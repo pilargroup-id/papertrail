@@ -1,0 +1,254 @@
+[
+  {
+    "id": "mp2gx8e0",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "tanggalFrp": "2026-05-12",
+    "divisi": "IT",
+    "dimintaOleh": "Bayu Noegroho",
+    "currency": "IDR",
+    "kurs": "1",
+    "keteranganFrp": "test pembayaran",
+    "vendor": "ORACLE CORPORATION SINGAPORE PTE LTD",
+    "internalPoNumber": "PO123",
+    "extDocType": "invoice",
+    "extDocNumber": "inv123",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-12",
+    "bankTujuan": "Citibank N.A/Oracle Corporation Singapore Pte Ltd",
+    "rekBankTujuan": "816419093",
+    "checkDocs[]": "Form Request Payment",
+    "items[0][memo]": "bayar internet biznet metronet 1D",
+    "items[0][budgetId]": "SIT2603",
+    "items[0][qty]": "1",
+    "items[0][hargaSatuan]": "2.340.000",
+    "items[0][amount]": "2.340.000",
+    "frpNo": "FRP-IT-26-00001",
+    "items": [
+      {
+        "memo": "bayar internet biznet metronet 1D",
+        "budgetId": "SIT2603",
+        "qty": "1",
+        "hargaSatuan": "2.340.000",
+        "amount": "2.340.000"
+      }
+    ],
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "status": "APPROVED",
+    "createdBy": "Bayu Noegroho",
+    "createdAt": "2026-05-12T10:08:45.240Z",
+    "approvedByActual": "Bayu Noegroho",
+    "approvedAt": "2026-05-12T10:08:54.743Z"
+  },
+  {
+    "id": "mp2gza82",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "tanggalFrp": "2026-05-12",
+    "divisi": "Finance",
+    "dimintaOleh": "Yosefhin Tesalonika",
+    "currency": "IDR",
+    "kurs": "1",
+    "keteranganFrp": "credit note",
+    "vendor": "PT. APLIKANUSA LINTASARTA",
+    "internalPoNumber": "123inv",
+    "extDocType": "invoice",
+    "extDocNumber": "inv123098765",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-12",
+    "bankTujuan": "Bank Mandiri/PT. Lintasarta",
+    "rekBankTujuan": "1030089540302",
+    "checkDocs[]": "Form Request Payment",
+    "items[0][memo]": "cn memo",
+    "items[0][budgetId]": "FIN2608",
+    "items[0][qty]": "1",
+    "items[0][hargaSatuan]": "900.000",
+    "items[0][amount]": "900.000",
+    "frpNo": "FRP-FIN-26-00001",
+    "items": [
+      {
+        "memo": "cn memo",
+        "budgetId": "FIN2608",
+        "qty": "1",
+        "hargaSatuan": "900.000",
+        "amount": "900.000"
+      }
+    ],
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "status": "APPROVED",
+    "createdBy": "Bayu Noegroho",
+    "createdAt": "2026-05-12T10:10:20.930Z",
+    "approvedByActual": "Bayu Noegroho",
+    "approvedAt": "2026-05-12T10:10:30.841Z"
+  },
+  {
+    "id": "mp3ewnpj",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "tanggalFrp": "2026-05-13",
+    "divisi": "GOTO Store",
+    "dimintaOleh": "Faizal Bastian Razaq",
+    "currency": "IDR",
+    "kurs": "1",
+    "keteranganFrp": "bayar listrik",
+    "vendor": "PT BERKAH TUMBUH BERSAMA INDONESIA",
+    "internalPoNumber": "PO123",
+    "extDocType": "invoice",
+    "extDocNumber": "inv123098765",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-13",
+    "bankTujuan": "BCA",
+    "rekBankTujuan": "7540276743 / PT BERKAH TUMBUH BERSAMA I",
+    "checkDocs[]": "Form Request Payment",
+    "items[0][memo]": "listrik",
+    "items[0][budgetId]": "S260117",
+    "items[0][qty]": "3",
+    "items[0][hargaSatuan]": "500.000",
+    "items[0][amount]": "1.500.000",
+    "frpNo": "FRP-GOT-26-00001",
+    "items": [
+      {
+        "memo": "listrik",
+        "budgetId": "S260117",
+        "qty": "3",
+        "hargaSatuan": "500.000",
+        "amount": "1.500.000"
+      }
+    ],
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "status": "APPROVED",
+    "createdBy": "Bayu Noegroho",
+    "createdAt": "2026-05-13T02:00:05.383Z",
+    "approvedByActual": "Bayu Noegroho",
+    "approvedAt": "2026-05-13T02:01:22.631Z"
+  },
+  {
+    "id": "mp3mgp16",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "tanggalFrp": "2026-05-13",
+    "divisi": "Product",
+    "dimintaOleh": "Khuzaima Desri",
+    "currency": "IDR",
+    "kurs": "1",
+    "keteranganFrp": "FRP",
+    "vendor": "KMTC",
+    "internalPoNumber": "PO1234",
+    "extDocType": "invoice",
+    "extDocNumber": "11234",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-13",
+    "bankTujuan": "BANK MANDIRI PT.SAMUDRA AGENCIES INDONESIA",
+    "rekBankTujuan": "1220003366633",
+    "checkDocs[]": "Form Request Payment",
+    "items[0][memo]": "FRP",
+    "items[0][budgetId]": "PRO2611",
+    "items[0][qty]": "1",
+    "items[0][hargaSatuan]": "500.000",
+    "items[0][amount]": "500.000",
+    "frpNo": "FRP-PRO-26-00001",
+    "items": [
+      {
+        "memo": "FRP",
+        "budgetId": "PRO2611",
+        "amount": "500.000"
+      }
+    ],
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "status": "APPROVED",
+    "createdBy": "Khuzaima Desri",
+    "createdAt": "2026-05-13T05:31:37.530Z",
+    "approvedBy": "Ernest Hianto",
+    "approvedByActual": "Ernest Hianto",
+    "approvedAt": "2026-05-13T05:41:38.424Z",
+    "requestBy": "Khuzaima Desri"
+  },
+  {
+    "id": "mp3s9k8f",
+    "companyName": "PT PILAR KARANG SAMUDERA",
+    "tanggalFrp": "2026-05-13",
+    "divisi": "",
+    "dimintaOleh": "Neneng Khodijah",
+    "currency": "IDR",
+    "kurs": "1",
+    "keteranganFrp": "VENDOR PIKASA",
+    "vendor": "KMTC",
+    "internalPoNumber": "PO1234",
+    "extDocType": "invoice",
+    "extDocNumber": "inv123098765",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-13",
+    "bankTujuan": "BANK MANDIRI PT.SAMUDRA AGENCIES INDONESIA",
+    "rekBankTujuan": "1220003366633",
+    "checkDocs[]": "Form Request Payment",
+    "items[0][memo]": "FRP",
+    "items[0][budgetId]": "PKS06",
+    "items[0][qty]": "10",
+    "items[0][hargaSatuan]": "200.000",
+    "items[0][amount]": "2.000.000",
+    "frpNo": "FRP-GEN-26-00001",
+    "items": [
+      {
+        "memo": "FRP",
+        "budgetId": "PKS06",
+        "amount": "2.000.000"
+      }
+    ],
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "requestBy": "Neneng Khodijah",
+    "status": "APPROVED",
+    "createdBy": "Bayu Noegroho",
+    "createdAt": "2026-05-13T08:14:02.415Z",
+    "approvedBy": "Ivon Yuanita Miharja",
+    "approvedByActual": "Bayu Noegroho",
+    "approvedAt": "2026-05-13T08:14:23.769Z"
+  },
+  {
+    "id": "mp3unf0q",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "tanggalFrp": "2026-05-13",
+    "divisi": "IT",
+    "dimintaOleh": "Bayu Noegroho",
+    "currency": "IDR",
+    "kurs": "1",
+    "keteranganFrp": "pembayaran",
+    "vendor": "PT. DEVOTEAM CLOUD SERVICES",
+    "internalPoNumber": "123inv",
+    "extDocType": "invoice",
+    "extDocNumber": "inv123",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-13",
+    "bankTujuan": "BANK MANDIRI/PT DEVOTEAM CLOUD SERVICES",
+    "rekBankTujuan": "102-00-0784292-2",
+    "checkDocs[]": "Form Request Payment",
+    "items[0][memo]": "bayar internet biznet metronet 1D",
+    "items[0][budgetId]": "SIT2602",
+    "items[0][qty]": "1",
+    "items[0][hargaSatuan]": "1.090.000",
+    "items[0][amount]": "1.090.000",
+    "frpNo": "FRP-SIT-26-00001",
+    "items": [
+      {
+        "memo": "bayar internet biznet metronet 1D",
+        "budgetId": "SIT2602",
+        "amount": "1.090.000"
+      }
+    ],
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "requestBy": "Bayu Noegroho",
+    "status": "APPROVED",
+    "createdBy": "Bayu Noegroho",
+    "createdAt": "2026-05-13T09:20:48.074Z",
+    "approvedBy": "Yulliemty",
+    "approvedByActual": "Bayu Noegroho",
+    "approvedAt": "2026-05-13T09:21:04.968Z"
+  }
+]

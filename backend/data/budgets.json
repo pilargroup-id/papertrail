@@ -1,0 +1,4664 @@
+[
+  {
+    "id": "PRO2601",
+    "department": "Product",
+    "class": "Product",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Aktiva",
+    "totalAmount": 28500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2602",
+    "department": "Product",
+    "class": "Product",
+    "description": "6001.01.00 - Biaya Iklan (royalty only)",
+    "type": "Cost",
+    "totalAmount": 500004964,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2603",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.01.00 - Biaya Jasa PPJK (Pelabuhan - Gudang)",
+    "type": "Cost",
+    "totalAmount": 2232000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2604",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.02.00 - Biaya Lift Off",
+    "type": "Cost",
+    "totalAmount": 177568000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2605",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.03.00 - Biaya Behandle",
+    "type": "Cost",
+    "totalAmount": 669600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2606",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.04.00 - Biaya Demurrage",
+    "type": "Cost",
+    "totalAmount": 300000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2607",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.05.00 - Biaya Repair",
+    "type": "Cost",
+    "totalAmount": 7200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2608",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.06.00 - Biaya Storage",
+    "type": "Cost",
+    "totalAmount": 1190400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2609",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.07.00 - Biaya Delivery Order (D/O)",
+    "type": "Cost",
+    "totalAmount": 992000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2610",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.08.00 - Biaya Extend DO",
+    "type": "Cost",
+    "totalAmount": 50400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2611",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.09.00 - Biaya Jasa Survey Import",
+    "type": "Cost",
+    "totalAmount": 1574800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2612",
+    "department": "Product",
+    "class": "Product",
+    "description": "6002.99.00 - Biaya Custom Lainnya",
+    "type": "Cost",
+    "totalAmount": 668360000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2613",
+    "department": "Product",
+    "class": "Product",
+    "description": "6003.01.00 - Biaya Ekspedisi (fedex, DHL, UPS)",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2614",
+    "department": "Product",
+    "class": "Product",
+    "description": "6003.03.00 - Biaya Materai",
+    "type": "Cost",
+    "totalAmount": 21000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2615",
+    "department": "Product",
+    "class": "Product",
+    "description": "6003.05.00 - Bea Masuk Import",
+    "type": "Cost",
+    "totalAmount": 1172413304,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2616",
+    "department": "Product",
+    "class": "Product",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 45750000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2617",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.04.02 - Bensin Kendaraan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 2400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2618",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.04.04 - Parkir, Tol Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 480000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2619",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.06.00 - Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 1800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2620",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 2160000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2621",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 4800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2622",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 37629768,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2623",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 84000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2624",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.23.00 - Biaya Pajak",
+    "type": "Cost",
+    "totalAmount": 1800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2625",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2626",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.26.00 - Biaya Sewa Lainnya",
+    "type": "Cost",
+    "totalAmount": 19000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2627",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 8200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2628",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 90000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2629",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 1000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2630",
+    "department": "Product",
+    "class": "Product",
+    "description": "6100.32.00 - Biaya Perbaikan Produk (repair product)",
+    "type": "Cost",
+    "totalAmount": 30000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2631",
+    "department": "Product",
+    "class": "Product",
+    "description": "PPN Import",
+    "type": "Cost",
+    "totalAmount": 20468067959,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2632",
+    "department": "Product",
+    "class": "Product",
+    "description": "PPh 22 Import",
+    "type": "Cost",
+    "totalAmount": 13955500886,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2633",
+    "department": "Product",
+    "class": "Product",
+    "description": "Pembelian Import",
+    "type": "Cost",
+    "totalAmount": 186073345096,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2634",
+    "department": "Product",
+    "class": "Product",
+    "description": "Pembelian Lokal",
+    "type": "Cost",
+    "totalAmount": 54472651944,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PRO2635",
+    "department": "Product",
+    "class": "Product",
+    "description": "7100.05.00 - Denda Administrasi Pabean",
+    "type": "Cost",
+    "totalAmount": 100000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2601",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6001.02.00 - Biaya Komisi",
+    "type": "Aktiva",
+    "totalAmount": 180000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2602",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6001.99.00 - Biaya Pemasaran Lainnya",
+    "type": "Cost",
+    "totalAmount": 1316900000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2603",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 30000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2604",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.03.04 - Biaya Pemeliharaan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2605",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.04.02 - Bensin Kendaraan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2606",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.04.04 - Parkir, Tol Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 21000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2607",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.12.00 - STNK, KIR & Pajak Kendaraan",
+    "type": "Cost",
+    "totalAmount": 4110000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2608",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 681000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2609",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 25017714,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2610",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 2100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2611",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 60000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2612",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 268000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2613",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 170000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2614",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "REFUND DANA",
+    "type": "Cost",
+    "totalAmount": 1200000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSG2615",
+    "department": "Gosave GT",
+    "class": "Gosave GT",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 4100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2601",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 7376319587,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2602",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6001.02.00 - Biaya Komisi",
+    "type": "Cost",
+    "totalAmount": 57119801450,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2603",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6001.05.00 - Biaya Afiliasi",
+    "type": "Cost",
+    "totalAmount": 7840000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2604",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6001.99.00 - Biaya Pemasaran Lainnya",
+    "type": "Cost",
+    "totalAmount": 1000000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2605",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 180000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2606",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 10872000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2607",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6100.06.00 - Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2608",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 10000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2609",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 205195250,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2610",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 39458760,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2611",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6100.23.00 - Biaya Pajak",
+    "type": "Cost",
+    "totalAmount": 2300000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2612",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2613",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "1000.01.02 - Kas Besar",
+    "type": "Cost",
+    "totalAmount": 480000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2614",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "REFUND DANA",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2615",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "Meta Ads",
+    "type": "Cost",
+    "totalAmount": 120000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTE2616",
+    "department": "GOTO E-Commerce",
+    "class": "GOTO E-Commerce",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 26400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2601",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6003.01.00 - Biaya Ekspedisi",
+    "type": "Cost",
+    "totalAmount": 15802145,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2602",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6003.02.00 - Biaya Ekspedisi Import (Freight)",
+    "type": "Cost",
+    "totalAmount": 2349400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2603",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 81120000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2604",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 7560000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2605",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2606",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2607",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2608",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.03.03 - Biaya Pemeliharaan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 93336650,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2609",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.03.04 - Biaya Pemeliharaan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 9000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2610",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.04.01 - Bensin Kendaraan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 331398156,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2611",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.04.02 - Bensin Kendaraan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 16840752,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2612",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.04.03 - Parkir, Tol Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 194628204,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2613",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.04.04 - Parkir, Tol Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 6290832,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2614",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.06.00 - Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 548808,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2615",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 218112,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2616",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.08.00 - Biaya Kebersihan Kantor",
+    "type": "Cost",
+    "totalAmount": 23076408,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2617",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 9720780,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2618",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 60532800,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2619",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.12.00 - STNK, KIR & Pajak Kendaraan",
+    "type": "Cost",
+    "totalAmount": 22502000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2620",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 32902926,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2621",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.14.00 - Biaya Sewa Bangunan",
+    "type": "Cost",
+    "totalAmount": 1572991667,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2622",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 32780880,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2623",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.18.00 - Biaya Bahan Packaging",
+    "type": "Cost",
+    "totalAmount": 135347895,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2624",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 94500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2625",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 16823545,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2626",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.26.00 - Biaya Sewa Lainnya",
+    "type": "Cost",
+    "totalAmount": 125400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2627",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 55200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2628",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "6101.02.00 - Biaya Upah & Honorer",
+    "type": "Cost",
+    "totalAmount": 487037400,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGS2629",
+    "department": "Warehouse Gosave",
+    "class": "Warehouse Gosave",
+    "description": "CASH GUDANG",
+    "type": "Cost",
+    "totalAmount": 240000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2601",
+    "department": "Warehouse GOTO",
+    "class": "Warehouse GOTO",
+    "description": "6003.01.00 - Biaya Ekspedisi",
+    "type": "Cost",
+    "totalAmount": 279336000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2602",
+    "department": "Warehouse GOTO",
+    "class": "Warehouse GOTO",
+    "description": "6003.02.00 - Biaya Ekspedisi Import (Freight)",
+    "type": "Cost",
+    "totalAmount": 3102500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2603",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6003.04.00 - Biaya Marketplace (Lain-Lain)",
+    "type": "Cost",
+    "totalAmount": 405817500,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2604",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 190644156,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2605",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 20400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2606",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2607",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 8000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2608",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.03.03 - Biaya Pemeliharaan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2609",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.03.04 - Biaya Pemeliharaan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 766000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2610",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.04.01 - Bensin Kendaraan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 11700000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2611",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.04.02 - Bensin Kendaraan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 1800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2612",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.08.00 - Biaya Kebersihan Kantor",
+    "type": "Cost",
+    "totalAmount": 8500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2613",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 411780000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2614",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 129000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2615",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.12.00 - STNK, KIR & Pajak Kendaraan",
+    "type": "Cost",
+    "totalAmount": 2209000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2616",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 255442382,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2617",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.14.00 - Biaya Sewa Bangunan",
+    "type": "Cost",
+    "totalAmount": 4074624000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2618",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 21449064,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2619",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.18.00 - Biaya Bahan Packaging",
+    "type": "Cost",
+    "totalAmount": 4800000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2620",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 133200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2621",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 8400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2622",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.26.00 - Biaya Sewa Lainnya",
+    "type": "Cost",
+    "totalAmount": 105600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2623",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 9600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2624",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 48000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2625",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "CASH GUDANG",
+    "type": "Cost",
+    "totalAmount": 480000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2626",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "6101.02.00 - Biaya Upah & Honorer",
+    "type": "Cost",
+    "totalAmount": 4088962000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "WGT2627",
+    "department": "Warehouse Goto",
+    "class": "Warehouse GOTO",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 13200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2601",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6003.03.00 - Biaya Materai",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2602",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2603",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 100055000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2604",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 5640000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2605",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 24600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2606",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 1206000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2607",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 13200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2608",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.03.04 - Biaya Pemeliharaan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 14304000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2609",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.04.02 - Bensin Kendaraan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 9660000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2610",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.04.04 - Parkir, Tol Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 8532000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2611",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.06.00 - Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 7992000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2612",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 15000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2613",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.08.00 - Biaya Kebersihan Kantor",
+    "type": "Cost",
+    "totalAmount": 18000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2614",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 54000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2615",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.12.00 - STNK, KIR & Pajak Kendaraan",
+    "type": "Cost",
+    "totalAmount": 7500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2616",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 20004000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2617",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.14.00 - Biaya Sewa Bangunan",
+    "type": "Cost",
+    "totalAmount": 725004000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2618",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 20756000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2619",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 22387824,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2620",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 260004000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2621",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2622",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2623",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 10200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2624",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "6101.02.00 - Biaya Upah & Honorer",
+    "type": "Cost",
+    "totalAmount": 24000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2625",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "OUTSOURCING",
+    "type": "Cost",
+    "totalAmount": 7390411986,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2626",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "TRAINING CORPORATE",
+    "type": "Cost",
+    "totalAmount": 366771793,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2627",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "BPJS TK",
+    "type": "Cost",
+    "totalAmount": 1355588539,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2628",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "BPJS KESEHATAN",
+    "type": "Cost",
+    "totalAmount": 733543580,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2629",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "UPAH MAGANG",
+    "type": "Cost",
+    "totalAmount": 50200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2630",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "Kas Bon Karyawan",
+    "type": "Cost",
+    "totalAmount": 180000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2631",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "Kurang Bayar Payroll",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "HCG2632",
+    "department": "HCGA",
+    "class": "HCGA",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 16000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2601",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Aktiva",
+    "totalAmount": 522000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2602",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "6001.02.00 - Biaya Komisi",
+    "type": "Cost",
+    "totalAmount": 684000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2603",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "6001.05.00 - Biaya Afiliasi",
+    "type": "Cost",
+    "totalAmount": 108000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2604",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2605",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 1540557,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2606",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "6100.21.00 - Biaya Outsourcing",
+    "type": "Cost",
+    "totalAmount": 63868140,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2607",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "6100.29.00 - Biaya Jasa Manajemen Outsourcing",
+    "type": "Cost",
+    "totalAmount": 3193404,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSE2608",
+    "department": "Gosave E-Commerce",
+    "class": "Gosave E-Commerce",
+    "description": "REFUND DANA",
+    "type": "Cost",
+    "totalAmount": 6000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2601",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6001.02.00 - Biaya Komisi",
+    "type": "Cost",
+    "totalAmount": 240000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2602",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6001.99.00 - Biaya Pemasaran Lainnya",
+    "type": "Cost",
+    "totalAmount": 60000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2603",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 60000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2604",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6100.06.00 - Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 660000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2605",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 11962626,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2606",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 1800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2607",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2608",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2609",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 36000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GSB2610",
+    "department": "Gosave B2B",
+    "class": "Gosave B2B",
+    "description": "REFUND DANA",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTG2601",
+    "department": "GOTO GT",
+    "class": "GOTO GT",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 66000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTG2602",
+    "department": "GOTO GT",
+    "class": "GOTO GT",
+    "description": "6003.01.00 - Biaya Ekspedisi",
+    "type": "Cost",
+    "totalAmount": 3600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTG2603",
+    "department": "GOTO GT",
+    "class": "GOTO GT",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 24000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTG2604",
+    "department": "GOTO GT",
+    "class": "GOTO GT",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 8012525,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTG2605",
+    "department": "GOTO GT",
+    "class": "GOTO GT",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 178000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "GTG2606",
+    "department": "GOTO GT",
+    "class": "GOTO GT",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 7000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260101",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 8000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260102",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260103",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260104",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 4195800,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260105",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260106",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 4200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260107",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.03.03 - Biaya Pemeliharaan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260108",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 4200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260109",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260110",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 912000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260111",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.14.00 - Biaya Sewa Bangunan",
+    "type": "Cost",
+    "totalAmount": 109000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260112",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 18000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260113",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 23500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260114",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260115",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260116",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260117",
+    "department": "GOTO Store",
+    "class": "Store 1 Pasar Lama",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 6000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260201",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 8250000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260202",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260203",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260204",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 5440554,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260205",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260206",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 4200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260207",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 4200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260208",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 1200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260209",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 1175810,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260210",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.14.00 - Biaya Sewa Bangunan",
+    "type": "Cost",
+    "totalAmount": 210000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260211",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 18000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260212",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 23500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260213",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260214",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260215",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260216",
+    "department": "GOTO Store",
+    "class": "Store 2 Poris",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 6000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260301",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Aktiva",
+    "totalAmount": 250000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260302",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260303",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 1023309,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260304",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260305",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260306",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260307",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260308",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260309",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260310",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260311",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260312",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260313",
+    "department": "GOTO Store",
+    "class": "Store 3 Menceng",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260401",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Aktiva",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260402",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260403",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 1534965,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260404",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260405",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260406",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 720000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260407",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.03.03 - Biaya Pemeliharaan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260408",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 900000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260409",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 300000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260410",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260411",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260412",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260413",
+    "department": "GOTO Store",
+    "class": "Store 4 Banjar Wijaya",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250501",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250502",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250503",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250504",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 1534964,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250505",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250506",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 60000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250507",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 1050000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250508",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 900000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250509",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 300000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250510",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250511",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250512",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S250513",
+    "department": "GOTO Store",
+    "class": "Store 5 Talaga Bestari",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260601",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Aktiva",
+    "totalAmount": 250000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260602",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260603",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 1023309,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260604",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260605",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260606",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260607",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260608",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260609",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260610",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260611",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 300000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260612",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260613",
+    "department": "GOTO Store",
+    "class": "Store 6 Karawaci",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260701",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 1250000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260702",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260703",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260704",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 2558273,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260705",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260706",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260707",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 1750000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260708",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.03.03 - Biaya Pemeliharaan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260709",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260710",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260711",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 5000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260712",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260713",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260714",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 5000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260715",
+    "department": "GOTO Store",
+    "class": "Store 7 Karawaci 2",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260801",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 1250000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260802",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260803",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 2558273,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260804",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260805",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260806",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 1700000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260807",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260808",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260809",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 5000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260810",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260811",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260812",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 5000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S260813",
+    "department": "GOTO Store",
+    "class": "Store 8 Ciledug",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261001",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 8000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261002",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261003",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 6139854,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261004",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261005",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 4200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261006",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 4200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261007",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 1200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261008",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 2574700,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261009",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 18000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261010",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 20000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261011",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261012",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261013",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261014",
+    "department": "GOTO Store",
+    "class": "Store 10 Kelapa Dua",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 6000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261101",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 1500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261102",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261103",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 3581582,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261104",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261105",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261106",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 2450000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261107",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.03.03 - Biaya Pemeliharaan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261108",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 2100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261109",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 700000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261110",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 7000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261111",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261112",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261113",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 7000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261114",
+    "department": "GOTO Store",
+    "class": "Store 11 Sepatan",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261201",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261202",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261203",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261204",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 4604891,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261205",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261206",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 70000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261207",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 3150000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261208",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 2700000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261209",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 1000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261210",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 10000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261211",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261212",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261213",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 9000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261214",
+    "department": "GOTO Store",
+    "class": "Store 12 Pamulang",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 5000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261301",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261302",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261303",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 4604891,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261304",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261305",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261306",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 3150000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261307",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 2700000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261308",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 1100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261309",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 10000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261310",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261311",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261312",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 9000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261313",
+    "department": "GOTO Store",
+    "class": "Store 13 Ciledug Indah",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 5000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261401",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6001.01.00 - Biaya Iklan",
+    "type": "Cost",
+    "totalAmount": 2250000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261402",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 0,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261403",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 5116545,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261404",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261405",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.03.01 - Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261406",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 3500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261407",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261408",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 1100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261409",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 12000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261410",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261411",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261412",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 10000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "S261413",
+    "department": "GOTO Store",
+    "class": "Store 14 Dasana Indah",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 5500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2601",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6001.99.00 - Biaya Pemasaran Lainnya",
+    "type": "Cost",
+    "totalAmount": 74000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2602",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.02.01 - Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 437891986,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2603",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.02.03 - Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 9356634,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2604",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2605",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 3150000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2606",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.03.04 - Biaya Pemeliharaan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 1475000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2607",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.04.01 - Bensin Kendaraan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 25500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2608",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.04.02 - Bensin Kendaraan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 10500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2609",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.04.04 - Parkir, Tol Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 1800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2610",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 1800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2611",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 5400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2612",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.11.00 - Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 1200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2613",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.12.00 - STNK, KIR & Pajak Kendaraan",
+    "type": "Cost",
+    "totalAmount": 4138000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2614",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.13.00 - Biaya Asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 18302196,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2615",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 13433350,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2616",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.17.00 - Biaya Jasa Profesional",
+    "type": "Cost",
+    "totalAmount": 2500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2617",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.18.00 - Biaya Bahan Packaging",
+    "type": "Cost",
+    "totalAmount": 22000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2618",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 25000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2619",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.23.00 - Biaya Pajak",
+    "type": "Cost",
+    "totalAmount": 100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2620",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 700000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2621",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.26.00 - Biaya Sewa Lainnya",
+    "type": "Cost",
+    "totalAmount": 114000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2622",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 700000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2623",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 92900000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2624",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6101.02.00 - Biaya Upah & Honorer",
+    "type": "Cost",
+    "totalAmount": 320760000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2625",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "CASH STORE & GUDANG",
+    "type": "Cost",
+    "totalAmount": 80000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2626",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "6100.02.02 - Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 5115966,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SHO2627",
+    "department": "GOTO Store",
+    "class": "Store HO",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 10000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2601",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Aktiva",
+    "totalAmount": 18000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2602",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6003.01.00 - Biaya Ekspedisi",
+    "type": "Cost",
+    "totalAmount": 9372000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2603",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6003.03.00 - Biaya Materai",
+    "type": "Cost",
+    "totalAmount": 40000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2604",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 2124096,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2605",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.03.04 - Biaya Pemeliharaan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 5757372,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2606",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.04.04 - Parkir, Tol Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 44827056,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2607",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 2650000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2608",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 12670788,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2609",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.12.00 - STNK, KIR & Pajak Kendaraan",
+    "type": "Cost",
+    "totalAmount": 1025000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2610",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 40715367,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2611",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.17.00 - Biaya Jasa Profesional",
+    "type": "Cost",
+    "totalAmount": 409100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2612",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 7500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2613",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.23.00 - Biaya Pajak",
+    "type": "Cost",
+    "totalAmount": 400000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2614",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 900000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2615",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 630000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2616",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "PPN Kurang Bayar",
+    "type": "Cost",
+    "totalAmount": 18000000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2617",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "PPh Masa",
+    "type": "Cost",
+    "totalAmount": 4800000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "FIN2618",
+    "department": "Finance",
+    "class": "Finance",
+    "description": "DPLK Manulife",
+    "type": "Cost",
+    "totalAmount": 1500000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2601",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6003.01.00 - Biaya Ekspedisi",
+    "type": "Cost",
+    "totalAmount": 504000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2602",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6003.03.00 - Biaya Materai",
+    "type": "Cost",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2603",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6004.00.00 - Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 300000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2604",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6100.04.04 - Parkir, Tol Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 2004000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2605",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6100.10.00 - Biaya Iuran Keanggotaan",
+    "type": "Cost",
+    "totalAmount": 3056284800,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2606",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 7821456,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2607",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6100.17.00 - Biaya Jasa Profesional",
+    "type": "Cost",
+    "totalAmount": 569600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2608",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 2004000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2609",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 5500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "LGL2610",
+    "department": "Legal",
+    "class": "Legal",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 10000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2601",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6003.01.00 - Biaya Ekspedisi",
+    "type": "Aktiva",
+    "totalAmount": 3000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2602",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 3600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2603",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.04.02 - Bensin Kendaraan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 1800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2604",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.06.00 - Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 1200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2605",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 3100000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2606",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 8500000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2607",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 23704692,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2608",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.21.00 - Biaya Outsourcing",
+    "type": "Cost",
+    "totalAmount": 313501860,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2609",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 54000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2610",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.23.00 - Biaya Pajak",
+    "type": "Cost",
+    "totalAmount": 8000004,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2611",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 20000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2612",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.28.00 - Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 1200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2613",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.29.00 - Biaya Jasa Manajemen Outsourcing",
+    "type": "Cost",
+    "totalAmount": 15675096,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2614",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "6100.30.00 - Biaya Percetakan",
+    "type": "Cost",
+    "totalAmount": 4800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "MKT2615",
+    "department": "Marketing",
+    "class": "Marketing",
+    "description": "1620.00.00 - Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 53000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2601",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.02.04 - Biaya Pulsa Handphone",
+    "type": "Aktiva",
+    "totalAmount": 99600000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2602",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.02.05 - Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 47200000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2603",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 14000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2604",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.06.00 - Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 2000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2605",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 4000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2606",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.09.00 - Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 800000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2607",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 1156400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2608",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 15347052,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2609",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 350000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "SIT2610",
+    "department": "IT",
+    "class": "IT",
+    "description": "6100.25.00 - Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 620000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "BOD01",
+    "department": "Board of Director",
+    "class": "Board of Director",
+    "description": "6100.07.00 - Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 1000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "BOD02",
+    "department": "Board of Director",
+    "class": "Board of Director",
+    "description": "6100.15.00 - Biaya Software",
+    "type": "Cost",
+    "totalAmount": 19000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "BOD03",
+    "department": "Board of Director",
+    "class": "Board of Director",
+    "description": "6100.16.00 - Biaya Training",
+    "type": "Cost",
+    "totalAmount": 65510160,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "BOD04",
+    "department": "Board of Director",
+    "class": "Board of Director",
+    "description": "6100.22.00 - Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 26000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "BOD05",
+    "department": "Board of Director",
+    "class": "Board of Director",
+    "description": "6100.23.00 - Biaya Pajak",
+    "type": "Cost",
+    "totalAmount": 3400000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "BOD06",
+    "department": "Board of Director",
+    "class": "Board of Director",
+    "description": "6100.27.00 - Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 30000000,
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "id": "PKS01",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Tax",
+    "type": "Aktiva",
+    "totalAmount": 184000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS02",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Biaya Operasional",
+    "type": "Cost",
+    "totalAmount": 72000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS03",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Iuran Langganan",
+    "type": "Cost",
+    "totalAmount": 6000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS04",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Biaya Trucking",
+    "type": "Cost",
+    "totalAmount": 1500000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS05",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Pindah Dana",
+    "type": "Cost",
+    "totalAmount": 3000000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS06",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Biaya Sewa",
+    "type": "Cost",
+    "totalAmount": 50000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS07",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Biaya DO",
+    "type": "Cost",
+    "totalAmount": 120000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS08",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Aktiva",
+    "type": "Cost",
+    "totalAmount": 5000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS09",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 10000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS10",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Biaya Software",
+    "type": "Cost",
+    "totalAmount": 29600000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS11",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Biaya Jasa",
+    "type": "Cost",
+    "totalAmount": 260000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKS12",
+    "department": "Pikasa",
+    "class": "Pikasa",
+    "description": "Biaya BPJS",
+    "type": "Cost",
+    "totalAmount": 70000000,
+    "company": "PT PILAR KARGO PERKASA"
+  },
+  {
+    "id": "PKD01",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Asset Pilkada",
+    "type": "Aktiva",
+    "totalAmount": 6606060000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD02",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Cost Pilkada",
+    "type": "Cost",
+    "totalAmount": 50000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD03",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Kas kecil",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD04",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Transit Aktiva Tetap",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD05",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Jasa PPJK (Pelabuhan - Gudang)",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD06",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Lift Off",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD07",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Behandle",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD08",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Repair",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD09",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Storage",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD10",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Delivery Order (D/O)",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD11",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Extend DO",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD12",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Jasa Survey Import",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD13",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Custom Lainnya",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD14",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Ekspedisi",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD15",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Ekspedisi Import (Freight)",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD16",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Materai",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD17",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Bea Masuk Import",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD18",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Sample",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD19",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Listrik",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD20",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya PAM",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD21",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Telepon",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD22",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Internet",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD23",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Pemeliharaan Gedung",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD24",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Pemeliharaan Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD25",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Parkir, Tol Kendaraan Operasional",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD26",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Perlengkapan Kantor",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD27",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Peralatan Kantor",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD28",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Kebersihan Kantor",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD29",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya ATK",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD30",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Retribusi",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD31",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "STNK, KIR & Pajak Kendaraan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD32",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD33",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Sewa Bangunan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD34",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Software",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD35",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Training",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD36",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Packaging / Re-packaging",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD37",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Outsourcing",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD38",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD39",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Sumbangan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD40",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Perjalanan Dinas Umum",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD41",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Entertainment",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD42",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Upah & Honorer",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD43",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya BPJS Ketenagakerjaan JHT & JP",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD44",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya BPJS Kesehatan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD45",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Neraca Saldo (Pindah Dana, PPN, PPh)",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD46",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "PPH Pasal 22",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD47",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "PPN In Import",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD48",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Refund Customer",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD49",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Persediaan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD50",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "PPH Pasal 21",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD51",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "PPH Pasal 23",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD52",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "PPH Pasal 25",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD53",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Lift on",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD54",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Bahan Pembantu",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD55",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Survey Import",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD56",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Beban Pemeliharaan Peralatan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD57",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Beban Pemeliharaan Kendaraan Kantor",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD58",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Beban ATK",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD59",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Profesional",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD60",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Pajak",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "id": "PKD61",
+    "department": "Pilkada",
+    "class": "Pilkada",
+    "description": "Biaya Software",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "company": "PT PILAR KARANG SAMUDERA"
+  }
+]

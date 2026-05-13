@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Form Request Payment - Sistem Pengelolaan Pembayaran">
+  <title>Form Request Payment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="material-icons-round brand-icon">payments</span>
+      <div>
+        <h1 class="nav-title">FRP System</h1>
+        <p class="nav-subtitle">Halo, <%= locals.user ? user.fullName : 'Guest' %></p>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link active">
+        <span class="material-icons-round">add_circle</span>
+        <span>New Request</span>
+      </a>
+      <a href="/approval" class="nav-link">
+        <span class="material-icons-round">pending_actions</span>
+        <span>Approval</span>
+      </a>
+      <a href="/approved" class="nav-link">
+        <span class="material-icons-round">check_circle</span>
+        <span>Approved</span>
+      </a>
+      <% if(locals.user && user.class === 'IT') { %>
+        <a href="/admin/employees" class="nav-link" style="color: var(--primary-dark);">
+          <span class="material-icons-round">admin_panel_settings</span>
+          <span>Master Data</span>
+        </a>
+      <% } %>
+      <a href="/logout" class="nav-link" style="color: var(--danger);">
+        <span class="material-icons-round">logout</span>
+        <span>Logout</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="form-container">
+      <!-- Header Card -->
+      <div class="header-card">
+        <div class="header-icon-wrap">
+          <span class="material-icons-round">description</span>
+        </div>
+        <div>
+          <h2>Form Request Payment</h2>
+          <p>Cash in Advance / Payment / Settlement / Internal Transfer</p>
+        </div>
+      </div>
+
+      <form id="frpForm" method="POST" action="/generate-pdf">
+        <!-- Section 1: FRP Info -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="material-icons-round section-icon">info</span>
+            <h3>Informasi FRP</h3>
+          </div>
+          <div class="form-grid cols-2">
+            <div class="form-group">
+              <label for="companyName">Company Name</label>
+              <% if(locals.user && user.class !== 'IT') { %>
+                <select id="companyName" name="companyName" disabled style="background:#f1f5f9; cursor:not-allowed; color:#1e293b; font-weight:700;">
+                  <option value="<%= user.company %>" selected><%= user.company %></option>
+                </select>
+                <input type="hidden" name="companyName" value="<%= user.company %>">
+              <% } else { %>
+                <select id="companyName" name="companyName" required>
+                  <option value="">Pilih Company</option>
+                  <% companies.forEach(c => { %>
+                    <option value="<%= c.name %>" <%= (locals.user && user.company === c.name) ? 'selected' : '' %>><%= c.name %></option>
+                  <% }); %>
+                </select>
+              <% } %>
+            </div>
+            <div class="form-group">
+              <label for="tanggalFrp">Tanggal FRP</label>
+              <input type="date" id="tanggalFrp" name="tanggalFrp" required>
+            </div>
+          </div>
+          <div class="form-grid cols-3">
+            <div class="form-group" id="divisiContainer">
+              <label for="divisi">Divisi</label>
+              <% if (locals.userDivisi) { %>
+                <%/* Non-IT: locked to their own division */%>
+                <select id="divisi" name="divisi" required disabled style="background:#f1f5f9; cursor:not-allowed; color:#475569;">
+                  <option value="<%= userDivisi %>" selected><%= userDivisi %></option>
+                </select>
+                <input type="hidden" name="divisi" value="<%= userDivisi %>">
+              <% } else { %>
+                <%/* IT: can see all divisions */%>
+                <select id="divisi" name="divisi" required>
+                  <option value="">Pilih Divisi</option>
+                </select>
+              <% } %>
+            </div>
+            <div class="form-group">
+              <label for="dimintaOleh">Diminta Oleh</label>
+              <select id="dimintaOleh" name="dimintaOleh" required>
+                <option value="">Pilih Karyawan</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid cols-3">
+            <div class="form-group">
+              <label for="currency">Currency</label>
+              <select id="currency" name="currency" required>
+                <option value="IDR">IDR - Indonesian Rupiah</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="CNY">CNY - Chinese Yuan</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="SGD">SGD - Singapore Dollar</option>
+              </select>
+            </div>
+            <div class="form-group" id="kursContainer" style="display: none;">
+              <label for="kurs">Exchange Rate (Kurs)</label>
+              <input type="text" id="kurs" name="kurs" value="1" placeholder="1" required>
+            </div>
+          </div>
+          <div class="form-group full-width" style="margin-top: 15px;">
+            <label for="keteranganFrp">Keterangan FRP</label>
+            <textarea id="keteranganFrp" name="keteranganFrp" rows="2" placeholder="Keterangan detail mengenai pembayaran ini..."></textarea>
+          </div>
+        </div>
+
+        <!-- Section 2: Vendor & Payment -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="material-icons-round section-icon">store</span>
+            <h3>Vendor & Pembayaran</h3>
+          </div>
+          <div class="form-grid cols-2">
+            <div class="form-group">
+              <label for="vendor">Vendor</label>
+              <input type="text" id="vendor" name="vendor" list="vendorList" placeholder="Ketik atau pilih vendor" required>
+              <datalist id="vendorList">
+                <% vendors.forEach(v => { %>
+                  <option value="<%= v.name %>">
+                <% }); %>
+              </datalist>
+            </div>
+            <div class="form-group">
+              <label for="internalPoNumber">Internal PO Number</label>
+              <input type="text" id="internalPoNumber" name="internalPoNumber" placeholder="(Opsional)">
+            </div>
+          </div>
+          <div class="form-grid cols-3">
+            <div class="form-group">
+              <label for="extDocType">Ext Doc Type</label>
+              <select id="extDocType" name="extDocType">
+                <option value="">Pilih</option>
+                <option value="invoice">Invoice</option>
+                <option value="kontrak">Kontrak</option>
+                <option value="kwitansi">Kwitansi</option>
+                <option value="nota">Nota</option>
+                <option value="other">Lainnya</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="extDocNumber">Ext Doc Number</label>
+              <input type="text" id="extDocNumber" name="extDocNumber" placeholder="Nomor dokumen">
+            </div>
+            <div class="form-group">
+              <label for="paymentMethod">Payment Method</label>
+              <select id="paymentMethod" name="paymentMethod" required>
+                <option value="">Pilih</option>
+                <option value="Transfer">Transfer</option>
+                <option value="Cash">Cash</option>
+                <option value="Giro">Giro</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid cols-3">
+            <div class="form-group">
+              <label for="paymentDate">Payment Date</label>
+              <input type="date" id="paymentDate" name="paymentDate" required>
+            </div>
+            <div class="form-group">
+              <label for="bankTujuan">Bank Tujuan</label>
+              <input type="text" id="bankTujuan" name="bankTujuan" placeholder="Nama bank tujuan">
+            </div>
+            <div class="form-group full-width">
+              <label for="rekBankTujuan">Rekening Bank Tujuan</label>
+              <input type="text" id="rekBankTujuan" name="rekBankTujuan" placeholder="Nomor rekening a/n penerima">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Checklist Documents -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="material-icons-round section-icon">checklist</span>
+            <h3>Checklist Documents</h3>
+          </div>
+          <div class="checklist-grid">
+            <label class="checklist-item">
+              <input type="checkbox" name="checkDocs[]" value="Form Request Payment" checked>
+              <span class="checkmark"></span>
+              <span>Form Request Payment <span class="required-star">*</span></span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" name="checkDocs[]" value="Tanda Terima Asli">
+              <span class="checkmark"></span>
+              <span>Tanda Terima Asli</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" name="checkDocs[]" value="Invoice / Kontrak">
+              <span class="checkmark"></span>
+              <span>Invoice / Kontrak <span class="required-star">*</span></span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" name="checkDocs[]" value="Surat Jalan Asli / Berita Acara">
+              <span class="checkmark"></span>
+              <span>Surat Jalan Asli / Berita Acara <span class="required-star">*</span></span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" name="checkDocs[]" value="Faktur Pajak">
+              <span class="checkmark"></span>
+              <span>Faktur Pajak</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" name="checkDocs[]" value="Purchase Order">
+              <span class="checkmark"></span>
+              <span>Purchase Order <span class="required-star">*</span></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section 4: Line Items -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="material-icons-round section-icon">receipt_long</span>
+            <h3>Detail Pembayaran</h3>
+          </div>
+          <div class="line-items-table">
+            <table id="lineItemsTable">
+              <thead>
+                <tr>
+                  <th class="th-no">No</th>
+                  <th class="th-memo">Memo / Keterangan</th>
+                  <th class="th-budget">Budget ID</th>
+                  <th class="th-qty">Qty</th>
+                  <th class="th-harga">Harga Satuan</th>
+                  <th class="th-idr">Nilai IDR</th>
+                  <th class="th-action">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="lineItemsBody">
+                <tr class="line-item-row" data-row="1">
+                  <td class="td-no">1</td>
+                  <td><input type="text" name="items[0][memo]" class="item-memo" placeholder="Deskripsi pembayaran" required></td>
+                  <td>
+                    <select name="items[0][budgetId]" class="item-budget" required>
+                      <option value="">Pilih Budget</option>
+                      <% budgets.forEach(b => { %>
+                        <option value="<%= b.id %>" data-dept="<%= b.department.toLowerCase() %>">
+                          <%= b.id %> — <%= b.description %> (Sisa: Rp <%= (b.remainingAmount || 0).toLocaleString('id-ID') %>)
+                        </option>
+                      <% }); %>
+                    </select>
+                  </td>
+                  <td><input type="text" name="items[0][qty]" class="item-qty" value="1" placeholder="1" required></td>
+                  <td><input type="text" name="items[0][hargaSatuan]" class="item-harga" placeholder="0" required></td>
+                  <td><input type="text" name="items[0][amount]" class="item-amount" placeholder="0" readonly></td>
+                  <td><button type="button" class="btn-remove-row" onclick="removeRow(this)" disabled><span class="material-icons-round">delete</span></button></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="5" class="total-label">Total</td>
+                  <td class="total-amount" id="totalAmount">IDR 0</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+            <button type="button" class="btn-add-row" id="btnAddRow">
+              <span class="material-icons-round">add</span> Tambah Baris
+            </button>
+          </div>
+        </div>
+
+
+
+        <div class="form-actions">
+          <button type="reset" class="btn btn-reset">
+            <span class="material-icons-round">restart_alt</span> Reset
+          </button>
+          <% if (user.class === 'IT') { %>
+            <button type="button" class="btn btn-preview" id="btnPreview">
+              <span class="material-icons-round">visibility</span> Preview
+            </button>
+          <% } %>
+          <button type="button" class="btn btn-generate" id="btnSaveSubmit">
+            <span class="material-icons-round">save</span> Save & Submit
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <!-- Preview Modal -->
+  <div class="modal-overlay" id="previewModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><span class="material-icons-round">preview</span> Preview FRP</h3>
+        <button class="modal-close" id="closeModal"><span class="material-icons-round">close</span></button>
+      </div>
+      <div class="modal-body" id="previewContent"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <footer class="footer">
+    <p>&copy; 2026 PT Pilar Niaga Makmur — FRP Payment System v1.0</p>
+  </footer>
+
+  <script>
+    // Pass server data to client
+    const allEmployees = <%- JSON.stringify(employees) %>;
+    const allBudgets = <%- JSON.stringify(budgets) %>;
+    const allCompanies = <%- JSON.stringify(companies) %>;
+    const allVendors = <%- JSON.stringify(vendors) %>;
+  </script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

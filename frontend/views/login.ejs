@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title><%= title %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { font-family: 'Outfit', sans-serif; }
+    .login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .login-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+      padding: 3rem;
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .company-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .company-card {
+      background: white;
+      border: 2px solid transparent;
+      border-radius: 1.5rem;
+      padding: 2rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .company-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      border-color: var(--primary);
+    }
+    .company-card span {
+      font-size: 3rem;
+      color: var(--primary);
+    }
+    .company-card h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--dark);
+      font-weight: 700;
+    }
+    .login-form-area {
+      display: none;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--gray-500);
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: var(--primary); }
+    
+    /* Animation for switching steps */
+    .fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+
+  <div class="login-container">
+    <div class="login-card" id="mainCard">
+      
+      <!-- STEP 1: COMPANY SELECTION -->
+      <div id="step1">
+        <span class="material-icons-round" style="font-size: 4rem; color: var(--primary); margin-bottom: 1rem;">business</span>
+        <h2 style="font-size: 2rem; font-weight: 800; color: var(--dark);">Selamat Datang</h2>
+        <p style="color: var(--gray-500); font-size: 1.1rem;">Silakan pilih perusahaan Anda</p>
+        
+        <div class="company-grid">
+          <div class="company-card" onclick="selectCompany('PT PILAR NIAGA MAKMUR')">
+            <span class="material-icons-round">inventory_2</span>
+            <h3>Pilar Niaga Makmur</h3>
+          </div>
+          <div class="company-card" onclick="selectCompany('PT PILAR KARGO PERKASA')">
+            <span class="material-icons-round">local_shipping</span>
+            <h3>Pilar Kargo Perkasa</h3>
+          </div>
+          <div class="company-card" onclick="selectCompany('PT PILAR KARANG SAMUDERA')">
+            <span class="material-icons-round">sailing</span>
+            <h3>Pilar Karang Samudera</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: DEPARTMENT SELECTION -->
+      <div id="step2" style="display: none;">
+        <div class="back-btn" onclick="showStep(1)">
+          <span class="material-icons-round">arrow_back</span> Kembali
+        </div>
+        <h2 id="step2CompanyName" style="color: var(--dark); margin-bottom: 0.5rem;"></h2>
+        <p style="color: var(--gray-500); margin-bottom: 2rem;">Pilih Departemen / Divisi Anda</p>
+        
+        <div class="company-grid" id="deptGrid">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+
+      <!-- STEP 3: LOGIN FORM -->
+      <div id="step3" class="login-form-area">
+        <div class="back-btn" onclick="showStep(2)">
+          <span class="material-icons-round">arrow_back</span> Kembali
+        </div>
+        <h3 id="selectedDeptName" style="margin-bottom: 0.5rem; color: var(--primary);"></h3>
+        <p style="margin-bottom: 2rem; color: var(--gray-500);">Masuk dengan akun karyawan Anda</p>
+        
+        <form action="/login" method="POST">
+          <input type="hidden" name="company" id="companyInput">
+          <input type="hidden" name="department" id="deptInput">
+          
+          <div class="form-group" style="text-align: left; margin-bottom: 1.5rem;">
+            <label>Nama Karyawan</label>
+            <select name="fullName" id="employeeSelect" required style="width: 100%;">
+              <option value="">Pilih Karyawan...</option>
+            </select>
+          </div>
+          
+          <div class="form-group" style="text-align: left; margin-bottom: 2rem;">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="••••••" required style="width: 100%;">
+          </div>
+          
+          <button type="submit" class="btn btn-generate" style="width: 100%; justify-content: center; height: 3.5rem; font-size: 1.1rem;">
+            <span class="material-icons-round">login</span> Masuk ke Sistem
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const allEmployees = <%- JSON.stringify(employees) %>;
+    const allDepts = <%- JSON.stringify(departments) %>;
+    let selectedCompany = '';
+    
+    function selectCompany(company) {
+      selectedCompany = company;
+      document.getElementById('companyInput').value = company;
+      document.getElementById('step2CompanyName').innerText = company;
+      
+      // Filter departments for this company
+      // For PNM, show all depts. For others, show specific ones.
+      let filteredDepts = [];
+      if (company === 'PT PILAR NIAGA MAKMUR') {
+        // Unique department names
+        const names = [...new Set(allDepts.filter(d => d.class !== 'Pikasa' && d.class !== 'Pilkada').map(d => d.name))];
+        filteredDepts = names.map(n => ({ name: n, class: n }));
+      } else if (company === 'PT PILAR KARANG SAMUDERA') {
+        filteredDepts = [{ name: 'Pilkada', class: 'Pilkada' }];
+      } else if (company === 'PT PILAR KARGO PERKASA') {
+        filteredDepts = [{ name: 'Pikasa', class: 'Pikasa' }];
+      }
+
+      const grid = document.getElementById('deptGrid');
+      grid.innerHTML = '';
+      
+      filteredDepts.sort((a,b) => a.name.localeCompare(b.name)).forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'company-card';
+        card.style.padding = '1.5rem';
+        card.onclick = () => selectDept(d.class, d.name);
+        card.innerHTML = `
+          <span class="material-icons-round" style="font-size: 2.5rem;">groups</span>
+          <h3 style="font-size: 0.9rem;">${d.name}</h3>
+        `;
+        grid.appendChild(card);
+      });
+      
+      showStep(2);
+    }
+
+    function selectDept(deptClass, deptName) {
+      document.getElementById('deptInput').value = deptClass;
+      document.getElementById('selectedDeptName').innerText = deptName;
+      
+      // Filter employees by company and department
+      const filtered = allEmployees.filter(e => e.company === selectedCompany && e.class === deptClass);
+      
+      const select = document.getElementById('employeeSelect');
+      select.innerHTML = '<option value="">Pilih Karyawan...</option>';
+      
+      filtered.sort((a,b) => a.fullName.localeCompare(b.fullName)).forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.fullName;
+        opt.textContent = e.fullName;
+        select.appendChild(opt);
+      });
+      
+      showStep(3);
+    }
+
+    function showStep(step) {
+      const s1 = document.getElementById('step1');
+      const s2 = document.getElementById('step2');
+      const s3 = document.getElementById('step3');
+      const card = document.getElementById('mainCard');
+      
+      // Reset all
+      s1.style.display = 'none';
+      s2.style.display = 'none';
+      s3.style.display = 'none';
+      
+      if (step === 1) {
+        s1.style.display = 'block';
+        s1.classList.add('fade-in');
+        card.style.maxWidth = '800px';
+      } else if (step === 2) {
+        s2.style.display = 'block';
+        s2.classList.add('fade-in');
+        card.style.maxWidth = '800px';
+      } else if (step === 3) {
+        s3.style.display = 'block';
+        s3.classList.add('fade-in');
+        card.style.maxWidth = '450px';
+      }
+    }
+  </script>
+</body>
+</html>

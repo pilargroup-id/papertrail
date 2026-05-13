@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel - Master Data</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #f8fafc; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
+    
+    /* Layout */
+    .admin-wrapper { display: flex; flex: 1; overflow: hidden; margin-top: 70px; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+    }
+    .sidebar-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      padding-left: 0.5rem;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: #475569;
+      text-decoration: none;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .sidebar-link:hover { background: #f1f5f9; color: var(--primary); }
+    .sidebar-link.active { background: var(--primary-light); color: var(--primary-dark); font-weight: 600; }
+    
+    /* Main Content */
+    .admin-main {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+    .admin-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
+    }
+    
+    /* Tables */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    .admin-table th, .admin-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .admin-table th { background: #f8fafc; font-weight: 600; color: #475569; }
+    
+    /* Form Add */
+    .add-form-container {
+      background: #f1f5f9;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px dashed #cbd5e1;
+    }
+    .badge-class { background: #e0f2fe; color: #0369a1; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-code { background: #fef3c7; color: #92400e; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid #fde68a; }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.5rem; color: #1e293b; }
+    .close-modal {
+      cursor: pointer;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    .close-modal:hover { background: #fee2e2; color: #ef4444; transform: rotate(90deg); }
+    .modal .form-group { margin-bottom: 1.25rem; }
+    .modal label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #475569; font-size: 0.9rem; }
+    .modal input, .modal select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .modal input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+  </style>
+</head>
+<body>
+
+  <!-- Reusing standard navbar but adapted for admin -->
+  <nav class="navbar" style="position: fixed; top: 0; width: 100%; z-index: 100;">
+    <div class="nav-brand">
+      <span class="material-icons-round brand-icon">admin_panel_settings</span>
+      <div>
+        <h1 class="nav-title">IT Admin Panel</h1>
+        <p class="nav-subtitle">Halo, <%= user.fullName %></p>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link"><span class="material-icons-round">home</span> Back to FRP</a>
+      <a href="/logout" class="nav-link" style="color: var(--danger);"><span class="material-icons-round">logout</span> Logout</a>
+    </div>
+  </nav>
+
+  <div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-title">Menu Master Data</div>
+      <a href="/admin/employees" class="sidebar-link <%= activeType === 'employees' ? 'active' : '' %>">
+        <span class="material-icons-round">badge</span> Data Karyawan
+      </a>
+      <a href="/admin/vendors" class="sidebar-link <%= activeType === 'vendors' ? 'active' : '' %>">
+        <span class="material-icons-round">storefront</span> Data Vendor
+      </a>
+      <a href="/admin/departments" class="sidebar-link <%= activeType === 'departments' ? 'active' : '' %>">
+        <span class="material-icons-round">corporate_fare</span> Master Department
+      </a>
+      <a href="/admin/budgets" class="sidebar-link <%= activeType === 'budgets' ? 'active' : '' %>">
+        <span class="material-icons-round">account_balance_wallet</span> Data Budget
+      </a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      
+      <!-- ADD FORM -->
+      <div class="admin-card add-form-container">
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="material-icons-round">add_circle</span> Tambah Data Baru
+        </h3>
+        
+        <form id="adminForm" action="/api/admin/<%= activeType %>/add" method="POST">
+          <% if(activeType === 'employees') { %>
+            <div class="form-grid cols-3">
+              <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" name="fullName" required placeholder="Contoh: Budi Santoso">
+              </div>
+              <div class="form-group">
+                <label>Company</label>
+                <select name="company" required>
+                  <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
+                  <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
+                  <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Class (Divisi)</label>
+                <input type="text" name="class" required placeholder="Contoh: IT, FINANCE">
+              </div>
+              <div class="form-group">
+                <label>Job Level</label>
+                <select name="jobLevel" required>
+                  <option value="Staff">Staff</option>
+                  <option value="Manager">Manager</option>
+                  <option value="Direktur">Direktur</option>
+                  <option value="Komisaris">Komisaris</option>
+                </select>
+              </div>
+            </div>
+          <% } else if(activeType === 'vendors') { %>
+            <div class="form-grid cols-3">
+              <div class="form-group">
+                <label>Nama Vendor / PT</label>
+                <input type="text" name="name" required placeholder="PT Contoh Maju">
+              </div>
+              <div class="form-group">
+                <label>Nama Bank Tujuan</label>
+                <input type="text" name="bank" required placeholder="BCA a/n PT Contoh">
+              </div>
+              <div class="form-group">
+                <label>Nomor Rekening</label>
+                <input type="text" name="account" required placeholder="1234567890">
+              </div>
+            </div>
+          <% } else if(activeType === 'departments') { %>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label>Nama Department</label>
+                <input type="text" name="name" required placeholder="FINANCE & ACCOUNTING">
+              </div>
+              <div class="form-group">
+                <label>Class (sesuai data karyawan)</label>
+                <input type="text" name="class" required placeholder="FINANCE">
+              </div>
+            </div>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label>Kode FRP (3 Huruf)</label>
+                <input type="text" name="kodeFrp" required placeholder="FIN" maxlength="3">
+              </div>
+               <div class="form-group">
+                <label>Manager / Head</label>
+                <select name="manager" required>
+                  <option value="">Pilih Manager</option>
+                  <% if(typeof employeeList !== 'undefined') { 
+                      employeeList.filter(e => e && e.fullName).sort((a,b) => (a.fullName || '').localeCompare(b.fullName || '')).forEach(emp => { %>
+                    <option value="<%= emp.fullName %>"><%= emp.fullName %> — <%= emp.class %></option>
+                  <% }); } %>
+                </select>
+              </div>
+            </div>
+          <% } else if(activeType === 'budgets') { %>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label>Budget ID</label>
+                <input type="text" name="id" required placeholder="FIN-001">
+              </div>
+              <div class="form-group">
+                <label>Departemen</label>
+                <input type="text" name="department" required placeholder="Contoh: FINANCE">
+              </div>
+              <div class="form-group">
+                <label>Company</label>
+                <select name="company" required>
+                  <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
+                  <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
+                  <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-grid cols-2">
+               <div class="form-group">
+                <label>Class</label>
+                <input type="text" name="class" required placeholder="Contoh: Product">
+              </div>
+              <div class="form-group">
+                <label>Type</label>
+                <input type="text" name="type" required placeholder="Cost / Aktiva">
+              </div>
+            </div>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label>Deskripsi / Project Name</label>
+                <input type="text" name="description" required placeholder="Biaya ATK">
+              </div>
+              <div class="form-group">
+                <label>Total Limit (Amount) Setahun</label>
+                <input type="text" name="totalAmount" required placeholder="10000000">
+              </div>
+            </div>
+          <% } %>
+          <button type="submit" class="btn btn-generate" style="margin-top: 1rem;">
+            <span class="material-icons-round">save</span> Simpan Data
+          </button>
+        </form>
+      </div>
+
+      <!-- DATA LIST -->
+      <div class="admin-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="margin: 0;">Daftar <%= activeType.charAt(0).toUpperCase() + activeType.slice(1) %></h3>
+          <% if(activeType === 'budgets' || activeType === 'employees') { %>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <label style="font-size: 13px; font-weight: 600; color: #64748b;">Filter PT:</label>
+              <select id="companyFilterTable" onchange="filterTableByCompany()" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px;">
+                <option value="">Semua Perusahaan</option>
+                <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
+                <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
+                <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
+              </select>
+            </div>
+          <% } %>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <% if(activeType === 'employees') { %>
+              <tr><th>No</th><th>Nama Lengkap</th><th>Company</th><th>Divisi</th><th>Jabatan</th><th>Aksi</th></tr>
+            <% } else if(activeType === 'vendors') { %>
+              <tr><th>No</th><th>Nama Vendor</th><th>Bank</th><th>No Rekening</th><th>Aksi</th></tr>
+            <% } else if(activeType === 'departments') { %>
+              <tr><th>No</th><th>Nama Dept</th><th>Class</th><th>Kode FRP</th><th>Manager</th><th>Aksi</th></tr>
+            <% } else if(activeType === 'budgets') { %>
+              <tr><th>No</th><th>Budget ID</th><th>Company</th><th>Dept</th><th>Class</th><th>Type</th><th>Deskripsi</th><th>Total Amount</th><th>Aksi</th></tr>
+            <% } %>
+          </thead>
+          <tbody>
+            <% if(listData.length === 0) { %>
+              <tr><td colspan="5" style="text-align: center; color: #94a3b8;">Tidak ada data</td></tr>
+            <% } %>
+            <% listData.forEach((item, index) => { %>
+              <tr>
+                <td><%= index + 1 %></td>
+                <% if(activeType === 'employees') { %>
+                  <td><%= item.fullName %></td>
+                  <td style="font-size: 0.8rem; font-weight: 600; color: #1e293b;"><%= item.company || 'PT PILAR NIAGA MAKMUR' %></td>
+                  <td><span style="background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;"><%= item.class %></span></td>
+                  <td><%= item.jobLevel %></td>
+                <% } else if(activeType === 'vendors') { %>
+                  <td><strong><%= item.name %></strong></td>
+                  <td><%= item.bank %></td>
+                  <td style="font-family: monospace;"><%= item.account %></td>
+                <% } else if(activeType === 'departments') { %>
+                  <td><strong><%= item.name %></strong></td>
+                  <td><span class="badge-class"><%= item.class %></span></td>
+                  <td><span class="badge-code"><%= item.kodeFrp %></span></td>
+                  <td><%= item.manager %></td>
+                <% } else if(activeType === 'budgets') { %>
+                  <td><strong><%= item.id %></strong></td>
+                  <td style="font-size: 0.8rem; font-weight: 600; color: #1e293b;"><%= item.company || 'PT PILAR NIAGA MAKMUR' %></td>
+                  <td><span style="background: #f1f5f9; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: #475569;"><%= item.department %></span></td>
+                  <td style="font-size: 0.9rem;"><%= item.class %></td>
+                  <td><span class="badge-code" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;"><%= item.type %></span></td>
+                  <td style="font-size: 0.85rem; color: #64748b;"><%= item.description %></td>
+                  <td style="font-family: monospace; font-weight: bold;">IDR <%= (item.totalAmount || 0).toLocaleString('id-ID') %></td>
+                <% } %>
+                <td style="display: flex; gap: 0.5rem;">
+                  <% const targetIdx = typeof item.originalIndex !== 'undefined' ? item.originalIndex : index; %>
+                  <button type="button" onclick='editRow(<%= targetIdx %>, <%- JSON.stringify(item) %>)' style="background: #e2e8f0; border: none; color: #475569; cursor: pointer; padding: 4px; border-radius: 4px;">
+                    <span class="material-icons-round">edit</span>
+                  </button>
+                  <form action="/api/admin/<%= activeType %>/delete/<%= targetIdx %>" method="POST" style="margin: 0;" onsubmit="return confirm('Yakin ingin menghapus baris ini?');">
+                    <button type="submit" style="background: #fee2e2; border: none; color: var(--danger); cursor: pointer; padding: 4px; border-radius: 4px;">
+                      <span class="material-icons-round">delete</span>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><span class="material-icons-round">edit</span> Edit Data</h3>
+        <span class="material-icons-round close-modal" onclick="closeModal()">close</span>
+      </div>
+      <form id="editForm" method="POST">
+        <% if(activeType === 'employees') { %>
+          <div class="form-group">
+            <label>Nama Lengkap</label>
+            <input type="text" name="fullName" required>
+          </div>
+          <div class="form-group">
+            <label>Company</label>
+            <select name="company" required>
+              <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
+              <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
+              <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Class (Divisi)</label>
+            <input type="text" name="class" required>
+          </div>
+          <div class="form-group">
+            <label>Job Level</label>
+            <select name="jobLevel" required>
+              <option value="Staff">Staff</option>
+              <option value="Manager">Manager</option>
+              <option value="Direktur">Direktur</option>
+              <option value="Komisaris">Komisaris</option>
+            </select>
+          </div>
+        <% } else if(activeType === 'vendors') { %>
+          <div class="form-group">
+            <label>Nama Vendor / PT</label>
+            <input type="text" name="name" required>
+          </div>
+          <div class="form-group">
+            <label>Nama Bank Tujuan</label>
+            <input type="text" name="bank" required>
+          </div>
+          <div class="form-group">
+            <label>Nomor Rekening</label>
+            <input type="text" name="account" required>
+          </div>
+        <% } else if(activeType === 'departments') { %>
+          <div class="form-group">
+            <label>Nama Department</label>
+            <input type="text" name="name" required>
+          </div>
+          <div class="form-group">
+            <label>Class</label>
+            <input type="text" name="class" required>
+          </div>
+          <div class="form-group">
+            <label>Kode FRP (3 Huruf)</label>
+            <input type="text" name="kodeFrp" required maxlength="3">
+          </div>
+          <div class="form-group">
+            <label>Manager / Head</label>
+            <select name="manager" required>
+              <option value="">Pilih Manager</option>
+              <% if(typeof employeeList !== 'undefined') { 
+                  employeeList.filter(e => e && e.fullName).sort((a,b) => (a.fullName || '').localeCompare(b.fullName || '')).forEach(emp => { %>
+                <option value="<%= emp.fullName %>"><%= emp.fullName %> — <%= emp.class %></option>
+              <% }); } %>
+            </select>
+          </div>
+        <% } else if(activeType === 'budgets') { %>
+          <div class="form-group">
+            <label>Budget ID</label>
+            <input type="text" name="id" required>
+          </div>
+          <div class="form-group">
+            <label>Departemen</label>
+            <input type="text" name="department" required>
+          </div>
+          <div class="form-group">
+            <label>Company</label>
+            <select name="company" required>
+              <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
+              <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
+              <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Class</label>
+            <input type="text" name="class" required>
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <input type="text" name="type" required>
+          </div>
+          <div class="form-group">
+            <label>Deskripsi</label>
+            <input type="text" name="description" required>
+          </div>
+          <div class="form-group">
+            <label>Total Limit (Amount)</label>
+            <input type="text" name="totalAmount" required>
+          </div>
+        <% } %>
+        <button type="submit" class="btn btn-generate" style="width: 100%; margin-top: 1rem; padding: 1rem;">
+          <span class="material-icons-round">save</span> Simpan Perubahan
+        </button>
+      </form>
+    </div>
+  </div>
+
+
+  <script>
+    function editRow(index, data) {
+      const modal = document.getElementById('editModal');
+      const form = document.getElementById('editForm');
+      
+      // Set action
+      form.action = `/api/admin/<%= activeType %>/edit/${index}`;
+      
+      // Fill values
+      for (const key in data) {
+        const el = form.elements[key];
+        if (el) el.value = data[key];
+      }
+      
+      // Show modal
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    function filterTableByCompany() {
+      const filterVal = document.getElementById('companyFilterTable').value;
+      const rows = document.querySelectorAll('.admin-table tbody tr');
+      
+      rows.forEach(row => {
+        // Kolom Company adalah kolom ke-3 (index 2) untuk Employee dan Budget
+        const companyCell = row.cells[2];
+        if(!companyCell) return;
+        const companyText = companyCell.innerText.trim();
+        
+        if (!filterVal || companyText === filterVal) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('editModal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+  </script>
+
+</body>
+</html>

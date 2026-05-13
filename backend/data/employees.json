@@ -1,0 +1,676 @@
+[
+  {
+    "email": "umma@piagam.id",
+    "employeeId": "19110167",
+    "fullName": "Khuzaima Desri",
+    "class": "Product",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "purchase1@piagam.id",
+    "employeeId": "24120350",
+    "fullName": "Agus Rifaldi",
+    "class": "Product",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "document.import@piagam.id",
+    "employeeId": "",
+    "fullName": "Nasywa Isbah Hidayah",
+    "class": "Pilkada",
+    "jobLevel": "Staff",
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "email": "awaliah@piagam.id",
+    "employeeId": "20110249",
+    "fullName": "Marhatun Awaliah",
+    "class": "Product",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "trisha@piagam.id",
+    "employeeId": "",
+    "fullName": "Trisha",
+    "class": "Product",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "jeanever@piagam.id",
+    "employeeId": "0011",
+    "fullName": "Jeanever",
+    "class": "Product",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "ernest@piagam.id",
+    "employeeId": "0005",
+    "fullName": "Ernest Hianto",
+    "class": "Product",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "sasa@piagam.id",
+    "employeeId": "",
+    "fullName": "Fakhrunisa Febriyanti",
+    "class": "Product",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "silvia@piagam.id",
+    "employeeId": "18020060",
+    "fullName": "Silvia Febriani",
+    "class": "Gosave GT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "egy.irsandi@piagam.id",
+    "employeeId": "",
+    "fullName": "Egy Irsandi",
+    "class": "Gosave GT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "admin.sales@piagam.id",
+    "employeeId": "0009",
+    "fullName": "Wahyuni",
+    "class": "Gosave GT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "chandra@piagam.id",
+    "employeeId": "",
+    "fullName": "Chandra",
+    "class": "Gosave GT",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "Nurma@piagam.id",
+    "employeeId": "",
+    "fullName": "Nurma Dewi Pangestu",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "sales05.goto@gmail.com",
+    "employeeId": "",
+    "fullName": "Rifda",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "sandy@piagam.id",
+    "employeeId": "23120290",
+    "fullName": "Sandy Aprianto",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "siska@piagam.id",
+    "employeeId": "21090260",
+    "fullName": "Siska Amelia",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "masriati@piagam.id",
+    "employeeId": "",
+    "fullName": "Masriati Indah Yani",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "frisilia@piagam.id",
+    "employeeId": "",
+    "fullName": "Frisilia Ichma Sevia",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "istiqma@piagam.id",
+    "employeeId": "",
+    "fullName": "Istiqma Nurfitriyah Adwili",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "rosanna@piagam.id",
+    "employeeId": "",
+    "fullName": "Rosanna Mulak Roha Simanjorang",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "devita@piagam.id",
+    "employeeId": "",
+    "fullName": "Ajeng Devita Anugraini",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "nurhidayat@piagam.id",
+    "employeeId": "",
+    "fullName": "Nurhidayat Kamil Pratama",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "trijuariyogo@piagam.id",
+    "employeeId": "18060080",
+    "fullName": "Trijuariyogo",
+    "class": "GOTO E-Commerce",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "suwanto@piagam.id",
+    "employeeId": "",
+    "fullName": "Suwanto",
+    "class": "Warehouse Gosave",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "linda@piagam.id",
+    "employeeId": "20080222",
+    "fullName": "Linda",
+    "class": "Warehouse Gosave",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "admin.gt@piagam.id",
+    "employeeId": "",
+    "fullName": "Nafizka Nisa Azzahra",
+    "class": "Warehouse Gosave",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "ikhsan@piagam.id",
+    "employeeId": "",
+    "fullName": "Ikhsan",
+    "class": "Warehouse Gosave",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "suwanto@piagam.id",
+    "employeeId": "",
+    "fullName": "Suwanto",
+    "class": "Warehouse GOTO",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "rizky@piagam.id",
+    "employeeId": "",
+    "fullName": "M Rizky Fahrizal Lubis",
+    "class": "Warehouse GOTO",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "parida@piagam.id",
+    "employeeId": "",
+    "fullName": "Parida Herlina",
+    "class": "Warehouse GOTO",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "umam@piagam.id",
+    "employeeId": "21010252",
+    "fullName": "Muhamad Asep Hafidzul Umam",
+    "class": "Pilkada",
+    "jobLevel": "Staff",
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "email": "renaldy@piagam.id",
+    "employeeId": "23030273",
+    "fullName": "Renaldy Alfarizi",
+    "class": "HCGA",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "generalaffair.piagam@gmail.com",
+    "employeeId": "",
+    "fullName": "Mohammad Fadly V'Delon Syam",
+    "class": "HCGA",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "cahya@piagam.id",
+    "employeeId": "24120351",
+    "fullName": "Cahyaningtyas Merry Nugraheni",
+    "class": "HCGA",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "alfarisi@piagam.id",
+    "employeeId": "",
+    "fullName": "Muhammad Salman Alfarisi",
+    "class": "HCGA",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "jannah@piagam.id",
+    "employeeId": "",
+    "fullName": "Fatimah Raudhatul Jannah",
+    "class": "HCGA",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "peopledev.piagam@gmail.com",
+    "employeeId": "",
+    "fullName": "Galang Indra Swara",
+    "class": "HCGA",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "chandra@piagam.id",
+    "employeeId": "",
+    "fullName": "Chandra",
+    "class": "Gosave E-Commerce",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "tiara@piagam.id",
+    "employeeId": "",
+    "fullName": "Tiara Nur Azizah",
+    "class": "Gosave E-Commerce",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "chandra@piagam.id",
+    "employeeId": "",
+    "fullName": "Chandra",
+    "class": "Gosave B2B",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "piagam.b2b@gmail.com",
+    "employeeId": "",
+    "fullName": "Ryan Gagas Setiyanto",
+    "class": "Gosave B2B",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "egy.irsandi@piagam.id",
+    "employeeId": "",
+    "fullName": "Egy Irsandi",
+    "class": "Gosave B2B",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "johan@piagam.id",
+    "employeeId": "",
+    "fullName": "Johan Setyo",
+    "class": "GOTO GT",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "faizal@piagam.id",
+    "employeeId": "22080266",
+    "fullName": "Faizal Bastian Razaq",
+    "class": "GOTO GT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "raziz@piagam.id",
+    "employeeId": "23080281",
+    "fullName": "Raziz Gandi",
+    "class": "GOTO GT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "johan@piagam.id",
+    "employeeId": "",
+    "fullName": "Johan Setyo",
+    "class": "GOTO Store",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "suwanto@piagam.id",
+    "employeeId": "",
+    "fullName": "Suwanto",
+    "class": "GOTO Store",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "faizal@piagam.id",
+    "employeeId": "22080266",
+    "fullName": "Faizal Bastian Razaq",
+    "class": "GOTO Store",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "raziz@piagam.id",
+    "employeeId": "23080281",
+    "fullName": "Raziz Gandi",
+    "class": "GOTO Store",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "dc.admin@piagam.id",
+    "employeeId": "",
+    "fullName": "Trinita",
+    "class": "GOTO Store",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "benediktus@piagam.id",
+    "employeeId": "0004",
+    "fullName": "Benediktus Gouzali",
+    "class": "Board Of Director",
+    "jobLevel": "Direktur",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "simon@piagam.id",
+    "employeeId": "0001",
+    "fullName": "Simon Gunawan",
+    "class": "Board Of Director",
+    "jobLevel": "Komisaris",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "lisianty@hotmail.com",
+    "employeeId": "0002",
+    "fullName": "Lisianty",
+    "class": "Board Of Director",
+    "jobLevel": "Komisaris",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "damianus@piagam.id",
+    "employeeId": "0003",
+    "fullName": "Damianus Gouzali",
+    "class": "Board Of Director",
+    "jobLevel": "Direktur",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "yose@piagam.id",
+    "employeeId": "0023",
+    "fullName": "Yosefhin Tesalonika",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "ketty@piagam.id",
+    "employeeId": "0043",
+    "fullName": "Ketty",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "bintang@piagam.id",
+    "employeeId": "0048",
+    "fullName": "Bintang Oktarini Anggun",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "kevin@piagam.id",
+    "employeeId": "18070092",
+    "fullName": "Kevin Phillips",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "fullName": "Neneng Khodijah",
+    "company": "PT PILAR KARGO PERKASA",
+    "class": "Pikasa",
+    "jobLevel": "Staff"
+  },
+  {
+    "email": "timothy@piagam.id",
+    "employeeId": "19030136",
+    "fullName": "Timothy Muryo Wiyoso",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "ema@piagam.id",
+    "employeeId": "20010169",
+    "fullName": "Ema Sugi Yanah",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "mulyasi@piagam.id",
+    "employeeId": "20040199",
+    "fullName": "Mulyasi Rahardja",
+    "class": "Finance",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "andika@piagam.id",
+    "employeeId": "22120272",
+    "fullName": "Andika Pratama",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "hosea@piagam.id",
+    "employeeId": "23050275",
+    "fullName": "Hosea Geraldino",
+    "class": "Pilkada",
+    "jobLevel": "Staff",
+    "company": "PT PILAR KARANG SAMUDERA"
+  },
+  {
+    "email": "shoona@piagam.id",
+    "employeeId": "23080282",
+    "fullName": "Shoona Kabila Mahaaba",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "rina@piagam.id",
+    "employeeId": "",
+    "fullName": "Rina Rahayu",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "delon@piagam.id",
+    "employeeId": "",
+    "fullName": "Delon Yahya",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "novi@gmail.com",
+    "employeeId": "",
+    "fullName": "Novi Kusumasari",
+    "class": "Finance",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "legal@piagam.id",
+    "employeeId": "",
+    "fullName": "Rivaldo Ryos Hutapea",
+    "class": "Legal",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "legal02@piagam.id",
+    "employeeId": "",
+    "fullName": "Rodo Evan Bonatua",
+    "class": "Legal",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "legal03.piagam@gmail.com",
+    "employeeId": "",
+    "fullName": "Az-Zahra Rafifah",
+    "class": "Legal",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "wandi@piagam.id",
+    "employeeId": "19080150",
+    "fullName": "Wandi Prawisnu Simanullang",
+    "class": "Marketing",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "bagas@piagam.id",
+    "employeeId": "22030262",
+    "fullName": "Bagas Sarwidianto",
+    "class": "Marketing",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "yuli@piagam.id",
+    "employeeId": "18060081",
+    "fullName": "Yulliemty",
+    "class": "IT",
+    "jobLevel": "Manager",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "bayu@piagam.id",
+    "employeeId": "20080220",
+    "fullName": "Bayu Noegroho",
+    "class": "IT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "apri@piagam.id",
+    "employeeId": "23120291",
+    "fullName": "Apriyanto",
+    "class": "IT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "email": "azi@piagam.id",
+    "employeeId": "23060277",
+    "fullName": "Azi Fauzi",
+    "class": "IT",
+    "jobLevel": "staff",
+    "company": "PT PILAR NIAGA MAKMUR"
+  },
+  {
+    "fullName": "Ivon Yuanita Miharja",
+    "company": "PT PILAR KARGO PERKASA",
+    "class": "Pikasa",
+    "jobLevel": "Manager"
+  },
+  {
+    "fullName": "Karna Ilahi",
+    "company": "PT PILAR KARGO PERKASA",
+    "class": "Pikasa",
+    "jobLevel": "Staff"
+  },
+  {
+    "fullName": "Elvira Indri Safitri",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Staff"
+  },
+  {
+    "fullName": "Ernest Hianto",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Manager"
+  },
+  {
+    "fullName": "Khuzaima Desri",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Staff"
+  },
+  {
+    "fullName": "Rinovi Septiar",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Staff"
+  },
+  {
+    "fullName": "Hamilatul Aliyah",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Staff"
+  },
+  {
+    "fullName": "Marhatun Awaliyah",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Staff"
+  },
+  {
+    "fullName": "Ropitasari",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Staff"
+  },
+  {
+    "fullName": "Fitri Febri Susanti",
+    "company": "PT PILAR KARANG SAMUDERA",
+    "class": "Pilkada",
+    "jobLevel": "Staff"
+  }
+]
