@@ -1,67 +1,65 @@
 const { useState, useEffect } = React
+const { BackgroundMain, Sidebar, Header } = window.FRPTemplateComponents || {}
 
 const S = {
-  body: {
-    fontFamily: "'Inter', sans-serif",
-    background: '#f8fafc',
-    margin: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
+  stage: {
+    display: 'grid',
+    placeItems: 'center',
+    minHeight: '100%',
+    padding: '16px 0 28px',
   },
   card: {
     background: 'white',
-    padding: '3rem',
-    borderRadius: '2rem',
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)',
+    padding: '2.5rem',
+    borderRadius: '20px',
+    boxShadow: '0 22px 44px -16px rgba(15, 23, 42, 0.18)',
     width: '100%',
-    maxWidth: '500px',
+    maxWidth: '520px',
     textAlign: 'center',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #dbe7f5',
     boxSizing: 'border-box',
   },
   iconBox: {
-    width: '64px',
-    height: '64px',
-    background: '#f0fdf4',
-    borderRadius: '1rem',
+    width: '60px',
+    height: '60px',
+    background: 'rgba(47, 111, 178, 0.12)',
+    borderRadius: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#16a34a',
-    margin: '0 auto 2rem',
+    color: '#1f4e8c',
+    margin: '0 auto 1.5rem',
   },
-  h1: { fontSize: '1.5rem', fontWeight: 800, color: '#1e293b', margin: '0 0 2rem' },
-  subtitle: { color: '#64748b', marginBottom: '1.5rem', fontSize: '0.875rem' },
-  grid: { display: 'flex', flexDirection: 'column', gap: '1rem' },
+  h1: { fontSize: '1.4rem', fontWeight: 800, color: '#163a6b', margin: '0 0 0.65rem' },
+  subtitle: { color: '#64748b', margin: '0 0 1.5rem', fontSize: '0.92rem', lineHeight: 1.5 },
+  grid: { display: 'flex', flexDirection: 'column', gap: '0.85rem' },
   btn: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '1.25rem',
-    border: '1.5px solid #e2e8f0',
-    borderRadius: '1.25rem',
+    padding: '1rem 1.1rem',
+    border: '1px solid #dbe7f5',
+    borderRadius: '16px',
     background: 'white',
     cursor: 'pointer',
     textAlign: 'left',
     width: '100%',
-    fontSize: '1rem',
+    fontSize: '0.98rem',
     fontWeight: 600,
     color: '#334155',
     fontFamily: "'Inter', sans-serif",
     transition: 'all 0.2s',
   },
-  subtitle2: { display: 'block', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400, marginTop: '2px' },
+  subtitle2: { display: 'block', fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500, marginTop: '4px' },
   footerLink: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    marginTop: '1.5rem',
-    color: '#94a3b8',
+    marginTop: '1.25rem',
+    color: '#64748b',
     fontSize: '0.875rem',
     textDecoration: 'none',
-    fontWeight: 500,
+    fontWeight: 600,
   },
 }
 
@@ -69,6 +67,7 @@ function SelectDivisionPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [hoveredIdx, setHoveredIdx] = useState(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     fetch('/api/data/select-division')
@@ -90,45 +89,70 @@ function SelectDivisionPage() {
     window.location.href = '/'
   }
 
-  if (loading) return <div style={{ ...S.body, fontSize: '1rem', color: '#64748b' }}>Memuat...</div>
+  if (loading) return <div style={{ padding: '2rem', color: '#64748b' }}>Memuat...</div>
+
+  const user = data?.user || {}
 
   return (
-    <div style={S.body}>
-      <div style={S.card}>
-        <div style={S.iconBox}>
-          <span className="material-icons-round">account_tree</span>
-        </div>
-        <h1 style={S.h1}>Pilih Divisi</h1>
-        <p style={S.subtitle}>Pilih divisi Anda di {data?.selectedCompany || 'perusahaan ini'}</p>
-        <div style={S.grid}>
-          {(data?.divisions || []).map((div, idx) => (
-            <button
-              key={`${div.class}-${idx}`}
-              style={{
-                ...S.btn,
-                ...(hoveredIdx === idx ? { borderColor: '#16a34a', background: '#f0fdf4', color: '#16a34a', transform: 'translateX(5px)' } : {}),
-              }}
-              onMouseEnter={() => setHoveredIdx(idx)}
-              onMouseLeave={() => setHoveredIdx(null)}
-              onClick={() => handleSelect(div.class)}
-            >
-              <div>
-                <span>{div.class}</span>
-                <span style={{ ...S.subtitle2, ...(hoveredIdx === idx ? { color: '#16a34a', opacity: 0.8 } : {}) }}>{div.jobLevel}</span>
+    <>
+      <BackgroundMain />
+      <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          userName={user.fullName || 'User'}
+          userRole={user.selectedJobLevel || user.role || 'Staff'}
+          userIsAdmin={user.role === 'administrator'}
+          allAssignments={user.allAssignments || []}
+          onToggleCollapse={() => setSidebarCollapsed(current => !current)}
+        />
+
+        <div className="dashboard-stage">
+          <Header
+            title="Pilih Divisi"
+            subtitle={`Akses perusahaan: ${data?.selectedCompany || '-'}`}
+            breadcrumb={[
+              { label: 'Akses', href: '#'},
+              { label: 'Divisi', href: '#', active: true },
+            ]}
+          />
+
+          <main className="dashboard-main">
+            <div style={S.stage}>
+              <div style={S.card}>
+                <div style={S.iconBox}>
+                  <span className="material-icons-round">account_tree</span>
+                </div>
+                <h1 style={S.h1}>Pilih Divisi</h1>
+                <p style={S.subtitle}>Pilih divisi Anda di {data?.selectedCompany || 'perusahaan ini'}</p>
+                <div style={S.grid}>
+                  {(data?.divisions || []).map((div, idx) => (
+                    <button
+                      key={`${div.class}-${idx}`}
+                      style={{
+                        ...S.btn,
+                        ...(hoveredIdx === idx ? { borderColor: '#2f6fb2', background: '#f7fbff', color: '#1f4e8c', transform: 'translateX(4px)', boxShadow: '0 10px 24px rgba(31, 78, 140, 0.08)' } : {}),
+                      }}
+                      onMouseEnter={() => setHoveredIdx(idx)}
+                      onMouseLeave={() => setHoveredIdx(null)}
+                      onClick={() => handleSelect(div.class)}
+                    >
+                      <div>
+                        <span>{div.class}</span>
+                        <span style={{ ...S.subtitle2, ...(hoveredIdx === idx ? { color: '#2f6fb2', opacity: 0.9 } : {}) }}>{div.jobLevel}</span>
+                      </div>
+                      <span className="material-icons-round" style={{ color: hoveredIdx === idx ? '#1f4e8c' : '#cbd5e1' }}>chevron_right</span>
+                    </button>
+                  ))}
+                </div>
+                <a href="/select-company" style={S.footerLink}>
+                  <span className="material-icons-round" style={{ fontSize: '16px' }}>arrow_back</span> Kembali ke Pilih Perusahaan
+                </a>
               </div>
-              <span className="material-icons-round" style={{ color: hoveredIdx === idx ? '#16a34a' : '#cbd5e1' }}>chevron_right</span>
-            </button>
-          ))}
+            </div>
+          </main>
         </div>
-        <a href="/select-company" style={S.footerLink}>
-          <span className="material-icons-round" style={{ fontSize: '16px' }}>arrow_back</span> Kembali ke Pilih Perusahaan
-        </a>
-        <br />
-        <a href="/logout" style={{ ...S.footerLink, marginTop: '0.75rem' }}>
-          <span className="material-icons-round" style={{ fontSize: '16px' }}>logout</span> Logout
-        </a>
       </div>
-    </div>
+    </>
   )
 }
 

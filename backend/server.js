@@ -3,6 +3,7 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const session = require('express-session');
+const { renderPdfDocument } = require('./renderPdfDocument');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,8 +12,6 @@ const frontendPath = path.join(__dirname, '..', 'frontend');
 const dataPath = path.join(__dirname, 'data');
 const pdfPath = path.join(__dirname, 'generated-pdfs');
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(frontendPath, 'views'));
 app.set('view cache', false);
 app.use(express.static(path.join(frontendPath, 'public')));
 app.use('/templateComponents', express.static(path.join(frontendPath, 'views', 'templateComponents')));
@@ -29,6 +28,35 @@ app.use(session({
 
 const readJson = (file) => JSON.parse(fs.readFileSync(path.join(dataPath, file), 'utf8').replace(/^﻿/, ''));
 const writeJson = (file, data) => fs.writeFileSync(path.join(dataPath, file), JSON.stringify(data, null, 2));
+
+const renderAppShell = ({
+    title = 'FRP System',
+    rootId = 'root',
+    css = [],
+    scripts = [],
+    bodyExtra = ''
+}) => `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  ${css.map((href) => `<link rel="stylesheet" href="${href}">`).join('\n  ')}
+</head>
+<body>
+  <div id="${rootId}"></div>
+  ${bodyExtra}
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  ${scripts.includes('/js/react-form.jsx') ? `<script crossorigin src="https://unpkg.com/@emotion/react@11.11.1/dist/emotion-react.umd.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js"></script>
+  <script crossorigin src="https://unpkg.com/@mui/material@5.13.7/umd/material-ui.development.js"></script>` : ''}
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  ${scripts.map((src) => `<script type="text/babel" data-presets="react" src="${src}"></script>`).join('\n  ')}
+</body>
+</html>`;
 
 const checkAuth = (req, res, next) => {
     if (!req.session.user) {
@@ -51,7 +79,10 @@ const checkIT = (req, res, next) => {
 // --- AUTH ROUTES ---
 app.get('/login', (req, res) => {
     if (req.session.user) return res.redirect('/');
-    res.sendFile(path.join(frontendPath, 'public', 'login.html'));
+    res.send(renderAppShell({
+        title: 'Login - FRP System',
+        scripts: ['/js/login.jsx']
+    }));
 });
 
 app.post('/login', (req, res) => {
@@ -84,7 +115,11 @@ app.get('/select-company', checkAuth, (req, res) => {
         req.session.user.selectedCompany = companies[0];
         return res.redirect('/select-division');
     }
-    res.sendFile(path.join(frontendPath, 'public', 'select-company.html'));
+    res.send(renderAppShell({
+        title: 'Pilih Perusahaan - FRP System',
+        css: ['/templateComponents/templateComponents.css'],
+        scripts: ['/templateComponents/browser.jsx', '/js/select-company.jsx']
+    }));
 });
 
 app.post('/select-company', checkAuth, (req, res) => {
@@ -95,7 +130,17 @@ app.post('/select-company', checkAuth, (req, res) => {
 app.get('/api/data/select-company', checkAuth, (req, res) => {
     const user = req.session.user;
     const companies = [...new Set(user.allAssignments.map(a => a.name))];
-    res.json({ companies, user: { fullName: user.fullName } });
+    res.json({
+        companies,
+        user: {
+            fullName: user.fullName,
+            role: user.role,
+            selectedCompany: user.selectedCompany || '',
+            selectedDivision: user.selectedDivision || '',
+            selectedJobLevel: user.selectedJobLevel || '',
+            allAssignments: user.allAssignments || []
+        }
+    });
 });
 
 app.post('/api/auth/select-company', checkAuth, (req, res) => {
@@ -113,7 +158,11 @@ app.get('/select-division', checkAuth, (req, res) => {
         req.session.user.selectedJobLevel = divisions[0].jobLevel;
         return res.redirect('/');
     }
-    res.sendFile(path.join(frontendPath, 'public', 'select-division.html'));
+    res.send(renderAppShell({
+        title: 'Pilih Divisi - FRP System',
+        css: ['/templateComponents/templateComponents.css'],
+        scripts: ['/templateComponents/browser.jsx', '/js/select-division.jsx']
+    }));
 });
 
 app.post('/select-division', checkAuth, (req, res) => {
@@ -131,7 +180,18 @@ app.get('/api/data/select-division', checkAuth, (req, res) => {
     const divisions = user.allAssignments
         .filter(a => a.name === user.selectedCompany)
         .map(a => ({ class: a.class, jobLevel: a.jobLevel }));
-    res.json({ divisions, selectedCompany: user.selectedCompany, user: { fullName: user.fullName } });
+    res.json({
+        divisions,
+        selectedCompany: user.selectedCompany,
+        user: {
+            fullName: user.fullName,
+            role: user.role,
+            selectedCompany: user.selectedCompany || '',
+            selectedDivision: user.selectedDivision || '',
+            selectedJobLevel: user.selectedJobLevel || '',
+            allAssignments: user.allAssignments || []
+        }
+    });
 });
 
 app.post('/api/auth/select-division', checkAuth, (req, res) => {
@@ -151,7 +211,13 @@ app.get('/logout', (req, res) => {
 
 // --- MAIN APP ROUTES ---
 app.get('/', checkAuth, (req, res) => {
-    res.sendFile(path.join(frontendPath, 'public', 'form.html'));
+    res.send(renderAppShell({
+        title: 'Form Request Payment',
+        rootId: 'reactFormRoot',
+        css: ['/templateComponents/templateComponents.css'],
+        bodyExtra: `<footer class="footer"><p>&copy; 2026 PT Pilar Niaga Makmur - FRP Payment System v1.0</p></footer>`,
+        scripts: ['/templateComponents/browser.jsx', '/js/react-form.jsx']
+    }));
 });
 
 app.get('/api/form-data', checkAuth, (req, res) => {
@@ -261,11 +327,19 @@ app.get('/api/next-frp-number/:department', checkAuth, (req, res) => {
 
 // --- APPROVAL ROUTES ---
 app.get('/approval', checkAuth, (req, res) => {
-    res.sendFile(path.join(frontendPath, 'public', 'approval.html'));
+    res.send(renderAppShell({
+        title: 'Approval - FRP System',
+        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
+        scripts: ['/templateComponents/browser.jsx', '/js/approval.jsx']
+    }));
 });
 
 app.get('/approved', checkAuth, (req, res) => {
-    res.sendFile(path.join(frontendPath, 'public', 'approval.html'));
+    res.send(renderAppShell({
+        title: 'Approval - FRP System',
+        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
+        scripts: ['/templateComponents/browser.jsx', '/js/approval.jsx']
+    }));
 });
 
 app.get('/api/data/approval', checkAuth, (req, res) => {
@@ -295,16 +369,29 @@ app.get('/api/data/approval', checkAuth, (req, res) => {
 
 // --- FRP ACTIONS ---
 app.get('/frp/:id', checkAuth, (req, res) => {
+    res.send(renderAppShell({
+        title: 'Detail FRP',
+        css: ['/css/style.css'],
+        scripts: ['/js/frp-detail.jsx']
+    }));
+});
+
+app.get('/api/frp/:id', checkAuth, (req, res) => {
     const data = readJson('requests.json').find(r => r.id === req.params.id);
-    if (!data) return res.send('Not found');
-    res.render('popup-detail', {
+    if (!data) return res.status(404).json({ error: 'Not found' });
+    const user = req.session.user;
+    const isIT = user.role === 'administrator' || user.class === 'IT';
+    const canApprove = isIT || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
+    const canEdit = isIT;
+
+    res.json({
         data,
         employees: readJson('employees.json'),
-        budgets: readJson('budgets.json'),
         companies: readJson('companies.json'),
-        vendors: readJson('vendors.json'),
-        title: 'Detail FRP',
-        user: req.session.user
+        user,
+        isIT,
+        canApprove,
+        canEdit
     });
 });
 
@@ -355,7 +442,11 @@ app.post('/api/frp/:id/:action', checkAuth, (req, res) => {
 app.get('/admin/:type', checkAuth, checkIT, (req, res) => {
     const type = req.params.type;
     if (!['employees', 'vendors', 'budgets', 'departments', 'roles'].includes(type)) return res.redirect('/');
-    res.sendFile(path.join(frontendPath, 'public', 'admin.html'));
+    res.send(renderAppShell({
+        title: 'Admin Panel - FRP System',
+        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
+        scripts: ['/templateComponents/browser.jsx', '/js/admin.jsx']
+    }));
 });
 
 app.get('/api/data/admin', checkAuth, checkIT, (req, res) => {
@@ -410,7 +501,11 @@ app.post('/api/admin/:type/edit/:index', checkAuth, checkIT, (req, res) => {
 
 // --- HISTORY ROUTE ---
 app.get('/history', checkAuth, (req, res) => {
-    res.sendFile(path.join(frontendPath, 'public', 'history.html'));
+    res.send(renderAppShell({
+        title: 'History - FRP System',
+        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
+        scripts: ['/templateComponents/browser.jsx', '/js/history.jsx']
+    }));
 });
 
 app.get('/api/data/history', checkAuth, (req, res) => {
@@ -430,11 +525,14 @@ app.get('/api/data/history', checkAuth, (req, res) => {
 });
 
 // --- PDF ROUTES ---
-app.post('/preview', checkAuth, (req, res) => res.render('pdf-template', { formData: req.body, preview: true }));
+app.post('/preview', checkAuth, (req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(renderPdfDocument(req.body, true));
+});
 
 app.post('/generate-pdf', checkAuth, async (req, res) => {
     try {
-        const html = await require('ejs').renderFile(path.join(frontendPath, 'views', 'pdf-template.ejs'), { formData: req.body, preview: false });
+        const html = renderPdfDocument(req.body, false);
         const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         const page = await browser.newPage();
         await page.setContent(html, { waitUntil: 'networkidle0' });

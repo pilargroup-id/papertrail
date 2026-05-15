@@ -12,10 +12,16 @@
       {
         "name": "PT PILAR KARANG SAMUDERA",
         "class": "Pilkada",
+        "jobLevel": "Manager"
+      },
+      {
+        "name": "PT PILAR KARANG SAMUDERA",
+        "class": "Pilkada",
         "jobLevel": "Staff"
       }
     ],
-    "role": "user"
+    "role": "user",
+    "originalIndex": 0
   },
   {
     "fullName": "Agus Rifaldi",
