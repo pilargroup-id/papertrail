@@ -20,7 +20,17 @@
       "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" show HEAD:frontend/views/templateComponents/browser.jsx 2>&1)",
       "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" log --oneline --all --diff-filter=D -- \"frontend/views/templateComponents/\")",
       "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" log --oneline --all -- \"frontend/views/templateComponents/browser.jsx\")",
-      "PowerShell(Get-ChildItem -Recurse -File -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\views\\\\templateComponents\" | ForEach-Object { $_.FullName })"
+      "PowerShell(Get-ChildItem -Recurse -File -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\views\\\\templateComponents\" | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" -Recurse -File | Where-Object { $_.FullName -notmatch \"node_modules|\\\\.git|generated-pdfs\" } | ForEach-Object { $_.FullName.Replace\\(\"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\\", \"\"\\) })",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\\\\styles\")",
+      "Bash(Out-Null)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\\\\styles\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\css\\\\color.css\" \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\\\\styles\\\\color.css\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\css\\\\style.css\" \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\\\\styles\\\\style.css\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\css\\\\templateComponents.css\" \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\\\\styles\\\\templateComponents.css\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\" -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\\", \"\"\\) })",
+      "PowerShell(cmd /c \"dir /a c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public 2>&1\")",
+      "PowerShell(cmd /c \"rmdir c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\templateComponents\")"
     ],
     "additionalDirectories": [
       "\\* �� Fix: prevent white gap during sidebar collapse\\expand transition �������� *\\\n\\* Let the grid column handle all width animation; sidebar just fills it *"

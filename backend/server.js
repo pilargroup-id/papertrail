@@ -13,9 +13,11 @@ const dataPath = path.join(__dirname, 'data');
 const pdfPath = path.join(__dirname, 'generated-pdfs');
 
 app.set('view cache', false);
+app.use(express.static(path.join(frontendPath, 'dist')));
 app.use(express.static(path.join(frontendPath, 'public')));
-app.use('/templateComponents', express.static(path.join(frontendPath, 'views', 'templateComponents')));
 app.use('/pdfs', express.static(pdfPath));
+
+const sendSPA = (res) => res.sendFile(path.join(frontendPath, 'dist', 'index.html'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -137,10 +139,7 @@ const checkIT = (req, res, next) => {
 // --- AUTH ROUTES ---
 app.get('/login', (req, res) => {
     if (req.session.user) return res.redirect('/');
-    res.send(renderAppShell({
-        title: 'Login - FRP System',
-        scripts: ['/js/login.jsx']
-    }));
+    sendSPA(res);
 });
 
 app.post('/login', (req, res) => {
@@ -173,11 +172,7 @@ app.get('/select-company', checkAuth, (req, res) => {
         req.session.user.selectedCompany = companies[0];
         return res.redirect('/select-division');
     }
-    res.send(renderAppShell({
-        title: 'Pilih Perusahaan - FRP System',
-        css: ['/templateComponents/templateComponents.css'],
-        scripts: ['/templateComponents/browser.jsx', '/js/select-company.jsx']
-    }));
+    sendSPA(res);
 });
 
 app.post('/select-company', checkAuth, (req, res) => {
@@ -216,11 +211,7 @@ app.get('/select-division', checkAuth, (req, res) => {
         req.session.user.selectedJobLevel = divisions[0].jobLevel;
         return res.redirect('/');
     }
-    res.send(renderAppShell({
-        title: 'Pilih Divisi - FRP System',
-        css: ['/templateComponents/templateComponents.css'],
-        scripts: ['/templateComponents/browser.jsx', '/js/select-division.jsx']
-    }));
+    sendSPA(res);
 });
 
 app.post('/select-division', checkAuth, (req, res) => {
@@ -268,15 +259,7 @@ app.get('/logout', (req, res) => {
 });
 
 // --- MAIN APP ROUTES ---
-app.get('/', checkAuth, (req, res) => {
-    res.send(renderAppShell({
-        title: 'Form Request Payment',
-        rootId: 'reactFormRoot',
-        css: ['/templateComponents/templateComponents.css'],
-        bodyExtra: `<footer class="footer"><p>&copy; 2026 PT Pilar Niaga Makmur - FRP Payment System v1.0</p></footer>`,
-        scripts: ['/templateComponents/browser.jsx', '/js/react-form.jsx']
-    }));
-});
+app.get('/', checkAuth, (req, res) => sendSPA(res));
 
 app.get('/api/form-data', checkAuth, (req, res) => {
     const u = req.session.user;
@@ -384,21 +367,8 @@ app.get('/api/next-frp-number/:department', checkAuth, (req, res) => {
 });
 
 // --- APPROVAL ROUTES ---
-app.get('/approval', checkAuth, (req, res) => {
-    res.send(renderAppShell({
-        title: 'Approval - FRP System',
-        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
-        scripts: ['/templateComponents/browser.jsx', '/js/approval.jsx']
-    }));
-});
-
-app.get('/approved', checkAuth, (req, res) => {
-    res.send(renderAppShell({
-        title: 'Approval - FRP System',
-        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
-        scripts: ['/templateComponents/browser.jsx', '/js/approval.jsx']
-    }));
-});
+app.get('/approval', checkAuth, (req, res) => sendSPA(res));
+app.get('/approved', checkAuth, (req, res) => sendSPA(res));
 
 app.get('/api/data/approval', checkAuth, (req, res) => {
     const u = req.session.user;
@@ -426,13 +396,7 @@ app.get('/api/data/approval', checkAuth, (req, res) => {
 });
 
 // --- FRP ACTIONS ---
-app.get('/frp/:id', checkAuth, (req, res) => {
-    res.send(renderAppShell({
-        title: 'Detail FRP',
-        css: ['/css/style.css'],
-        scripts: ['/js/frp-detail.jsx']
-    }));
-});
+app.get('/frp/:id', checkAuth, (req, res) => sendSPA(res));
 
 app.get('/api/frp/:id', checkAuth, (req, res) => {
     const data = readJson('requests.json').find(r => r.id === req.params.id);
@@ -497,15 +461,7 @@ app.post('/api/frp/:id/:action', checkAuth, (req, res) => {
 });
 
 // --- ADMIN ROUTES ---
-app.get('/admin/:type', checkAuth, checkIT, (req, res) => {
-    const type = req.params.type;
-    if (!['employees', 'vendors', 'budgets', 'departments', 'roles'].includes(type)) return res.redirect('/');
-    res.send(renderAppShell({
-        title: 'Admin Panel - FRP System',
-        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
-        scripts: ['/templateComponents/browser.jsx', '/js/admin.jsx']
-    }));
-});
+app.get('/admin/:type', checkAuth, checkIT, (req, res) => sendSPA(res));
 
 app.get('/api/data/admin', checkAuth, checkIT, (req, res) => {
     const type = req.query.type;
@@ -558,13 +514,7 @@ app.post('/api/admin/:type/edit/:index', checkAuth, checkIT, (req, res) => {
 });
 
 // --- HISTORY ROUTE ---
-app.get('/history', checkAuth, (req, res) => {
-    res.send(renderAppShell({
-        title: 'History - FRP System',
-        css: ['/css/style.css', '/templateComponents/templateComponents.css'],
-        scripts: ['/templateComponents/browser.jsx', '/js/history.jsx']
-    }));
-});
+app.get('/history', checkAuth, (req, res) => sendSPA(res));
 
 app.get('/api/data/history', checkAuth, (req, res) => {
     const u = req.session.user;
