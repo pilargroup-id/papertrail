@@ -87,9 +87,12 @@ function ApprovalPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'inherit', color: '#64748b' }}>
-        Memuat data...
-      </div>
+      <>
+        <BackgroundMain />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'inherit', color: '#64748b' }}>
+          Memuat data...
+        </div>
+      </>
     )
   }
 
@@ -107,10 +110,7 @@ function ApprovalPage() {
         />
 
         <div className="dashboard-stage">
-          <Header
-            title={isApprovedView ? 'Approved List' : 'Approval List'}
-            subtitle={isApprovedView ? 'Daftar pengajuan yang sudah diproses' : 'Daftar pengajuan menunggu persetujuan'}
-          />
+          <Header title="Form Request Payment" />
 
           <main className="dashboard-main">
             {/* Filter Bar */}

@@ -75,11 +75,10 @@ select {
   width: 100%;
   max-width: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top right, rgba(42, 157, 143, 0.1), transparent 24%),
-    radial-gradient(circle at bottom left, rgba(231, 111, 81, 0.08), transparent 22%),
-    linear-gradient(180deg, #f6f9fc 0%, #edf3f9 100%);
+  background: transparent;
   transition: grid-template-columns var(--layout-transition-duration) var(--layout-transition-easing);
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard-shell--sidebar-collapsed {
@@ -93,6 +92,8 @@ select {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard-main {
@@ -102,6 +103,9 @@ select {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  color: #1e293b;
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar {
@@ -3233,4 +3237,15 @@ select {
   .register-user-popup {
     border-radius: 20px;
   }
+}
+
+/* -- Fix: prevent white gap during sidebar collapse/expand transition -------- */
+/* Let the grid column handle all width animation; sidebar just fills it */
+.sidebar,
+.sidebar.collapsed {
+  width: 100%;
+  min-width: 0;
+}
+.sidebar {
+  transition: transform 0.3s ease;
 }

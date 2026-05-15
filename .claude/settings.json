@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\views\\\\templateComponents\\\\templateComponents.css\" \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\css\\\\templateComponents.css\")",
+      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\css\\\\templateComponents.css\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\css\\\\templateComponents.css\" | Select-Object -Last 15\\) -join \"`n\")",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\" -Recurse -File | ForEach-Object { \"$\\($_.FullName\\)\" })",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\views\\\\templateComponents\" -Recurse -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\form.html\" -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\approval.html\" -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\admin.html\" -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\history.html\" -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\select-company.html\" -Force -Confirm:$false -ErrorAction SilentlyContinue)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\select-division.html\" -Force -Confirm:$false -ErrorAction SilentlyContinue)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\login.html\" -Force -Confirm:$false -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-ChildItem -Recurse -File -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\" | ForEach-Object { $_.FullName })",
+      "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" log --oneline --all)",
+      "PowerShell(head -10)",
+      "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" ls-files --others --exclude-standard -- \"frontend/views/templateComponents/\" 2>$null)",
+      "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" show HEAD:frontend/views/templateComponents/browser.jsx 2>&1)",
+      "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" log --oneline --all --diff-filter=D -- \"frontend/views/templateComponents/\")",
+      "PowerShell(git -C \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\" log --oneline --all -- \"frontend/views/templateComponents/browser.jsx\")",
+      "PowerShell(Get-ChildItem -Recurse -File -Path \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\views\\\\templateComponents\" | ForEach-Object { $_.FullName })"
+    ],
+    "additionalDirectories": [
+      "\\* �� Fix: prevent white gap during sidebar collapse\\expand transition �������� *\\\n\\* Let the grid column handle all width animation; sidebar just fills it *"
+    ]
+  }
+}

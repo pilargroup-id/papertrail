@@ -295,7 +295,14 @@ function AdminPage() {
   const user = data?.user || {}
 
   if (loading) {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'inherit', color: '#64748b' }}>Memuat data...</div>
+    return (
+      <>
+        <BackgroundMain />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'inherit', color: '#64748b' }}>
+          Memuat data...
+        </div>
+      </>
+    )
   }
 
   return (
@@ -312,7 +319,7 @@ function AdminPage() {
         />
 
         <div className="dashboard-stage">
-          <Header title={`Master ${typeName}`} subtitle="Admin Panel — Data Master" />
+          <Header title="Form Request Payment" />
 
           <main className="dashboard-main">
             {/* Add Form */}

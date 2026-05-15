@@ -195,19 +195,25 @@ function FRPForm() {
 
   if (loading) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h6">Memuat data...</Typography>
-      </Box>
+      <>
+        <TemplateBackgroundMain />
+        <Box sx={{ p: 4, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography variant="h6">Memuat data...</Typography>
+        </Box>
+      </>
     )
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h6" color="error">
-          Error: {error}
-        </Typography>
-      </Box>
+      <>
+        <TemplateBackgroundMain />
+        <Box sx={{ p: 4, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography variant="h6" color="error">
+            Error: {error}
+          </Typography>
+        </Box>
+      </>
     )
   }
 
@@ -254,7 +260,7 @@ function FRPForm() {
           onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
         />
         <div className="dashboard-stage">
-          <TemplateHeader title="Form Request Payment" subtitle="FRP System" />
+          <TemplateHeader title="Form Request Payment" />
           <main className="dashboard-main">
             <Container maxWidth="lg">
               <CssBaseline />

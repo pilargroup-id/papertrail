@@ -23,9 +23,12 @@ function HistoryPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'inherit', color: '#64748b' }}>
-        Memuat data...
-      </div>
+      <>
+        <BackgroundMain />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'inherit', color: '#64748b' }}>
+          Memuat data...
+        </div>
+      </>
     )
   }
 
@@ -46,10 +49,7 @@ function HistoryPage() {
         />
 
         <div className="dashboard-stage">
-          <Header
-            title="Document History"
-            subtitle="Daftar FRP PDF yang telah di-generate"
-          />
+          <Header title="Form Request Payment" />
 
           <main className="dashboard-main">
             <div style={{ background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflowX: 'auto' }}>
