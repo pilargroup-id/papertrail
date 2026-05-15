@@ -39,8 +39,32 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('id-ID').format(normalizeNumber(value))
 }
 
-const buildDepartments = (employees) => {
-  return [...new Set((employees || []).map((e) => e.class || '').filter(Boolean))].sort()
+const getEmployeeAssignments = (employee) => {
+  if (Array.isArray(employee?.companies) && employee.companies.length > 0) {
+    return employee.companies
+  }
+
+  if (employee?.class) {
+    return [{
+      name: employee.company || '',
+      class: employee.class,
+      jobLevel: employee.jobLevel || '',
+    }]
+  }
+
+  return []
+}
+
+const buildDepartments = (employees, companyName) => {
+  return [
+    ...new Set(
+      (employees || [])
+        .flatMap((employee) => getEmployeeAssignments(employee))
+        .filter((assignment) => !companyName || assignment.name === companyName)
+        .map((assignment) => assignment.class || '')
+        .filter(Boolean),
+    ),
+  ].sort()
 }
 
 const getDefaultItems = () => [{ memo: '', budgetId: '', qty: '1', hargaSatuan: '0' }]
@@ -120,16 +144,28 @@ function FRPForm() {
 
   const FRP = frpData || {}
 
-  const departments = useMemo(() => buildDepartments(FRP.employees || []), [FRP.employees])
+  const departments = useMemo(
+    () => buildDepartments(FRP.employees || [], values.companyName),
+    [FRP.employees, values.companyName],
+  )
 
   const filteredEmployees = useMemo(() => {
     if (FRP.user?.role !== 'administrator') {
       return [{ fullName: FRP.user?.fullName || '' }]
     }
+
     return (FRP.employees || []).filter((employee) => {
-      const companyMatch = !values.companyName || employee.companies?.some((c) => c.name === values.companyName)
-      const divisionMatch = !values.divisi || employee.class === values.divisi
-      return companyMatch && divisionMatch
+      const assignments = getEmployeeAssignments(employee)
+
+      if (!values.companyName && !values.divisi) {
+        return true
+      }
+
+      return assignments.some((assignment) => {
+        const companyMatch = !values.companyName || assignment.name === values.companyName
+        const divisionMatch = !values.divisi || assignment.class === values.divisi
+        return companyMatch && divisionMatch
+      })
     })
   }, [values.companyName, values.divisi, FRP.employees])
 
@@ -213,6 +249,8 @@ function FRPForm() {
           collapsed={sidebarCollapsed}
           userName={FRP.user?.fullName || 'User'}
           userRole={FRP.user?.selectedJobLevel || FRP.user?.role || 'Administrator'}
+          userIsAdmin={FRP.user?.role === 'administrator'}
+          allAssignments={FRP.user?.allAssignments || []}
           onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
         />
         <div className="dashboard-stage">

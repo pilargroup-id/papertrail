@@ -81,6 +81,14 @@ function VendorFormFields({ form, onChange }) {
 }
 
 function DepartmentFormFields({ form, onChange, employeeList }) {
+  const getEmployeeClasses = (employee) => {
+    if (Array.isArray(employee?.companies) && employee.companies.length > 0) {
+      return [...new Set(employee.companies.map((company) => company.class).filter(Boolean))]
+    }
+
+    return employee?.class ? [employee.class] : []
+  }
+
   return (
     <>
       <div style={S.grid2}>
@@ -94,7 +102,7 @@ function DepartmentFormFields({ form, onChange, employeeList }) {
           <select style={S.select} required value={form.manager} onChange={e => onChange('manager', e.target.value)}>
             <option value="">Pilih Manager</option>
             {(employeeList || []).filter(e => e?.fullName).sort((a, b) => a.fullName.localeCompare(b.fullName)).map(emp => (
-              <option key={emp.fullName} value={emp.fullName}>{emp.fullName} — {emp.class}</option>
+              <option key={emp.fullName} value={emp.fullName}>{emp.fullName} - {getEmployeeClasses(emp).join(', ') || '-'}</option>
             ))}
           </select>
         </div>
@@ -373,3 +381,4 @@ function AdminPage() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
 root.render(<AdminPage />)
+

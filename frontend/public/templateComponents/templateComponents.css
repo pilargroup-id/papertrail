@@ -102,6 +102,7 @@ select {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  color: #1e293b;
 }
 
 .sidebar {
