@@ -422,8 +422,6 @@
       {
         "memo": "pembayaran kontainer",
         "budgetId": "PRO2603",
-        "qty": "10",
-        "hargaSatuan": "200.000",
         "amount": "2.000.000"
       }
     ],
@@ -435,6 +433,6 @@
     "createdBy": "Khuzaima Desri",
     "createdAt": "2026-05-15T03:56:03.451Z",
     "approvedBy": "Ernest Hianto",
-    "approvedAt": "2026-05-15T04:05:49.060Z"
+    "approvedAt": "2026-05-15T04:35:56.238Z"
   }
 ]

@@ -49,7 +49,7 @@
   </style>
 </head>
 <body>
-  <% const isIT = (user.class === 'IT'); %>
+  <% const isIT = (user.role === 'administrator' || user.class === 'IT'); %>
   <div class="main-content">
     <div class="form-container">
       
@@ -262,7 +262,15 @@
             <div class="form-group">
               <label>Approved By (Head/Manager)</label>
               <select name="approvedBy" <%= isIT ? '' : 'disabled' %>>
-                <% employees.filter(e => e.jobLevel === 'Manager' || e.jobLevel === 'Direktur' || e.jobLevel === 'Komisaris').forEach(e => { %>
+                <option value="">-- Pilih Manager/Head --</option>
+                <% employees.filter(e => {
+                  if (!e.companies) return false;
+                  return e.companies.some(c => 
+                    c.name === data.companyName && 
+                    c.class === data.divisi && 
+                    ['Manager', 'Direktur', 'Komisaris'].includes(c.jobLevel)
+                  );
+                }).forEach(e => { %>
                   <option value="<%= e.fullName %>" <%= data.approvedBy===e.fullName?'selected':'' %>><%= e.fullName %></option>
                 <% }); %>
               </select>
@@ -320,7 +328,7 @@
         <% } %>
         <% if (isIT) { %>
             <button type="button" class="btn btn-sm" style="background: var(--dark); color: white;" onclick="doAction('revert')">
-                <span class="material-icons-round">undo</span> Revert
+                <span class="material-icons-round">undo</span> Kembali ke PENDING
             </button>
             <button type="button" class="btn btn-sm" style="background: var(--success); color: white;" onclick="saveEdits()">
                 <span class="material-icons-round">save</span> Save
@@ -366,9 +374,17 @@
                 <span class="material-icons-round">edit</span> Revisi
             </button>
         <% } %>
+        <% if (['Manager', 'Direktur', 'Komisaris'].includes(user.jobLevel) || isIT) { %>
+            <button type="button" class="btn btn-sm btn-generate" onclick="doAction('approve')">
+                <span class="material-icons-round">check_circle</span> Approve
+            </button>
+            <button type="button" class="btn btn-sm" style="background: #f59e0b; color: white;" onclick="doAction('reject')">
+                <span class="material-icons-round">cancel</span> Reject
+            </button>
+        <% } %>
         <% if (isIT) { %>
-            <button type="button" class="btn btn-sm" style="background: var(--primary); color: white;" onclick="doAction('revert')">
-                <span class="material-icons-round">undo</span> Revert
+            <button type="button" class="btn btn-sm" style="background: var(--dark); color: white;" onclick="doAction('revert')">
+                <span class="material-icons-round">undo</span> Kembali ke PENDING
             </button>
             <button type="button" class="btn btn-sm" style="background: var(--success); color: white;" onclick="saveEdits()">
                 <span class="material-icons-round">save</span> Save
