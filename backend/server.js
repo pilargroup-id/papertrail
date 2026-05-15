@@ -120,7 +120,7 @@ const renderAppShell = ({
 
 const checkAuth = (req, res, next) => {
     if (!req.session.user) {
-        if (req.headers['accept'] && req.headers['accept'].includes('application/json')) {
+        if (req.path.startsWith('/api/')) {
             return res.status(401).json({ error: 'Unauthorized', redirect: '/login' });
         }
         return res.redirect('/login');

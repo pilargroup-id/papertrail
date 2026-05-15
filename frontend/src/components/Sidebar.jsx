@@ -1,11 +1,75 @@
-import { useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 function getInitials(name) {
   return (name || '').split(' ').filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('')
 }
 
+function getItemKey(item) {
+  return item.id ?? item.href ?? item.label
+}
+
+function isItemActive(item, pathname) {
+  if (item.href === '/') return pathname === '/'
+  if (item.href && item.href.startsWith('/admin')) return pathname.startsWith('/admin')
+  if (item.href) return pathname === item.href
+  return item.children?.some(c => isItemActive(c, pathname)) ?? false
+}
+
+function SidebarNavItem({ item, pathname, collapsed, expandedGroups, onToggleGroup, onSelect }) {
+  const hasChildren = item.children?.length > 0
+  const active = isItemActive(item, pathname)
+  const expanded = hasChildren ? (expandedGroups[getItemKey(item)] ?? false) : false
+
+  const className = [
+    'nav-item',
+    active ? 'active' : '',
+    hasChildren ? 'nav-item--accordion' : '',
+    expanded ? 'nav-item--expanded' : '',
+    hasChildren ? 'nav-item--button' : '',
+    item.danger ? 'logout-item' : '',
+  ].filter(Boolean).join(' ')
+
+  const content = (
+    <>
+      <span className="material-icons-round nav-icon" style={{ fontSize: '22px' }}>{item.icon}</span>
+      <span className="nav-text">{item.label}</span>
+      {hasChildren && <span className="material-icons-round nav-item__chevron" style={{ fontSize: '18px', marginLeft: 'auto' }}>chevron_right</span>}
+    </>
+  )
+
+  const handleClick = e => {
+    e.preventDefault()
+    if (hasChildren) { onToggleGroup(getItemKey(item)); return }
+    onSelect(item)
+  }
+
+  return (
+    <>
+      {hasChildren ? (
+        <button type="button" className={className} data-tooltip={collapsed ? item.label : undefined} onClick={handleClick}>
+          {content}
+        </button>
+      ) : (
+        <a href={item.href} className={className} data-tooltip={collapsed ? item.label : undefined} onClick={handleClick}>
+          {content}
+        </a>
+      )}
+      {hasChildren && !collapsed && (
+        <div className={`nav-submenu${expanded ? ' expanded' : ''}`}>
+          {item.children.map(child => (
+            <SidebarNavItem key={getItemKey(child)} item={child} pathname={pathname} collapsed={collapsed} expandedGroups={expandedGroups} onToggleGroup={onToggleGroup} onSelect={onSelect} />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function Sidebar({ collapsed = false, userName = 'User', userRole = 'Staff', userIsAdmin = false, allAssignments = [], onToggleCollapse }) {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const [expandedGroups, setExpandedGroups] = useState({})
 
   const uniqueCompanies = [...new Set((allAssignments || []).map(a => a.name))]
   const showBack = (allAssignments || []).length > 1
@@ -24,48 +88,43 @@ export default function Sidebar({ collapsed = false, userName = 'User', userRole
     { label: 'Logout', href: '/logout', icon: 'logout', danger: true },
   ]
 
-  const isActive = href => {
-    if (href === '/') return pathname === '/'
-    if (href.startsWith('/admin')) return pathname.startsWith('/admin')
-    return pathname === href
+  const onToggleGroup = key => setExpandedGroups(g => ({ ...g, [key]: !g[key] }))
+
+  const onSelect = item => {
+    if (item.href === '/logout') { window.location.href = '/logout'; return }
+    navigate(item.href)
   }
 
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
       <button type="button" className="sidebar-toggle" aria-label="Toggle Sidebar" onClick={onToggleCollapse}>
-        <span className="material-icons-round" style={{ fontSize: '18px' }}>{collapsed ? 'chevron_right' : 'chevron_left'}</span>
+        <span className="material-icons-round toggle-icon" style={{ fontSize: '16px' }}>
+          {collapsed ? 'chevron_right' : 'chevron_left'}
+        </span>
       </button>
 
       <div className="sidebar-logo">
-        <span className="material-icons-round" style={{ fontSize: '28px', color: 'var(--theme-accent-primary)', flexShrink: 0 }}>payments</span>
-        <span className="logo-text">Pilar Group</span>
-      </div>
-
-      <div className="sidebar-profile">
         <div className="profile-content">
-          <div className="profile-avatar__badge">{getInitials(userName)}</div>
+          <div className="profile-avatar">
+            <span className="profile-avatar__badge">{getInitials(userName)}</span>
+            <div className="online-status" />
+          </div>
           <div className="profile-info">
-            <p className="profile-name">{userName}</p>
+            <h3 className="profile-name">{userName}</h3>
             <p className="profile-role">{userRole}</p>
           </div>
         </div>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="sidebar-nav" aria-label="Main navigation">
         {primaryItems.map(item => (
-          <a key={item.href} href={item.href} className={`nav-item${isActive(item.href) ? ' active' : ''}`} data-tooltip={collapsed ? item.label : undefined}>
-            <span className="material-icons-round" style={{ fontSize: '22px', flexShrink: 0 }}>{item.icon}</span>
-            <span className="nav-text">{item.label}</span>
-          </a>
+          <SidebarNavItem key={getItemKey(item)} item={item} pathname={pathname} collapsed={collapsed} expandedGroups={expandedGroups} onToggleGroup={onToggleGroup} onSelect={onSelect} />
         ))}
       </nav>
 
       <div className="sidebar-bottom">
         {secondaryItems.map(item => (
-          <a key={item.label} href={item.href} className={`nav-item${item.danger ? ' logout-item' : ''}`} data-tooltip={collapsed ? item.label : undefined}>
-            <span className="material-icons-round" style={{ fontSize: '22px', flexShrink: 0 }}>{item.icon}</span>
-            <span className="nav-text">{item.label}</span>
-          </a>
+          <SidebarNavItem key={getItemKey(item)} item={item} pathname={pathname} collapsed={collapsed} expandedGroups={expandedGroups} onToggleGroup={onToggleGroup} onSelect={onSelect} />
         ))}
       </div>
     </aside>

@@ -30,7 +30,11 @@
       "PowerShell(Copy-Item \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\css\\\\templateComponents.css\" \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\\\\styles\\\\templateComponents.css\")",
       "PowerShell(Get-ChildItem \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\" -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\\", \"\"\\) })",
       "PowerShell(cmd /c \"dir /a c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public 2>&1\")",
-      "PowerShell(cmd /c \"rmdir c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\templateComponents\")"
+      "PowerShell(cmd /c \"rmdir c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\public\\\\templateComponents\")",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess; if \\($proc\\) { Stop-Process -Id $proc -Force; Write-Output \"Killed PID $proc on port 3000\" } else { Write-Output \"No process on port 3000\" })",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess; if \\($proc\\) { Stop-Process -Id $proc -Force; Write-Output \"Killed PID $proc\" } else { Write-Output \"Port 3000 not in use\" })",
+      "PowerShell(Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest \"http://localhost:3000/login\" -UseBasicParsing -TimeoutSec 5; Write-Output \"Status: $\\($r.StatusCode\\)\"; Write-Output \\($r.Content.Substring\\(0, 200\\)\\) } catch { Write-Output \"Error: $_\" })",
+      "PowerShell(Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest \"http://localhost:3000/api/form-data\" -UseBasicParsing -TimeoutSec 5; \"Status: $\\($r.StatusCode\\)\" } catch [System.Net.WebException] { \"Status: $\\($_.Exception.Response.StatusCode.value__\\) - $\\($_.Exception.Response.StatusDescription\\)\" })"
     ],
     "additionalDirectories": [
       "\\* �� Fix: prevent white gap during sidebar collapse\\expand transition �������� *\\\n\\* Let the grid column handle all width animation; sidebar just fills it *"
