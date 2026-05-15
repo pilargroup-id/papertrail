@@ -111,8 +111,6 @@
       {
         "memo": "listrik",
         "budgetId": "S260117",
-        "qty": "3",
-        "hargaSatuan": "500.000",
         "amount": "1.500.000"
       }
     ],
@@ -123,7 +121,10 @@
     "createdBy": "Bayu Noegroho",
     "createdAt": "2026-05-13T02:00:05.383Z",
     "approvedByActual": "Bayu Noegroho",
-    "approvedAt": "2026-05-13T02:01:22.631Z"
+    "approvedAt": "2026-05-13T02:01:22.631Z",
+    "attachLink": "",
+    "requestBy": "Khuzaima Desri",
+    "approvedBy": "Johan Setyo"
   },
   {
     "id": "mp3mgp16",
@@ -434,5 +435,49 @@
     "createdAt": "2026-05-15T03:56:03.451Z",
     "approvedBy": "Ernest Hianto",
     "approvedAt": "2026-05-15T04:35:56.238Z"
+  },
+  {
+    "id": "mp6hnkxp",
+    "companyName": "PT PILAR KARGO PERKASA",
+    "tanggalFrp": "2026-05-15",
+    "divisi": "Pikasa",
+    "dimintaOleh": "Neneng Khodijah",
+    "currency": "IDR",
+    "kurs": "1",
+    "keteranganFrp": "pikasa",
+    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
+    "internalPoNumber": "123inv",
+    "extDocType": "invoice",
+    "extDocNumber": "inv123",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-15",
+    "bankTujuan": "P.T.EVERGREEN SHIPPING AGENCY INDONESIA (MANDIRI)",
+    "rekBankTujuan": "124.001.6768690",
+    "attachLink": "https://docs.google.com/",
+    "checkDocs[]": "Form Request Payment",
+    "items[0][memo]": "pikaasa",
+    "items[0][budgetId]": "PKS10",
+    "items[0][qty]": "1",
+    "items[0][hargaSatuan]": "200.000",
+    "items[0][amount]": "200.000",
+    "frpNo": "FRP-PKS-26-00001",
+    "items": [
+      {
+        "memo": "pikaasa",
+        "budgetId": "PKS10",
+        "qty": "1",
+        "hargaSatuan": "200.000",
+        "amount": "200.000"
+      }
+    ],
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "requestBy": "Neneng Khodijah",
+    "status": "APPROVED",
+    "createdBy": "Neneng Khodijah",
+    "createdAt": "2026-05-15T05:40:19.261Z",
+    "approvedBy": "Ivon Yuanita Miharja",
+    "approvedAt": "2026-05-15T05:47:08.465Z"
   }
 ]

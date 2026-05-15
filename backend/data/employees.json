@@ -949,15 +949,18 @@
   {
     "fullName": "Ivon Yuanita Miharja",
     "email": "",
-    "employeeId": "",
     "companies": [
       {
         "name": "PT PILAR KARGO PERKASA",
         "class": "Pikasa",
         "jobLevel": "Manager"
+      },
+      {
+        "name": "PT PILAR NIAGA MAKMUR",
+        "class": "Legal",
+        "jobLevel": "Manager"
       }
-    ],
-    "role": "user"
+    ]
   },
   {
     "fullName": "Karna Ilahi",
