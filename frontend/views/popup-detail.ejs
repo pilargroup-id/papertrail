@@ -156,9 +156,20 @@
               <label>Bank Tujuan</label>
               <input type="text" name="bankTujuan" value="<%= data.bankTujuan || '' %>" <%= isIT ? '' : 'readonly' %>>
             </div>
-            <div class="form-group full-width">
+            <div class="form-group">
               <label>Rekening Bank Tujuan</label>
               <input type="text" name="rekBankTujuan" value="<%= data.rekBankTujuan || '' %>" <%= isIT ? '' : 'readonly' %>>
+            </div>
+          </div>
+          <div class="form-group full-width" style="margin-top: 15px;">
+            <label>Attach Link (Dokumen Pendukung)</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="url" name="attachLink" value="<%= data.attachLink || '' %>" <%= isIT ? '' : 'readonly' %> style="flex: 1;">
+                <% if(data.attachLink) { %>
+                    <a href="<%= data.attachLink %>" target="_blank" class="btn btn-sm" style="background: var(--primary); color: white; text-decoration: none; display: flex; align-items: center;">
+                        <span class="material-icons-round">open_in_new</span> Buka Link
+                    </a>
+                <% } %>
             </div>
           </div>
         </div>
@@ -282,6 +293,7 @@
             <input type="hidden" name="extDocNumber" value="<%= data.extDocNumber %>">
             <input type="hidden" name="paymentMethod" value="<%= data.paymentMethod %>">
             <input type="hidden" name="paymentDate" value="<%= data.paymentDate %>">
+            <input type="hidden" name="attachLink" value="<%= data.attachLink || '' %>">
             <input type="hidden" name="keteranganFrp" value="<%= data.keteranganFrp || '' %>">
             <!-- Serialize items -->
             <% data.items.forEach((item, idx) => { %>
@@ -321,6 +333,9 @@
             <button type="button" class="btn btn-sm" style="background: var(--danger); color: white;" onclick="doAction('delete')">
                 <span class="material-icons-round">delete</span> Hapus
             </button>
+            <button type="button" class="btn btn-sm" style="background: var(--primary); color: white;" onclick="revisiForm()">
+                <span class="material-icons-round">edit</span> Revisi
+            </button>
             <button type="button" class="btn btn-sm" style="background: #f59e0b; color: white;" onclick="doAction('reject')">
                 <span class="material-icons-round">cancel</span> Reject
             </button>
@@ -336,6 +351,9 @@
             <button type="button" class="btn btn-sm" style="background: var(--danger); color: white;" onclick="doAction('delete')">
                 <span class="material-icons-round">delete</span> Hapus
             </button>
+            <button type="button" class="btn btn-sm" style="background: var(--primary); color: white;" onclick="revisiForm()">
+                <span class="material-icons-round">edit</span> Revisi
+            </button>
         <% } %>
     <% } %>
 
@@ -343,6 +361,9 @@
         <% if (['Manager', 'Direktur', 'Komisaris'].includes(user.jobLevel) || isIT || data.createdBy === user.fullName) { %>
             <button type="button" class="btn btn-sm" style="background: var(--danger); color: white;" onclick="doAction('delete')">
                 <span class="material-icons-round">delete</span> Hapus
+            </button>
+            <button type="button" class="btn btn-sm" style="background: var(--primary); color: white;" onclick="revisiForm()">
+                <span class="material-icons-round">edit</span> Revisi
             </button>
         <% } %>
         <% if (isIT) { %>
@@ -372,7 +393,13 @@
       }
     }
 
+    function revisiForm() {
+        if(!confirm('Anda yakin ingin merevisi FRP ini? Form input akan dimuat dengan data FRP ini.')) return;
+        window.parent.location.href = '/?revisi=<%= data.id %>';
+    }
+
     async function saveEdits() {
+      if(!confirm('Anda yakin ingin menyimpan perubahan dokumen ini?')) return;
       const form = document.getElementById('detailForm');
       const formData = new FormData(form);
       const dataObj = Object.fromEntries(formData.entries());

@@ -99,14 +99,13 @@
       justify-content: center;
     }
     .modal-content {
-      background-color: white;
-      padding: 2.5rem;
-      border-radius: 20px;
-      width: 100%;
-      max-width: 500px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      background: white;
+      padding: 30px;
+      border-radius: 24px;
+      width: 90%;
+      max-width: 900px;
       position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -150,12 +149,11 @@
       <span class="material-icons-round brand-icon">admin_panel_settings</span>
       <div>
         <h1 class="nav-title">IT Admin Panel</h1>
-        <p class="nav-subtitle">Halo, <%= user.fullName %></p>
+        <p class="nav-subtitle">Sistem Pengelolaan Data Master</p>
       </div>
     </div>
     <div class="nav-links">
       <a href="/" class="nav-link"><span class="material-icons-round">home</span> Back to FRP</a>
-      <a href="/logout" class="nav-link" style="color: var(--danger);"><span class="material-icons-round">logout</span> Logout</a>
     </div>
   </nav>
 
@@ -175,6 +173,9 @@
       <a href="/admin/budgets" class="sidebar-link <%= activeType === 'budgets' ? 'active' : '' %>">
         <span class="material-icons-round">account_balance_wallet</span> Data Budget
       </a>
+      <a href="/admin/roles" class="sidebar-link <%= activeType === 'roles' ? 'active' : '' %>">
+        <span class="material-icons-round">security</span> Master Roles
+      </a>
     </aside>
 
     <!-- Main Content -->
@@ -188,32 +189,50 @@
         
         <form id="adminForm" action="/api/admin/<%= activeType %>/add" method="POST">
           <% if(activeType === 'employees') { %>
-            <div class="form-grid cols-3">
+            <div class="form-grid cols-2">
               <div class="form-group">
                 <label>Nama Lengkap</label>
                 <input type="text" name="fullName" required placeholder="Contoh: Budi Santoso">
               </div>
               <div class="form-group">
-                <label>Company</label>
-                <select name="company" required>
-                  <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
-                  <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
-                  <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
-                </select>
+                <label>Email</label>
+                <input type="email" name="email" placeholder="budi@piagam.id">
               </div>
-              <div class="form-group">
-                <label>Class (Divisi)</label>
-                <input type="text" name="class" required placeholder="Contoh: IT, FINANCE">
+            </div>
+            
+            <div id="assignmentsContainer" style="margin-top: 1rem; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 8px; background: white;">
+              <h4 style="margin-top: 0;">Penugasan Perusahaan & Divisi</h4>
+              <div id="assignmentsList">
+                <div class="assignment-item" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-end;">
+                  <div class="form-group" style="flex: 1;">
+                    <label>Company</label>
+                    <select name="companies[0][name]" required>
+                      <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
+                      <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
+                      <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label>Class (Divisi)</label>
+                    <input type="text" name="companies[0][class]" required placeholder="IT">
+                  </div>
+                  <div class="form-group" style="flex: 1;">
+                    <label>Job Level</label>
+                    <select name="companies[0][jobLevel]" required>
+                      <option value="Staff">Staff</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Direktur">Direktur</option>
+                      <option value="Komisaris">Komisaris</option>
+                    </select>
+                  </div>
+                  <button type="button" class="btn" style="background: #fee2e2; color: #ef4444; padding: 10px;" onclick="removeAssignment(this)" disabled>
+                    <span class="material-icons-round">delete</span>
+                  </button>
+                </div>
               </div>
-              <div class="form-group">
-                <label>Job Level</label>
-                <select name="jobLevel" required>
-                  <option value="Staff">Staff</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Direktur">Direktur</option>
-                  <option value="Komisaris">Komisaris</option>
-                </select>
-              </div>
+              <button type="button" class="btn" style="background: #e2e8f0; font-size: 12px;" onclick="addAssignment()">
+                <span class="material-icons-round" style="font-size: 16px;">add</span> Tambah Assignment
+              </button>
             </div>
           <% } else if(activeType === 'vendors') { %>
             <div class="form-grid cols-3">
@@ -296,6 +315,17 @@
                 <input type="text" name="totalAmount" required placeholder="10000000">
               </div>
             </div>
+          <% } else if(activeType === 'roles') { %>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label>Role Name</label>
+                <input type="text" name="role" required placeholder="administrator">
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <input type="text" name="description" required placeholder="Akses penuh">
+              </div>
+            </div>
           <% } %>
           <button type="submit" class="btn btn-generate" style="margin-top: 1rem;">
             <span class="material-icons-round">save</span> Simpan Data
@@ -322,13 +352,15 @@
         <table class="admin-table">
           <thead>
             <% if(activeType === 'employees') { %>
-              <tr><th>No</th><th>Nama Lengkap</th><th>Company</th><th>Divisi</th><th>Jabatan</th><th>Aksi</th></tr>
+              <tr><th>No</th><th>Nama Lengkap</th><th>Email</th><th>Company</th><th>Divisi</th><th>Jabatan</th><th>Role</th><th>Aksi</th></tr>
             <% } else if(activeType === 'vendors') { %>
               <tr><th>No</th><th>Nama Vendor</th><th>Bank</th><th>No Rekening</th><th>Aksi</th></tr>
             <% } else if(activeType === 'departments') { %>
               <tr><th>No</th><th>Nama Dept</th><th>Class</th><th>Kode FRP</th><th>Manager</th><th>Aksi</th></tr>
             <% } else if(activeType === 'budgets') { %>
               <tr><th>No</th><th>Budget ID</th><th>Company</th><th>Dept</th><th>Class</th><th>Type</th><th>Deskripsi</th><th>Total Amount</th><th>Aksi</th></tr>
+            <% } else if(activeType === 'roles') { %>
+              <tr><th>No</th><th>Role</th><th>Deskripsi</th><th>Aksi</th></tr>
             <% } %>
           </thead>
           <tbody>
@@ -340,10 +372,39 @@
                 <td><%= index + 1 %></td>
                 <% if(activeType === 'employees') { %>
                   <td><%= item.fullName %></td>
-                  <td style="font-size: 0.8rem; font-weight: 600; color: #1e293b;"><%= item.company || 'PT PILAR NIAGA MAKMUR' %></td>
-                  <td><span style="background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;"><%= item.class %></span></td>
-                  <td><%= item.jobLevel %></td>
-                <% } else if(activeType === 'vendors') { %>
+                  <td><%= item.email || '-' %></td>
+                  <td style="font-size: 0.8rem; font-weight: 600; color: #1e293b;">
+                    <% if(item.companies && Array.isArray(item.companies)) { %>
+                      <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <% item.companies.forEach(c => { %>
+                          <div style="background: #f1f5f9; padding: 4px 8px; border-radius: 4px; border-left: 3px solid var(--primary);">
+                            <strong><%= c.name %></strong><br>
+                            <span style="font-size: 10px; color: #64748b;"><%= c.class %> — <%= c.jobLevel %></span>
+                          </div>
+                        <% }); %>
+                      </div>
+                    <% } else { %>
+                      <%= item.company || 'N/A' %>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if(item.companies && Array.isArray(item.companies)) { %>
+                      <% const classes = [...new Set(item.companies.map(c => c.class))]; %>
+                      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        <% classes.forEach(cls => { %>
+                          <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;"><%= cls %></span>
+                        <% }); %>
+                      </div>
+                    <% } else { %>
+                      <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;"><%= item.class %></span>
+                    <% } %>
+                  </td>
+                  <td><%= Array.isArray(item.companies) ? item.companies.map(c => c.jobLevel).join(', ') : item.jobLevel %></td>
+                  <td><span class="status-badge <%= item.role === 'administrator' ? 'status-APPROVED' : 'status-PENDING' %>"><%= item.role || 'user' %></span></td>
+<% } else if(activeType === 'roles') { %>
+                  <td><strong><%= item.role %></strong></td>
+                  <td><%= item.description %></td>
+<% } else if(activeType === 'vendors') { %>
                   <td><strong><%= item.name %></strong></td>
                   <td><%= item.bank %></td>
                   <td style="font-family: monospace;"><%= item.account %></td>
@@ -390,30 +451,22 @@
       </div>
       <form id="editForm" method="POST">
         <% if(activeType === 'employees') { %>
-          <div class="form-group">
-            <label>Nama Lengkap</label>
-            <input type="text" name="fullName" required>
+          <div class="form-grid cols-2">
+            <div class="form-group">
+              <label>Nama Lengkap</label>
+              <input type="text" name="fullName" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" name="email">
+            </div>
           </div>
-          <div class="form-group">
-            <label>Company</label>
-            <select name="company" required>
-              <option value="PT PILAR NIAGA MAKMUR">PT PILAR NIAGA MAKMUR</option>
-              <option value="PT PILAR KARANG SAMUDERA">PT PILAR KARANG SAMUDERA</option>
-              <option value="PT PILAR KARGO PERKASA">PT PILAR KARGO PERKASA</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Class (Divisi)</label>
-            <input type="text" name="class" required>
-          </div>
-          <div class="form-group">
-            <label>Job Level</label>
-            <select name="jobLevel" required>
-              <option value="Staff">Staff</option>
-              <option value="Manager">Manager</option>
-              <option value="Direktur">Direktur</option>
-              <option value="Komisaris">Komisaris</option>
-            </select>
+          <div id="editAssignmentsContainer" style="margin-top: 1rem; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 8px; background: #f8fafc;">
+            <h4 style="margin-top: 0;">Penugasan Perusahaan & Divisi</h4>
+            <div id="editAssignmentsList"></div>
+            <button type="button" class="btn" style="background: #e2e8f0; font-size: 12px;" onclick="addAssignment(true)">
+              <span class="material-icons-round" style="font-size: 16px;">add</span> Tambah Assignment
+            </button>
           </div>
         <% } else if(activeType === 'vendors') { %>
           <div class="form-group">
@@ -484,6 +537,15 @@
             <label>Total Limit (Amount)</label>
             <input type="text" name="totalAmount" required>
           </div>
+        <% } else if(activeType === 'roles') { %>
+          <div class="form-group">
+            <label>Role Name</label>
+            <input type="text" name="role" required>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" name="description" required>
+          </div>
         <% } %>
         <button type="submit" class="btn btn-generate" style="width: 100%; margin-top: 1rem; padding: 1rem;">
           <span class="material-icons-round">save</span> Simpan Perubahan
@@ -498,17 +560,93 @@
       const modal = document.getElementById('editModal');
       const form = document.getElementById('editForm');
       
-      // Set action
       form.action = `/api/admin/<%= activeType %>/edit/${index}`;
       
-      // Fill values
+      // Reset assignments list if activeType is employees
+      if ('<%= activeType %>' === 'employees') {
+        const list = document.getElementById('editAssignmentsList');
+        list.innerHTML = '';
+        
+        if (data.companies && Array.isArray(data.companies)) {
+          data.companies.forEach((assign, idx) => {
+            addAssignment(true, assign);
+          });
+        } else {
+          // Fallback for old data
+          addAssignment(true, { name: data.company, class: data.class, jobLevel: data.jobLevel });
+        }
+      }
+
       for (const key in data) {
+        if (key === 'companies') continue;
         const el = form.elements[key];
         if (el) el.value = data[key];
       }
       
-      // Show modal
       modal.style.display = 'flex';
+    }
+
+    function addAssignment(isEdit = false, data = null) {
+      const listId = isEdit ? 'editAssignmentsList' : 'assignmentsList';
+      const list = document.getElementById(listId);
+      const idx = list.children.length;
+      const prefix = isEdit ? `companies[${idx}]` : `companies[${idx}]`;
+      
+      const div = document.createElement('div');
+      div.className = 'assignment-item';
+      div.style.display = 'flex';
+      div.style.gap = '10px';
+      div.style.marginBottom = '10px';
+      div.style.alignItems = 'flex-end';
+      
+      div.innerHTML = `
+        <div class="form-group" style="flex: 1;">
+          <label>Company</label>
+          <select name="companies[${idx}][name]" required>
+            <option value="PT PILAR NIAGA MAKMUR" ${data && data.name === 'PT PILAR NIAGA MAKMUR' ? 'selected' : ''}>PT PILAR NIAGA MAKMUR</option>
+            <option value="PT PILAR KARANG SAMUDERA" ${data && data.name === 'PT PILAR KARANG SAMUDERA' ? 'selected' : ''}>PT PILAR KARANG SAMUDERA</option>
+            <option value="PT PILAR KARGO PERKASA" ${data && data.name === 'PT PILAR KARGO PERKASA' ? 'selected' : ''}>PT PILAR KARGO PERKASA</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Class (Divisi)</label>
+          <input type="text" name="companies[${idx}][class]" required value="${data ? data.class : ''}">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>Job Level</label>
+          <select name="companies[${idx}][jobLevel]" required>
+            <option value="Staff" ${data && data.jobLevel === 'Staff' ? 'selected' : ''}>Staff</option>
+            <option value="Manager" ${data && data.jobLevel === 'Manager' ? 'selected' : ''}>Manager</option>
+            <option value="Direktur" ${data && data.jobLevel === 'Direktur' ? 'selected' : ''}>Direktur</option>
+            <option value="Komisaris" ${data && data.jobLevel === 'Komisaris' ? 'selected' : ''}>Komisaris</option>
+          </select>
+        </div>
+        <button type="button" class="btn" style="background: #fee2e2; color: #ef4444; padding: 10px;" onclick="removeAssignment(this)">
+          <span class="material-icons-round">delete</span>
+        </button>
+      `;
+      list.appendChild(div);
+      updateAssignmentIndices(isEdit);
+    }
+
+    function removeAssignment(btn) {
+      const list = btn.closest('#assignmentsList') || btn.closest('#editAssignmentsList');
+      const isEdit = list.id === 'editAssignmentsList';
+      btn.closest('.assignment-item').remove();
+      updateAssignmentIndices(isEdit);
+    }
+
+    function updateAssignmentIndices(isEdit) {
+      const listId = isEdit ? 'editAssignmentsList' : 'assignmentsList';
+      const list = document.getElementById(listId);
+      Array.from(list.children).forEach((item, idx) => {
+        item.querySelector('select[name*="[name]"]').name = `companies[${idx}][name]`;
+        item.querySelector('input[name*="[class]"]').name = `companies[${idx}][class]`;
+        item.querySelector('select[name*="[jobLevel]"]').name = `companies[${idx}][jobLevel]`;
+        const delBtn = item.querySelector('button');
+        if (list.children.length === 1) delBtn.disabled = true;
+        else delBtn.disabled = false;
+      });
     }
 
     function closeModal() {
@@ -520,12 +658,11 @@
       const rows = document.querySelectorAll('.admin-table tbody tr');
       
       rows.forEach(row => {
-        // Kolom Company adalah kolom ke-3 (index 2) untuk Employee dan Budget
         const companyCell = row.cells[2];
         if(!companyCell) return;
         const companyText = companyCell.innerText.trim();
         
-        if (!filterVal || companyText === filterVal) {
+        if (!filterVal || companyText.includes(filterVal)) {
           row.style.display = '';
         } else {
           row.style.display = 'none';

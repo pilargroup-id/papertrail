@@ -1,0 +1,10 @@
+[
+  {
+    "role": "administrator",
+    "description": "Akses penuh ke semua fitur dan master data"
+  },
+  {
+    "role": "user",
+    "description": "Akses terbatas untuk membuat dan melihat pengajuan"
+  }
+]

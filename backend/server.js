@@ -16,69 +16,110 @@ app.set('view cache', false);
 app.use(express.static(path.join(frontendPath, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(session({ secret: 'frp-secret', resave: false, saveUninitialized: true }));
+
+app.use(session({
+    secret: 'frp-secret-key-2024',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+}));
 
 const readJson = (file) => JSON.parse(fs.readFileSync(path.join(dataPath, file), 'utf8').replace(/^\uFEFF/, ''));
 const writeJson = (file, data) => fs.writeFileSync(path.join(dataPath, file), JSON.stringify(data, null, 2));
 
-let employees = readJson('employees.json');
-let budgets = readJson('budgets.json');
-let companies = readJson('companies.json');
-let vendors = readJson('vendors.json');
-let departments = readJson('departments.json');
-
-app.get('/login', (req, res) => {
-    const employeesData = readJson('employees.json');
-    const departmentsData = readJson('departments.json');
-    res.render('login', { employees: employeesData, departments: departmentsData, title: 'Login FRP System' });
-});
-app.post('/login', (req, res) => {
-    const { fullName, password } = req.body;
-    const employeesData = readJson('employees.json');
-    const emp = employeesData.find(e => e.fullName === fullName);
-    if (emp && password === '123') { 
-        req.session.user = emp; 
-        res.redirect('/'); 
-    } else { 
-        res.redirect('/login'); 
-    }
-});
-app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/login'); });
-
-// Middleware requires login
+// Auth Middleware
 const checkAuth = (req, res, next) => {
-    if(!req.session.user) return res.redirect('/login');
-    res.locals.user = req.session.user; 
+    if (!req.session.user) return res.redirect('/login');
+    res.locals.user = req.session.user;
     next();
 };
 
-// Middleware requires IT class
 const checkIT = (req, res, next) => {
-    if(req.session.user.class !== 'IT') return res.status(403).send('Forbidden: Khusus Divisi IT');
+    if (!req.session.user || req.session.user.role !== 'administrator') {
+        return res.status(403).send('Forbidden: Access limited to IT Administrators');
+    }
     next();
 };
 
-app.use(checkAuth);
+// --- AUTH ROUTES ---
+app.get('/login', (req, res) => res.render('login', { error: null }));
 
-app.get('/', (req, res) => {
-    const u = req.session.user;
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    const employees = readJson('employees.json');
+    const user = employees.find(e => e.fullName === username);
+
+    if (user && password === '123') {
+        req.session.user = { 
+            fullName: user.fullName, 
+            role: user.role, 
+            allAssignments: user.companies || [] 
+        };
+        return res.redirect('/select-company');
+    }
+    res.render('login', { error: 'Nama atau Password salah' });
+});
+
+app.get('/select-company', checkAuth, (req, res) => {
+    const user = req.session.user;
+    const companies = [...new Set(user.allAssignments.map(a => a.name))];
+    if (companies.length === 1) {
+        req.session.user.selectedCompany = companies[0];
+        return res.redirect('/select-division');
+    }
+    res.render('select-company', { companies });
+});
+
+app.post('/select-company', checkAuth, (req, res) => {
+    req.session.user.selectedCompany = req.body.company;
+    res.redirect('/select-division');
+});
+
+app.get('/select-division', checkAuth, (req, res) => {
+    const user = req.session.user;
+    const divisions = user.allAssignments
+        .filter(a => a.name === user.selectedCompany)
+        .map(a => ({ class: a.class, jobLevel: a.jobLevel }));
     
-    // Refresh data from files
+    if (divisions.length === 1) {
+        req.session.user.selectedDivision = divisions[0].class;
+        req.session.user.selectedJobLevel = divisions[0].jobLevel;
+        return res.redirect('/');
+    }
+    res.render('select-division', { divisions });
+});
+
+app.post('/select-division', checkAuth, (req, res) => {
+    const user = req.session.user;
+    const assignment = user.allAssignments.find(a => a.name === user.selectedCompany && a.class === req.body.division);
+    if (assignment) {
+        req.session.user.selectedDivision = assignment.class;
+        req.session.user.selectedJobLevel = assignment.jobLevel;
+    }
+    res.redirect('/');
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/login');
+});
+
+// --- APP ROUTES ---
+app.get('/', checkAuth, (req, res) => {
+    const u = req.session.user;
     const employeesData = readJson('employees.json');
     const budgetsData = readJson('budgets.json');
     const companiesData = readJson('companies.json');
     const vendorsData = readJson('vendors.json');
-    const departmentsData = readJson('departments.json');
-
     const requests = readJson('requests.json');
+
     const usedBudgets = {};
     requests.forEach(r => {
         if (r.status === 'APPROVED' && r.items) {
             r.items.forEach(item => {
                 const bId = item.budgetId;
                 const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                if (!usedBudgets[bId]) usedBudgets[bId] = 0;
-                usedBudgets[bId] += amt;
+                usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
             });
         }
     });
@@ -88,48 +129,37 @@ app.get('/', (req, res) => {
         remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0)
     }));
 
-    // Non-IT users: lock divisi to their own class only
-    const userDivisi = u.class;
-
-    // Find department info for the user's class
-    const userDeptInfo = departmentsData.find(d => d.class === userDivisi);
-    const deptName = userDeptInfo ? userDeptInfo.name : null;
-
-    // Find all classes under the same department name
-    const siblingClasses = deptName
-        ? departmentsData.filter(d => d.name === deptName).map(d => d.class)
-        : [userDivisi];
-
-    let filteredEmployees;
-    if (u.class === 'IT') {
-        filteredEmployees = employeesData;
-    } else {
-        const ownClassEmployees = employeesData.filter(e => e.class === userDivisi);
-        const siblingManagers = employeesData.filter(e =>
-            siblingClasses.includes(e.class) &&
-            e.class !== userDivisi &&
-            ['Manager', 'Direktur', 'Komisaris'].includes(e.jobLevel)
-        );
-        const merged = [...ownClassEmployees];
-        siblingManagers.forEach(m => {
-            if (!merged.find(e => e.fullName === m.fullName)) merged.push(m);
-        });
-        filteredEmployees = merged;
+    let editData = null;
+    if (req.query.revisi) {
+        editData = requests.find(r => r.id === req.query.revisi);
     }
 
     res.render('form', {
-        employees: filteredEmployees,
+        employees: employeesData,
         budgets: budgetsWithRemaining,
         companies: companiesData,
         vendors: vendorsData,
-        title: 'Form Request Payment',
-        userDivisi: u.class === 'IT' ? null : userDivisi
+        title: editData ? 'Revisi Request Payment' : 'Form Request Payment',
+        selectedCompany: u.selectedCompany,
+        selectedDivision: u.selectedDivision,
+        selectedJobLevel: u.selectedJobLevel,
+        editData: editData
     });
 });
 
-app.get('/api/employees/:department', (req, res) => res.json(employees.filter(e => e.class === req.params.department)));
-app.get('/api/budgets/:department', (req, res) => {
-    console.log(`[API] Fetching budgets for department: ${req.params.department}`);
+app.get('/api/employees/:department', checkAuth, (req, res) => {
+    const dept = req.params.department;
+    const company = req.query.company;
+    const employeesData = readJson('employees.json');
+    let filtered = employeesData.filter(e => {
+        if (!e.companies) return e.class === dept;
+        return e.companies.some(assign => (assign.class === dept && (!company || assign.name === company)));
+    });
+    res.json(filtered);
+});
+
+app.get('/api/budgets/:department', checkAuth, (req, res) => {
+    const budgetsData = readJson('budgets.json');
     const requests = readJson('requests.json');
     const usedBudgets = {};
     requests.forEach(r => {
@@ -137,267 +167,181 @@ app.get('/api/budgets/:department', (req, res) => {
             r.items.forEach(item => {
                 const bId = item.budgetId;
                 const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                if (!usedBudgets[bId]) usedBudgets[bId] = 0;
-                usedBudgets[bId] += amt;
+                usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
             });
         }
     });
-
-    const deptParam = req.params.department.toLowerCase();
-    const filtered = budgets.filter(b => (b.department || '').toLowerCase() === deptParam).map(b => {
-        const used = usedBudgets[b.id] || 0;
-        return {
-            ...b,
-            remainingAmount: (b.totalAmount || 0) - used
-        };
-    });
-    
-    console.log(`[API] Found ${filtered.length} budgets for ${req.params.department}`);
+    const filtered = budgetsData.filter(b => (b.department || '').toLowerCase() === req.params.department.toLowerCase()).map(b => ({
+        ...b,
+        remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0)
+    }));
     res.json(filtered);
 });
-app.get('/api/departments', (req, res) => {
+
+app.get('/api/departments', checkAuth, (req, res) => {
     const depts = readJson('departments.json');
     res.json([...new Set(depts.map(d => d.class).filter(Boolean))].sort());
 });
-app.get('/api/managers/:department', (req, res) => res.json(employees.filter(e => e.class === req.params.department && (e.jobLevel === 'Manager' || e.jobLevel === 'Direktur' || e.jobLevel === 'Komisaris'))));
 
-app.get('/api/next-frp-number/:department', (req, res) => {
+app.get('/api/managers/:department', checkAuth, (req, res) => {
+    const dept = req.params.department;
+    const company = req.query.company;
+    const employeesData = readJson('employees.json');
+    let filtered = employeesData.filter(e => {
+        if (!e.companies) return false;
+        return e.companies.some(assign => (assign.class === dept && (!company || assign.name === company) && ['Manager', 'Direktur', 'Komisaris'].includes(assign.jobLevel)));
+    });
+    res.json(filtered);
+});
+
+app.get('/api/next-frp-number/:department', checkAuth, (req, res) => {
     const requests = readJson('requests.json');
-    const now = new Date();
-    const yearStr = now.getFullYear().toString().slice(-2);
+    const departmentsData = readJson('departments.json');
     const dept = req.params.department.toUpperCase();
-    
-    // Get dept code from Master Department
-    const deptData = departments.find(d => d.class === dept || d.name === dept);
+    const deptData = departmentsData.find(d => d.class === dept || d.name === dept);
     const deptCode = deptData ? deptData.kodeFrp : dept.substring(0, 3).toUpperCase();
-    
-    const prefix = `FRP-${deptCode}-${yearStr}-`;
-    const sameYearDeptRequests = requests.filter(r => r.frpNo && r.frpNo.startsWith(prefix));
-    
-    let nextSeq = 1;
-    if (sameYearDeptRequests.length > 0) {
-        const sequences = sameYearDeptRequests.map(r => {
-            const parts = r.frpNo.split('-');
-            return parseInt(parts[parts.length - 1], 10) || 0;
-        });
-        nextSeq = Math.max(...sequences) + 1;
-    }
-    
-    const frpNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
-    res.json({ frpNo });
+    const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
+    const sequences = requests.filter(r => r.frpNo && r.frpNo.startsWith(prefix)).map(r => parseInt(r.frpNo.split('-').pop(), 10) || 0);
+    const nextSeq = Math.max(0, ...sequences) + 1;
+    res.json({ frpNo: `${prefix}${nextSeq.toString().padStart(5, '0')}` });
 });
 
 // --- ADMIN ROUTES ---
-app.get('/admin/:type', checkIT, (req, res) => {
+app.get('/admin/:type', checkAuth, checkIT, (req, res) => {
     const type = req.params.type;
-    if(!['employees','vendors','budgets','departments'].includes(type)) return res.redirect('/');
-    
-    // Read directly from file to ensure data is always fresh
+    if(!['employees','vendors','budgets','departments','roles'].includes(type)) return res.redirect('/');
     let listData = readJson(`${type}.json`);
-    
-    let title = 'Admin Master Data';
-    if(type === 'employees') { title = 'Master Karyawan'; }
-    if(type === 'vendors') { title = 'Master Vendor'; }
-    if(type === 'budgets') { title = 'Master Budget'; }
-    if(type === 'departments') { title = 'Master Department'; }
-    
-    // Add original index for simple operations
-    listData = listData.map((item, index) => ({ ...item, originalIndex: index }));
-    
-    let employeeList = readJson('employees.json');
-    res.render('admin', { activeType: type, listData, employeeList, title });
+    res.render('admin', { activeType: type, listData: listData.map((item, index) => ({ ...item, originalIndex: index })), employeeList: readJson('employees.json'), title: `Master ${type.charAt(0).toUpperCase() + type.slice(1)}` });
 });
 
-app.post('/api/admin/:type/add', checkIT, (req, res) => {
+app.post('/api/admin/:type/add', checkAuth, checkIT, (req, res) => {
     const type = req.params.type;
-    if(type === 'employees') { employees.push(req.body); writeJson('employees.json', employees); }
-    if(type === 'vendors') { vendors.push(req.body); writeJson('vendors.json', vendors); }
-    if(type === 'budgets') { 
-        const b = req.body;
-        if(b.totalAmount) b.totalAmount = parseInt(String(b.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
-        budgets.push(b); 
-        writeJson('budgets.json', budgets); 
-    }
-    if(type === 'departments') { departments.push(req.body); writeJson('departments.json', departments); }
+    const data = readJson(`${type}.json`);
+    let newItem = req.body;
+    if(type === 'employees' && newItem.companies && !Array.isArray(newItem.companies)) newItem.companies = Object.values(newItem.companies);
+    if(type === 'budgets' && newItem.totalAmount) newItem.totalAmount = parseInt(String(newItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
+    data.push(newItem);
+    writeJson(`${type}.json`, data);
     res.redirect(`/admin/${type}`);
 });
 
-app.post('/api/admin/:type/delete/:index', checkIT, (req, res) => {
+app.post('/api/admin/:type/delete/:index', checkAuth, checkIT, (req, res) => {
     const type = req.params.type;
-    const index = parseInt(req.params.index, 10);
-    if(type === 'employees') { employees.splice(index, 1); writeJson('employees.json', employees); }
-    if(type === 'vendors') { vendors.splice(index, 1); writeJson('vendors.json', vendors); }
-    if(type === 'budgets') { budgets.splice(index, 1); writeJson('budgets.json', budgets); }
-    if(type === 'departments') { departments.splice(index, 1); writeJson('departments.json', departments); }
+    const data = readJson(`${type}.json`);
+    data.splice(parseInt(req.params.index, 10), 1);
+    writeJson(`${type}.json`, data);
     res.redirect(`/admin/${type}`);
 });
 
-app.post('/api/admin/:type/edit/:index', checkIT, (req, res) => {
+app.post('/api/admin/:type/edit/:index', checkAuth, checkIT, (req, res) => {
     const type = req.params.type;
-    const index = parseInt(req.params.index, 10);
-    if(type === 'employees') { employees[index] = req.body; writeJson('employees.json', employees); }
-    if(type === 'vendors') { vendors[index] = req.body; writeJson('vendors.json', vendors); }
-    if(type === 'departments') { departments[index] = req.body; writeJson('departments.json', departments); }
-    if(type === 'budgets') { 
-        const updated = req.body;
-        if(updated.totalAmount) updated.totalAmount = parseInt(String(updated.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
-        budgets[index] = updated; 
-        writeJson('budgets.json', budgets); 
-    }
+    const data = readJson(`${type}.json`);
+    let updatedItem = req.body;
+    if(type === 'employees' && updatedItem.companies && !Array.isArray(updatedItem.companies)) updatedItem.companies = Object.values(updatedItem.companies);
+    if(type === 'budgets' && updatedItem.totalAmount) updatedItem.totalAmount = parseInt(String(updatedItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
+    data[parseInt(req.params.index, 10)] = updatedItem;
+    writeJson(`${type}.json`, data);
     res.redirect(`/admin/${type}`);
 });
-// --------------------
 
-app.post('/api/frp/save', (req, res) => {
+app.post('/api/frp/save', checkAuth, (req, res) => {
     try {
         let requests = readJson('requests.json');
         
-        // --- Sequential Numbering Logic ---
-        const now = new Date();
-        const yearStr = now.getFullYear().toString().slice(-2);
-        const dept = (req.body.divisi || 'GENERAL').toUpperCase();
-        
-        // 1. Get dept code from Master Department
-        const deptData = departments.find(d => d.class === dept || d.name === dept);
-        const deptCode = deptData ? deptData.kodeFrp : dept.substring(0, 3).toUpperCase();
-        
-        const prefix = `FRP-${deptCode}-${yearStr}-`;
-        
-        // 2. Find highest sequence for this prefix
-        const sameYearDeptRequests = requests.filter(r => r.frpNo && r.frpNo.startsWith(prefix));
-        let nextSeq = 1;
-        
-        if (sameYearDeptRequests.length > 0) {
-            const sequences = sameYearDeptRequests.map(r => {
-                const parts = r.frpNo.split('-');
-                return parseInt(parts[parts.length - 1], 10) || 0;
-            });
-            nextSeq = Math.max(...sequences) + 1;
+        if (req.body.frpId) {
+            // Revisi - Update existing
+            const idx = requests.findIndex(r => r.id === req.body.frpId);
+            if (idx === -1) return res.json({ success: false, error: 'FRP not found for revision' });
+            
+            const updatedReq = { 
+                ...requests[idx], 
+                ...req.body, 
+                id: requests[idx].id, 
+                frpNo: requests[idx].frpNo, 
+                status: 'PENDING' 
+            };
+            delete updatedReq.frpId;
+            requests[idx] = updatedReq;
+            writeJson('requests.json', requests);
+            return res.json({ success: true, id: updatedReq.id, frpNo: updatedReq.frpNo });
         }
-        
-        const frpNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
-        // ----------------------------------
 
-        const newReq = {
-            id: Date.now().toString(36),
-            ...req.body,
-            frpNo: frpNo,
-            requestBy: req.body.dimintaOleh || req.session.user.fullName, // Auto-fill Request By from Diminta Oleh
-            status: 'PENDING',
-            createdBy: req.session.user.fullName,
-            createdAt: new Date().toISOString()
-        };
-        
+        // New Request
+        const departmentsData = readJson('departments.json');
+        const dept = (req.body.divisi || 'GENERAL').toUpperCase();
+        const deptData = departmentsData.find(d => d.class === dept || d.name === dept);
+        const deptCode = deptData ? deptData.kodeFrp : dept.substring(0, 3).toUpperCase();
+        const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
+        const sequences = requests.filter(r => r.frpNo && r.frpNo.startsWith(prefix)).map(r => parseInt(r.frpNo.split('-').pop(), 10) || 0);
+        const nextSeq = Math.max(0, ...sequences) + 1;
+        const frpNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
+        const newReq = { id: Date.now().toString(36), ...req.body, frpNo: frpNo, requestBy: req.body.dimintaOleh || 'System', status: 'PENDING', createdBy: req.session.user.fullName, createdAt: new Date().toISOString() };
         requests.push(newReq);
         writeJson('requests.json', requests);
-        
-        console.log(`[SERVER] Saved new FRP: ${frpNo}`);
         res.json({ success: true, id: newReq.id, frpNo: frpNo });
-    } catch(e) {
-        console.error(`[SERVER ERROR] ${e.message}`);
-        res.json({ success: false, error: e.message });
-    }
+    } catch(e) { res.json({ success: false, error: e.message }); }
 });
 
-app.get('/approval', (req, res) => {
-    const requests = readJson('requests.json');
+app.get('/approval', checkAuth, (req, res) => {
     const u = req.session.user;
-    let pending = requests.filter(r => r.status === 'PENDING');
-    
-    // Scoping: IT can see all, others only see their own division
-    if (u.class !== 'IT') {
-        pending = pending.filter(r => r.divisi === u.class);
+    let reqs = readJson('requests.json').filter(r => r.status === 'PENDING');
+    if (u.role !== 'administrator' && u.selectedDivision) {
+        reqs = reqs.filter(r => r.divisi === u.selectedDivision);
     }
-
-    res.render('approval', { requests: pending, title: 'Approval List', isApprovedView: false });
+    const canApprove = u.role === 'administrator' || ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
+    res.render('approval', { requests: reqs, title: 'Approval List', isApprovedView: false, canApprove });
 });
 
-app.get('/approved', (req, res) => {
-    const requests = readJson('requests.json');
+app.get('/approved', checkAuth, (req, res) => {
     const u = req.session.user;
-    let approved = requests.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED');
-    
-    // Scoping: IT can see all, others only see their own division
-    if (u.class !== 'IT') {
-        approved = approved.filter(r => r.divisi === u.class);
+    let reqs = readJson('requests.json').filter(r => r.status === 'APPROVED' || r.status === 'REJECTED');
+    if (u.role !== 'administrator' && u.selectedDivision) {
+        reqs = reqs.filter(r => r.divisi === u.selectedDivision);
     }
-
-    res.render('approval', { requests: approved, title: 'Approved List', isApprovedView: true });
+    const canApprove = u.role === 'administrator' || ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
+    res.render('approval', { requests: reqs, title: 'Approved List', isApprovedView: true, canApprove });
+});
+app.get('/frp/:id', checkAuth, (req, res) => {
+    const data = readJson('requests.json').find(r => r.id === req.params.id);
+    if (!data) return res.send('Not found');
+    res.render('popup-detail', { 
+        data, 
+        employees: readJson('employees.json'), 
+        budgets: readJson('budgets.json'), 
+        companies: readJson('companies.json'), 
+        vendors: readJson('vendors.json'), 
+        title: 'Detail FRP',
+        user: req.session.user 
+    });
 });
 
-app.get('/frp/:id', (req, res) => {
-    const u = req.session.user;
-    const reqData = readJson('requests.json').find(r => r.id === req.params.id);
-    if (!reqData) return res.send('Not found');
-    // Security: non-IT users can only view FRP from their own division
-    if (u.class !== 'IT' && reqData.divisi !== u.class) {
-        return res.status(403).send('Akses ditolak: FRP ini bukan dari divisi Anda.');
-    }
-    res.render('popup-detail', { data: reqData, employees, budgets, companies, vendors, title: 'Detail FRP' });
-});
-
-app.post('/api/frp/:id/:action', (req, res) => {
-    const { id, action } = req.params;
+app.post('/api/frp/:id/:action', checkAuth, (req, res) => {
     let requests = readJson('requests.json');
-    const index = requests.findIndex(r => r.id === id);
-    if(index === -1) return res.json({ success: false });
-
-    if(action === 'approve') {
-        requests[index].status = 'APPROVED';
-        requests[index].approvedBy = req.session.user.fullName; // Untuk tampilan PDF
-        requests[index].approvedByActual = req.session.user.fullName; // Audit trail
-        requests[index].approvedAt = new Date().toISOString();
-    } else if(action === 'reject') {
-        requests[index].status = 'REJECTED';
-    } else if(action === 'delete') {
-        requests.splice(index, 1);
-    } else if(action === 'revert') {
-        requests[index].status = 'PENDING';
-        delete requests[index].approvedBy;
-        delete requests[index].approvedByActual;
-        delete requests[index].approvedAt;
-    } else if(action === 'update') {
-        const preserve = {
-            id: requests[index].id,
-            status: requests[index].status,
-            createdBy: requests[index].createdBy,
-            createdAt: requests[index].createdAt,
-            frpNo: requests[index].frpNo // don't change generated number
-        };
-        requests[index] = { ...requests[index], ...req.body, ...preserve };
-    }
+    const idx = requests.findIndex(r => r.id === req.params.id);
+    if(idx === -1) return res.json({ success: false });
+    const action = req.params.action;
+    if(action === 'approve') { requests[idx].status = 'APPROVED'; requests[idx].approvedBy = req.session.user.fullName; requests[idx].approvedAt = new Date().toISOString(); }
+    else if(action === 'reject') requests[idx].status = 'REJECTED';
+    else if(action === 'delete') requests.splice(idx, 1);
+    else if(action === 'revert') { requests[idx].status = 'PENDING'; delete requests[idx].approvedBy; delete requests[idx].approvedAt; }
+    else if(action === 'update') { requests[idx] = { ...requests[idx], ...req.body, id: requests[idx].id, status: requests[idx].status, frpNo: requests[idx].frpNo }; }
     writeJson('requests.json', requests);
     res.json({ success: true });
 });
 
-app.post('/preview', (req, res) => {
-  const formData = req.body;
-  res.render('pdf-template', { formData, preview: true });
-});
-
-app.post('/generate-pdf', async (req, res) => {
+app.post('/preview', checkAuth, (req, res) => res.render('pdf-template', { formData: req.body, preview: true }));
+app.post('/generate-pdf', checkAuth, async (req, res) => {
   try {
-    const formData = req.body;
-    const ejs = require('ejs');
-    const templatePath = path.join(frontendPath, 'views', 'pdf-template.ejs');
-    const html = await ejs.renderFile(templatePath, { formData, preview: false });
-
+    const html = await require('ejs').renderFile(path.join(frontendPath, 'views', 'pdf-template.ejs'), { formData: req.body, preview: false });
     const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' } });
     await browser.close();
-
-    const filename = `FRP-${formData.frpNo || 'DRAFT'}-${Date.now()}.pdf`;
-    const pdfPath = path.join(__dirname, 'generated-pdfs', filename);
-    fs.writeFileSync(pdfPath, pdfBuffer);
-
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="FRP-${req.body.frpNo || 'DRAFT'}.pdf"`);
     res.send(pdfBuffer);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to generate PDF', details: error.message });
-  }
+  } catch (error) { res.status(500).json({ error: 'Failed to generate PDF', details: error.message }); }
 });
 
 app.listen(PORT, () => { console.log(`\n🚀 FRP Backend running at http://localhost:${PORT}\n`); });

@@ -31,16 +31,27 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('paymentDate').value = today;
   
     function initDropdowns() {
-      // If divisi is already locked (non-IT user), skip building the dropdown
-      if (!divisiSelect.disabled) {
-        const departments = [...new Set(allEmployees.map(e => e.class).filter(Boolean))].sort();
+      // If divisi is a select (Administrator), populate it
+      if (divisiSelect.tagName === 'SELECT') {
+        const depts = new Set();
+        allEmployees.forEach(e => {
+          if (e.companies && Array.isArray(e.companies)) {
+            e.companies.forEach(c => depts.add(c.class));
+          } else if (e.class) {
+            depts.add(e.class);
+          }
+        });
+        const departments = [...depts].filter(Boolean).sort();
+        const initialVal = divisiSelect.value;
+        divisiSelect.innerHTML = '<option value="">Pilih Divisi</option>';
         departments.forEach(dept => {
           const opt = document.createElement('option');
           opt.value = dept; opt.textContent = dept;
+          if (dept === initialVal) opt.selected = true;
           divisiSelect.appendChild(opt);
         });
       }
-      // Always trigger cascade update (handles locked divisi for non-IT users)
+      
       updateAllCascadingData();
       handleCurrencyChange();
       toggleDivisiVisibility();
@@ -69,21 +80,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   
     function updateAllCascadingData() {
-      const company = companyNameSelect.value;
-      const isPNM = company === 'PT PILAR NIAGA MAKMUR';
-      const dept = divisiSelect.value;
+      const company = (companyNameSelect.value || '').trim();
+      const dept = (divisiSelect.value || '').trim();
       
-      const deptEmployees = allEmployees.filter(emp => emp.class === dept);
-      populateSelect(dimintaOlehSelect, deptEmployees, 'Pilih Karyawan');
-      if (requestBySelect) populateSelect(requestBySelect, deptEmployees, 'Pilih Karyawan');
-      
-      const deptManagers = allEmployees.filter(emp => 
-        emp.class === dept && (emp.jobLevel === 'Manager' || emp.jobLevel === 'Direktur' || emp.jobLevel === 'Komisaris')
-      );
-      const managersToShow = deptManagers.length > 0 ? deptManagers : allEmployees.filter(emp => emp.jobLevel === 'Manager' || emp.jobLevel === 'Direktur');
-      if (approvedBySelect) populateSelect(approvedBySelect, managersToShow, 'Pilih Manager/Head');
+      // For administrators, we might want to filter employees based on selection too
+      if (dimintaOlehSelect.tagName === 'SELECT') {
+        const deptEmployees = allEmployees.filter(emp => {
+          if (!emp.companies) return emp.class === dept;
+          return emp.companies.some(c => (!dept || c.class === dept) && (!company || c.name === company));
+        });
+        
+        // Keep current selection if still valid
+        const currentVal = dimintaOlehSelect.value;
+        populateSelect(dimintaOlehSelect, deptEmployees, 'Pilih Karyawan');
+        if (deptEmployees.some(e => e.fullName === currentVal)) dimintaOlehSelect.value = currentVal;
+      }
 
-      // Always filter by department now since it's always visible and auto-selected for PKS/PKP
+      // We still update budgets because they are critical
       document.querySelectorAll('.item-budget').forEach(sel => populateBudgetDropdown(sel, dept));
       generateFRPNumber();
     }
@@ -363,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
     btnSaveSubmit.addEventListener('click', async () => {
       if (!form.checkValidity()) { form.reportValidity(); return; }
+      if (!confirm('Anda yakin ingin menyimpan dan men-submit form FRP ini?')) return;
       const rows = document.querySelectorAll('.line-item-row');
       const budgetTotals = {};
       rows.forEach(row => {

@@ -21,7 +21,7 @@
       <span class="material-icons-round brand-icon">payments</span>
       <div>
         <h1 class="nav-title">FRP System</h1>
-        <p class="nav-subtitle">Halo, <%= locals.user ? user.fullName : 'Guest' %></p>
+        <p class="nav-subtitle">Halo, <%= user.fullName %> (<%= user.selectedJobLevel %>)</p>
       </div>
     </div>
     <div class="nav-links">
@@ -37,10 +37,22 @@
         <span class="material-icons-round">check_circle</span>
         <span>Approved</span>
       </a>
-      <% if(locals.user && user.class === 'IT') { %>
+      <% if(user.role === 'administrator') { %>
         <a href="/admin/employees" class="nav-link" style="color: var(--primary-dark);">
           <span class="material-icons-round">admin_panel_settings</span>
           <span>Master Data</span>
+        </a>
+      <% } %>
+      <% 
+        const _assignments = user.allAssignments || [];
+        const _companies = [...new Set(_assignments.map(a => a.name))];
+        const _backUrl = _companies.length > 1 ? '/select-company' : '/select-division';
+        const _showBack = _assignments.length > 1;
+      %>
+      <% if(_showBack) { %>
+        <a href="<%= _backUrl %>" class="nav-link" style="color: var(--gray-600);">
+          <span class="material-icons-round">swap_horiz</span>
+          <span>Ganti Akses</span>
         </a>
       <% } %>
       <a href="/logout" class="nav-link" style="color: var(--danger);">
@@ -74,18 +86,15 @@
           <div class="form-grid cols-2">
             <div class="form-group">
               <label for="companyName">Company Name</label>
-              <% if(locals.user && user.class !== 'IT') { %>
-                <select id="companyName" name="companyName" disabled style="background:#f1f5f9; cursor:not-allowed; color:#1e293b; font-weight:700;">
-                  <option value="<%= user.company %>" selected><%= user.company %></option>
-                </select>
-                <input type="hidden" name="companyName" value="<%= user.company %>">
-              <% } else { %>
+              <% if(user.role === 'administrator') { %>
                 <select id="companyName" name="companyName" required>
                   <option value="">Pilih Company</option>
                   <% companies.forEach(c => { %>
-                    <option value="<%= c.name %>" <%= (locals.user && user.company === c.name) ? 'selected' : '' %>><%= c.name %></option>
+                    <option value="<%= c.name %>" <%= selectedCompany === c.name ? 'selected' : '' %>><%= c.name %></option>
                   <% }); %>
                 </select>
+              <% } else { %>
+                <input type="text" id="companyName" name="companyName" value="<%= selectedCompany %>" readonly style="background:#f1f5f9; cursor:not-allowed; font-weight:700;">
               <% } %>
             </div>
             <div class="form-group">
@@ -96,24 +105,27 @@
           <div class="form-grid cols-3">
             <div class="form-group" id="divisiContainer">
               <label for="divisi">Divisi</label>
-              <% if (locals.userDivisi) { %>
-                <%/* Non-IT: locked to their own division */%>
-                <select id="divisi" name="divisi" required disabled style="background:#f1f5f9; cursor:not-allowed; color:#475569;">
-                  <option value="<%= userDivisi %>" selected><%= userDivisi %></option>
-                </select>
-                <input type="hidden" name="divisi" value="<%= userDivisi %>">
-              <% } else { %>
-                <%/* IT: can see all divisions */%>
+              <% if(user.role === 'administrator') { %>
                 <select id="divisi" name="divisi" required>
                   <option value="">Pilih Divisi</option>
+                  <% /* Will be populated via JS */ %>
                 </select>
+              <% } else { %>
+                <input type="text" id="divisi" name="divisi" value="<%= selectedDivision %>" readonly style="background:#f1f5f9; cursor:not-allowed; font-weight:700;">
               <% } %>
             </div>
             <div class="form-group">
               <label for="dimintaOleh">Diminta Oleh</label>
-              <select id="dimintaOleh" name="dimintaOleh" required>
-                <option value="">Pilih Karyawan</option>
-              </select>
+              <% if(user.role === 'administrator') { %>
+                <select id="dimintaOleh" name="dimintaOleh" required>
+                  <option value="">Pilih Karyawan</option>
+                  <% employees.forEach(e => { %>
+                    <option value="<%= e.fullName %>" <%= user.fullName === e.fullName ? 'selected' : '' %>><%= e.fullName %></option>
+                  <% }); %>
+                </select>
+              <% } else { %>
+                <input type="text" id="dimintaOleh" name="dimintaOleh" value="<%= user.fullName %>" readonly style="background:#f1f5f9; cursor:not-allowed; font-weight:700;">
+              <% } %>
             </div>
           </div>
           <div class="form-grid cols-3">
@@ -194,10 +206,17 @@
               <label for="bankTujuan">Bank Tujuan</label>
               <input type="text" id="bankTujuan" name="bankTujuan" placeholder="Nama bank tujuan">
             </div>
-            <div class="form-group full-width">
+            <div class="form-group">
               <label for="rekBankTujuan">Rekening Bank Tujuan</label>
               <input type="text" id="rekBankTujuan" name="rekBankTujuan" placeholder="Nomor rekening a/n penerima">
             </div>
+          </div>
+          <div class="form-grid cols-2" style="margin-top: 15px;">
+            <div class="form-group">
+              <label for="attachLink">Attach Link (Dokumen Pendukung)</label>
+              <input type="url" id="attachLink" name="attachLink" placeholder="Contoh: https://drive.google.com/...">
+            </div>
+            <div></div> <!-- Spacer -->
           </div>
         </div>
 
@@ -337,7 +356,61 @@
     const allBudgets = <%- JSON.stringify(budgets) %>;
     const allCompanies = <%- JSON.stringify(companies) %>;
     const allVendors = <%- JSON.stringify(vendors) %>;
+    const editData = <%- JSON.stringify(locals.editData || null) %>;
   </script>
   <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (editData) {
+        // add hidden frpId input
+        const form = document.getElementById('frpForm');
+        const hiddenId = document.createElement('input');
+        hiddenId.type = 'hidden';
+        hiddenId.name = 'frpId';
+        hiddenId.value = editData.id;
+        form.appendChild(hiddenId);
+
+        // Populate fields
+        for (const [key, val] of Object.entries(editData)) {
+            const el = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+            if (el && key !== 'items' && key !== 'checkDocs') {
+                el.value = val;
+                el.dispatchEvent(new Event('change'));
+                el.dispatchEvent(new Event('input'));
+            }
+        }
+        
+        // Populate checkDocs
+        if (editData.checkDocs && Array.isArray(editData.checkDocs)) {
+            document.querySelectorAll('input[name="checkDocs[]"]').forEach(cb => {
+                cb.checked = editData.checkDocs.includes(cb.value);
+            });
+        }
+        
+        // Populate items
+        if (editData.items && editData.items.length > 0) {
+            const tbody = document.getElementById('lineItemsBody');
+            while (tbody.children.length < editData.items.length) {
+                document.getElementById('btnAddRow').click();
+            }
+            
+            const rows = tbody.querySelectorAll('.line-item-row');
+            setTimeout(() => {
+                editData.items.forEach((item, index) => {
+                    if (rows[index]) {
+                        rows[index].querySelector('.item-memo').value = item.memo || '';
+                        const budgetSelect = rows[index].querySelector('.item-budget');
+                        if(budgetSelect) budgetSelect.value = item.budgetId || '';
+                        rows[index].querySelector('.item-qty').value = item.qty || '1';
+                        rows[index].querySelector('.item-harga').value = item.hargaSatuan || '0';
+                        rows[index].querySelector('.item-amount').value = item.amount || '0';
+                        rows[index].querySelector('.item-harga').dispatchEvent(new Event('input'));
+                    }
+                });
+            }, 100); // slight delay to allow datalists/dropdowns to initialize
+        }
+      }
+    });
+  </script>
 </body>
 </html>

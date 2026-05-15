@@ -73,7 +73,7 @@
       <span class="material-icons-round brand-icon">payments</span>
       <div>
         <h1 class="nav-title">FRP System</h1>
-        <p class="nav-subtitle">Halo, <%= user.fullName %> (<%= user.class %>)</p>
+        <p class="nav-subtitle">Halo, <%= locals.user ? user.fullName : 'Guest' %></p>
       </div>
     </div>
     <div class="nav-links">
@@ -83,10 +83,22 @@
         <span class="material-icons-round">check_circle</span>
         <span>Approved</span>
       </a>
-      <% if(locals.user && user.class === 'IT') { %>
+      <% if(locals.user && user.role === 'administrator') { %>
         <a href="/admin/employees" class="nav-link" style="color: var(--primary-dark);">
           <span class="material-icons-round">admin_panel_settings</span>
           <span>Master Data</span>
+        </a>
+      <% } %>
+      <% 
+        const _assignments = (locals.user && user.allAssignments) ? user.allAssignments : [];
+        const _companies = [...new Set(_assignments.map(a => a.name))];
+        const _backUrl = _companies.length > 1 ? '/select-company' : '/select-division';
+        const _showBack = _assignments.length > 1;
+      %>
+      <% if(_showBack) { %>
+        <a href="<%= _backUrl %>" class="nav-link" style="color: var(--gray-600);">
+          <span class="material-icons-round">swap_horiz</span>
+          <span>Ganti Akses</span>
         </a>
       <% } %>
       <a href="/logout" class="nav-link" style="color: var(--danger);">
@@ -135,13 +147,11 @@
             <div></div> <!-- Spacer -->
           <% } %>
 
-          <% if (user.class === 'IT') { %>
           <div class="filter-group">
             <label><span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">business</span> Divisi</label>
             <select id="divisionFilter" onchange="filterTable()">
               <option value="">Semua Divisi</option>
               <% 
-                // Mendapatkan list divisi unik dari requests
                 const divisions = [...new Set(requests.map(r => r.divisi))].sort();
                 divisions.forEach(d => { 
               %>
@@ -149,9 +159,6 @@
               <% }); %>
             </select>
           </div>
-          <% } else { %>
-            <div></div> <!-- Spacer -->
-          <% } %>
         </div>
       </div>
 
@@ -170,6 +177,7 @@
                 <th>Total Nominal</th>
                 <% if (isApprovedView) { %><th>Approved By</th><% } %>
                 <th>Status</th>
+                <% if (canApprove && !isApprovedView) { %><th>Aksi</th><% } %>
               </tr>
             </thead>
             <tbody>
@@ -200,6 +208,16 @@
                     <td><%= r.approvedBy || r.approvedByActual || '-' %></td>
                   <% } %>
                   <td><span class="status-badge status-<%= r.status %>"><%= r.status %></span></td>
+                  <% if (canApprove && !isApprovedView) { %>
+                  <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+                    <button onclick="doAction('<%= r.id %>','approve')" style="background:#dcfce7;color:#16a34a;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;margin-right:4px;">
+                      <span class="material-icons-round" style="font-size:14px;vertical-align:middle;">check</span> Approve
+                    </button>
+                    <button onclick="doAction('<%= r.id %>','reject')" style="background:#fee2e2;color:#dc2626;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:700;">
+                      <span class="material-icons-round" style="font-size:14px;vertical-align:middle;">close</span> Reject
+                    </button>
+                  </td>
+                  <% } %>
                 </tr>
               <% }); %>
             </tbody>
@@ -244,6 +262,14 @@
       modal.classList.remove('active');
       document.body.style.overflow = 'auto';
       iframe.src = '';
+    }
+
+    async function doAction(id, action) {
+      if (!confirm(action === 'approve' ? 'Approve pengajuan ini?' : 'Reject pengajuan ini?')) return;
+      const res = await fetch(`/api/frp/${id}/${action}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) window.location.reload();
+      else alert('Gagal melakukan aksi');
     }
     
     // Close on click outside
