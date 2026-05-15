@@ -21,8 +21,8 @@ function getBlankForm(type) {
 const S = {
   card: { background: 'white', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', marginBottom: '1.5rem' },
   addCard: { background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1', padding: '1.5rem', marginBottom: '1.5rem' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { padding: '10px 14px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', background: '#f8fafc', fontWeight: 600, color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0 },
+  th: { position: 'sticky', top: 0, zIndex: 2, padding: '10px 14px', textAlign: 'left', boxShadow: '0 2px 0 #e2e8f0', background: '#f8fafc', fontWeight: 600, color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' },
   td: { padding: '12px 14px', textAlign: 'left', borderBottom: '1px solid #f1f5f9', fontSize: '0.9rem' },
   formGroup: { marginBottom: '1rem' },
   label: { display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#475569', fontSize: '0.875rem' },
@@ -319,7 +319,7 @@ export default function AdminPage() {
                 )}
               </div>
 
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 420px)' }}>
                 <table style={S.table}>
                   <TableHeadRow type={type} />
                   <tbody>

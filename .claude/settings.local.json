@@ -12,7 +12,10 @@
       "Bash(node -e ' *)",
       "Bash(node server.js)",
       "Bash(curl -s http://localhost:3000/api/data/approval?view=pending)",
-      "Bash(findstr \":3000.*LISTENING\")"
+      "Bash(findstr \":3000.*LISTENING\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne \"node_modules\" } | Select-Object Name, LastWriteTime)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne \"node_modules\" })",
+      "Bash(del \"C:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\frontend\\\\src\\\\pages\\\\HistoryPage.jsx\")"
     ]
   }
 }

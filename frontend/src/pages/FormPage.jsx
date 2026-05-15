@@ -1,7 +1,53 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Header from '../components/Header'
+
+function Combobox({ name, value, onChange, options, placeholder = 'Pilih...', style }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef(null)
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
+
+  useEffect(() => {
+    if (!open) setSearch('')
+  }, [open])
+
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }} onClick={() => setOpen(o => !o)}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: value ? '#1e293b' : '#94a3b8', flex: 1 }}>{value || placeholder}</span>
+        <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', flexShrink: 0, transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, background: 'white', border: '1.5px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', zIndex: 200, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '260px' }}>
+          <div style={{ padding: '8px 8px 4px' }}>
+            <input autoFocus value={search} onChange={e => setSearch(e.target.value)} onClick={e => e.stopPropagation()} placeholder="Cari..." style={{ width: '100%', padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #e2e8f0', fontSize: '0.85rem', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit', background: '#f8fafc' }} />
+          </div>
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            {value && <div onClick={() => { onChange(''); setOpen(false) }} style={{ padding: '8px 12px', fontSize: '0.875rem', color: '#94a3b8', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>— Kosongkan</div>}
+            {filtered.length === 0 && <div style={{ padding: '12px', color: '#94a3b8', fontSize: '0.875rem', textAlign: 'center' }}>Tidak ditemukan</div>}
+            {filtered.map(opt => (
+              <div key={opt} onClick={() => { onChange(opt); setOpen(false) }}
+                style={{ padding: '9px 12px', cursor: 'pointer', fontSize: '0.875rem', background: opt === value ? '#eff6ff' : 'white', color: opt === value ? '#1f4e8c' : '#1e293b', fontWeight: opt === value ? 600 : 400 }}
+                onMouseEnter={e => { if (opt !== value) e.currentTarget.style.background = '#f8fafc' }}
+                onMouseLeave={e => { if (opt !== value) e.currentTarget.style.background = 'white' }}>
+                {opt}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <input type="hidden" name={name} value={value} />
+    </div>
+  )
+}
 
 const today = new Date().toISOString().split('T')[0]
 
@@ -142,7 +188,7 @@ export default function FormPage() {
     <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={sidebarCollapsed} userName={FRP.user?.fullName} userRole={FRP.user?.selectedJobLevel || FRP.user?.role} userIsAdmin={FRP.user?.role === 'administrator'} allAssignments={FRP.user?.allAssignments || []} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
       <div className="dashboard-stage">
-        <Header />
+        <Header title="Form Request Payment" />
         <main className="dashboard-main">
           {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
           {error && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#ef4444' }}>{error}</div>}
@@ -218,8 +264,15 @@ export default function FormPage() {
               <div style={S.grid2}>
                 <div style={S.formGroup}>
                   <label style={S.label}>Vendor</label>
-                  <input name="vendor" style={S.input} value={values.vendor} onChange={e => updateField('vendor', e.target.value)} list="vendorList" placeholder="Ketik atau pilih vendor" />
-                  <datalist id="vendorList">{(FRP.vendors || []).map(v => <option key={v.name} value={v.name} />)}</datalist>
+                  <select name="vendor" value={values.vendor} onChange={e => {
+                    const selected = (FRP.vendors || []).find(v => v.name === e.target.value)
+                    updateField('vendor', e.target.value)
+                    if (selected?.bank) updateField('bankTujuan', selected.bank)
+                    if (selected?.account) updateField('rekBankTujuan', selected.account)
+                  }} style={S.select}>
+                    <option value="">Pilih Vendor</option>
+                    {(FRP.vendors || []).map(v => <option key={v.name} value={v.name}>{v.name}</option>)}
+                  </select>
                 </div>
                 <div style={S.formGroup}>
                   <label style={S.label}>Internal PO Number</label>

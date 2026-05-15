@@ -1637,6 +1637,8 @@ select {
 .users-table-wrapper {
   margin-top: 22px;
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 320px);
   border: 1px solid rgba(26, 42, 87, 0.08);
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.92);
@@ -1662,13 +1664,10 @@ select {
   min-width: 0;
 }
 
-.approval-table .users-table th {
+.users-table th {
   position: sticky;
   top: 0;
   z-index: 6;
-}
-
-.users-table th {
   padding: 1rem;
   border-bottom: 1px solid rgba(26, 42, 87, 0.08);
   background: rgba(24, 43, 88, 0.04);

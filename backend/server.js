@@ -554,4 +554,12 @@ app.post('/generate-pdf', checkAuth, async (req, res) => {
     }
 });
 
-app.listen(PORT, () => { console.log(`\n FRP Backend running at http://localhost:${PORT}\n`); });
+app.listen(PORT, '0.0.0.0', () => {
+    const os = require('os');
+    const nets = os.networkInterfaces();
+    const localIPs = Object.values(nets).flat().filter(n => n.family === 'IPv4' && !n.internal).map(n => n.address);
+    console.log(`\n FRP Backend running:`);
+    console.log(`   Local:   http://localhost:${PORT}`);
+    localIPs.forEach(ip => console.log(`   Network: http://${ip}:${PORT}`));
+    console.log('');
+});

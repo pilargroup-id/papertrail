@@ -149,7 +149,7 @@ export default function ApprovalPage() {
 
           <main
             className="dashboard-main"
-            style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
           >
             {loading && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b' }}>
@@ -358,16 +358,12 @@ export default function ApprovalPage() {
                 borderRadius: '16px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                 border: '1px solid #e2e8f0',
-                overflow: 'hidden',
-                flex: 1,
-                minHeight: 0,
               }}
             >
               {filtered.length > 0 ? (
                 <div
                   style={{
-                    height: '100%',
-                    maxHeight: 'calc(100vh - 280px)',
+                    height: 'calc(100vh - 340px)',
                     overflowX: 'auto',
                     overflowY: 'auto',
                   }}
