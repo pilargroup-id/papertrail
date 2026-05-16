@@ -230,6 +230,7 @@ export default function AdminPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [addForm, setAddForm] = useState(getBlankForm(type))
   const [editItem, setEditItem] = useState(null)
   const [companyFilter, setCompanyFilter] = useState('')
@@ -284,13 +285,20 @@ export default function AdminPage() {
   const showFilter = type === 'budgets' || type === 'employees'
   const typeName = type.charAt(0).toUpperCase() + type.slice(1)
   const user = data?.user || {}
+  const handleSidebarToggle = () => {
+    if (window.innerWidth <= 1024) {
+      setMobileMenuOpen(current => !current)
+      return
+    }
+    setSidebarCollapsed(c => !c)
+  }
 
   return (
     <>
       <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-        <Sidebar collapsed={sidebarCollapsed} userName={user.fullName || 'Admin'} userRole={user.selectedJobLevel || user.role || 'Administrator'} userIsAdmin={user.role === 'administrator'} allAssignments={user.allAssignments || []} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
+        <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} userName={user.fullName || 'Admin'} userRole={user.selectedJobLevel || user.role || 'Administrator'} userIsAdmin={user.role === 'administrator'} allAssignments={user.allAssignments || []} onToggleCollapse={handleSidebarToggle} onCloseMobile={() => setMobileMenuOpen(false)} />
         <div className="dashboard-stage">
-          <Header title="Form Request Payment" />
+          <Header title="Form Request Payment" onMenuClick={() => setMobileMenuOpen(true)} />
           <main className="dashboard-main">
             {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
             {!loading && <div style={S.card}>

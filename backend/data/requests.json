@@ -627,39 +627,5 @@
     "status": "PENDING",
     "createdBy": "Egy Irsandi",
     "createdAt": "2026-05-15T13:02:10.451Z"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "IT",
-    "dimintaOleh": "Apriyanto",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "",
-    "internalPoNumber": "",
-    "extDocType": "",
-    "extDocNumber": "",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "attachLink": "",
-    "keteranganFrp": "",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "",
-        "budgetId": "",
-        "qty": "1",
-        "hargaSatuan": "0",
-        "amount": 0
-      }
-    ],
-    "id": "mp720r95",
-    "frpNo": "FRP-SIT-26-00002",
-    "requestBy": "Apriyanto",
-    "status": "PENDING",
-    "createdBy": "Apriyanto",
-    "createdAt": "2026-05-15T15:10:26.297Z"
   }
 ]

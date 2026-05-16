@@ -69,7 +69,7 @@ function SidebarNavItem({ item, pathname, collapsed, expandedGroups, onToggleGro
   )
 }
 
-export default function Sidebar({ collapsed = false, userName = 'User', userRole = 'Staff', userIsAdmin = false, allAssignments = [], onToggleCollapse }) {
+export default function Sidebar({ collapsed = false, mobileOpen = false, userName = 'User', userRole = 'Staff', userIsAdmin = false, allAssignments = [], onToggleCollapse, onCloseMobile }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [expandedGroups, setExpandedGroups] = useState({})
@@ -101,16 +101,20 @@ export default function Sidebar({ collapsed = false, userName = 'User', userRole
   const onToggleGroup = key => setExpandedGroups(g => ({ ...g, [key]: !g[key] }))
 
   const onSelect = item => {
+    if (onCloseMobile) onCloseMobile()
     if (item.href === '/logout') { window.location.href = '/logout'; return }
     navigate(item.href)
   }
 
   return (
-    <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
+    <aside className={`sidebar${collapsed ? ' collapsed' : ''}${mobileOpen ? ' mobile-open' : ''}`}>
       <button type="button" className="sidebar-toggle" aria-label="Toggle Sidebar" onClick={onToggleCollapse}>
         <span className="material-icons-round toggle-icon" style={{ fontSize: '16px' }}>
           {collapsed ? 'chevron_right' : 'chevron_left'}
         </span>
+      </button>
+      <button type="button" className="sidebar-mobile-dismiss" aria-label="Close menu" onClick={onCloseMobile}>
+        <span className="material-icons-round" style={{ fontSize: '20px' }}>close</span>
       </button>
 
       <div className="sidebar-logo">

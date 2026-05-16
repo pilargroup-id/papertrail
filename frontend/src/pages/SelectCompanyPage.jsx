@@ -15,6 +15,7 @@ export default function SelectCompanyPage() {
   const [loading, setLoading] = useState(true)
   const [hoveredIdx, setHoveredIdx] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/data/select-company')
@@ -30,13 +31,20 @@ export default function SelectCompanyPage() {
   if (loading) return <div style={{ padding: '2rem', color: '#64748b' }}>Memuat...</div>
 
   const user = data?.user || {}
+  const handleSidebarToggle = () => {
+    if (window.innerWidth <= 1024) {
+      setMobileMenuOpen(current => !current)
+      return
+    }
+    setSidebarCollapsed(c => !c)
+  }
 
   return (
     <>
       <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-        <Sidebar collapsed={sidebarCollapsed} userName={user.fullName} userRole={user.selectedJobLevel || user.role} userIsAdmin={user.role === 'administrator'} allAssignments={user.allAssignments || []} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
+        <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} userName={user.fullName} userRole={user.selectedJobLevel || user.role} userIsAdmin={user.role === 'administrator'} allAssignments={user.allAssignments || []} onToggleCollapse={handleSidebarToggle} onCloseMobile={() => setMobileMenuOpen(false)} />
         <div className="dashboard-stage">
-          <Header title="Form Request Payment" />
+          <Header title="Form Request Payment" onMenuClick={() => setMobileMenuOpen(true)} />
           <main className="dashboard-main" style={{ display: 'grid', placeItems: 'center' }}>
             <div style={S.card}>
               <div style={S.iconBox}><span className="material-icons-round">business</span></div>
