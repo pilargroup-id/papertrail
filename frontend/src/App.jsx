@@ -3,12 +3,15 @@ import BackgroundMain from './components/BackgroundMain'
 import LoginPage from './pages/LoginPage'
 import SelectCompanyPage from './pages/SelectCompanyPage'
 import SelectDivisionPage from './pages/SelectDivisionPage'
+import ChoicePage from './pages/ChoicePage'
 import FormPage from './pages/FormPage'
 import ApprovalPage from './pages/ApprovalPage'
 import AdminPage from './pages/AdminPage'
 import FrpDetailPage from './pages/FrpDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import LaporanPage from './pages/LaporanPage'
+import RpFormPage from './pages/RpFormPage'
+import RpApprovalPage from './pages/RpApprovalPage'
 
 export default function App() {
   return (
@@ -19,12 +22,16 @@ export default function App() {
       <Route path="/select-company" element={<SelectCompanyPage />} />
       <Route path="/select-division" element={<SelectDivisionPage />} />
       <Route path="/" element={<FormPage />} />
+      <Route path="/frp" element={<FormPage />} />
       <Route path="/approval" element={<ApprovalPage />} />
       <Route path="/approved" element={<ApprovalPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/laporan" element={<LaporanPage />} />
       <Route path="/admin/:type" element={<AdminPage />} />
       <Route path="/frp/:id" element={<FrpDetailPage />} />
+      <Route path="/rp" element={<RpFormPage />} />
+      <Route path="/rp-approval" element={<RpApprovalPage />} />
+      <Route path="/rp-approved" element={<RpApprovalPage />} />
     </Routes>
     </>
   )

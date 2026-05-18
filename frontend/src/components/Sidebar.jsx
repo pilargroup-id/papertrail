@@ -69,7 +69,7 @@ function SidebarNavItem({ item, pathname, collapsed, expandedGroups, onToggleGro
   )
 }
 
-export default function Sidebar({ collapsed = false, mobileOpen = false, userName = 'User', userRole = 'Staff', userIsAdmin = false, allAssignments = [], onToggleCollapse, onCloseMobile }) {
+export default function Sidebar({ collapsed = false, mobileOpen = false, userName = 'User', userRole = 'Staff', userIsAdmin = false, allAssignments = [], onToggleCollapse, onCloseMobile, hideMenu = false }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [expandedGroups, setExpandedGroups] = useState({})
@@ -78,11 +78,18 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
   const showBack = (allAssignments || []).length > 1
   const backUrl = uniqueCompanies.length > 1 ? '/select-company' : '/select-division'
 
-  const primaryItems = [
+  const primaryItems = hideMenu ? [] : [
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'dashboard' }] : []),
-    { label: 'New Request', href: '/', icon: 'add_circle' },
-    { label: 'Approval', href: '/approval', icon: 'pending_actions' },
-    { label: 'Approved', href: '/approved', icon: 'check_circle' },
+    { label: 'FRP', icon: 'payments', children: [
+      { label: 'New Request', href: '/frp', icon: 'add_circle' },
+      { label: 'Approval', href: '/approval', icon: 'pending_actions' },
+      { label: 'Approved', href: '/approved', icon: 'check_circle' },
+    ]},
+    { label: 'Request Purchase', icon: 'shopping_cart', children: [
+      { label: 'New RP', href: '/rp', icon: 'add_circle' },
+      { label: 'RP Approval', href: '/rp-approval', icon: 'pending_actions' },
+      { label: 'RP Approved', href: '/rp-approved', icon: 'check_circle' },
+    ]},
     ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{ label: 'Laporan', href: '/laporan', icon: 'summarize' }] : []),
     ...(userIsAdmin ? [{
       label: 'Master Data', icon: 'admin_panel_settings', children: [
@@ -96,7 +103,7 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
   ]
 
   const secondaryItems = [
-    ...(showBack ? [{ label: 'Ganti Akses', href: backUrl, icon: 'swap_horiz' }] : []),
+    ...(showBack && !hideMenu ? [{ label: 'Ganti Akses', href: backUrl, icon: 'swap_horiz' }] : []),
     { label: 'Logout', href: '/logout', icon: 'logout', danger: true },
   ]
 

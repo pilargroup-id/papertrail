@@ -176,8 +176,8 @@ export default function LaporanPage() {
     REJECTED: { background: '#fecaca', color: '#991b1b' },
   }
 
-  const desktopHeaders = ['No FRP', 'Tanggal', 'Pemohon & Vendor', 'Divisi', 'Perusahaan', 'Total', 'Status', 'Disetujui Oleh']
-  const desktopWidths  = ['13%', '9%', '18%', '9%', '14%', '13%', '9%', '15%']
+  const desktopHeaders = ['No FRP', 'Tanggal', 'Pemohon & Vendor', 'Divisi', 'Perusahaan', 'Total', 'Status', 'Disetujui Oleh', 'Attach Link', 'Approved']
+  const desktopWidths  = ['11%', '8%', '15%', '8%', '11%', '11%', '8%', '11%', '9%', '8%']
 
   const getRow = r => [
     r.frpNo ?? '', r.tanggalFrp ?? '', r.dimintaOleh ?? '', r.divisi ?? '',
@@ -366,6 +366,19 @@ export default function LaporanPage() {
                               <div style={{ fontSize: '13px', color: '#166534', fontWeight: 600 }}>{r.approvedBy}</div>
                             </div>
                           )}
+                          {r.attachLink && (
+                            <div style={{ gridColumn: '1 / -1' }}>
+                              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Attach Link</div>
+                              <div style={{ fontSize: '13px' }}><a href={r.attachLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>Buka Link</a></div>
+                            </div>
+                          )}
+
+                          {r.approvedAt && (
+                            <div style={{ gridColumn: '1 / -1' }}>
+                              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Approved</div>
+                              <div style={{ fontSize: '13px', color: '#475569', fontWeight: 500 }}>{formatDate(r.approvedAt)}</div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )
@@ -426,6 +439,11 @@ export default function LaporanPage() {
                               <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', wordBreak: 'break-word' }}>{formatCurrency(r.totalAmount)}</td>
                               <td style={td}><span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em', ...ss }}>{r.status}</span></td>
                               <td style={{ ...td, fontSize: '12px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.approvedBy || '-'}</td>
+                              <td style={{ ...td, fontSize: '12px', color: '#2563eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {r.attachLink ? <a href={r.attachLink} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none', color:'#2563eb', fontWeight:600}}>Link</a> : '-'}
+                              </td>
+
+                              <td style={{ ...td, fontSize: '12px', color: '#475569', whiteSpace: 'nowrap' }}>{r.approvedAt ? formatDate(r.approvedAt) : '-'}</td>
                             </tr>
                           )
                         })}

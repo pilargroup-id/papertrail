@@ -472,17 +472,19 @@ export default function ApprovalPage() {
     'Divisi',
     'Total',
     'Status',
+    'Attach Link',
     ...(data?.canApprove ? ['Aksi'] : []),
     'Detail',
   ]
   const desktopColumnWidths = [
-    '22%',
-    '24%',
+    '18%',
+    '20%',
     '10%',
-    '14%',
-    '15%',
+    '12%',
+    '12%',
+    '12%',
     ...(data?.canApprove ? ['8%'] : []),
-    '7%',
+    '8%',
   ]
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const safeCurrentPage = Math.min(currentPage, totalPages)
@@ -668,6 +670,12 @@ export default function ApprovalPage() {
                               <div style={{ fontSize: '13px', color: '#1e293b' }}>{request.approvedBy}</div>
                             </div>
                           )}
+                          {request.attachLink && (
+                            <div style={{ gridColumn: '1 / -1' }}>
+                              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Attach Link</div>
+                              <div style={{ fontSize: '13px' }}><a href={request.attachLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>Buka Link</a></div>
+                            </div>
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {data?.canApprove && !isApprovedView && (
@@ -676,7 +684,7 @@ export default function ApprovalPage() {
                               <button type="button" onClick={() => doAction(request.id, 'reject')} style={{ flex: 1, background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Reject</button>
                             </>
                           )}
-                          {data?.canApprove && isApprovedView && (
+                          {data?.canApprove && isApprovedView && user.role === 'administrator' && (
                             <button type="button" onClick={() => doAction(request.id, 'revert')} style={{ flex: 1, background: '#fef9c3', color: '#92400e', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Revert</button>
                           )}
                           <button type="button" onClick={() => setSelectedRequest(request)} style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Detail</button>
@@ -805,6 +813,9 @@ export default function ApprovalPage() {
                                     ) : null}
                                   </div>
                                 </td>
+                                <td style={{ ...td, fontSize: '12px', color: '#2563eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {request.attachLink ? <a href={request.attachLink} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none', color:'#2563eb', fontWeight:600}}>Link</a> : '-'}
+                                </td>
                                 {data?.canApprove ? (
                                   <td style={{ ...td, whiteSpace: 'normal' }}>
                                     {!isApprovedView ? (
@@ -812,9 +823,9 @@ export default function ApprovalPage() {
                                         <button type="button" onClick={() => doAction(request.id, 'approve')} style={{ background: '#dcfce7', color: '#15803d', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Approve</button>
                                         <button type="button" onClick={() => doAction(request.id, 'reject')} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Reject</button>
                                       </div>
-                                    ) : (
+                                    ) : user.role === 'administrator' ? (
                                       <button type="button" onClick={() => doAction(request.id, 'revert')} style={{ width: '100%', background: '#fef9c3', color: '#92400e', border: 'none', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Revert</button>
-                                    )}
+                                    ) : '-'}
                                   </td>
                                 ) : null}
                                 <td style={{ ...td, whiteSpace: 'normal' }}>

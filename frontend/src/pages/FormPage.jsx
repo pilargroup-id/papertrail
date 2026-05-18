@@ -14,6 +14,13 @@ const normalizeNumber = v => {
 
 const formatCurrency = v => new Intl.NumberFormat('id-ID').format(normalizeNumber(v))
 
+const formatNumberInput = v => {
+  if (v === undefined || v === null || v === '') return ''
+  const clean = String(v).replace(/\D/g, '')
+  if (!clean) return ''
+  return new Intl.NumberFormat('en-US').format(parseInt(clean, 10))
+}
+
 const getEmployeeAssignments = e => {
   if (Array.isArray(e?.companies) && e.companies.length > 0) return e.companies
   if (e?.class) return [{ name: e.company || '', class: e.class, jobLevel: e.jobLevel || '' }]
@@ -844,32 +851,60 @@ export default function FormPage() {
                 <div style={{ ...grid3Style, marginTop: '1rem' }}>
                   <div style={S.formGroup}>
                     <label style={S.label}>Divisi</label>
-                    <SearchableSelect
-                      name="divisi"
-                      value={values.divisi}
-                      onChange={selectedValue => updateField('divisi', selectedValue)}
-                      options={divisionSelectOptions}
-                      placeholder="Pilih Divisi"
-                      style={S.select}
-                    />
+                    {FRP.user?.role === 'administrator' ? (
+                      <SearchableSelect
+                        name="divisi"
+                        value={values.divisi}
+                        onChange={selectedValue => updateField('divisi', selectedValue)}
+                        options={divisionSelectOptions}
+                        placeholder="Pilih Divisi"
+                        style={S.select}
+                      />
+                    ) : (
+                      <input style={S.inputReadonly} value={values.divisi} readOnly />
+                    )}
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Diminta Oleh</label>
-                    <SearchableSelect
-                      name="dimintaOleh"
-                      value={values.dimintaOleh}
-                      onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
-                      options={employeeSelectOptions}
-                      placeholder="Pilih Karyawan"
-                      style={S.select}
-                    />
+                    {FRP.user?.role === 'administrator' ? (
+                      <SearchableSelect
+                        name="dimintaOleh"
+                        value={values.dimintaOleh}
+                        onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
+                        options={employeeSelectOptions}
+                        placeholder="Pilih Karyawan"
+                        style={S.select}
+                      />
+                    ) : (
+                      <input style={S.inputReadonly} value={values.dimintaOleh} readOnly />
+                    )}
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Currency</label>
                     <SearchableSelect
                       name="currency"
                       value={values.currency}
-                      onChange={selectedValue => updateField('currency', selectedValue)}
+                      onChange={async selectedValue => {
+                        updateField('currency', selectedValue)
+                        if (selectedValue === 'IDR') {
+                          updateField('kurs', '1')
+                        } else {
+                          updateField('kurs', 'Memuat...')
+                          try {
+                            const res = await fetch(`/api/kurs/${selectedValue}`)
+                            const data = await res.json()
+                            if (data.success && data.rate) {
+                              updateField('kurs', String(data.rate))
+                            } else {
+                              updateField('kurs', '1') // fallback
+                              console.error('API Error:', data.error)
+                            }
+                          } catch (e) {
+                            updateField('kurs', '1')
+                            console.error('Gagal mengambil kurs:', e)
+                          }
+                        }
+                      }}
                       options={currencySelectOptions}
                       placeholder="Pilih Currency"
                       style={S.select}
@@ -1036,7 +1071,7 @@ export default function FormPage() {
                           </div>
                           <div style={S.formGroup}>
                             <label style={S.label}>Harga Satuan</label>
-                            <input type="number" name={`items[${idx}][hargaSatuan]`} style={S.input} value={item.hargaSatuan} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value)} />
+                            <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.input} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
                           </div>
                         </div>
                         <div style={S.itemCardAmount}>
@@ -1080,7 +1115,7 @@ export default function FormPage() {
                               <input type="number" name={`items[${idx}][qty]`} style={S.tdInput} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
                             </td>
                             <td style={S.td}>
-                              <input type="number" name={`items[${idx}][hargaSatuan]`} style={S.tdInput} value={item.hargaSatuan} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value)} />
+                              <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.tdInput} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
                             </td>
                             <td style={S.td}>
                               <input

@@ -63,8 +63,8 @@ function renderPdfDocument(formData = {}, preview = false) {
   const checklistRows = allDocs.map((doc, idx) => {
     const checked = checkDocs.includes(doc.name)
     return `
-      <div style="font-size:12px;display:flex;align-items:center;gap:8px;color:${checked ? '#1f4e8c' : '#475569'};">
-        <span style="display:inline-grid;place-items:center;width:15px;height:15px;border:1.5px solid ${checked ? '#1f4e8c' : '#cbd5e1'};border-radius:4px;background:${checked ? '#1f4e8c' : 'white'};color:white;font-size:10px;font-weight:900;">${checked ? '✓' : ''}</span>
+      <div style="font-size:12px;display:flex;align-items:center;gap:8px;color:#000;">
+        <span style="display:inline-grid;place-items:center;width:15px;height:15px;border:1.5px solid #000;border-radius:4px;background:${checked ? '#000' : 'white'};color:white;font-size:10px;font-weight:900;">${checked ? '✓' : ''}</span>
         <span>${idx + 1}. ${escapeHtml(doc.name)}${doc.required ? ' *' : ''}</span>
       </div>`
   }).join('')
@@ -145,11 +145,11 @@ function renderPdfDocument(formData = {}, preview = false) {
       text-align: center;
       font-size: 16px;
       font-weight: 800;
-      color: #163a6b;
+      color: #000;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       padding-bottom: 8px;
-      border-bottom: 2px solid #163a6b;
+      border-bottom: 2px solid #000;
       margin-bottom: 8px;
     }
     .frp-badge {
@@ -158,83 +158,84 @@ function renderPdfDocument(formData = {}, preview = false) {
     }
     .frp-badge span {
       display: inline-block;
-      border: 1.5px solid #1f4e8c;
+      border: 1.5px solid #000;
       border-radius: 999px;
       padding: 4px 16px;
       font-size: 13px;
       font-weight: 700;
-      color: #163a6b;
-      background: #eff6ff;
+      color: #000;
+      background: white;
     }
 
     /* Info tables */
     .info-row { display: flex; gap: 16px; margin-bottom: 10px; }
     .info-col { flex: 1; }
-    .info-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-    .info-table td { padding: 6px 10px; font-size: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .info-table { width: 100%; border-collapse: collapse; border: 1px solid #000; border-radius: 8px; overflow: hidden; }
+    .info-table td { padding: 6px 10px; font-size: 12px; border-bottom: 1px solid #000; color: #000; vertical-align: top; }
     .info-table tr:last-child td { border-bottom: none; }
-    .info-table .lbl { font-weight: 600; width: 130px; color: #475569; background: #f8fafc; }
-    .info-table .sep { width: 8px; text-align: center; color: #94a3b8; background: #f8fafc; }
+    .info-table .lbl { font-weight: 600; width: 130px; color: #000; background: white; border-right: 1px solid #000; }
+    .info-table .sep { width: 8px; text-align: center; color: #000; background: white; }
 
     /* Bank */
     .bank-row {
       display: flex;
       gap: 32px;
-      border: 1px solid #e2e8f0;
-      border-left: 4px solid #1f4e8c;
+      border: 1px solid #000;
+      border-left: 4px solid #000;
       border-radius: 8px;
       padding: 10px 14px;
       margin-bottom: 10px;
-      background: #f8fafc;
+      background: white;
     }
-    .bank-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 3px; }
-    .bank-val { font-size: 14px; font-weight: 700; color: #163a6b; }
+    .bank-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #000; letter-spacing: 0.05em; margin-bottom: 3px; }
+    .bank-val { font-size: 14px; font-weight: 700; color: #000; }
 
     /* Checklist */
     .checklist-box {
-      border: 1px solid #e2e8f0;
+      border: 1px solid #000;
       border-radius: 8px;
       padding: 10px 12px;
       margin-bottom: 10px;
+      background: white;
     }
-    .checklist-heading { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.08em; margin-bottom: 8px; }
+    .checklist-heading { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #000; letter-spacing: 0.08em; margin-bottom: 8px; }
     .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
 
     /* Items table */
-    .items-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin: 10px 0; }
-    .items-table th { background: #f8fafc; color: #475569; padding: 8px 10px; font-size: 11px; font-weight: 700; text-align: left; border-bottom: 1.5px solid #e2e8f0; }
-    .items-table td { padding: 7px 10px; font-size: 12px; border-bottom: 1px solid #f1f5f9; }
+    .items-table { width: 100%; border-collapse: collapse; border: 1px solid #000; border-radius: 8px; overflow: hidden; margin: 10px 0; }
+    .items-table th { background: white; color: #000; padding: 8px 10px; font-size: 11px; font-weight: 700; text-align: left; border-bottom: 2px solid #000; text-transform: uppercase; }
+    .items-table td { padding: 7px 10px; font-size: 12px; border-bottom: 1px solid #000; color: #000; }
     .items-table tr:last-child td { border-bottom: none; }
-    .items-table .total-row td { font-weight: 700; background: #f1f5f9; border-top: 1.5px solid #e2e8f0; font-size: 13px; color: #163a6b; }
+    .items-table .total-row td { font-weight: 700; background: white; border-top: 2px solid #000; font-size: 13px; color: #000; }
 
     /* Keterangan */
     .ket-box {
-      border: 1px solid #e2e8f0;
+      border: 1px solid #000;
       border-radius: 8px;
       padding: 10px 12px;
       margin: 10px 0;
-      background: #f8fafc;
+      background: white;
     }
-    .ket-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 4px; }
-    .ket-text { font-size: 12px; line-height: 1.6; color: #1e293b; }
+    .ket-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #000; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .ket-text { font-size: 12px; line-height: 1.6; color: #000; }
 
     /* Note & footer */
     .note {
       margin-top: 14px;
-      border: 1px solid #fcd34d;
+      border: 1px dashed #000;
       border-radius: 8px;
       padding: 10px 14px;
-      background: #fffbeb;
+      background: white;
       font-size: 11px;
-      color: #92400e;
+      color: #000;
       line-height: 1.5;
     }
     .pdf-footer {
       margin-top: 16px;
       text-align: center;
       font-size: 10px;
-      color: #94a3b8;
-      border-top: 1px solid #e2e8f0;
+      color: #000;
+      border-top: 1px solid #000;
       padding-top: 8px;
     }
   </style>
@@ -317,6 +318,32 @@ function renderPdfDocument(formData = {}, preview = false) {
   <div class="ket-box">
     <div class="ket-lbl">Keterangan FRP</div>
     <div class="ket-text">${escapeHtml(keteranganFrp || '-')}</div>
+  </div>
+
+  <div class="approval-table-container" style="margin-top: 20px; page-break-inside: avoid;">
+    <div style="border: 1px solid #000; border-radius: 8px; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px;">
+        <thead>
+          <tr style="background: white; border-bottom: 2px solid #000;">
+            <th style="padding: 8px 10px; width: 50%; font-weight: 700; color: #000; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; border-right: 1px solid #000;">Dibuat Oleh</th>
+            <th style="padding: 8px 10px; width: 50%; font-weight: 700; color: #000; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em;">Disetujui Oleh (Mgr Divisi)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #000;">
+            <td style="padding: 14px 10px 4px; font-weight: 700; color: #000; border-right: 1px solid #000;">${escapeHtml(formData.dimintaOleh || formData.createdBy || '-')}</td>
+            <td style="padding: 14px 10px 4px; font-weight: 700; color: #000;">${escapeHtml(formData.approvedBy || formData.approvedByActual || '-')}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 10px 10px; font-size: 10px; color: #000; border-right: 1px solid #000;">${formData.createdAt ? new Date(formData.createdAt).toLocaleString('id-ID') : '-'}</td>
+            <td style="padding: 4px 10px 10px; font-size: 10px; color: #000;">${formData.approvedAt ? new Date(formData.approvedAt).toLocaleString('id-ID') : '-'}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top: 10px; font-size: 10px; font-weight: 600; font-style: italic; color: #000; text-align: left;">
+      * Dokumen ini dibuat, divalidasi, dan diterbitkan secara elektronik oleh sistem. Dokumen ini sah dan berkekuatan resmi tanpa memerlukan tanda tangan basah.
+    </div>
   </div>
 
   <div class="note">

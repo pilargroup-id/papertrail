@@ -421,9 +421,15 @@
         "name": "PT PILAR KARANG SAMUDERA",
         "class": "Pilkada",
         "jobLevel": "Staff"
+      },
+      {
+        "name": "PT PILAR NIAGA MAKMUR",
+        "class": "HCGA",
+        "jobLevel": "Manager"
       }
     ],
-    "role": "user"
+    "role": "user",
+    "originalIndex": 29
   },
   {
     "fullName": "Renaldy Alfarizi",

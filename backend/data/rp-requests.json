@@ -1,0 +1,225 @@
+[
+  {
+    "id": "rp-1779078806900-y12qqmfwf",
+    "rpNo": "RP-GSG-26-00001",
+    "status": "APPROVED",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "Gosave GT",
+    "class": "Gosave GT",
+    "dibuatOleh": "Egy Irsandi",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "pembelian barang baru",
+    "diprosesOleh": "IT",
+    "tanggalDibutuhkan": "2026-05-18",
+    "vendorSuggestion": "ONE",
+    "picPenerima": "sales",
+    "items": [
+      {
+        "budgetId": "GSG2603",
+        "memo": "barang 1",
+        "linkPembelian": "google.com",
+        "qty": "1",
+        "estimatedValue": "150000"
+      },
+      {
+        "budgetId": "GSG2602",
+        "memo": "barang 2",
+        "linkPembelian": "google.com",
+        "qty": "1",
+        "estimatedValue": "400000"
+      }
+    ],
+    "createdAt": "2026-05-18T04:33:26.900Z",
+    "createdBy": "Egy Irsandi",
+    "managerApprovedBy": "Chandra",
+    "managerApprovedAt": "2026-05-18T04:34:06.127Z",
+    "processChanges": [
+      {
+        "field": "items[0].estimatedValue",
+        "oldValue": "50000",
+        "newValue": "150000",
+        "itemIndex": 0
+      },
+      {
+        "field": "items[1].estimatedValue",
+        "oldValue": "100000",
+        "newValue": "400000",
+        "itemIndex": 1
+      }
+    ],
+    "processUpdatedBy": "Bayu Noegroho",
+    "processUpdatedAt": "2026-05-18T04:35:09.689Z",
+    "processManagerApprovedBy": "Yulliemty",
+    "processManagerApprovedAt": "2026-05-18T04:36:04.455Z"
+  },
+  {
+    "id": "rp-1779080480345-os31y4poi",
+    "rpNo": "RP-GSG-26-00002",
+    "status": "APPROVED",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "Gosave GT",
+    "class": "",
+    "dibuatOleh": "Chandra",
+    "kategoriPembelian": "Penambahan Barang",
+    "deskripsi": "barang sample",
+    "diprosesOleh": "IT",
+    "tanggalDibutuhkan": "2026-05-18",
+    "vendorSuggestion": "COSCO SHIPPING LINES INDONESIA, PT",
+    "picPenerima": "sales",
+    "items": [
+      {
+        "budgetId": "GSG2603",
+        "memo": "sample item",
+        "linkPembelian": "google.com",
+        "qty": "1",
+        "estimatedValue": "2000000"
+      }
+    ],
+    "createdAt": "2026-05-18T05:01:20.345Z",
+    "createdBy": "Chandra",
+    "managerApprovedBy": "Chandra",
+    "managerApprovedAt": "2026-05-18T05:01:47.540Z",
+    "processChanges": [],
+    "processUpdatedBy": "Bayu Noegroho",
+    "processUpdatedAt": "2026-05-18T05:02:50.076Z",
+    "processManagerApprovedBy": "Yulliemty",
+    "processManagerApprovedAt": "2026-05-18T05:03:35.221Z"
+  },
+  {
+    "id": "rp-1779082055674-eatc4vzd5",
+    "rpNo": "RP-GSG-26-00003",
+    "status": "PENDING_PROCESS_APPROVAL",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "Gosave GT",
+    "class": "Gosave GT",
+    "dibuatOleh": "Chandra",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "komisi sales",
+    "diprosesOleh": "IT",
+    "tanggalDibutuhkan": "2026-05-18",
+    "vendorSuggestion": "PT. PURARI MITRA RAPUNZEL",
+    "picPenerima": "sales",
+    "items": [
+      {
+        "budgetId": "GSG2601",
+        "memo": "komisi sales",
+        "linkPembelian": "",
+        "qty": "1",
+        "estimatedValue": "2000000"
+      }
+    ],
+    "createdAt": "2026-05-18T05:27:35.674Z",
+    "createdBy": "Chandra",
+    "managerApprovedBy": "Chandra",
+    "managerApprovedAt": "2026-05-18T06:46:50.575Z",
+    "processChanges": [],
+    "processUpdatedBy": "Bayu Noegroho",
+    "processUpdatedAt": "2026-05-18T06:47:55.017Z"
+  },
+  {
+    "id": "rp-1779082968106-r85rzo0lm",
+    "rpNo": "RP-GSG-26-00004",
+    "status": "APPROVED",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "Gosave GT",
+    "class": "Gosave GT",
+    "dibuatOleh": "Egy Irsandi",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "sampel barang",
+    "diprosesOleh": "IT",
+    "tanggalDibutuhkan": "2026-05-18",
+    "vendorSuggestion": "PT Jolect Technologies Indonesia",
+    "picPenerima": "sales",
+    "items": [
+      {
+        "budgetId": "GSG2602",
+        "memo": "sampel barang",
+        "linkPembelian": "google.com",
+        "qty": "1",
+        "estimatedValue": "900000"
+      }
+    ],
+    "createdAt": "2026-05-18T05:42:48.106Z",
+    "createdBy": "Egy Irsandi",
+    "managerApprovedBy": "Chandra",
+    "managerApprovedAt": "2026-05-18T05:43:37.517Z",
+    "processChanges": [],
+    "processUpdatedBy": "Bayu Noegroho",
+    "processUpdatedAt": "2026-05-18T05:44:06.746Z",
+    "processManagerApprovedBy": "Yulliemty",
+    "processManagerApprovedAt": "2026-05-18T05:44:53.076Z"
+  },
+  {
+    "id": "rp-1779083327677-z4xliuxdy",
+    "rpNo": "RP-GSG-26-00005",
+    "status": "APPROVED",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "Gosave GT",
+    "class": "Gosave GT",
+    "dibuatOleh": "Egy Irsandi",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "barang pajangan",
+    "diprosesOleh": "IT",
+    "tanggalDibutuhkan": "2026-05-18",
+    "vendorSuggestion": "PT BIGSELLER TECHNOLOGY INDONESIA",
+    "picPenerima": "sales",
+    "items": [
+      {
+        "budgetId": "GSG2601",
+        "memo": "barang pajangan",
+        "linkPembelian": "google.com",
+        "qty": "1",
+        "estimatedValue": "1000000"
+      }
+    ],
+    "createdAt": "2026-05-18T05:48:47.677Z",
+    "createdBy": "Egy Irsandi",
+    "managerApprovedBy": "Chandra",
+    "managerApprovedAt": "2026-05-18T05:49:12.499Z",
+    "processChanges": [
+      {
+        "field": "items[0].estimatedValue",
+        "oldValue": "100000",
+        "newValue": "1000000",
+        "itemIndex": 0
+      }
+    ],
+    "processUpdatedBy": "Bayu Noegroho",
+    "processUpdatedAt": "2026-05-18T05:49:40.437Z",
+    "processManagerApprovedBy": "Yulliemty",
+    "processManagerApprovedAt": "2026-05-18T05:50:20.519Z"
+  },
+  {
+    "id": "rp-1779085752861-hq9voj24m",
+    "rpNo": "RP-GSG-26-00006",
+    "status": "APPROVED",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "Gosave GT",
+    "class": "Gosave GT",
+    "dibuatOleh": "Egy Irsandi",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "beli mobil sales",
+    "diprosesOleh": "HCGA",
+    "tanggalDibutuhkan": "2026-05-18",
+    "vendorSuggestion": "ONE",
+    "picPenerima": "sales",
+    "items": [
+      {
+        "budgetId": "GSG2602",
+        "memo": "beli mobil sales",
+        "linkPembelian": "google.com",
+        "qty": "1",
+        "estimatedValue": "10000000"
+      }
+    ],
+    "createdAt": "2026-05-18T06:29:12.861Z",
+    "createdBy": "Egy Irsandi",
+    "managerApprovedBy": "Chandra",
+    "managerApprovedAt": "2026-05-18T06:49:26.936Z",
+    "processChanges": [],
+    "processUpdatedBy": "Renaldy Alfarizi",
+    "processUpdatedAt": "2026-05-18T06:49:45.817Z",
+    "processManagerApprovedBy": "Muhamad Asep Hafidzul Umam",
+    "processManagerApprovedAt": "2026-05-18T06:50:21.725Z"
+  }
+]

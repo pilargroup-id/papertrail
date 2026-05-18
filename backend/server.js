@@ -3,7 +3,9 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const session = require('express-session');
+const https = require('https');
 const { renderPdfDocument } = require('./renderPdfDocument');
+const renderRpPdfDocument = require('./renderRpPdfDocument');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -125,6 +127,40 @@ const checkAuth = (req, res, next) => {
         }
         return res.redirect('/login');
     }
+
+    const u = req.session.user;
+    const isExempt = [
+        '/select-company',
+        '/select-division',
+        '/logout',
+        '/api/auth/select-company',
+        '/api/auth/select-division',
+        '/api/data/select-company',
+        '/api/data/select-division'
+    ].includes(req.path);
+
+    if (!isExempt) {
+        if (Array.isArray(u.allAssignments) && u.allAssignments.length > 0) {
+            const uniqueCompanies = [...new Set(u.allAssignments.map(a => a.name))];
+            if (!u.selectedCompany && uniqueCompanies.length > 1) {
+                if (req.path.startsWith('/api/')) {
+                    return res.status(401).json({ error: 'Unauthorized', redirect: '/select-company' });
+                }
+                return res.redirect('/select-company');
+            }
+            
+            const divisions = u.allAssignments
+                .filter(a => a.name === (u.selectedCompany || uniqueCompanies[0]))
+                .map(a => a.class);
+            if (!u.selectedDivision && divisions.length > 1) {
+                if (req.path.startsWith('/api/')) {
+                    return res.status(401).json({ error: 'Unauthorized', redirect: '/select-division' });
+                }
+                return res.redirect('/select-division');
+            }
+        }
+    }
+
     res.locals.user = req.session.user;
     next();
 };
@@ -260,6 +296,7 @@ app.get('/logout', (req, res) => {
 
 // --- MAIN APP ROUTES ---
 app.get('/', checkAuth, (req, res) => sendSPA(res));
+app.get('/frp', checkAuth, (req, res) => sendSPA(res));
 
 app.get('/api/form-data', checkAuth, (req, res) => {
     const u = req.session.user;
@@ -354,11 +391,80 @@ app.get('/api/managers/:department', checkAuth, (req, res) => {
     res.json(filtered);
 });
 
+function getExchangeRateFromGoogle(from, to = 'IDR') {
+    return new Promise((resolve, reject) => {
+        const url = `https://www.google.com/finance/quote/${from}-${to}`;
+        
+        function fetchUrl(currentUrl, depth) {
+            if (depth > 5) {
+                return reject(new Error('Too many redirects'));
+            }
+            https.get(currentUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }, (res) => {
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    let nextUrl = res.headers.location;
+                    if (!nextUrl.startsWith('http')) {
+                        nextUrl = new URL(nextUrl, currentUrl).href;
+                    }
+                    return fetchUrl(nextUrl, depth + 1);
+                }
+
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    try {
+                        const pattern = new RegExp(`"${from}\\s*\\/\\s*${to}",\\s*\\d+\\s*,\\s*null\\s*,\\s*\\[\\s*([\\d.]+)`);
+                        const match = data.match(pattern);
+                        if (match) {
+                            return resolve(parseFloat(match[1]));
+                        }
+                        
+                        const regexClass = /class="YMlKec fxfa3d"[^>]*>([\d,.]+)</;
+                        const matchClass = data.match(regexClass);
+                        if (matchClass) {
+                            const val = parseFloat(matchClass[1].replace(/,/g, ''));
+                            return resolve(val);
+                        }
+
+                        reject(new Error(`Nilai kurs ${from}/${to} tidak ditemukan di Google Finance`));
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            }).on('error', reject);
+        }
+
+        fetchUrl(url, 0);
+    });
+}
+
+app.get('/api/kurs/:currency', checkAuth, async (req, res) => {
+    try {
+        const from = (req.params.currency || '').trim().toUpperCase();
+        console.log(`[API Kurs] Request for ${from} from user ${req.session?.user?.username || 'unknown'}`);
+        if (from === 'IDR') {
+            return res.json({ success: true, rate: 1 });
+        }
+        const rate = await getExchangeRateFromGoogle(from, 'IDR');
+        console.log(`[API Kurs] Successfully fetched ${from}: ${rate}`);
+        res.json({ success: true, rate });
+    } catch (e) {
+        console.error(`[API Kurs] Error fetching ${req.params.currency}:`, e.message);
+        res.json({ success: false, error: e.message });
+    }
+});
+
 app.get('/api/next-frp-number/:department', checkAuth, (req, res) => {
     const requests = readJson('requests.json');
     const departmentsData = readJson('departments.json');
-    const dept = req.params.department.toUpperCase();
-    const deptData = departmentsData.find(d => d.class === dept || d.name === dept);
+    const dept = (req.params.department || '').trim().toUpperCase();
+    const deptData = departmentsData.find(d => 
+        (d.class || '').trim().toUpperCase() === dept || 
+        (d.name || '').trim().toUpperCase() === dept
+    );
     const deptCode = deptData ? deptData.kodeFrp : dept.substring(0, 3).toUpperCase();
     const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
     const sequences = requests.filter(r => r.frpNo && r.frpNo.startsWith(prefix)).map(r => parseInt(r.frpNo.split('-').pop(), 10) || 0);
@@ -374,6 +480,9 @@ app.get('/api/data/approval', checkAuth, (req, res) => {
     const u = req.session.user;
     const isApprovedView = req.query.view === 'approved';
     let reqs = readJson('requests.json');
+
+    const pendingCount = reqs.filter(r => r.status === 'PENDING' && (u.role === 'administrator' || r.divisi === u.selectedDivision)).length;
+    const approvedCount = reqs.filter(r => (r.status === 'APPROVED' || r.status === 'REJECTED') && (u.role === 'administrator' || r.divisi === u.selectedDivision)).length;
 
     if (isApprovedView) {
         reqs = reqs.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED');
@@ -391,6 +500,10 @@ app.get('/api/data/approval', checkAuth, (req, res) => {
         requests: reqs,
         canApprove,
         isApprovedView,
+        counts: {
+            pending: pendingCount,
+            approved: approvedCount
+        },
         user: { fullName: u.fullName, role: u.role, selectedDivision: u.selectedDivision, selectedJobLevel: u.selectedJobLevel, allAssignments: u.allAssignments || [] }
     });
 });
@@ -432,8 +545,11 @@ app.post('/api/frp/save', checkAuth, (req, res) => {
         }
 
         const departmentsData = readJson('departments.json');
-        const dept = (req.body.divisi || 'GENERAL').toUpperCase();
-        const deptData = departmentsData.find(d => d.class === dept || d.name === dept);
+        const dept = (req.body.divisi || 'GENERAL').trim().toUpperCase();
+        const deptData = departmentsData.find(d => 
+            (d.class || '').trim().toUpperCase() === dept || 
+            (d.name || '').trim().toUpperCase() === dept
+        );
         const deptCode = deptData ? deptData.kodeFrp : dept.substring(0, 3).toUpperCase();
         const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
         const sequences = requests.filter(r => r.frpNo && r.frpNo.startsWith(prefix)).map(r => parseInt(r.frpNo.split('-').pop(), 10) || 0);
@@ -454,7 +570,12 @@ app.post('/api/frp/:id/:action', checkAuth, (req, res) => {
     if (action === 'approve') { requests[idx].status = 'APPROVED'; requests[idx].approvedByActual = req.session.user.fullName; const employees = readJson('employees.json'); const divisi = requests[idx].divisi || ''; const mgr = employees.find(e => (e.companies || []).some(a => a.class === divisi && ['Manager', 'Direktur', 'Komisaris'].includes(a.jobLevel))); requests[idx].approvedBy = mgr ? mgr.fullName : req.session.user.fullName; requests[idx].approvedAt = new Date().toISOString(); }
     else if (action === 'reject') requests[idx].status = 'REJECTED';
     else if (action === 'delete') requests.splice(idx, 1);
-    else if (action === 'revert') { requests[idx].status = 'PENDING'; delete requests[idx].approvedByActual; delete requests[idx].approvedAt; }
+    else if (action === 'revert') { 
+        if (req.session.user.role !== 'administrator') return res.status(403).json({ success: false, error: 'Hanya administrator yang bisa melakukan revert' });
+        requests[idx].status = 'PENDING'; 
+        delete requests[idx].approvedByActual; 
+        delete requests[idx].approvedAt; 
+    }
     else if (action === 'update') { requests[idx] = { ...requests[idx], ...req.body, id: requests[idx].id, status: requests[idx].status, frpNo: requests[idx].frpNo }; }
     writeJson('requests.json', requests);
     res.json({ success: true });
@@ -611,6 +732,7 @@ app.get('/api/data/laporan', checkAuth, checkLaporan, (req, res) => {
     const divisions = [...new Set(allRequests.map(r => r.divisi).filter(Boolean))].sort();
 
     const mapped = requests.map(r => ({
+        id: r.id,
         frpNo: r.frpNo,
         tanggalFrp: r.tanggalFrp,
         dimintaOleh: r.dimintaOleh,
@@ -622,6 +744,7 @@ app.get('/api/data/laporan', checkAuth, checkLaporan, (req, res) => {
         approvedBy: r.approvedBy,
         approvedAt: r.approvedAt,
         keterangan: r.keterangan,
+        attachLink: r.attachLink,
     })).sort((a, b) => new Date(b.tanggalFrp || 0) - new Date(a.tanggalFrp || 0));
 
     res.json({
@@ -780,10 +903,385 @@ app.get('/api/data/history', checkAuth, (req, res) => {
     });
 });
 
+// --- REQUEST PURCHASE (RP) ROUTES ---
+app.get('/rp', checkAuth, (req, res) => sendSPA(res));
+app.get('/rp-approval', checkAuth, (req, res) => sendSPA(res));
+app.get('/rp-approved', checkAuth, (req, res) => sendSPA(res));
+app.get('/rp/:id', checkAuth, (req, res) => sendSPA(res));
+
+app.get('/api/rp/form-data', checkAuth, (req, res) => {
+    const u = req.session.user;
+    const employeesData = readJson('employees.json');
+    const budgetsData = readJson('budgets.json');
+    const vendorsData = readJson('vendors.json');
+    const departmentsData = readJson('departments.json');
+    const rpRequests = readJson('rp-requests.json');
+    const frpRequests = readJson('requests.json');
+
+    // Calculate used budgets from both RP and FRP
+    const usedBudgets = {};
+    frpRequests.forEach(r => {
+        if (r.status === 'APPROVED' && r.items) {
+            r.items.forEach(item => {
+                const bId = item.budgetId;
+                const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
+            });
+        }
+    });
+    rpRequests.forEach(r => {
+        if (r.status === 'APPROVED' && r.items) {
+            r.items.forEach(item => {
+                const bId = item.budgetId;
+                const amt = parseInt(String(item.estimatedValue || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                usedBudgets[bId] = (usedBudgets[bId] || 0) + (amt * (parseInt(item.qty) || 1));
+            });
+        }
+    });
+
+    const budgetsWithRemaining = budgetsData.map(b => ({
+        ...b,
+        remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0)
+    }));
+
+    // Get unique divisi classes for the "Diproses Oleh" dropdown
+    const processDivisions = [...new Set(departmentsData.map(d => d.class).filter(Boolean))].sort();
+
+    let editData = null;
+    if (req.query.revisi) {
+        editData = rpRequests.find(r => r.id === req.query.revisi);
+    } else if (req.query.process) {
+        editData = rpRequests.find(r => r.id === req.query.process);
+    }
+
+    res.json({
+        employees: employeesData,
+        budgets: budgetsWithRemaining,
+        vendors: vendorsData,
+        departments: departmentsData,
+        processDivisions,
+        user: {
+            ...u,
+            selectedCompany: u.selectedCompany || '',
+            selectedDivision: u.selectedDivision || '',
+            selectedJobLevel: u.selectedJobLevel || ''
+        },
+        selectedCompany: u.selectedCompany || '',
+        selectedDivision: u.selectedDivision || '',
+        editData
+    });
+});
+
+app.get('/api/rp/next-number/:department', checkAuth, (req, res) => {
+    const rpRequests = readJson('rp-requests.json');
+    const departmentsData = readJson('departments.json');
+    const dept = (req.params.department || '').trim().toUpperCase();
+    const deptData = departmentsData.find(d =>
+        (d.class || '').trim().toUpperCase() === dept ||
+        (d.name || '').trim().toUpperCase() === dept
+    );
+    const deptCode = deptData ? deptData.kodeFrp : dept.substring(0, 3).toUpperCase();
+    const prefix = `RP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
+    const sequences = rpRequests.filter(r => r.rpNo && r.rpNo.startsWith(prefix)).map(r => parseInt(r.rpNo.split('-').pop(), 10) || 0);
+    const nextSeq = Math.max(0, ...sequences) + 1;
+    res.json({ rpNo: `${prefix}${nextSeq.toString().padStart(5, '0')}` });
+});
+
+app.post('/api/rp/save', checkAuth, (req, res) => {
+    try {
+        let rpRequests = readJson('rp-requests.json');
+        const u = req.session.user;
+
+        if (req.body.rpId) {
+            // Revision
+            const idx = rpRequests.findIndex(r => r.id === req.body.rpId);
+            if (idx === -1) return res.json({ success: false, error: 'RP not found for revision' });
+            const updatedReq = { ...rpRequests[idx], ...req.body, id: rpRequests[idx].id, rpNo: rpRequests[idx].rpNo, status: 'PENDING_MANAGER' };
+            delete updatedReq.rpId;
+            rpRequests[idx] = updatedReq;
+            writeJson('rp-requests.json', rpRequests);
+            return res.json({ success: true, rpNo: rpRequests[idx].rpNo, id: rpRequests[idx].id });
+        }
+
+        // New RP
+        const id = 'rp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        const newRp = {
+            id,
+            rpNo: req.body.rpNo || '',
+            status: 'PENDING_MANAGER',
+            companyName: req.body.companyName || u.selectedCompany || '',
+            divisi: req.body.divisi || u.selectedDivision || '',
+            class: req.body.class || '',
+            dibuatOleh: req.body.dibuatOleh || u.fullName,
+            kategoriPembelian: req.body.kategoriPembelian || '',
+            deskripsi: req.body.deskripsi || '',
+            diprosesOleh: req.body.diprosesOleh || '',
+            tanggalDibutuhkan: req.body.tanggalDibutuhkan || '',
+            vendorSuggestion: req.body.vendorSuggestion || '',
+            picPenerima: req.body.picPenerima || '',
+            items: req.body.items || [],
+            createdAt: new Date().toISOString(),
+            createdBy: u.fullName
+        };
+        rpRequests.push(newRp);
+        writeJson('rp-requests.json', rpRequests);
+        res.json({ success: true, rpNo: newRp.rpNo, id: newRp.id });
+    } catch (e) {
+        res.json({ success: false, error: e.message });
+    }
+});
+
+app.get('/api/data/rp-approval', checkAuth, (req, res) => {
+    const u = req.session.user;
+    const view = req.query.view || 'pending';
+    let reqs = readJson('rp-requests.json');
+
+    // Calculate counts for each view dynamically
+    const pendingCount = reqs.filter(r => r.status === 'PENDING_MANAGER' && (u.role === 'administrator' || r.divisi === u.selectedDivision)).length;
+    const processCount = reqs.filter(r => r.status === 'PENDING_PROCESS' && (u.role === 'administrator' || r.diprosesOleh === u.selectedDivision || r.divisi === u.selectedDivision)).length;
+    const processApprovalCount = reqs.filter(r => r.status === 'PENDING_PROCESS_APPROVAL' && (u.role === 'administrator' || r.diprosesOleh === u.selectedDivision || r.divisi === u.selectedDivision)).length;
+    const approvedCount = reqs.filter(r => (r.status === 'APPROVED' || r.status === 'REJECTED') && (u.role === 'administrator' || r.divisi === u.selectedDivision || r.diprosesOleh === u.selectedDivision)).length;
+
+    if (view === 'approved') {
+        reqs = reqs.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED');
+        if (u.role !== 'administrator') {
+            reqs = reqs.filter(r => r.divisi === u.selectedDivision || r.diprosesOleh === u.selectedDivision);
+        }
+    } else if (view === 'process') {
+        // Items pending processing by the processing division
+        reqs = reqs.filter(r => r.status === 'PENDING_PROCESS');
+        if (u.role !== 'administrator') {
+            reqs = reqs.filter(r => r.diprosesOleh === u.selectedDivision || r.divisi === u.selectedDivision);
+        }
+    } else if (view === 'process-approval') {
+        reqs = reqs.filter(r => r.status === 'PENDING_PROCESS_APPROVAL');
+        if (u.role !== 'administrator') {
+            reqs = reqs.filter(r => r.diprosesOleh === u.selectedDivision || r.divisi === u.selectedDivision);
+        }
+    } else {
+        // Default: pending manager approval
+        reqs = reqs.filter(r => r.status === 'PENDING_MANAGER');
+        if (u.role !== 'administrator') {
+            reqs = reqs.filter(r => r.divisi === u.selectedDivision);
+        }
+    }
+
+    const canApprove = u.role === 'administrator' || ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
+
+    res.json({
+        requests: reqs,
+        canApprove,
+        view,
+        counts: {
+            pending: pendingCount,
+            process: processCount,
+            'process-approval': processApprovalCount,
+            approved: approvedCount
+        },
+        user: { fullName: u.fullName, role: u.role, selectedDivision: u.selectedDivision, selectedJobLevel: u.selectedJobLevel, allAssignments: u.allAssignments || [] }
+    });
+});
+
+app.get('/api/rp/:id', checkAuth, (req, res) => {
+    const data = readJson('rp-requests.json').find(r => r.id === req.params.id);
+    if (!data) return res.status(404).json({ error: 'Not found' });
+    const user = req.session.user;
+    const isAdmin = user.role === 'administrator';
+    const canApprove = isAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
+    const isProcessDivision = isAdmin || user.selectedDivision === data.diprosesOleh;
+
+    res.json({
+        data,
+        employees: readJson('employees.json'),
+        vendors: readJson('vendors.json'),
+        budgets: readJson('budgets.json'),
+        user,
+        isAdmin,
+        canApprove,
+        isProcessDivision
+    });
+});
+
+app.post('/api/rp/:id/:action', checkAuth, (req, res) => {
+    let rpRequests = readJson('rp-requests.json');
+    const idx = rpRequests.findIndex(r => r.id === req.params.id);
+    if (idx === -1) return res.json({ success: false, error: 'RP not found' });
+
+    const action = req.params.action;
+    const rp = rpRequests[idx];
+    const u = req.session.user;
+    const isAdmin = u.role === 'administrator';
+
+    // Authorization checks for different actions based on division and role
+    if (action === 'manager-approve' || action === 'manager-reject') {
+        if (!isAdmin) {
+            const isManager = ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
+            if (!isManager) {
+                return res.json({ success: false, error: 'Hanya Manager yang dapat melakukan persetujuan ini' });
+            }
+            if (u.selectedDivision !== rp.divisi) {
+                return res.json({ success: false, error: 'Anda hanya dapat menyetujui dokumen dari divisi Anda sendiri' });
+            }
+        }
+    }
+
+    if (action === 'process-update' || action === 'process-direct' || action === 'process-reject') {
+        if (!isAdmin) {
+            const allowedDivisions = ['IT', 'HCGA', 'Product'];
+            if (!allowedDivisions.includes(u.selectedDivision)) {
+                return res.json({ success: false, error: 'Hanya divisi IT, HCGA, dan Product yang dapat memproses data ini' });
+            }
+            if (u.selectedDivision !== rp.diprosesOleh) {
+                return res.json({ success: false, error: `Anda hanya dapat memproses data untuk divisi ${rp.diprosesOleh}` });
+            }
+        }
+    }
+
+    if (action === 'process-manager-approve' || action === 'process-manager-reject') {
+        if (!isAdmin) {
+            const isManager = ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
+            if (!isManager) {
+                return res.json({ success: false, error: 'Hanya Manager dari divisi pemroses yang dapat melakukan persetujuan final ini' });
+            }
+            const allowedDivisions = ['IT', 'HCGA', 'Product'];
+            if (!allowedDivisions.includes(u.selectedDivision)) {
+                return res.json({ success: false, error: 'Hanya divisi IT, HCGA, dan Product yang dapat menyetujui data ini' });
+            }
+            if (u.selectedDivision !== rp.diprosesOleh) {
+                return res.json({ success: false, error: `Anda hanya dapat menyetujui data untuk divisi ${rp.diprosesOleh}` });
+            }
+        }
+    }
+
+    if (action === 'manager-approve') {
+        // Manager of requester's division approves
+        if (rp.status !== 'PENDING_MANAGER') return res.json({ success: false, error: 'Invalid status for this action' });
+        rp.status = 'PENDING_PROCESS';
+        rp.managerApprovedBy = u.fullName;
+        rp.managerApprovedAt = new Date().toISOString();
+    } else if (action === 'manager-reject') {
+        if (rp.status !== 'PENDING_MANAGER') return res.json({ success: false, error: 'Invalid status' });
+        rp.status = 'REJECTED';
+        rp.rejectedBy = u.fullName;
+        rp.rejectedAt = new Date().toISOString();
+        rp.rejectedReason = req.body.reason || '';
+        rp.rejectedStage = 'manager';
+    } else if (action === 'process-update') {
+        // Processing division updates the RP data
+        if (rp.status !== 'PENDING_PROCESS') return res.json({ success: false, error: 'Invalid status' });
+
+        // Track changes (old vs new)
+        const changes = [];
+        const headerFields = ['vendorSuggestion', 'tanggalDibutuhkan', 'picPenerima', 'deskripsi'];
+        headerFields.forEach(field => {
+            if (req.body[field] !== undefined && req.body[field] !== rp[field]) {
+                changes.push({ field, oldValue: rp[field], newValue: req.body[field] });
+            }
+        });
+
+        // Track item changes
+        const newItems = req.body.items || rp.items;
+        const oldItems = rp.items || [];
+        newItems.forEach((newItem, i) => {
+            const oldItem = oldItems[i] || {};
+            ['memo', 'linkPembelian', 'qty', 'estimatedValue', 'budgetId'].forEach(field => {
+                if (newItem[field] !== undefined && String(newItem[field]) !== String(oldItem[field] || '')) {
+                    changes.push({ field: `items[${i}].${field}`, oldValue: oldItem[field] || '', newValue: newItem[field], itemIndex: i });
+                }
+            });
+        });
+
+        // Update the data
+        headerFields.forEach(field => {
+            if (req.body[field] !== undefined) rp[field] = req.body[field];
+        });
+        if (req.body.items) rp.items = req.body.items;
+
+        rp.processChanges = changes;
+        rp.processUpdatedBy = u.fullName;
+        rp.processUpdatedAt = new Date().toISOString();
+        rp.status = 'PENDING_PROCESS_APPROVAL';
+    } else if (action === 'process-direct') {
+        // Processing division directly moves to process-approval without changes
+        if (rp.status !== 'PENDING_PROCESS') return res.json({ success: false, error: 'Invalid status' });
+        rp.processUpdatedBy = u.fullName;
+        rp.processUpdatedAt = new Date().toISOString();
+        rp.processChanges = [];
+        rp.status = 'PENDING_PROCESS_APPROVAL';
+    } else if (action === 'process-reject') {
+        if (rp.status !== 'PENDING_PROCESS') return res.json({ success: false, error: 'Invalid status' });
+        rp.status = 'REJECTED';
+        rp.rejectedBy = u.fullName;
+        rp.rejectedAt = new Date().toISOString();
+        rp.rejectedReason = req.body.reason || '';
+        rp.rejectedStage = 'process';
+    } else if (action === 'process-manager-approve') {
+        if (rp.status !== 'PENDING_PROCESS_APPROVAL') return res.json({ success: false, error: 'Invalid status' });
+        rp.status = 'APPROVED';
+        rp.processManagerApprovedBy = u.fullName;
+        rp.processManagerApprovedAt = new Date().toISOString();
+    } else if (action === 'process-manager-reject') {
+        if (rp.status !== 'PENDING_PROCESS_APPROVAL') return res.json({ success: false, error: 'Invalid status' });
+        rp.status = 'REJECTED';
+        rp.rejectedBy = u.fullName;
+        rp.rejectedAt = new Date().toISOString();
+        rp.rejectedReason = req.body.reason || '';
+        rp.rejectedStage = 'process-manager';
+    } else if (action === 'delete') {
+        rpRequests.splice(idx, 1);
+    } else if (action === 'revert') {
+        if (u.role !== 'administrator') return res.status(403).json({ success: false, error: 'Hanya administrator' });
+        rp.status = 'PENDING_MANAGER';
+        delete rp.managerApprovedBy;
+        delete rp.managerApprovedAt;
+        delete rp.processUpdatedBy;
+        delete rp.processUpdatedAt;
+        delete rp.processChanges;
+        delete rp.processManagerApprovedBy;
+        delete rp.processManagerApprovedAt;
+        delete rp.rejectedBy;
+        delete rp.rejectedAt;
+        delete rp.rejectedReason;
+        delete rp.rejectedStage;
+    } else {
+        return res.json({ success: false, error: 'Unknown action' });
+    }
+
+    rpRequests[idx] = rp;
+    writeJson('rp-requests.json', rpRequests);
+    res.json({ success: true });
+});
+
 // --- PDF ROUTES ---
 app.post('/preview', checkAuth, (req, res) => {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(renderPdfDocument(req.body, true));
+});
+
+app.get('/api/rp/:id/preview', checkAuth, (req, res) => {
+    const data = readJson('rp-requests.json').find(r => r.id === req.params.id);
+    if (!data) return res.status(404).send('Not found');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(renderRpPdfDocument(data, true));
+});
+
+app.get('/api/rp/:id/pdf', checkAuth, async (req, res) => {
+    try {
+        const data = readJson('rp-requests.json').find(r => r.id === req.params.id);
+        if (!data) return res.status(404).send('Not found');
+        
+        const html = renderRpPdfDocument(data, false);
+        const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({ format: 'A4', landscape: true, printBackground: true, margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' } });
+        await browser.close();
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${data.rpNo || 'DRAFT'}.pdf"`);
+        res.send(pdfBuffer);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to generate PDF', details: error.message });
+    }
 });
 
 app.post('/generate-pdf', checkAuth, async (req, res) => {
