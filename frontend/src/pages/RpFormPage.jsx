@@ -158,10 +158,11 @@ export default function RpFormPage() {
   const removeRow = i => setValues(p => ({ ...p, items: p.items.filter((_, idx) => idx !== i) }))
 
   const departments = useMemo(() => {
+    if (D.processDivisions && D.processDivisions.length > 0) return D.processDivisions
     const emps = D.employees || []
     const divs = [...new Set(emps.flatMap(e => (e.companies || []).filter(a => !values.companyName || a.name === values.companyName).map(a => a.class)).filter(Boolean))]
     return divs.sort()
-  }, [D.employees, values.companyName])
+  }, [D.processDivisions, D.employees, values.companyName])
 
   const classOptions = useMemo(() => {
     const budgets = D.budgets || []
@@ -178,7 +179,10 @@ export default function RpFormPage() {
     })
   }, [D.budgets, values.divisi, values.companyName])
 
-  const processDivOptions = useMemo(() => ['IT', 'HCGA', 'Product'].map(d => ({ value: d, label: d })), [])
+  const processDivOptions = useMemo(
+    () => (D.processDivisions || ['IT', 'HCGA', 'Product']).map(d => ({ value: d, label: d })),
+    [D.processDivisions]
+  )
   const vendorOptions = useMemo(() => (D.vendors || []).map(v => ({ value: v.name, label: v.name })), [D.vendors])
   const kategoriOptions = ['Pengadaan Barang Baru', 'Pergantian Barang', 'Penambahan Barang'].map(k => ({ value: k, label: k }))
   const budgetSelectOpts = useMemo(() => budgetOptions.map(b => ({ value: b.id, label: `${b.id} - ${b.description}`, keywords: `${b.id} ${b.description}` })), [budgetOptions])

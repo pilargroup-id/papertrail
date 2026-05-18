@@ -395,11 +395,12 @@ app.get('/frp', checkAuth, (req, res) => sendSPA(res));
 app.get('/api/form-data', checkAuth, async (req, res) => {
     try {
         const u = req.session.user;
-        const [employees, budgetsData, companiesData, vendorsData] = await Promise.all([
+        const [employees, budgetsData, companiesData, vendorsData, deptRows] = await Promise.all([
             getAllEmployees(),
             Promise.resolve(readJson('budgets.json')),
             Promise.resolve(readJson('companies.json')),
             Promise.resolve(readJson('vendors.json')),
+            db.query('SELECT id, name, class, code AS kodeFrp, company FROM master_departments ORDER BY name').then(([r]) => r),
         ]);
         const requests = readJson('requests.json');
 
@@ -424,11 +425,16 @@ app.get('/api/form-data', checkAuth, async (req, res) => {
             editData = requests.find(r => r.id === req.query.revisi);
         }
 
+        const departments = deptRows.map(r => ({ id: r.id, name: r.name, class: r.class, kodeFrp: r.kodeFrp, company: r.company }));
+        const divisionList = [...new Set(deptRows.map(r => r.name))].sort();
+
         res.json({
             employees,
             budgets: budgetsWithRemaining,
             companies: companiesData,
             vendors: vendorsData,
+            departments,
+            divisionList,
             user: {
                 ...u,
                 selectedCompany: u.selectedCompany || '',

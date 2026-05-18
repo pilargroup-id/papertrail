@@ -675,8 +675,8 @@ export default function FormPage() {
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
   const departments = useMemo(
-    () => buildDepartments(FRP.employees || [], values.companyName),
-    [FRP.employees, values.companyName],
+    () => FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName),
+    [FRP.divisionList, FRP.employees, values.companyName],
   )
 
   const filteredEmployees = useMemo(() => {
