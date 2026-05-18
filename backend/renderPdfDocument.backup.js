@@ -267,7 +267,6 @@ function renderPdfDocument(formData = {}, preview = false) {
         <tr><td class="lbl">Company Name</td><td class="sep">:</td><td>${escapeHtml(formData.companyName || '-')}</td></tr>
         <tr><td class="lbl">Divisi</td><td class="sep">:</td><td>${escapeHtml(formData.divisi || '-')}</td></tr>
         <tr><td class="lbl">Diminta Oleh</td><td class="sep">:</td><td>${escapeHtml(formData.dimintaOleh || '-')}</td></tr>
-        ${formData.rpReference ? `<tr><td class="lbl" style="color: #1e3a8a; font-weight: 700;">Referensi RP No</td><td class="sep" style="color: #1e3a8a; font-weight: 700;">:</td><td style="color: #1e3a8a; font-weight: 700;">${escapeHtml(formData.rpReference)}</td></tr>` : ''}
       </table>
     </div>
     <div class="info-col">

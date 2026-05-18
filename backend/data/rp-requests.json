@@ -2,10 +2,10 @@
   {
     "id": "rp-1779078806900-y12qqmfwf",
     "rpNo": "RP-GSG-26-00001",
-    "status": "APPROVED",
+    "status": "CREATED_FRP",
     "companyName": "PT PILAR NIAGA MAKMUR",
-    "divisi": "Gosave GT",
-    "class": "Gosave GT",
+    "divisi": "Product",
+    "class": "Product",
     "dibuatOleh": "Egy Irsandi",
     "kategoriPembelian": "Pengadaan Barang Baru",
     "deskripsi": "pembelian barang baru",
@@ -31,26 +31,13 @@
     ],
     "createdAt": "2026-05-18T04:33:26.900Z",
     "createdBy": "Egy Irsandi",
-    "managerApprovedBy": "Chandra",
-    "managerApprovedAt": "2026-05-18T04:34:06.127Z",
-    "processChanges": [
-      {
-        "field": "items[0].estimatedValue",
-        "oldValue": "50000",
-        "newValue": "150000",
-        "itemIndex": 0
-      },
-      {
-        "field": "items[1].estimatedValue",
-        "oldValue": "100000",
-        "newValue": "400000",
-        "itemIndex": 1
-      }
-    ],
+    "managerApprovedBy": "Bayu Noegroho",
+    "managerApprovedAt": "2026-05-18T08:23:39.845Z",
+    "processChanges": [],
     "processUpdatedBy": "Bayu Noegroho",
-    "processUpdatedAt": "2026-05-18T04:35:09.689Z",
-    "processManagerApprovedBy": "Yulliemty",
-    "processManagerApprovedAt": "2026-05-18T04:36:04.455Z"
+    "processUpdatedAt": "2026-05-18T08:23:51.917Z",
+    "processManagerApprovedBy": "Bayu Noegroho",
+    "processManagerApprovedAt": "2026-05-18T08:24:04.584Z"
   },
   {
     "id": "rp-1779080480345-os31y4poi",

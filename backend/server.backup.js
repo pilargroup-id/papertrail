@@ -558,17 +558,6 @@ app.post('/api/frp/save', checkAuth, (req, res) => {
         const newReq = { ...req.body, id: Date.now().toString(36), frpNo, requestBy: req.body.dimintaOleh || 'System', status: 'PENDING', createdBy: req.session.user.fullName, createdAt: new Date().toISOString() };
         requests.push(newReq);
         writeJson('requests.json', requests);
-
-        // Update originating RP status to CREATED_FRP if fromRpId is provided
-        if (req.body.fromRpId) {
-            let rpRequests = readJson('rp-requests.json');
-            const rpIdx = rpRequests.findIndex(r => r.id === req.body.fromRpId);
-            if (rpIdx !== -1) {
-                rpRequests[rpIdx].status = 'CREATED_FRP';
-                writeJson('rp-requests.json', rpRequests);
-            }
-        }
-
         res.json({ success: true, id: newReq.id, frpNo });
     } catch (e) { res.json({ success: false, error: e.message }); }
 });
@@ -1051,10 +1040,10 @@ app.get('/api/data/rp-approval', checkAuth, (req, res) => {
     const pendingCount = reqs.filter(r => r.status === 'PENDING_MANAGER' && (u.role === 'administrator' || r.divisi === u.selectedDivision)).length;
     const processCount = reqs.filter(r => r.status === 'PENDING_PROCESS' && (u.role === 'administrator' || r.diprosesOleh === u.selectedDivision || r.divisi === u.selectedDivision)).length;
     const processApprovalCount = reqs.filter(r => r.status === 'PENDING_PROCESS_APPROVAL' && (u.role === 'administrator' || r.diprosesOleh === u.selectedDivision || r.divisi === u.selectedDivision)).length;
-    const approvedCount = reqs.filter(r => (r.status === 'APPROVED' || r.status === 'REJECTED' || r.status === 'CREATED_FRP') && (u.role === 'administrator' || r.divisi === u.selectedDivision || r.diprosesOleh === u.selectedDivision)).length;
+    const approvedCount = reqs.filter(r => (r.status === 'APPROVED' || r.status === 'REJECTED') && (u.role === 'administrator' || r.divisi === u.selectedDivision || r.diprosesOleh === u.selectedDivision)).length;
 
     if (view === 'approved') {
-        reqs = reqs.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED' || r.status === 'CREATED_FRP');
+        reqs = reqs.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED');
         if (u.role !== 'administrator') {
             reqs = reqs.filter(r => r.divisi === u.selectedDivision || r.diprosesOleh === u.selectedDivision);
         }

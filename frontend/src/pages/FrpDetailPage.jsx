@@ -133,6 +133,12 @@ export default function FrpDetailPage() {
           <div><label style={labelStyle}>Diminta Oleh</label><input readOnly value={data.dimintaOleh || ''} style={fieldStyle} /></div>
         </div>
         <div><label style={labelStyle}>Keterangan FRP</label><textarea rows="2" readOnly value={data.keteranganFrp || ''} style={{ ...fieldStyle, resize: 'none' }} /></div>
+        {data.rpReference && (
+          <div style={{ marginTop: '10px' }}>
+            <label style={{ ...labelStyle, color: '#1d4ed8' }}>Referensi RP No</label>
+            <input readOnly value={data.rpReference} style={{ ...fieldStyle, color: '#1d4ed8', fontWeight: 'bold', background: '#eff6ff', border: '1.5px solid #bfdbfe', maxWidth: isMobile ? '100%' : '50%' }} />
+          </div>
+        )}
       </div>
 
       <div style={sectionStyle}>

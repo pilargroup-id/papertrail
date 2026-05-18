@@ -55,8 +55,6 @@ const blankForm = {
   checkDocs: ['Form Request Payment'],
   items: getDefaultItems(),
   id: '',
-  rpReference: '',
-  fromRpId: '',
 }
 
 const buildInitialForm = data => {
@@ -614,51 +612,9 @@ export default function FormPage() {
         }
         return r.json()
       })
-      .then(async data => {
+      .then(data => {
         setFrpData(data)
-        const initial = buildInitialForm(data)
-
-        const fromRpId = searchParams.get('fromRp')
-        if (fromRpId) {
-          try {
-            const rpRes = await fetch(`/api/rp/${fromRpId}`)
-            const rpJson = await rpRes.json()
-            if (rpJson && rpJson.data) {
-              const rp = rpJson.data
-
-              // Map items from RP to FRP format
-              const mappedItems = Array.isArray(rp.items) ? rp.items.map(it => {
-                const qtyVal = Number(it.qty) || 1
-                const estVal = Number(it.estimatedValue) || 0
-                return {
-                  memo: it.memo || '',
-                  budgetId: it.budgetId || '',
-                  qty: String(qtyVal),
-                  hargaSatuan: formatNumberInput(estVal),
-                  amount: qtyVal * estVal,
-                }
-              }) : getDefaultItems()
-
-              setValues({
-                ...initial,
-                companyName: rp.companyName || initial.companyName,
-                divisi: rp.divisi || initial.divisi,
-                dimintaOleh: rp.dibuatOleh || initial.dimintaOleh,
-                keteranganFrp: rp.deskripsi || '',
-                vendor: rp.vendorSuggestion || '',
-                paymentDate: rp.tanggalDibutuhkan || today,
-                rpReference: rp.rpNo || '',
-                fromRpId: fromRpId,
-                items: mappedItems,
-              })
-              return
-            }
-          } catch (e) {
-            console.error('Failed to load RP data:', e)
-          }
-        }
-
-        setValues(initial)
+        setValues(buildInitialForm(data))
       })
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false))
@@ -869,13 +825,6 @@ export default function FormPage() {
           {!loading && !error && (
             <form id="frpForm" onSubmit={handleSubmit}>
               {values.id && <input type="hidden" name="frpId" value={values.id} />}
-
-              {values.rpReference && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', marginBottom: '1.5rem', color: '#1e40af', fontWeight: 600, fontSize: '0.9rem' }}>
-                  <span className="material-icons-round" style={{ color: '#2563eb', fontSize: '20px' }}>info</span>
-                  Membuat FRP dari referensi Request Purchase No: <strong>{values.rpReference}</strong>
-                </div>
-              )}
 
               <div style={cardStyle}>
                 <h3 style={S.sectionTitle}>

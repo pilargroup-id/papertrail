@@ -4,8 +4,8 @@ import Sidebar from '../components/Sidebar'
 import Header from '../components/Header'
 
 const formatCurrency = v => new Intl.NumberFormat('id-ID').format(Math.round(Number(String(v).replace(/[^0-9.-]/g,''))||0))
-const STATUS_COLORS = { PENDING_MANAGER:'#f59e0b', PENDING_PROCESS:'#3b82f6', PENDING_PROCESS_APPROVAL:'#8b5cf6', APPROVED:'#10b981', REJECTED:'#ef4444', CREATED_FRP:'#0284c7' }
-const STATUS_LABELS = { PENDING_MANAGER:'Menunggu Manager', PENDING_PROCESS:'Menunggu Proses', PENDING_PROCESS_APPROVAL:'Menunggu Approval Proses', APPROVED:'Approved', REJECTED:'Rejected', CREATED_FRP:'Created FRP' }
+const STATUS_COLORS = { PENDING_MANAGER:'#f59e0b', PENDING_PROCESS:'#3b82f6', PENDING_PROCESS_APPROVAL:'#8b5cf6', APPROVED:'#10b981', REJECTED:'#ef4444' }
+const STATUS_LABELS = { PENDING_MANAGER:'Menunggu Manager', PENDING_PROCESS:'Menunggu Proses', PENDING_PROCESS_APPROVAL:'Menunggu Approval Proses', APPROVED:'Approved', REJECTED:'Rejected' }
 
 export default function RpApprovalPage() {
   const { pathname } = useLocation()
@@ -123,10 +123,6 @@ export default function RpApprovalPage() {
             <div style={{ display:'flex', gap:'10px', justifyContent:'flex-end', marginTop:'1.5rem', flexWrap:'wrap' }}>
               <button onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')} style={{ padding:'10px 20px', background:'#f8fafc', color:'#475569', border:'1px solid #cbd5e1', borderRadius:'10px', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Preview</button>
               <button onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')} style={{ padding:'10px 20px', background:'#f1f5f9', color:'#1e293b', border:'1px solid #cbd5e1', borderRadius:'10px', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Print PDF</button>
-              
-              {rp.status === 'APPROVED' && user.selectedDivision === 'Product' && (
-                <button onClick={() => navigate(`/frp?fromRp=${rp.id}`)} style={{ padding:'10px 20px', background:'#2563eb', color:'white', border:'none', borderRadius:'10px', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Ke FRP</button>
-              )}
               
               {rp.status === 'PENDING_MANAGER' && (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && user.selectedDivision === rp.divisi)) && (
                 <>
