@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 function getInitials(name) {
@@ -37,7 +37,7 @@ function SidebarNavItem({ item, pathname, collapsed, expandedGroups, onToggleGro
         : <span className="nav-item__bullet" />
       }
       <span className="nav-text">{item.label}</span>
-      {hasChildren && <span className="material-icons-round nav-item__chevron" style={{ fontSize: '18px', marginLeft: 'auto' }}>chevron_right</span>}
+      {hasChildren && <span className="material-icons-round nav-item__chevron" style={{ fontSize: '18px', marginLeft: 'auto' }}>{expanded ? 'expand_less' : 'expand_more'}</span>}
     </>
   )
 
@@ -60,54 +60,75 @@ function SidebarNavItem({ item, pathname, collapsed, expandedGroups, onToggleGro
       )}
       {hasChildren && !collapsed && (
         <div className={`nav-submenu${expanded ? ' expanded' : ''}`}>
-          {item.children.map(child => (
-            <SidebarNavItem key={getItemKey(child)} item={child} pathname={pathname} collapsed={collapsed} expandedGroups={expandedGroups} onToggleGroup={onToggleGroup} onSelect={onSelect} isChild />
-          ))}
+          <div className="nav-submenu__inner">
+            {item.children.map(child => (
+              <SidebarNavItem key={getItemKey(child)} item={child} pathname={pathname} collapsed={collapsed} expandedGroups={expandedGroups} onToggleGroup={onToggleGroup} onSelect={onSelect} isChild />
+            ))}
+          </div>
         </div>
       )}
     </>
   )
 }
 
+function getInitialExpanded(pathname) {
+  const map = {
+    'FRP': ['/', '/frp', '/approval', '/approved'],
+    'Request Purchase': ['/rp', '/rp-approval', '/rp-approved'],
+    'Master Data': null,
+  }
+  const initial = {}
+  for (const [key, paths] of Object.entries(map)) {
+    if (paths ? paths.includes(pathname) : pathname.startsWith('/admin/')) {
+      initial[key] = true
+    }
+  }
+  return initial
+}
+
 export default function Sidebar({ collapsed = false, mobileOpen = false, userName = 'User', userRole = 'Staff', userIsAdmin = false, allAssignments = [], onToggleCollapse, onCloseMobile, hideMenu = false }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const [expandedGroups, setExpandedGroups] = useState({})
+  const [userExpandedGroups, setUserExpandedGroups] = useState({})
+  const expandedGroups = { ...getInitialExpanded(pathname), ...userExpandedGroups }
 
   const uniqueCompanies = [...new Set((allAssignments || []).map(a => a.name))]
   const showBack = (allAssignments || []).length > 1
   const backUrl = uniqueCompanies.length > 1 ? '/select-company' : '/select-division'
 
   const primaryItems = hideMenu ? [] : [
-    ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'dashboard' }] : []),
-    { label: 'FRP', icon: 'payments', children: [
-      { label: 'New Request', href: '/frp', icon: 'add_circle' },
-      { label: 'Approval', href: '/approval', icon: 'pending_actions' },
-      { label: 'Approved', href: '/approved', icon: 'check_circle' },
+    ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
+    { label: 'FRP', icon: 'receipt_long', children: [
+      { label: 'New Request', href: '/frp', icon: 'note_add' },
+      { label: 'Approval', href: '/approval', icon: 'rule' },
+      { label: 'Approved', href: '/approved', icon: 'task_alt' },
     ]},
-    { label: 'Request Purchase', icon: 'shopping_cart', children: [
-      { label: 'New RP', href: '/rp', icon: 'add_circle' },
-      { label: 'RP Approval', href: '/rp-approval', icon: 'pending_actions' },
-      { label: 'RP Approved', href: '/rp-approved', icon: 'check_circle' },
+    { label: 'Request Purchase', icon: 'shopping_bag', children: [
+      { label: 'New RP', href: '/rp', icon: 'note_add' },
+      { label: 'RP Approval', href: '/rp-approval', icon: 'rule' },
+      { label: 'RP Approved', href: '/rp-approved', icon: 'task_alt' },
     ]},
-    ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{ label: 'Laporan', href: '/laporan', icon: 'summarize' }] : []),
+    ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{ label: 'Report', href: '/laporan', icon: 'analytics' }] : []),
     ...(userIsAdmin ? [{
-      label: 'Master Data', icon: 'admin_panel_settings', children: [
-        { label: 'Karyawan', href: '/admin/employees', icon: 'people' },
-        { label: 'Vendor', href: '/admin/vendors', icon: 'store' },
-        { label: 'Departemen', href: '/admin/departments', icon: 'account_tree' },
-        { label: 'Anggaran', href: '/admin/budgets', icon: 'savings' },
-        { label: 'Roles', href: '/admin/roles', icon: 'manage_accounts' },
+      label: 'Master Data', icon: 'dns', children: [
+        { label: 'Karyawan', href: '/admin/employees', icon: 'groups' },
+        { label: 'Vendor', href: '/admin/vendors', icon: 'storefront' },
+        { label: 'Departemen', href: '/admin/departments', icon: 'corporate_fare' },
+        { label: 'Anggaran', href: '/admin/budgets', icon: 'account_balance' },
+        { label: 'Roles', href: '/admin/roles', icon: 'verified_user' },
       ]
     }] : []),
   ]
 
   const secondaryItems = [
-    ...(showBack && !hideMenu ? [{ label: 'Ganti Akses', href: backUrl, icon: 'swap_horiz' }] : []),
+    ...(showBack && !hideMenu ? [{ label: 'Ganti Akses', href: backUrl, icon: 'switch_account' }] : []),
     { label: 'Logout', href: '/logout', icon: 'logout', danger: true },
   ]
 
-  const onToggleGroup = key => setExpandedGroups(g => ({ ...g, [key]: !g[key] }))
+  const onToggleGroup = key => {
+    const isExpanded = expandedGroups[key] ?? false
+    setUserExpandedGroups(g => ({ ...g, [key]: !isExpanded }))
+  }
 
   const onSelect = item => {
     if (onCloseMobile) onCloseMobile()
@@ -116,6 +137,13 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
   }
 
   return (
+    <>
+    <button
+      type="button"
+      className={`sidebar-overlay${mobileOpen ? ' active' : ''}`}
+      onClick={onCloseMobile}
+      aria-label="Tutup menu"
+    />
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}${mobileOpen ? ' mobile-open' : ''}`}>
       <button type="button" className="sidebar-toggle" aria-label="Toggle Sidebar" onClick={onToggleCollapse}>
         <span className="material-icons-round toggle-icon" style={{ fontSize: '16px' }}>
@@ -151,5 +179,6 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
         ))}
       </div>
     </aside>
+    </>
   )
 }

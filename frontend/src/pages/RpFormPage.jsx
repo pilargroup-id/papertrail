@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import { useUser } from '../contexts/UserContext'
 
 const MOBILE = 768, TABLET = 1024
 const normalizeNumber = v => { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return Number.isNaN(n) ? 0 : n }
@@ -121,8 +120,7 @@ export default function RpFormPage() {
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [values, setValues] = useState(blankRp)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -135,6 +133,7 @@ export default function RpFormPage() {
       .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
       .then(d => {
         setData(d)
+        setUser(d?.user)
         const base = { ...blankRp, companyName: d.selectedCompany || '', divisi: d.selectedDivision || '', dibuatOleh: d.user?.fullName || '' }
         if (d.editData) {
           setValues({ ...base, ...d.editData })
@@ -241,14 +240,8 @@ export default function RpFormPage() {
 
   const gridStyle = (cols) => ({ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${cols}, 1fr)`, gap: isMobile ? '0.85rem' : '1rem' })
 
-  const handleSidebarToggle = () => { if (window.innerWidth <= 1024) { setMobileMenuOpen(c => !c); return }; setSidebarCollapsed(c => !c) }
-
   return (
-    <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-      <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} userName={D.user?.fullName} userRole={D.user?.selectedJobLevel || D.user?.role} userIsAdmin={isAdmin} allAssignments={D.user?.allAssignments || []} onToggleCollapse={handleSidebarToggle} onCloseMobile={() => setMobileMenuOpen(false)} />
-      <div className="dashboard-stage">
-        <Header title="Request Purchase (RP)" onMenuClick={() => setMobileMenuOpen(true)} />
-        <main className="dashboard-main">
+    <main className="dashboard-main">
           {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
           {error && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#ef4444' }}>{error}</div>}
           {!loading && !error && (
@@ -351,8 +344,6 @@ export default function RpFormPage() {
               </div>
             </form>
           )}
-        </main>
-      </div>
-    </div>
+    </main>
   )
 }

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import { useUser } from '../contexts/UserContext'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -697,14 +696,24 @@ export default function AdminPage() {
   if (!VALID_TYPES.includes(type)) return <Navigate to="/" replace />
 
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [addForm, setAddForm] = useState(getBlankForm(type))
+  const { setUser } = useUser()
+  const [addForm, setAddForm] = useState(() => getBlankForm(type))
   const [editItem, setEditItem] = useState(null)
   const [companyFilter, setCompanyFilter] = useState('')
   const [saving, setSaving] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
+  const [renderedType, setRenderedType] = useState(type)
+
+  // Synchronous state reset — runs before browser paint, no stale-data flash
+  if (renderedType !== type) {
+    setRenderedType(type)
+    setAddForm(getBlankForm(type))
+    setEditItem(null)
+    setCompanyFilter('')
+    setData(null)
+  }
+
+  const loading = data === null
 
   const meta = PAGE_META[type]
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
@@ -714,16 +723,8 @@ export default function AdminPage() {
   const loadData = useCallback(() => {
     fetch(`/api/data/admin?type=${type}`)
       .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
-      .then(setData)
+      .then(d => { setData(d); setUser(d?.user) })
       .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [type])
-
-  useEffect(() => {
-    setAddForm(getBlankForm(type))
-    setEditItem(null)
-    setCompanyFilter('')
-    setLoading(true)
   }, [type])
 
   useEffect(() => { loadData() }, [loadData])
@@ -792,30 +793,9 @@ export default function AdminPage() {
     return listData.length
   }, [companyFilter, listData, type])
 
-  const handleSidebarToggle = () => {
-    if (window.innerWidth <= 1024) {
-      setMobileMenuOpen(current => !current)
-      return
-    }
-    setSidebarCollapsed(current => !current)
-  }
-
   return (
     <>
-      <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          mobileOpen={mobileMenuOpen}
-          userName={user.fullName || 'Admin'}
-          userRole={user.selectedJobLevel || user.role || 'Administrator'}
-          userIsAdmin={user.role === 'administrator'}
-          allAssignments={user.allAssignments || []}
-          onToggleCollapse={handleSidebarToggle}
-          onCloseMobile={() => setMobileMenuOpen(false)}
-        />
-        <div className="dashboard-stage">
-          <Header title="Form Request Payment" onMenuClick={() => setMobileMenuOpen(true)} />
-          <main className="dashboard-main">
+      <main className="dashboard-main">
             {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
 
             {!loading && <>
@@ -865,9 +845,7 @@ export default function AdminPage() {
                 )}
               </section>
             </>}
-          </main>
-        </div>
-      </div>
+      </main>
 
       {editItem && (
         <div style={styles.modalOverlay} onClick={() => setEditItem(null)}>

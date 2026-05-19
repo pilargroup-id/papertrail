@@ -797,12 +797,10 @@
     "rekBankTujuan": "1234567890",
     "frpNo": "FRP-SIT-26-00002",
     "requestBy": "Bayu Noegroho",
-    "status": "APPROVED",
+    "status": "PENDING",
     "createdBy": "Bayu Noegroho",
     "createdAt": "2026-05-18T10:01:48.113Z",
-    "approvedByActual": "Bayu Noegroho",
-    "approvedBy": "Yulliemty",
-    "approvedAt": "2026-05-18T10:02:02.217Z"
+    "approvedBy": "Yulliemty"
   },
   {
     "companyName": "PT PILAR NIAGA MAKMUR",
@@ -876,7 +874,8 @@
     "requestBy": "Trisha",
     "status": "PENDING",
     "createdBy": "Trisha",
-    "createdAt": "2026-05-19T02:53:40.010Z"
+    "createdAt": "2026-05-19T02:53:40.010Z",
+    "approvedBy": "Ernest Hianto"
   },
   {
     "companyName": "PT PILAR NIAGA MAKMUR",
@@ -912,8 +911,11 @@
     "rekBankTujuan": "124.001.6768690",
     "frpNo": "FRP-PRO-26-00006",
     "requestBy": "Trisha",
-    "status": "PENDING",
+    "status": "APPROVED",
     "createdBy": "Trisha",
-    "createdAt": "2026-05-19T02:53:58.444Z"
+    "createdAt": "2026-05-19T02:53:58.444Z",
+    "approvedByActual": "Apriyanto",
+    "approvedBy": "Ernest Hianto",
+    "approvedAt": "2026-05-19T03:50:10.552Z"
   }
 ]

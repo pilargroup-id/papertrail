@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
-import Sidebar from '../components/Sidebar'
+import { useUser } from '../contexts/UserContext'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -98,8 +97,7 @@ export default function LaporanPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
   const [viewportWidth, setViewportWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
@@ -118,7 +116,7 @@ export default function LaporanPage() {
         if (!r.ok) { navigate('/login'); return null }
         return r.json()
       })
-      .then(d => { if (d) setData(d) })
+      .then(d => { if (d) { setData(d); setUser(d.user) } })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -128,11 +126,6 @@ export default function LaporanPage() {
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
   const user = data?.user || {}
-
-  const handleSidebarToggle = () => {
-    if (window.innerWidth <= 1024) { setMobileMenuOpen(c => !c); return }
-    setSidebarCollapsed(c => !c)
-  }
 
   const filtered = useMemo(() => {
     if (!data?.requests) return []
@@ -238,22 +231,7 @@ export default function LaporanPage() {
   )
 
   return (
-    <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        mobileOpen={mobileMenuOpen}
-        userName={user.fullName || 'User'}
-        userRole={user.selectedJobLevel || user.role || 'Staff'}
-        userIsAdmin={user.role === 'administrator'}
-        allAssignments={user.allAssignments || []}
-        onToggleCollapse={handleSidebarToggle}
-        onCloseMobile={() => setMobileMenuOpen(false)}
-      />
-
-      <div className="dashboard-stage">
-        <Header title="Laporan" onMenuClick={() => setMobileMenuOpen(true)} />
-
-        <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column' }}>
+    <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column' }}>
           {loading && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b' }}>
               Memuat data...
@@ -469,8 +447,6 @@ export default function LaporanPage() {
               </>
             )}
           </div>
-        </main>
-      </div>
-    </div>
+    </main>
   )
 }

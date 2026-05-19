@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PieChart } from '@mui/x-charts/PieChart'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import { useUser } from '../contexts/UserContext'
 import CardBox from '../components/cardbox/CardBox'
 import CardBigBox from '../components/cardbox/CardBigBox'
 import RevenueLastUpdate from '../components/RevenueLastUpdate'
@@ -36,8 +35,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
   const [viewportWidth, setViewportWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280)
 
   useEffect(() => {
@@ -53,19 +51,13 @@ export default function DashboardPage() {
         if (!r.ok) { navigate('/login'); return null }
         return r.json()
       })
-      .then(d => { if (d) setData(d) })
+      .then(d => { if (d) { setData(d); setUser(d.user) } })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
-  const user = data?.user || {}
-
-  const handleSidebarToggle = () => {
-    if (window.innerWidth <= 1024) { setMobileMenuOpen(c => !c); return }
-    setSidebarCollapsed(c => !c)
-  }
 
   // Chart data
   const donutData = data ? [
@@ -100,22 +92,7 @@ export default function DashboardPage() {
   const companyGridCols = isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)'
 
   return (
-    <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        mobileOpen={mobileMenuOpen}
-        userName={user.fullName || 'User'}
-        userRole={user.selectedJobLevel || user.role || 'Staff'}
-        userIsAdmin={user.role === 'administrator'}
-        allAssignments={user.allAssignments || []}
-        onToggleCollapse={handleSidebarToggle}
-        onCloseMobile={() => setMobileMenuOpen(false)}
-      />
-
-      <div className="dashboard-stage">
-        <Header title="Dashboard" onMenuClick={() => setMobileMenuOpen(true)} />
-
-        <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b', gap: '10px' }}>
               <span className="material-icons-round" style={{ fontSize: '20px', animation: 'spin 1s linear infinite' }}>refresh</span>
@@ -474,8 +451,6 @@ export default function DashboardPage() {
               </CardBigBox>
             </>
           )}
-        </main>
-      </div>
-    </div>
+    </main>
   )
 }

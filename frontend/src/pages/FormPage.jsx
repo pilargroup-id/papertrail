@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import { useUser } from '../contexts/UserContext'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -601,8 +600,7 @@ export default function FormPage() {
   const navigate = useNavigate()
   const [frpData, setFrpData] = useState(null)
   const [values, setValues] = useState(blankForm)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -621,6 +619,7 @@ export default function FormPage() {
       })
       .then(async data => {
         setFrpData(data)
+        setUser(data?.user)
         const isDuplicate = searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'
         const initial = buildInitialForm(data, isDuplicate)
 
@@ -762,13 +761,6 @@ export default function FormPage() {
     }),
     [isMobile],
   )
-  const handleSidebarToggle = () => {
-    if (window.innerWidth <= 1024) {
-      setMobileMenuOpen(current => !current)
-      return
-    }
-    setSidebarCollapsed(current => !current)
-  }
   const companySelectOptions = useMemo(
     () => (FRP.companies || []).map(company => ({ value: company.name, label: company.name })),
     [FRP.companies],
@@ -851,20 +843,7 @@ export default function FormPage() {
   }
 
   return (
-    <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        mobileOpen={mobileMenuOpen}
-        userName={FRP.user?.fullName}
-        userRole={FRP.user?.selectedJobLevel || FRP.user?.role}
-        userIsAdmin={FRP.user?.role === 'administrator'}
-        allAssignments={FRP.user?.allAssignments || []}
-        onToggleCollapse={handleSidebarToggle}
-        onCloseMobile={() => setMobileMenuOpen(false)}
-      />
-      <div className="dashboard-stage">
-        <Header title="Form Request Payment" onMenuClick={() => setMobileMenuOpen(true)} />
-        <main className="dashboard-main">
+    <main className="dashboard-main">
           {loading && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>
               Memuat data...
@@ -1237,8 +1216,6 @@ export default function FormPage() {
               </div>
             </form>
           )}
-        </main>
-      </div>
-    </div>
+    </main>
   )
 }

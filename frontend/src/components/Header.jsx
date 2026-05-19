@@ -5,6 +5,7 @@ import logoPiagamTransparent from '../assets/logo-piagam2.png'
 
 const ROUTE_TITLES = {
   '/': 'New Request',
+  '/frp': 'New Request',
   '/approval': 'Approval',
   '/approved': 'Approved',
   '/dashboard': 'Dashboard',
@@ -12,6 +13,9 @@ const ROUTE_TITLES = {
   '/history': 'History',
   '/select-company': 'Pilih Perusahaan',
   '/select-division': 'Pilih Divisi',
+  '/rp': 'Request Purchase (RP)',
+  '/rp-approval': 'RP Approval',
+  '/rp-approved': 'RP Approved',
 }
 
 function getTitleFromPath(pathname) {

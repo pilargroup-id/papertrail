@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import { useUser } from '../contexts/UserContext'
 
 const formatCurrency = v => new Intl.NumberFormat('id-ID').format(Math.round(Number(String(v).replace(/[^0-9.-]/g,''))||0))
 const STATUS_COLORS = { PENDING_MANAGER:'#f59e0b', PENDING_PROCESS:'#3b82f6', PENDING_PROCESS_APPROVAL:'#8b5cf6', APPROVED:'#10b981', REJECTED:'#ef4444', CREATED_FRP:'#0284c7' }
@@ -15,8 +14,7 @@ export default function RpApprovalPage() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [tab, setTab] = useState(isApprovedView ? 'approved' : 'pending')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
   const [actionLoading, setActionLoading] = useState(false)
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
 
@@ -43,7 +41,7 @@ export default function RpApprovalPage() {
     setLoading(true)
     fetch(`/api/data/rp-approval?view=${view || tab}`)
       .then(r => { if(!r.ok){window.location.href='/login';throw new Error()} return r.json() })
-      .then(d => setData(d))
+      .then(d => { setData(d); setUser(d?.user) })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
@@ -107,8 +105,6 @@ export default function RpApprovalPage() {
     { key:'process-approval', label:'Approval Proses', icon:'verified' },
     { key:'approved', label:'Selesai', icon:'done_all' },
   ]
-
-  const handleSidebarToggle = () => { if(window.innerWidth<=1024){setMobileMenuOpen(c=>!c);return}; setSidebarCollapsed(c=>!c) }
 
   const renderDetail = () => {
     if(!selected) return null
@@ -216,11 +212,8 @@ export default function RpApprovalPage() {
   }
 
   return (
-    <div className={`dashboard-shell${sidebarCollapsed?' dashboard-shell--sidebar-collapsed':''}`}>
-      <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} userName={user.fullName} userRole={user.selectedJobLevel||user.role} userIsAdmin={isAdmin} allAssignments={user.allAssignments||[]} onToggleCollapse={handleSidebarToggle} onCloseMobile={() => setMobileMenuOpen(false)} />
-      <div className="dashboard-stage">
-        <Header title="RP Approval" onMenuClick={() => setMobileMenuOpen(true)} />
-        <main className="dashboard-main">
+    <>
+      <main className="dashboard-main">
           <div style={{ display:'flex', gap:'8px', marginBottom:'1.5rem', flexWrap:'wrap' }}>
             {tabs.map(t => {
               const count = D.counts?.[t.key] ?? 0;
@@ -290,9 +283,8 @@ export default function RpApprovalPage() {
               </table>
             </div>
           )}
-        </main>
-      </div>
+      </main>
       {renderDetail()}
-    </div>
+    </>
   )
 }

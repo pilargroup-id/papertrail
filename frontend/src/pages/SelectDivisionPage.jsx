@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import { useUser } from '../contexts/UserContext'
 
 const S = {
   card: { background: 'white', padding: '3rem', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', width: '100%', maxWidth: '560px', textAlign: 'center', border: '1px solid #e2e8f0', boxSizing: 'border-box' },
@@ -15,13 +14,12 @@ export default function SelectDivisionPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [hoveredIdx, setHoveredIdx] = useState(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
 
   useEffect(() => {
     fetch('/api/data/select-division')
       .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
-      .then(setData).catch(() => {}).finally(() => setLoading(false))
+      .then(d => { setData(d); setUser(d?.user) }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const handleSelect = async (division) => {
@@ -31,39 +29,22 @@ export default function SelectDivisionPage() {
 
   if (loading) return <div style={{ padding: '2rem', color: '#64748b' }}>Memuat...</div>
 
-  const user = data?.user || {}
-  const handleSidebarToggle = () => {
-    if (window.innerWidth <= 1024) {
-      setMobileMenuOpen(current => !current)
-      return
-    }
-    setSidebarCollapsed(c => !c)
-  }
-
   return (
-    <>
-      <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-        <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} userName={user.fullName} userRole={user.selectedJobLevel || user.role} userIsAdmin={user.role === 'administrator'} allAssignments={user.allAssignments || []} onToggleCollapse={handleSidebarToggle} onCloseMobile={() => setMobileMenuOpen(false)} hideMenu={true} />
-        <div className="dashboard-stage">
-          <Header title="Form Request Payment" onMenuClick={() => setMobileMenuOpen(true)} />
-          <main className="dashboard-main" style={{ display: 'grid', placeItems: 'center' }}>
-            <div style={S.card}>
-              <div style={S.iconBox}><span className="material-icons-round">domain</span></div>
-              <h1 style={S.h1}>Pilih Divisi</h1>
-              <p style={S.subtitle}>Pilih divisi &amp; level jabatan Anda</p>
-              {(data?.divisions || []).map((div, idx) => (
-                <button key={`${div.class}-${idx}`} style={{ ...S.btn, ...(hoveredIdx === idx ? { borderColor: '#16a34a', background: '#f0fdf4', color: '#16a34a' } : {}) }} onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)} onClick={() => handleSelect(div.class)}>
-                  <div>
-                    <div>{div.class}</div>
-                    <div style={S.jobLevel}>{div.jobLevel}</div>
-                  </div>
-                  <span className="material-icons-round" style={{ color: hoveredIdx === idx ? '#16a34a' : '#cbd5e1' }}>chevron_right</span>
-                </button>
-              ))}
+    <main className="dashboard-main" style={{ display: 'grid', placeItems: 'center' }}>
+      <div style={S.card}>
+        <div style={S.iconBox}><span className="material-icons-round">domain</span></div>
+        <h1 style={S.h1}>Pilih Divisi</h1>
+        <p style={S.subtitle}>Pilih divisi &amp; level jabatan Anda</p>
+        {(data?.divisions || []).map((div, idx) => (
+          <button key={`${div.class}-${idx}`} style={{ ...S.btn, ...(hoveredIdx === idx ? { borderColor: '#16a34a', background: '#f0fdf4', color: '#16a34a' } : {}) }} onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)} onClick={() => handleSelect(div.class)}>
+            <div>
+              <div>{div.class}</div>
+              <div style={S.jobLevel}>{div.jobLevel}</div>
             </div>
-          </main>
-        </div>
+            <span className="material-icons-round" style={{ color: hoveredIdx === idx ? '#16a34a' : '#cbd5e1' }}>chevron_right</span>
+          </button>
+        ))}
       </div>
-    </>
+    </main>
   )
 }

@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import BackgroundMain from './components/BackgroundMain'
+import { UserProvider } from './contexts/UserContext'
+import DashboardLayout from './components/DashboardLayout'
 import LoginPage from './pages/LoginPage'
 import SelectCompanyPage from './pages/SelectCompanyPage'
 import SelectDivisionPage from './pages/SelectDivisionPage'
@@ -17,22 +19,26 @@ export default function App() {
   return (
     <>
       <BackgroundMain />
-      <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/select-company" element={<SelectCompanyPage />} />
-      <Route path="/select-division" element={<SelectDivisionPage />} />
-      <Route path="/" element={<FormPage />} />
-      <Route path="/frp" element={<FormPage />} />
-      <Route path="/approval" element={<ApprovalPage />} />
-      <Route path="/approved" element={<ApprovalPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/laporan" element={<LaporanPage />} />
-      <Route path="/admin/:type" element={<AdminPage />} />
-      <Route path="/frp/:id" element={<FrpDetailPage />} />
-      <Route path="/rp" element={<RpFormPage />} />
-      <Route path="/rp-approval" element={<RpApprovalPage />} />
-      <Route path="/rp-approved" element={<RpApprovalPage />} />
-    </Routes>
+      <UserProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/frp/:id" element={<FrpDetailPage />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/select-company" element={<SelectCompanyPage />} />
+            <Route path="/select-division" element={<SelectDivisionPage />} />
+            <Route path="/" element={<FormPage />} />
+            <Route path="/frp" element={<FormPage />} />
+            <Route path="/approval" element={<ApprovalPage />} />
+            <Route path="/approved" element={<ApprovalPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/laporan" element={<LaporanPage />} />
+            <Route path="/admin/:type" element={<AdminPage />} />
+            <Route path="/rp" element={<RpFormPage />} />
+            <Route path="/rp-approval" element={<RpApprovalPage />} />
+            <Route path="/rp-approved" element={<RpApprovalPage />} />
+          </Route>
+        </Routes>
+      </UserProvider>
     </>
   )
 }

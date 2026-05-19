@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import { useUser } from '../contexts/UserContext'
 
 const S = {
   card: { background: 'white', padding: '3rem', borderRadius: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', width: '100%', maxWidth: '560px', textAlign: 'center', border: '1px solid #e2e8f0', boxSizing: 'border-box' },
@@ -14,13 +13,12 @@ export default function SelectCompanyPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [hoveredIdx, setHoveredIdx] = useState(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
 
   useEffect(() => {
     fetch('/api/data/select-company')
       .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
-      .then(setData).catch(() => {}).finally(() => setLoading(false))
+      .then(d => { setData(d); setUser(d?.user) }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const handleSelect = async (company) => {
@@ -30,36 +28,19 @@ export default function SelectCompanyPage() {
 
   if (loading) return <div style={{ padding: '2rem', color: '#64748b' }}>Memuat...</div>
 
-  const user = data?.user || {}
-  const handleSidebarToggle = () => {
-    if (window.innerWidth <= 1024) {
-      setMobileMenuOpen(current => !current)
-      return
-    }
-    setSidebarCollapsed(c => !c)
-  }
-
   return (
-    <>
-      <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-        <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} userName={user.fullName} userRole={user.selectedJobLevel || user.role} userIsAdmin={user.role === 'administrator'} allAssignments={user.allAssignments || []} onToggleCollapse={handleSidebarToggle} onCloseMobile={() => setMobileMenuOpen(false)} hideMenu={true} />
-        <div className="dashboard-stage">
-          <Header title="Form Request Payment" onMenuClick={() => setMobileMenuOpen(true)} />
-          <main className="dashboard-main" style={{ display: 'grid', placeItems: 'center' }}>
-            <div style={S.card}>
-              <div style={S.iconBox}><span className="material-icons-round">business</span></div>
-              <h1 style={S.h1}>Pilih Perusahaan</h1>
-              <p style={S.subtitle}>Pilih perusahaan tempat Anda bertugas</p>
-              {(data?.companies || []).map((company, idx) => (
-                <button key={company} style={{ ...S.btn, ...(hoveredIdx === idx ? { borderColor: '#4f46e5', background: '#f5f3ff', color: '#4f46e5' } : {}) }} onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)} onClick={() => handleSelect(company)}>
-                  <span>{company}</span>
-                  <span className="material-icons-round" style={{ color: hoveredIdx === idx ? '#4f46e5' : '#cbd5e1' }}>chevron_right</span>
-                </button>
-              ))}
-            </div>
-          </main>
-        </div>
+    <main className="dashboard-main" style={{ display: 'grid', placeItems: 'center' }}>
+      <div style={S.card}>
+        <div style={S.iconBox}><span className="material-icons-round">business</span></div>
+        <h1 style={S.h1}>Pilih Perusahaan</h1>
+        <p style={S.subtitle}>Pilih perusahaan tempat Anda bertugas</p>
+        {(data?.companies || []).map((company, idx) => (
+          <button key={company} style={{ ...S.btn, ...(hoveredIdx === idx ? { borderColor: '#4f46e5', background: '#f5f3ff', color: '#4f46e5' } : {}) }} onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)} onClick={() => handleSelect(company)}>
+            <span>{company}</span>
+            <span className="material-icons-round" style={{ color: hoveredIdx === idx ? '#4f46e5' : '#cbd5e1' }}>chevron_right</span>
+          </button>
+        ))}
       </div>
-    </>
+    </main>
   )
 }

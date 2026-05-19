@@ -106,6 +106,12 @@ select {
   color: #1e293b;
   position: relative;
   z-index: 1;
+  animation: page-in 0.12s ease;
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .sidebar {
@@ -123,7 +129,8 @@ select {
   box-shadow: var(--sidebar-shadow);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   transition:
     width var(--layout-transition-duration) var(--layout-transition-easing),
     transform 0.3s ease;
@@ -182,6 +189,7 @@ select {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .logo-image {
@@ -277,12 +285,15 @@ select {
 .sidebar-nav {
   flex: 1;
   padding: 1.5rem 0;
-  overflow-y: hidden;
 }
 
 .sidebar-bottom {
   padding: 1rem 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  bottom: 0;
+  background: var(--secondary-blue);
+  z-index: 2;
 }
 
 .nav-item {
@@ -296,11 +307,13 @@ select {
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   overflow: hidden;
+  flex-shrink: 0;
   transition:
-    color 0.3s ease,
-    background 0.3s ease,
-    transform 0.3s ease;
-  animation: slideInLeft 0.3s ease-out;
+    color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    margin-right 0.15s ease,
+    border-radius 0.15s ease;
 }
 
 .nav-item::before {
@@ -313,7 +326,6 @@ select {
   height: 0;
   border-radius: 0 4px 4px 0;
   background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-teal-dark) 100%);
-  transition: height 0.3s ease;
 }
 
 .nav-item::after {
@@ -329,8 +341,7 @@ select {
 
 .nav-item:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .nav-item:hover::before {
@@ -350,7 +361,6 @@ select {
 
 .nav-item.active:hover {
   background: rgba(42, 157, 143, 0.15);
-  transform: none;
 }
 
 .nav-item.active::before {
@@ -374,8 +384,14 @@ select {
   display: none;
 }
 
-.nav-item--button:hover {
-  transform: none;
+/* Accordion parent items: keep consistent width/shape when a child is active */
+.nav-item--accordion.active {
+  margin-right: 8px;
+  border-radius: 8px;
+}
+
+.nav-item--accordion.active::before {
+  height: 0;
 }
 
 .nav-icon {
@@ -390,36 +406,37 @@ select {
   font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
 .nav-item__chevron {
   flex-shrink: 0;
   opacity: 0.72;
-  transition:
-    transform 0.25s ease,
-    opacity 0.25s ease;
+  transition: opacity 0.25s ease;
 }
 
 .nav-item--expanded .nav-item__chevron {
   opacity: 1;
-  transform: rotate(90deg);
 }
 
 .nav-submenu {
   display: grid;
-  gap: 4px;
-  max-height: 0;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.18s ease;
   overflow: hidden;
-  padding: 0 0 0 20px;
-  transition:
-    max-height 0.25s ease,
-    padding-bottom 0.25s ease;
+}
+
+.nav-submenu__inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 0 4px 20px;
 }
 
 .nav-submenu.expanded {
-  max-height: 200px;
-  padding-bottom: 4px;
+  grid-template-rows: 1fr;
 }
 
 .nav-item__bullet {
@@ -459,7 +476,7 @@ select {
 .nav-item--child.active {
   color: #e9c46a;
   background: linear-gradient(135deg, rgba(238, 243, 249, 0.13) 0%, rgba(244, 169, 64, 0.1) 100%);
-  border: 1px solid rgba(233, 196, 106, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(233, 196, 106, 0.18);
   margin-right: 4px;
   border-radius: 8px;
   font-weight: 600;
@@ -559,11 +576,11 @@ select {
   z-index: 4;
 }
 
-.sidebar-nav::-webkit-scrollbar {
+.sidebar::-webkit-scrollbar {
   width: 4px;
 }
 
-.sidebar-nav::-webkit-scrollbar-thumb {
+.sidebar::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-teal-dark) 100%);
 }

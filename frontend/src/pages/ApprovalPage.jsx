@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import DialogFrpDetail from '../components/Dialog/DialogFrpDetail'
-import Header from '../components/Header'
-import Sidebar from '../components/Sidebar'
+import { useUser } from '../contexts/UserContext'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -271,8 +270,7 @@ export default function ApprovalPage() {
   const isApprovedView = pathname === '/approved'
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { setUser } = useUser()
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [expandedRowId, setExpandedRowId] = useState(null)
@@ -317,7 +315,7 @@ export default function ApprovalPage() {
 
         return response.json()
       })
-      .then(setData)
+      .then(d => { setData(d); setUser(d?.user) })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
@@ -500,13 +498,6 @@ export default function ApprovalPage() {
     }),
     [isMobile, isTablet],
   )
-  const handleSidebarToggle = () => {
-    if (window.innerWidth <= 1024) {
-      setMobileMenuOpen((current) => !current)
-      return
-    }
-    setSidebarCollapsed((current) => !current)
-  }
   useEffect(() => {
     setCurrentPage(1)
   }, [filters, isApprovedView, rowsPerPage])
@@ -543,25 +534,10 @@ export default function ApprovalPage() {
 
   return (
     <>
-      <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          mobileOpen={mobileMenuOpen}
-          userName={user.fullName || 'User'}
-          userRole={user.selectedJobLevel || user.role || 'Staff'}
-          userIsAdmin={user.role === 'administrator'}
-          allAssignments={user.allAssignments || []}
-          onToggleCollapse={handleSidebarToggle}
-          onCloseMobile={() => setMobileMenuOpen(false)}
-        />
-
-        <div className="dashboard-stage">
-          <Header title="Form Request Payment" onMenuClick={() => setMobileMenuOpen(true)} />
-
-          <main
-            className="dashboard-main"
-            style={{ display: 'flex', flexDirection: 'column' }}
-          >
+      <main
+        className="dashboard-main"
+        style={{ display: 'flex', flexDirection: 'column' }}
+      >
             {loading && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b' }}>
                 Memuat data...
@@ -733,7 +709,7 @@ export default function ApprovalPage() {
                           {data?.canApprove && isApprovedView && user.role === 'administrator' && (
                             <button type="button" onClick={() => doAction(request.id, 'revert')} style={{ flex: 1, background: '#fef9c3', color: '#92400e', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Revert</button>
                           )}
-                          <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ flex: 1, background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Duplicate</button>
+                          {!isApprovedView && <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ flex: 1, background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Duplicate</button>}
                           <button type="button" onClick={() => setSelectedRequest(request)} style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Detail</button>
                         </div>
                       </div>
@@ -867,7 +843,7 @@ export default function ApprovalPage() {
                                   </div>
                                 </td>
                                 <td style={{ ...td, fontSize: '12px', color: '#2563eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {request.attachLink ? <a href={request.attachLink} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none', color:'#2563eb', fontWeight:600}}>Link</a> : '-'}
+                                  {request.attachLink ? <a href={request.attachLink} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none', color:'#2563eb', fontWeight:600}}>Attach Link</a> : '-'}
                                 </td>
                                 {data?.canApprove ? (
                                   <td style={{ ...td, whiteSpace: 'normal' }}>
@@ -883,7 +859,7 @@ export default function ApprovalPage() {
                                 ) : null}
                                 <td style={{ ...td, whiteSpace: 'normal' }}>
                                   <div style={{ display: 'flex', gap: '6px', flexDirection: 'column' }}>
-                                    <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ width: '100%', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', fontFamily: 'inherit' }}>Duplicate</button>
+                                    {!isApprovedView && <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ width: '100%', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', fontFamily: 'inherit' }}>Duplicate</button>}
                                     <button type="button" onClick={() => setSelectedRequest(request)} style={{ width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', fontFamily: 'inherit' }}>Detail</button>
                                   </div>
                                 </td>
@@ -944,9 +920,7 @@ export default function ApprovalPage() {
                 </>
               )}
             </div>
-          </main>
-        </div>
-      </div>
+      </main>
 
       <DialogFrpDetail
         isOpen={Boolean(selectedRequest)}
