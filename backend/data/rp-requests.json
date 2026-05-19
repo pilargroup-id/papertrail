@@ -243,5 +243,31 @@
     "processUpdatedAt": "2026-05-18T09:43:38.428Z",
     "processManagerApprovedBy": "Bayu Noegroho",
     "processManagerApprovedAt": "2026-05-18T09:43:47.433Z"
+  },
+  {
+    "id": "rp-1779179996537-s3akgg0ok",
+    "rpNo": "RP-SIT-26-00002",
+    "status": "PENDING_MANAGER",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "IT",
+    "class": "IT",
+    "dibuatOleh": "Apriyanto",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "Beli Kabel",
+    "diprosesOleh": "Product",
+    "tanggalDibutuhkan": "2026-05-19",
+    "vendorSuggestion": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
+    "picPenerima": "",
+    "items": [
+      {
+        "budgetId": "SIT2603",
+        "memo": "tesss",
+        "linkPembelian": "",
+        "qty": "1",
+        "estimatedValue": "100000"
+      }
+    ],
+    "createdAt": "2026-05-19T08:39:56.537Z",
+    "createdBy": "Apriyanto"
   }
 ]

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import DialogFrpDetail from '../components/Dialog/DialogFrpDetail'
+import DialogConfirm from '../components/Dialog/DialogConfirm'
 import { useUser } from '../contexts/UserContext'
 
 const MOBILE_BREAKPOINT = 768
@@ -286,6 +287,9 @@ export default function ApprovalPage() {
   })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
 
+  const [confirmAction, setConfirmAction] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
+
   const requestSort = (key) => {
     if (!key) return
     let direction = 'asc'
@@ -402,12 +406,53 @@ export default function ApprovalPage() {
     });
   }, [data, filters, sortConfig])
 
-  const doAction = async (id, action) => {
-    const response = await fetch(`/api/frp/${id}/${action}`, { method: 'POST' })
-    const result = await response.json()
+  const confirmActionMeta = {
+    approve: {
+      eyebrow: 'Konfirmasi Approval',
+      title: 'Approve FRP?',
+      message: 'FRP akan disetujui.',
+      confirmLabel: 'Ya, Approve',
+      icon: 'check_circle',
+      tone: 'approve',
+    },
+    reject: {
+      eyebrow: 'Konfirmasi Reject',
+      title: 'Reject FRP?',
+      message: 'FRP akan ditolak.',
+      confirmLabel: 'Ya, Reject',
+      icon: 'cancel',
+      tone: 'reject',
+    },
+    revert: {
+      eyebrow: 'Konfirmasi Revert',
+      title: 'Revert Status?',
+      message: 'Status FRP akan dikembalikan ke draft/pending.',
+      confirmLabel: 'Ya, Revert',
+      icon: 'restart_alt',
+      tone: 'warning',
+    }
+  }
 
-    if (result.success) {
-      loadData()
+  const requestAction = (request, action) => {
+    setConfirmAction({ request, action })
+  }
+
+  const doAction = async (id, action) => {
+    setActionLoading(true)
+    try {
+      const response = await fetch(`/api/frp/${id}/${action}`, { method: 'POST' })
+      const result = await response.json()
+
+      if (result.success) {
+        setConfirmAction(null)
+        loadData()
+      } else {
+        window.alert(result.error || 'Gagal memproses data')
+      }
+    } catch (e) {
+      window.alert(e.message)
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -502,27 +547,16 @@ export default function ApprovalPage() {
     setCurrentPage(1)
   }, [filters, isApprovedView, rowsPerPage])
 
-  const useCompactDesktopTable = !isMobile
   const desktopHeaders = [
     { label: 'Ringkasan', key: 'date' },
     { label: 'Pemohon & Vendor', key: 'requester' },
     { label: 'Divisi', key: 'division' },
     { label: 'Total', key: 'total' },
     { label: 'Status', key: 'status' },
-    { label: 'Attach Link', key: null },
-    ...(data?.canApprove ? [{ label: 'Aksi', key: null }] : []),
+    { label: 'Aksi', key: null },
     { label: 'Detail', key: null },
   ]
-  const desktopColumnWidths = [
-    '18%',
-    '20%',
-    '10%',
-    '12%',
-    '12%',
-    '12%',
-    ...(data?.canApprove ? ['8%'] : []),
-    '8%',
-  ]
+  const desktopColumnWidths = ['19%', '20%', '10%', '13%', '13%', '16%', '9%']
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const safeCurrentPage = Math.min(currentPage, totalPages)
   const paginated = useMemo(() => {
@@ -702,12 +736,12 @@ export default function ApprovalPage() {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {data?.canApprove && !isApprovedView && (
                             <>
-                              <button type="button" onClick={() => doAction(request.id, 'approve')} style={{ flex: 1, background: '#dcfce7', color: '#15803d', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Approve</button>
-                              <button type="button" onClick={() => doAction(request.id, 'reject')} style={{ flex: 1, background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Reject</button>
+                              <button type="button" onClick={() => setConfirmAction({ request, action: 'approve' })} style={{ flex: 1, background: '#dcfce7', color: '#15803d', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Approve</button>
+                              <button type="button" onClick={() => setConfirmAction({ request, action: 'reject' })} style={{ flex: 1, background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Reject</button>
                             </>
                           )}
                           {data?.canApprove && isApprovedView && user.role === 'administrator' && (
-                            <button type="button" onClick={() => doAction(request.id, 'revert')} style={{ flex: 1, background: '#fef9c3', color: '#92400e', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Revert</button>
+                            <button type="button" onClick={() => setConfirmAction({ request, action: 'revert' })} style={{ flex: 1, background: '#fef9c3', color: '#92400e', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Revert</button>
                           )}
                           {!isApprovedView && <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ flex: 1, background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Duplicate</button>}
                           <button type="button" onClick={() => setSelectedRequest(request)} style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Detail</button>
@@ -842,26 +876,22 @@ export default function ApprovalPage() {
                                     ) : null}
                                   </div>
                                 </td>
-                                <td style={{ ...td, fontSize: '12px', color: '#2563eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {request.attachLink ? <a href={request.attachLink} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none', color:'#2563eb', fontWeight:600}}>Attach Link</a> : '-'}
-                                </td>
-                                {data?.canApprove ? (
-                                  <td style={{ ...td, whiteSpace: 'normal' }}>
-                                    {!isApprovedView ? (
-                                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                        <button type="button" onClick={() => doAction(request.id, 'approve')} style={{ background: '#dcfce7', color: '#15803d', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Approve</button>
-                                        <button type="button" onClick={() => doAction(request.id, 'reject')} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Reject</button>
-                                      </div>
-                                    ) : user.role === 'administrator' ? (
-                                      <button type="button" onClick={() => doAction(request.id, 'revert')} style={{ width: '100%', background: '#fef9c3', color: '#92400e', border: 'none', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Revert</button>
-                                    ) : '-'}
-                                  </td>
-                                ) : null}
                                 <td style={{ ...td, whiteSpace: 'normal' }}>
-                                  <div style={{ display: 'flex', gap: '6px', flexDirection: 'column' }}>
-                                    {!isApprovedView && <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ width: '100%', background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', fontFamily: 'inherit' }}>Duplicate</button>}
-                                    <button type="button" onClick={() => setSelectedRequest(request)} style={{ width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '12px', fontFamily: 'inherit' }}>Detail</button>
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {!isApprovedView && <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Duplicate</button>}
+                                    {data?.canApprove && !isApprovedView && (
+                                      <>
+                                        <button type="button" onClick={() => setConfirmAction({ request, action: 'approve' })} style={{ background: '#dcfce7', color: '#15803d', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Approve</button>
+                                        <button type="button" onClick={() => setConfirmAction({ request, action: 'reject' })} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Reject</button>
+                                      </>
+                                    )}
+                                    {data?.canApprove && isApprovedView && user.role === 'administrator' && (
+                                      <button type="button" onClick={() => setConfirmAction({ request, action: 'revert' })} style={{ background: '#fef9c3', color: '#92400e', border: 'none', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Revert</button>
+                                    )}
                                   </div>
+                                </td>
+                                <td style={{ ...td, whiteSpace: 'normal' }}>
+                                  <button type="button" onClick={() => setSelectedRequest(request)} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Detail</button>
                                 </td>
                               </tr>
                               {isExpanded ? (
@@ -923,12 +953,41 @@ export default function ApprovalPage() {
       </main>
 
       <DialogFrpDetail
-        isOpen={Boolean(selectedRequest)}
+        isOpen={!!selectedRequest}
         request={selectedRequest}
-        title={selectedRequest?.frpNo || 'Detail FRP'}
-        eyebrow={isApprovedView ? 'Approved Request' : 'Pending Request'}
         onClose={() => setSelectedRequest(null)}
       />
+
+      <DialogConfirm
+        isOpen={!!confirmAction}
+        eyebrow={confirmAction ? confirmActionMeta[confirmAction.action]?.eyebrow : ''}
+        title={confirmAction ? confirmActionMeta[confirmAction.action]?.title : ''}
+        message={confirmAction ? confirmActionMeta[confirmAction.action]?.message : ''}
+        confirmLabel={confirmAction ? confirmActionMeta[confirmAction.action]?.confirmLabel : ''}
+        icon={confirmAction ? confirmActionMeta[confirmAction.action]?.icon : ''}
+        tone={confirmAction ? confirmActionMeta[confirmAction.action]?.tone : 'primary'}
+        isLoading={actionLoading}
+        onClose={() => { if (!actionLoading) setConfirmAction(null) }}
+        onConfirm={() => confirmAction && doAction(confirmAction.request.id, confirmAction.action)}
+      >
+        {confirmAction && (
+          <div
+            style={{
+              padding: '10px 12px',
+              borderRadius: '12px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              color: '#334155',
+              fontSize: '0.9rem',
+              lineHeight: 1.5,
+            }}
+          >
+            <strong style={{ color: '#1e293b' }}>{confirmAction.request.frpNo || 'Draft FRP'}</strong>
+            <span style={{ color: '#64748b' }}> dari </span>
+            <strong style={{ color: '#1e293b' }}>{confirmAction.request.dimintaOleh || '-'}</strong>
+          </div>
+        )}
+      </DialogConfirm>
     </>
   )
 }

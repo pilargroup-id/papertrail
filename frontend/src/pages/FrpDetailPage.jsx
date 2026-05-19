@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import CreateButton from '../components/button/CreateButton'
+import DialogConfirm from '../components/Dialog/DialogConfirm'
 
 const DOCS = ['Form Request Payment', 'Tanda Terima Asli', 'Invoice / Kontrak', 'Surat Jalan Asli / Berita Acara', 'Faktur Pajak', 'Purchase Order']
 
@@ -63,6 +64,8 @@ export default function FrpDetailPage() {
   const [loading, setLoading] = useState(true)
   const isApprovalEmbedded = new URLSearchParams(location.search).get('embedded') === 'approval'
   const [viewportWidth, setViewportWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280)
+  const [confirmAction, setConfirmAction] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth)
@@ -87,21 +90,38 @@ export default function FrpDetailPage() {
   const isMobile = viewportWidth < 768
 
   const doAction = async (action) => {
-    if (!window.confirm(`Anda yakin ingin melakukan ${action}?`)) return
-    const res = await fetch(`/api/frp/${data.id}/${action}`, { method: 'POST' })
-    const result = await res.json()
-    if (result.success) window.parent.postMessage('refresh', '*')
-    else window.alert('Gagal mengeksekusi aksi.')
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/frp/${data.id}/${action}`, { method: 'POST' })
+      const result = await res.json()
+      if (result.success) window.parent.postMessage('refresh', '*')
+      else window.alert('Gagal mengeksekusi aksi.')
+    } catch (e) {
+      window.alert(e.message)
+    } finally {
+      setActionLoading(false)
+      setConfirmAction(null)
+    }
   }
 
   const revisiForm = () => {
-    if (!window.confirm('Anda yakin ingin merevisi FRP ini?')) return
     window.parent.location.href = `/?revisi=${data.id}`
   }
 
   const duplicateForm = () => {
-    if (!window.confirm('Anda yakin ingin menduplikasi FRP ini menjadi form baru?')) return
     window.parent.location.href = `/?revisi=${data.id}&duplicate=1`
+  }
+
+  const requestAction = (action) => {
+    setConfirmAction(action)
+  }
+
+  const confirmActionMeta = {
+    approve: { eyebrow: 'Konfirmasi Approval', title: 'Approve FRP?', message: 'FRP akan disetujui.', confirmLabel: 'Ya, Approve', icon: 'check_circle', tone: 'approve' },
+    reject: { eyebrow: 'Konfirmasi Reject', title: 'Reject FRP?', message: 'FRP akan ditolak.', confirmLabel: 'Ya, Reject', icon: 'cancel', tone: 'reject' },
+    delete: { eyebrow: 'Konfirmasi Hapus', title: 'Hapus FRP?', message: 'FRP akan dihapus permanen.', confirmLabel: 'Ya, Hapus', icon: 'delete', tone: 'danger' },
+    revisi: { eyebrow: 'Konfirmasi Revisi', title: 'Revisi FRP?', message: 'Anda akan merevisi FRP ini.', confirmLabel: 'Ya, Revisi', icon: 'edit', tone: 'primary' },
+    duplicate: { eyebrow: 'Konfirmasi Duplikasi', title: 'Duplikasi FRP?', message: 'FRP ini akan diduplikasi menjadi form baru.', confirmLabel: 'Ya, Duplikasi', icon: 'content_copy', tone: 'primary' },
   }
 
   const fieldStyle = { width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit' }
@@ -238,7 +258,7 @@ export default function FrpDetailPage() {
             <span className="material-icons-round" style={{ fontSize: '16px' }}>visibility</span>
             Preview dibuka tanpa dialog print otomatis
           </div>
-          <CreateButton variant="accordion" tone="primary" onClick={duplicateForm} style={mobileActionButtonStyle}>
+          <CreateButton variant="accordion" tone="primary" onClick={() => requestAction('duplicate')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>content_copy</span>
             Duplicate
           </CreateButton>
@@ -250,52 +270,69 @@ export default function FrpDetailPage() {
             <span className="material-icons-round" style={{ fontSize: '16px' }}>download</span>
             Download
           </CreateButton>
-          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" tone="warning" onClick={() => doAction('reject')} style={mobileActionButtonStyle}>
+          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" tone="warning" onClick={() => requestAction('reject')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>cancel</span>
             Reject
           </CreateButton>}
         </>}
         {data.status === 'PENDING' && <>
-          <CreateButton variant="accordion" tone="primary" onClick={duplicateForm} style={mobileActionButtonStyle}>
+          <CreateButton variant="accordion" tone="primary" onClick={() => requestAction('duplicate')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>content_copy</span>
             Duplicate
           </CreateButton>
-          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="danger" onClick={() => doAction('delete')} style={mobileActionButtonStyle}>
+          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="danger" onClick={() => requestAction('delete')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
             Hapus
           </CreateButton>}
-          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="primary" onClick={revisiForm} style={mobileActionButtonStyle}>
+          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="primary" onClick={() => requestAction('revisi')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
             Revisi
           </CreateButton>}
-          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" tone="warning" onClick={() => doAction('reject')} style={mobileActionButtonStyle}>
+          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" tone="warning" onClick={() => requestAction('reject')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>cancel</span>
             Reject
           </CreateButton>}
-          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" onClick={() => doAction('approve')} style={mobileActionButtonStyle}>
+          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" onClick={() => requestAction('approve')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>check_circle</span>
             Approve
           </CreateButton>}
         </>}
         {data.status === 'REJECTED' && <>
-          <CreateButton variant="accordion" tone="primary" onClick={duplicateForm} style={mobileActionButtonStyle}>
+          <CreateButton variant="accordion" tone="primary" onClick={() => requestAction('duplicate')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>content_copy</span>
             Duplicate
           </CreateButton>
-          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="danger" onClick={() => doAction('delete')} style={mobileActionButtonStyle}>
+          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="danger" onClick={() => requestAction('delete')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
             Hapus
           </CreateButton>}
-          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="primary" onClick={revisiForm} style={mobileActionButtonStyle}>
+          {(canApprove || isIT || data.createdBy === user?.fullName) && <CreateButton variant="accordion" tone="primary" onClick={() => requestAction('revisi')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span>
             Revisi
           </CreateButton>}
-          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" onClick={() => doAction('approve')} style={mobileActionButtonStyle}>
+          {!isApprovalEmbedded && (canApprove || isIT) && <CreateButton variant="accordion" onClick={() => requestAction('approve')} style={mobileActionButtonStyle}>
             <span className="material-icons-round" style={{ fontSize: '16px' }}>check_circle</span>
             Approve
           </CreateButton>}
         </>}
       </div>
+
+      <DialogConfirm
+        isOpen={!!confirmAction}
+        eyebrow={confirmAction ? confirmActionMeta[confirmAction]?.eyebrow : ''}
+        title={confirmAction ? confirmActionMeta[confirmAction]?.title : ''}
+        message={confirmAction ? confirmActionMeta[confirmAction]?.message : ''}
+        confirmLabel={confirmAction ? confirmActionMeta[confirmAction]?.confirmLabel : ''}
+        icon={confirmAction ? confirmActionMeta[confirmAction]?.icon : ''}
+        tone={confirmAction ? confirmActionMeta[confirmAction]?.tone : 'primary'}
+        isLoading={actionLoading}
+        onClose={() => { if (!actionLoading) setConfirmAction(null) }}
+        onConfirm={() => {
+          if (confirmAction === 'revisi') revisiForm()
+          else if (confirmAction === 'duplicate') duplicateForm()
+          else doAction(confirmAction)
+        }}
+      />
     </div>
   )
 }

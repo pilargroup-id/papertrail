@@ -101,11 +101,11 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
   const primaryItems = hideMenu ? [] : [
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
     { label: 'FRP', icon: 'receipt_long', children: [
-      { label: 'New Request', href: '/frp', icon: 'note_add' },
-      { label: 'Approval', href: '/approval', icon: 'rule' },
-      { label: 'Approved', href: '/approved', icon: 'task_alt' },
+      { label: 'New FRP', href: '/frp', icon: 'note_add' },
+      { label: 'FRP Approval', href: '/approval', icon: 'rule' },
+      { label: 'FRP Approved', href: '/approved', icon: 'task_alt' },
     ]},
-    { label: 'Request Purchase', icon: 'shopping_bag', children: [
+    { label: 'RP', icon: 'shopping_bag', children: [
       { label: 'New RP', href: '/rp', icon: 'note_add' },
       { label: 'RP Approval', href: '/rp-approval', icon: 'rule' },
       { label: 'RP Approved', href: '/rp-approved', icon: 'task_alt' },
@@ -165,8 +165,9 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
           <div className="profile-info">
             <h3 className="profile-name">{userName}</h3>
             <p className="profile-role">
-              {userJobLevel || (userIsAdmin ? 'Administrator' : 'Staff')}
-              {userDivision ? <span className="profile-division"> · {userDivision}</span> : null}
+              {userDivision && userJobLevel
+                ? `${userDivision} ${userJobLevel}`
+                : (userJobLevel || userDivision || (userIsAdmin ? 'Administrator' : 'Staff'))}
             </p>
           </div>
         </div>

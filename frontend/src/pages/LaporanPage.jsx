@@ -5,6 +5,15 @@ import { useUser } from '../contexts/UserContext'
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
 
+const RP_STATUS_META = {
+  PENDING_MANAGER:         { label: 'Menunggu Manager',  background: '#fef3c7', color: '#92400e' },
+  PENDING_PROCESS:         { label: 'Menunggu Proses',   background: '#dbeafe', color: '#1d4ed8' },
+  PENDING_PROCESS_APPROVAL:{ label: 'Approval Proses',   background: '#ede9fe', color: '#6d28d9' },
+  APPROVED:                { label: 'Approved',          background: '#bbf7d0', color: '#166534' },
+  REJECTED:                { label: 'Rejected',          background: '#fecaca', color: '#991b1b' },
+  CREATED_FRP:             { label: 'Created FRP',       background: '#cffafe', color: '#0e7490' },
+}
+
 function formatDate(value) {
   return value
     ? new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value))
@@ -94,6 +103,7 @@ function SearchableSelect({ value, onChange, options, placeholder = 'Pilih...', 
 
 export default function LaporanPage() {
   const navigate = useNavigate()
+  const [reportType, setReportType] = useState('frp')
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(null)
@@ -110,7 +120,10 @@ export default function LaporanPage() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/data/laporan')
+    setLoading(true)
+    setData(null)
+    const url = reportType === 'rp' ? '/api/data/laporan-rp' : '/api/data/laporan'
+    fetch(url)
       .then(r => {
         if (r.status === 403) { navigate('/'); return null }
         if (!r.ok) { navigate('/login'); return null }
@@ -119,9 +132,9 @@ export default function LaporanPage() {
       .then(d => { if (d) { setData(d); setUser(d.user) } })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }, [reportType])
 
-  useEffect(() => { setCurrentPage(1) }, [filters, rowsPerPage])
+  useEffect(() => { setCurrentPage(1) }, [filters, rowsPerPage, reportType])
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
@@ -133,10 +146,17 @@ export default function LaporanPage() {
       if (filters.status && r.status !== filters.status) return false
       if (filters.company && r.companyName !== filters.company) return false
       if (filters.divisi && r.divisi !== filters.divisi) return false
-      if (filters.from && r.tanggalFrp < filters.from) return false
-      if (filters.to && r.tanggalFrp > filters.to) return false
+      const dateField = reportType === 'rp' ? (r.createdAt || r.tanggalDibutuhkan || '').slice(0, 10) : r.tanggalFrp
+      if (filters.from && dateField < filters.from) return false
+      if (filters.to && dateField > filters.to) return false
       if (filters.search) {
         const q = filters.search.toLowerCase()
+        if (reportType === 'rp') {
+          return (r.rpNo || '').toLowerCase().includes(q) ||
+            (r.vendorSuggestion || '').toLowerCase().includes(q) ||
+            (r.dibuatOleh || '').toLowerCase().includes(q) ||
+            (r.companyName || '').toLowerCase().includes(q)
+        }
         return (r.frpNo || '').toLowerCase().includes(q) ||
           (r.vendor || '').toLowerCase().includes(q) ||
           (r.dimintaOleh || '').toLowerCase().includes(q) ||
@@ -144,7 +164,7 @@ export default function LaporanPage() {
       }
       return true
     })
-  }, [data, filters])
+  }, [data, filters, reportType])
 
   const totalAmount = filtered.reduce((s, r) => s + r.totalAmount, 0)
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
@@ -155,7 +175,9 @@ export default function LaporanPage() {
 
   const companyOptions = useMemo(() => (data?.companies || []).map(c => ({ value: c, label: c })), [data])
   const divisiOptions  = useMemo(() => (data?.divisions  || []).map(d => ({ value: d, label: d })), [data])
-  const statusOptions  = [{ value: 'APPROVED', label: 'APPROVED' }, { value: 'PENDING', label: 'PENDING' }, { value: 'REJECTED', label: 'REJECTED' }]
+  const statusOptions = reportType === 'rp'
+    ? Object.entries(RP_STATUS_META).map(([value, m]) => ({ value, label: m.label }))
+    : [{ value: 'APPROVED', label: 'APPROVED' }, { value: 'PENDING', label: 'PENDING' }, { value: 'REJECTED', label: 'REJECTED' }]
 
   const filterInput = {
     width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #dde3ed',
@@ -169,27 +191,35 @@ export default function LaporanPage() {
     REJECTED: { background: '#fecaca', color: '#991b1b' },
   }
 
-  const desktopHeaders = ['No FRP', 'Tanggal', 'Pemohon & Vendor', 'Divisi', 'Perusahaan', 'Total', 'Status', 'Disetujui Oleh', 'Attach Link', 'Approved']
-  const desktopWidths  = ['11%', '8%', '15%', '8%', '11%', '11%', '8%', '11%', '9%', '8%']
+  const desktopHeaders = reportType === 'rp'
+    ? ['No RP', 'Tanggal', 'Pemohon', 'Divisi', 'Diproses Oleh', 'Kategori', 'Total', 'Status']
+    : ['No FRP', 'Tanggal', 'Pemohon & Vendor', 'Divisi', 'Perusahaan', 'Total', 'Status', 'Disetujui Oleh', 'Attach Link', 'Approved']
+  const desktopWidths = reportType === 'rp'
+    ? ['13%', '9%', '14%', '10%', '15%', '16%', '13%', '10%']
+    : ['11%', '8%', '15%', '8%', '11%', '11%', '8%', '11%', '9%', '8%']
 
-  const getRow = r => [
-    r.frpNo ?? '', r.tanggalFrp ?? '', r.dimintaOleh ?? '', r.divisi ?? '',
-    r.companyName ?? '', r.vendor ?? '', r.totalAmount ?? 0, r.status ?? '',
-    r.approvedBy ?? '', r.approvedAt ? r.approvedAt.substring(0, 10) : '',
-  ]
+  const getRow = r => reportType === 'rp'
+    ? [r.rpNo ?? '', (r.createdAt || r.tanggalDibutuhkan || '').slice(0, 10), r.dibuatOleh ?? '', r.divisi ?? '', r.diprosesOleh ?? '', r.kategoriPembelian ?? '', r.totalAmount ?? 0, r.status ?? '']
+    : [r.frpNo ?? '', r.tanggalFrp ?? '', r.dimintaOleh ?? '', r.divisi ?? '', r.companyName ?? '', r.vendor ?? '', r.totalAmount ?? 0, r.status ?? '', r.approvedBy ?? '', r.approvedAt ? r.approvedAt.substring(0, 10) : '']
 
   const exportCSV = () => {
-    const headers = ['No FRP', 'Tanggal', 'Diminta Oleh', 'Divisi', 'Perusahaan', 'Vendor', 'Total (IDR)', 'Status', 'Disetujui Oleh', 'Tgl Disetujui']
+    const headers = reportType === 'rp'
+      ? ['No RP', 'Tanggal', 'Dibuat Oleh', 'Divisi', 'Diproses Oleh', 'Kategori', 'Total (IDR)', 'Status']
+      : ['No FRP', 'Tanggal', 'Diminta Oleh', 'Divisi', 'Perusahaan', 'Vendor', 'Total (IDR)', 'Status', 'Disetujui Oleh', 'Tgl Disetujui']
+    const prefix = reportType === 'rp' ? 'laporan-rp' : 'laporan-frp'
     const csv = [headers, ...filtered.map(getRow)]
       .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `laporan-frp-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
+    const a = document.createElement('a'); a.href = url; a.download = `${prefix}-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
   const exportExcel = () => {
-    const headers = ['No FRP', 'Tanggal', 'Diminta Oleh', 'Divisi', 'Perusahaan', 'Vendor', 'Total (IDR)', 'Status', 'Disetujui Oleh', 'Tgl Disetujui']
+    const headers = reportType === 'rp'
+      ? ['No RP', 'Tanggal', 'Dibuat Oleh', 'Divisi', 'Diproses Oleh', 'Kategori', 'Total (IDR)', 'Status']
+      : ['No FRP', 'Tanggal', 'Diminta Oleh', 'Divisi', 'Perusahaan', 'Vendor', 'Total (IDR)', 'Status', 'Disetujui Oleh', 'Tgl Disetujui']
+    const prefix = reportType === 'rp' ? 'laporan-rp' : 'laporan-frp'
     let html = '<table><thead><tr>' + headers.map(h => `<th style="background:#163a6b;color:white;font-weight:bold;padding:6px 10px;">${h}</th>`).join('') + '</tr></thead><tbody>'
     filtered.map(getRow).forEach((row, idx) => {
       html += `<tr style="background:${idx % 2 === 0 ? '#fff' : '#f8fafc'}">`
@@ -199,14 +229,16 @@ export default function LaporanPage() {
     html += '</tbody></table>'
     const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `laporan-frp-${new Date().toISOString().slice(0, 10)}.xls`; a.click()
+    const a = document.createElement('a'); a.href = url; a.download = `${prefix}-${new Date().toISOString().slice(0, 10)}.xls`; a.click()
     URL.revokeObjectURL(url)
   }
 
   const exportPDF = async () => {
     setExporting('pdf')
+    const prefix = reportType === 'rp' ? 'laporan-rp' : 'laporan-frp'
+    const pdfUrl = reportType === 'rp' ? '/api/laporan-rp/pdf' : '/api/laporan/pdf'
     try {
-      const res = await fetch('/api/laporan/pdf', {
+      const res = await fetch(pdfUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -217,7 +249,7 @@ export default function LaporanPage() {
       if (!res.ok) throw new Error()
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a'); a.href = url; a.download = `laporan-frp-${new Date().toISOString().slice(0, 10)}.pdf`; a.click()
+      const a = document.createElement('a'); a.href = url; a.download = `${prefix}-${new Date().toISOString().slice(0, 10)}.pdf`; a.click()
       URL.revokeObjectURL(url)
     } catch { alert('Gagal export PDF') }
     finally { setExporting(null) }
@@ -232,6 +264,34 @@ export default function LaporanPage() {
 
   return (
     <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* ── Report Type Toggle ── */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: isMobile ? '12px' : '16px', flexWrap: 'wrap' }}>
+            {[
+              { key: 'frp', label: 'FRP', icon: 'receipt_long' },
+              { key: 'rp',  label: 'RP',  icon: 'shopping_bag' },
+            ].map(item => {
+              const active = reportType === item.key
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => { setReportType(item.key); setFilters({ search: '', status: 'APPROVED', company: '', divisi: '', from: '', to: '' }) }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '8px 16px', borderRadius: '10px',
+                    border: active ? '2px solid #1f4e8c' : '1.5px solid #e2e8f0',
+                    background: active ? '#eff6ff' : 'white',
+                    color: active ? '#1f4e8c' : '#64748b',
+                    fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.85rem',
+                  }}
+                >
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>{item.icon}</span>
+                  Laporan {item.label}
+                </button>
+              )
+            })}
+          </div>
+
           {loading && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b' }}>
               Memuat data...
@@ -245,7 +305,7 @@ export default function LaporanPage() {
                 {
                   label: 'Search',
                   span: isMobile,
-                  content: <input style={filterInput} placeholder="Cari No FRP / Vendor / Nama..." value={filters.search} onChange={e => setFilters(c => ({ ...c, search: e.target.value }))} />
+                  content: <input style={filterInput} placeholder={reportType === 'rp' ? 'Cari No RP / Vendor / Nama...' : 'Cari No FRP / Vendor / Nama...'} value={filters.search} onChange={e => setFilters(c => ({ ...c, search: e.target.value }))} />
                 },
                 {
                   label: 'Status',
@@ -396,10 +456,30 @@ export default function LaporanPage() {
                       <colgroup>{desktopWidths.map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
                       <tbody>
                         {paginated.map((r, idx) => {
-                          const ss = statusColors[r.status] || {}
                           const absIdx = (safePage - 1) * rowsPerPage + idx
                           const rowBg = absIdx % 2 === 0 ? 'white' : '#fafbfc'
                           const td = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }
+                          if (reportType === 'rp') {
+                            const rpMeta = RP_STATUS_META[r.status] || { label: r.status, background: '#e2e8f0', color: '#475569' }
+                            const dateVal = r.createdAt || r.tanggalDibutuhkan
+                            return (
+                              <tr key={r.id + idx} style={{ background: rowBg }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                                onMouseLeave={e => e.currentTarget.style.background = rowBg}>
+                                <td style={td}>
+                                  <div style={{ fontWeight: 700, color: '#1e40af', fontSize: '0.82rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.rpNo || '-'}</div>
+                                </td>
+                                <td style={{ ...td, color: '#64748b', whiteSpace: 'nowrap' }}>{formatDate(dateVal)}</td>
+                                <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '13px' }}>{r.dibuatOleh || '-'}</td>
+                                <td style={td}><span style={{ background: '#e0e7ef', color: '#334155', borderRadius: '6px', padding: '2px 8px', fontSize: '12px', fontWeight: 600 }}>{r.divisi || '-'}</span></td>
+                                <td style={{ ...td, fontSize: '12px', color: '#475569', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.diprosesOleh || '-'}</td>
+                                <td style={{ ...td, fontSize: '12px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.kategoriPembelian || '-'}</td>
+                                <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>{formatCurrency(r.totalAmount)}</td>
+                                <td style={td}><span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em', background: rpMeta.background, color: rpMeta.color, whiteSpace: 'nowrap' }}>{rpMeta.label}</span></td>
+                              </tr>
+                            )
+                          }
+                          const ss = statusColors[r.status] || {}
                           return (
                             <tr key={r.frpNo + idx} style={{ background: rowBg }}
                               onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
@@ -420,7 +500,6 @@ export default function LaporanPage() {
                               <td style={{ ...td, fontSize: '12px', color: '#2563eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {r.attachLink ? <a href={r.attachLink} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none', color:'#2563eb', fontWeight:600}}>Link</a> : '-'}
                               </td>
-
                               <td style={{ ...td, fontSize: '12px', color: '#475569', whiteSpace: 'nowrap' }}>{r.approvedAt ? formatDate(r.approvedAt) : '-'}</td>
                             </tr>
                           )

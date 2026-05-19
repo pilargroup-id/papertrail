@@ -879,6 +879,43 @@ app.get('/api/data/laporan', checkAuth, checkLaporan, (req, res) => {
     });
 });
 
+app.get('/api/data/laporan-rp', checkAuth, checkLaporan, (req, res) => {
+    const u = req.session.user;
+    const rpRequests = readJson('rp-requests.json');
+
+    const parseItemAmount = (items) => {
+        if (!Array.isArray(items)) return 0;
+        return items.reduce((sum, item) => {
+            const qty = parseFloat(String(item.qty || '0').replace(/[^0-9.]/g, '')) || 0;
+            const val = parseFloat(String(item.estimatedValue || '0').replace(/[^0-9.]/g, '')) || 0;
+            return sum + qty * val;
+        }, 0);
+    };
+
+    const divisions = [...new Set(rpRequests.map(r => r.divisi).filter(Boolean))].sort();
+
+    const mapped = rpRequests.map(r => ({
+        id: r.id,
+        rpNo: r.rpNo,
+        createdAt: r.createdAt,
+        tanggalDibutuhkan: r.tanggalDibutuhkan,
+        dibuatOleh: r.dibuatOleh,
+        divisi: r.divisi,
+        companyName: r.companyName,
+        diprosesOleh: r.diprosesOleh,
+        kategoriPembelian: r.kategoriPembelian,
+        vendorSuggestion: r.vendorSuggestion,
+        totalAmount: parseItemAmount(r.items),
+        status: r.status,
+    })).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    res.json({
+        requests: mapped,
+        divisions,
+        user: { fullName: u.fullName, role: u.role, selectedJobLevel: u.selectedJobLevel, allAssignments: u.allAssignments || [] }
+    });
+});
+
 app.post('/api/laporan/pdf', checkAuth, checkLaporan, async (req, res) => {
     try {
         const { requests = [], meta = {} } = req.body;

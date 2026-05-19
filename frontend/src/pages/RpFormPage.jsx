@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
+import DialogConfirm from '../components/Dialog/DialogConfirm'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -248,6 +249,7 @@ export default function RpFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [error, setError] = useState(null)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [vw, setVw] = useState(typeof window === 'undefined' ? 1280 : window.innerWidth)
 
   useEffect(() => {
@@ -346,16 +348,11 @@ export default function RpFormPage() {
       setSubmitError('Kolom Class wajib diisi.')
       return
     }
+    setShowConfirm(true)
+  }
 
-    // Confirmation dialog before submit
-    const isProcess = !!searchParams.get('process')
-    const confirmMsg = isProcess
-      ? 'Apakah Anda yakin ingin mengupdate dan mengirimkan data Request Purchase ini?'
-      : 'Apakah Anda yakin ingin mengirimkan Request Purchase ini?'
-    if (!window.confirm(confirmMsg)) {
-      return
-    }
-
+  const executeSubmit = async () => {
+    setShowConfirm(false)
     setSubmitting(true); setSubmitError(null)
     try {
       const processId = searchParams.get('process')
@@ -386,7 +383,8 @@ export default function RpFormPage() {
   }
 
   return (
-    <main className="dashboard-main">
+    <>
+      <main className="dashboard-main">
           {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
           {error && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#ef4444' }}>{error}</div>}
           {!loading && !error && (
@@ -584,6 +582,23 @@ export default function RpFormPage() {
               </div>
             </form>
           )}
+      <DialogConfirm
+        isOpen={showConfirm}
+        eyebrow="Konfirmasi Submit"
+        title="Kirim Request Purchase?"
+        message={
+          !!searchParams.get('process')
+            ? 'Apakah Anda yakin ingin mengupdate dan mengirimkan data Request Purchase ini?'
+            : 'Apakah Anda yakin ingin mengirimkan Request Purchase ini?'
+        }
+        confirmLabel="Ya, Kirim"
+        icon="send"
+        tone="primary"
+        isLoading={submitting}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={executeSubmit}
+      />
     </main>
+    </>
   )
 }

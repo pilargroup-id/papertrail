@@ -28,7 +28,12 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
       "Bash(Get-Content \"C:\\\\Users\\\\IT\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-IT-Documents-FRP\\\\e8e38a42-05a7-465e-886c-ed2b7c16b4c6\\\\tasks\\\\bq0y3xqy5.output\" -Wait -Tail 10)",
       "Bash(Select-Object -First 15)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(dir c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend /b /a-d)",
+      "Bash(Get-ChildItem c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend -Exclude node_modules)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne 'node_modules' } | Select-Object Name)",
+      "PowerShell(dir \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne 'node_modules' })"
     ]
   }
 }

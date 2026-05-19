@@ -436,9 +436,14 @@ select {
   display: grid;
   grid-template-rows: 0fr;
   margin-top: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   transition:
     grid-template-rows 0.18s ease,
-    margin-top 0.18s ease;
+    margin-top 0.18s ease,
+    opacity 0.12s ease,
+    visibility 0s linear 0.18s;
   overflow: hidden;
 }
 
@@ -447,13 +452,31 @@ select {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px 8px 8px 34px;
+  gap: 0;
+  padding: 0 8px 0 34px;
+  transform: translateY(-4px);
+  transition:
+    gap 0.18s ease,
+    padding 0.18s ease,
+    transform 0.18s ease;
 }
 
 .nav-submenu.expanded {
   grid-template-rows: 1fr;
   margin-top: 4px;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    grid-template-rows 0.18s ease,
+    margin-top 0.18s ease,
+    opacity 0.12s ease;
+}
+
+.nav-submenu.expanded .nav-submenu__inner {
+  gap: 6px;
+  padding: 6px 8px 8px 34px;
+  transform: translateY(0);
 }
 
 .nav-item__bullet {
