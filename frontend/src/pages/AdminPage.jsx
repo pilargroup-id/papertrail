@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
@@ -953,7 +953,7 @@ export default function AdminPage() {
 
       {editItem && createPortal(
         <div className="dashboard-popup-overlay" role="presentation" onClick={() => setEditItem(null)}>
-          <div className="dashboard-popup" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+          <div className="dashboard-popup" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ width: 'min(92vw, 920px)', maxWidth: 'none' }}>
             <div className="dashboard-popup__header">
               <div>
                 <p className="dashboard-popup__eyebrow">Edit Data</p>
