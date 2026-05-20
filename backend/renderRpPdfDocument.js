@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 function escapeHtml(value) {
@@ -31,12 +31,17 @@ function renderRpPdfDocument(formData = {}, preview = false) {
   
   const companyName = formData.companyName || 'PT PILAR NIAGA MAKMUR'
   
-  // Choose logo based on company
-  let logoUrl = 'https://i.ibb.co.com/8YhGZ2N/logo-piagam2.png' // Default PNM
-  if (companyName.toUpperCase() === 'PT PILAR KARGO PERKASA') {
-    logoUrl = 'https://i.ibb.co.com/FwYJ3Hj/logo-pkp.png' // Use appropriate URL if needed, fallback to default
-  } else if (companyName.toUpperCase() === 'PT PILAR KARANG SAMUDERA') {
-    logoUrl = 'https://i.ibb.co.com/FwYJ3Hj/logo-pks.png' // Use appropriate URL if needed, fallback to default
+  // Dynamic Logo Resolution
+  let logoUrl = 'https://i.ibb.co.com/8YhGZ2N/logo-piagam2.png';
+  try {
+    const publicDir = path.join(__dirname, '..', 'frontend', 'public');
+    const exactPath = path.join(publicDir, companyName + '.png');
+    if (fs.existsSync(exactPath)) {
+      const b64 = fs.readFileSync(exactPath).toString('base64');
+      logoUrl = 'data:image/png;base64,' + b64;
+    }
+  } catch (err) {
+    console.error('Error loading logo:', err.message);
   }
 
   const css = `
@@ -99,7 +104,7 @@ function renderRpPdfDocument(formData = {}, preview = false) {
     
     .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1.5px solid #000; padding-bottom: 8px; }
     .logo-container { width: 75px; }
-    .logo { max-width: 100%; height: auto; filter: grayscale(100%); }
+    .logo { max-width: 100%; height: auto; }
     .title-container { text-align: right; }
     .title { font-size: 16px; font-weight: 700; color: #000; margin: 0 0 2px 0; text-transform: uppercase; letter-spacing: 0.5px; }
     .doc-no { font-size: 11px; font-weight: 600; color: #000; margin: 0; }

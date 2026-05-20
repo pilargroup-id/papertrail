@@ -652,8 +652,11 @@ export default function RpApprovalPage() {
         {showDetail && (
           <button type="button" onClick={() => setSelected(rp)} style={actionButtonStyle('primary')}>Detail</button>
         )}
-        {showPreview && rp.status === 'APPROVED' && (
-          <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
+        {showPreview && ['APPROVED', 'CREATED_FRP'].includes(rp.status) && (
+          <>
+            <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
+            <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
+          </>
         )}
         {canManagerApprove && (
           <>
@@ -794,7 +797,7 @@ export default function RpApprovalPage() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-                {selected.status === 'APPROVED' && (
+                {['APPROVED', 'CREATED_FRP'].includes(selected.status) && (
                   <>
                     <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
                     <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
