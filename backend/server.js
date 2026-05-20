@@ -1041,6 +1041,57 @@ app.get('/api/data/dashboard', checkAuth, (req, res) => {
         .map(([name, d]) => ({ name, ...d, total: d.pending + d.approved + d.rejected }))
         .sort((a, b) => b.approvedAmount - a.approvedAmount);
 
+    // --- RP (Request Purchase) Stats ---
+    const rpRequests = readJson('rp-requests.json');
+    const parseRpItemAmount = (items) => {
+        if (!Array.isArray(items)) return 0;
+        return items.reduce((sum, item) => {
+            const qty = parseFloat(String(item.qty || '0').replace(/[^0-9.]/g, '')) || 0;
+            const val = parseFloat(String(item.estimatedValue || '0').replace(/[^0-9.]/g, '')) || 0;
+            return sum + qty * val;
+        }, 0);
+    };
+
+    const rpPendingMgr = rpRequests.filter(r => r.status === 'PENDING_MANAGER');
+    const rpPendingProc = rpRequests.filter(r => r.status === 'PENDING_PROCESS');
+    const rpPendingProcApproval = rpRequests.filter(r => r.status === 'PENDING_PROCESS_APPROVAL');
+    const rpApproved = rpRequests.filter(r => r.status === 'APPROVED');
+    const rpRejected = rpRequests.filter(r => r.status === 'REJECTED');
+    const rpCreatedFrp = rpRequests.filter(r => r.status === 'CREATED_FRP');
+
+    const rpRecent = [...rpRequests]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 10)
+        .map(r => ({
+            id: r.id,
+            rpNo: r.rpNo,
+            companyName: r.companyName,
+            divisi: r.divisi,
+            dibuatOleh: r.dibuatOleh,
+            diprosesOleh: r.diprosesOleh,
+            kategoriPembelian: r.kategoriPembelian,
+            vendorSuggestion: r.vendorSuggestion,
+            status: r.status,
+            totalAmount: parseRpItemAmount(r.items),
+            tanggalDibutuhkan: r.tanggalDibutuhkan,
+            createdAt: r.createdAt,
+        }));
+
+    const rpDivisiMap = {};
+    rpRequests.forEach(r => {
+        const d = r.divisi || 'Unknown';
+        if (!rpDivisiMap[d]) rpDivisiMap[d] = { pendingManager: 0, pendingProcess: 0, approved: 0, rejected: 0, createdFrp: 0, approvedAmount: 0, pendingAmount: 0 };
+        if (r.status === 'PENDING_MANAGER') { rpDivisiMap[d].pendingManager++; rpDivisiMap[d].pendingAmount += parseRpItemAmount(r.items); }
+        else if (r.status === 'PENDING_PROCESS') { rpDivisiMap[d].pendingProcess++; rpDivisiMap[d].pendingAmount += parseRpItemAmount(r.items); }
+        else if (r.status === 'PENDING_PROCESS_APPROVAL') { rpDivisiMap[d].pendingProcess++; rpDivisiMap[d].pendingAmount += parseRpItemAmount(r.items); }
+        else if (r.status === 'APPROVED') { rpDivisiMap[d].approved++; rpDivisiMap[d].approvedAmount += parseRpItemAmount(r.items); }
+        else if (r.status === 'CREATED_FRP') { rpDivisiMap[d].createdFrp++; rpDivisiMap[d].approvedAmount += parseRpItemAmount(r.items); }
+        else if (r.status === 'REJECTED') rpDivisiMap[d].rejected++;
+    });
+    const rpByDivisi = Object.entries(rpDivisiMap)
+        .map(([name, d]) => ({ name, ...d, total: d.pendingManager + d.pendingProcess + d.approved + d.rejected + d.createdFrp }))
+        .sort((a, b) => b.total - a.total);
+
     res.json({
         stats: {
             total: requests.length,
@@ -1051,9 +1102,23 @@ app.get('/api/data/dashboard', checkAuth, (req, res) => {
             approvedAmount: approved.reduce((s, r) => s + parseItemAmount(r.items), 0),
             rejectedAmount: rejected.reduce((s, r) => s + parseItemAmount(r.items), 0),
         },
+        rpStats: {
+            total: rpRequests.length,
+            pendingManager: rpPendingMgr.length,
+            pendingProcess: rpPendingProc.length,
+            pendingProcessApproval: rpPendingProcApproval.length,
+            approved: rpApproved.length,
+            rejected: rpRejected.length,
+            createdFrp: rpCreatedFrp.length,
+            pendingAmount: [...rpPendingMgr, ...rpPendingProc, ...rpPendingProcApproval].reduce((s, r) => s + parseRpItemAmount(r.items), 0),
+            approvedAmount: [...rpApproved, ...rpCreatedFrp].reduce((s, r) => s + parseRpItemAmount(r.items), 0),
+            rejectedAmount: rpRejected.reduce((s, r) => s + parseRpItemAmount(r.items), 0),
+        },
         byCompany,
         byDivisi,
         recent,
+        rpRecent,
+        rpByDivisi,
         monthly,
         topVendors,
         user: { fullName: u.fullName, role: u.role, selectedJobLevel: u.selectedJobLevel, allAssignments: u.allAssignments || [] }

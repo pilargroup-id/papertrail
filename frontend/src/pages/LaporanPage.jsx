@@ -101,6 +101,54 @@ function SearchableSelect({ value, onChange, options, placeholder = 'Pilih...', 
   )
 }
 
+const REPORT_TYPES = [
+  { key: 'frp', label: 'FRP', subtitle: 'Fund Request Procurement', color: '#1f4e8c', icon: 'receipt_long' },
+  { key: 'rp',  label: 'RP',  subtitle: 'Request Pembelian',        color: '#7c3aed', icon: 'shopping_bag' },
+]
+
+function ReportTypeDropdown({ reportType, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const current = REPORT_TYPES.find(t => t.key === reportType) || REPORT_TYPES[0]
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+  return (
+    <div ref={ref} style={{ position: 'relative', userSelect: 'none' }}>
+      <button type="button" onClick={() => setOpen(o => !o)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '9px 14px', borderRadius: '12px', border: `2px solid ${current.color}20`, background: `${current.color}08`, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <span className="material-icons-round" style={{ fontSize: '20px', color: current.color }}>{current.icon}</span>
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ fontSize: '13px', fontWeight: 800, color: current.color, lineHeight: 1.1 }}>Laporan {current.label}</div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500, marginTop: '1px' }}>{current.subtitle}</div>
+        </div>
+        <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', marginLeft: '4px', transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, minWidth: '200px', background: 'white', border: '1.5px solid #dbe5f0', borderRadius: '14px', boxShadow: '0 14px 30px rgba(15,23,42,0.12)', zIndex: 100, overflow: 'hidden', padding: '6px' }}>
+          {REPORT_TYPES.map(t => {
+            const active = t.key === reportType
+            return (
+              <button key={t.key} type="button"
+                onClick={() => { onChange(t.key); setOpen(false) }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '10px', border: 'none', background: active ? `${t.color}10` : 'transparent', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                <span className="material-icons-round" style={{ fontSize: '18px', color: t.color }}>{t.icon}</span>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: active ? t.color : '#1e293b' }}>Laporan {t.label}</div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8' }}>{t.subtitle}</div>
+                </div>
+                {active && <span className="material-icons-round" style={{ fontSize: '16px', color: t.color, marginLeft: 'auto' }}>check</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function LaporanPage() {
   const navigate = useNavigate()
   const [reportType, setReportType] = useState('frp')
@@ -264,32 +312,9 @@ export default function LaporanPage() {
 
   return (
     <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column' }}>
-          {/* ── Report Type Toggle ── */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: isMobile ? '12px' : '16px', flexWrap: 'wrap' }}>
-            {[
-              { key: 'frp', label: 'FRP', icon: 'receipt_long' },
-              { key: 'rp',  label: 'RP',  icon: 'shopping_bag' },
-            ].map(item => {
-              const active = reportType === item.key
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => { setReportType(item.key); setFilters({ search: '', status: 'APPROVED', company: '', divisi: '', from: '', to: '' }) }}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    padding: '8px 16px', borderRadius: '10px',
-                    border: active ? '2px solid #1f4e8c' : '1.5px solid #e2e8f0',
-                    background: active ? '#eff6ff' : 'white',
-                    color: active ? '#1f4e8c' : '#64748b',
-                    fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.85rem',
-                  }}
-                >
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>{item.icon}</span>
-                  Laporan {item.label}
-                </button>
-              )
-            })}
+          {/* ── Report Type Dropdown ── */}
+          <div style={{ marginBottom: isMobile ? '12px' : '16px' }}>
+            <ReportTypeDropdown reportType={reportType} onChange={key => { setReportType(key); setFilters({ search: '', status: 'APPROVED', company: '', divisi: '', from: '', to: '' }) }} />
           </div>
 
           {loading && (
