@@ -339,6 +339,9 @@ export default function RpApprovalPage() {
     processor: '',
   })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [tabDropdownOpen, setTabDropdownOpen] = useState(false)
+  const tabDropdownRef = useRef(null)
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
@@ -399,6 +402,15 @@ export default function RpApprovalPage() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [confirmAction, actionLoading])
+
+  useEffect(() => {
+    if (!tabDropdownOpen) return undefined
+    const handleOutside = e => {
+      if (tabDropdownRef.current && !tabDropdownRef.current.contains(e.target)) setTabDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [tabDropdownOpen])
 
   const requestSort = key => {
     if (!key) return
@@ -569,7 +581,7 @@ export default function RpApprovalPage() {
   const filterGridStyle = useMemo(
     () => ({
       display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr 1fr' : getGridColumns(6, false, isTablet),
+      gridTemplateColumns: isMobile ? '1fr' : getGridColumns(6, false, isTablet),
       gap: isMobile ? '10px' : '15px',
       alignItems: 'flex-end',
     }),
@@ -799,39 +811,83 @@ export default function RpApprovalPage() {
 
   return (
     <>
-      <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: isMobile ? '12px' : '16px', flexWrap: 'wrap' }}>
-          {tabs.map(item => {
-            const count = D.counts?.[item.key] ?? 0
-            const active = tab === item.key
-            return (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setTab(item.key)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: '10px',
-                  border: active ? '2px solid #1f4e8c' : '1.5px solid #e2e8f0',
-                  background: active ? '#eff6ff' : 'white',
-                  color: active ? '#1f4e8c' : '#64748b',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  fontSize: '0.85rem',
-                }}
-              >
-                <span className="material-icons-round" style={{ fontSize: '18px' }}>{item.icon}</span>
-                {item.label} ({count})
-              </button>
-            )
-          })}
-        </div>
+      <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
+        {isMobile ? (
+          <div ref={tabDropdownRef} style={{ position: 'relative', marginBottom: '12px' }}>
+            <button
+              type="button"
+              onClick={() => setTabDropdownOpen(v => !v)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '12px', border: '2px solid #1f4e8c', background: '#eff6ff', color: '#1f4e8c', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem' }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>{tabs.find(t => t.key === tab)?.icon}</span>
+                {tabs.find(t => t.key === tab)?.label}
+                <span style={{ background: '#1f4e8c', color: 'white', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[tab] ?? 0}</span>
+              </span>
+              <span className="material-icons-round" style={{ fontSize: '20px' }}>{tabDropdownOpen ? 'expand_less' : 'expand_more'}</span>
+            </button>
+            {tabDropdownOpen && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'white', border: '1.5px solid #dbe5f0', borderRadius: '12px', boxShadow: '0 14px 30px rgba(15,23,42,0.14)', zIndex: 50, overflow: 'hidden' }}>
+                {tabs.map(item => {
+                  const active = tab === item.key
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => { setTab(item.key); setTabDropdownOpen(false) }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', border: 'none', borderTop: '1px solid #f1f5f9', background: active ? '#eff6ff' : 'white', color: active ? '#1f4e8c' : '#334155', fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem', textAlign: 'left' }}
+                    >
+                      <span className="material-icons-round" style={{ fontSize: '18px', flexShrink: 0 }}>{item.icon}</span>
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      <span style={{ background: active ? '#1f4e8c' : '#e2e8f0', color: active ? 'white' : '#475569', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[item.key] ?? 0}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            {tabs.map(item => {
+              const count = D.counts?.[item.key] ?? 0
+              const active = tab === item.key
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setTab(item.key)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: active ? '2px solid #1f4e8c' : '1.5px solid #e2e8f0', background: active ? '#eff6ff' : 'white', color: active ? '#1f4e8c' : '#64748b', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.85rem' }}
+                >
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>{item.icon}</span>
+                  {item.label} ({count})
+                </button>
+              )
+            })}
+          </div>
+        )}
 
-        <div style={{ background: '#f1f5f9', borderRadius: '16px', padding: isMobile ? '12px' : '20px', marginBottom: isMobile ? '12px' : '20px', border: '1px solid #e2e8f0' }}>
+        <div style={{ background: '#f1f5f9', borderRadius: '16px', padding: isMobile ? '10px 12px' : '20px', marginBottom: isMobile ? '12px' : '20px', border: '1px solid #e2e8f0' }}>
+          {isMobile && (
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(v => !v)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: '2px 0', marginBottom: filtersOpen ? '10px' : 0, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="material-icons-round" style={{ fontSize: '17px' }}>tune</span>
+                Filter & Pencarian
+                {Object.values(filters).some(Boolean) && (
+                  <span style={{ background: '#2563eb', color: 'white', borderRadius: '999px', fontSize: '10px', fontWeight: 700, padding: '1px 7px', lineHeight: 1.6 }}>
+                    {Object.values(filters).filter(Boolean).length}
+                  </span>
+                )}
+              </span>
+              <span className="material-icons-round" style={{ fontSize: '20px', color: '#94a3b8' }}>
+                {filtersOpen ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+          )}
+          {(!isMobile || filtersOpen) && (
           <div style={filterGridStyle}>
             {[
               {
@@ -867,6 +923,7 @@ export default function RpApprovalPage() {
               </div>
             ))}
           </div>
+          )}
         </div>
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
@@ -910,7 +967,7 @@ export default function RpApprovalPage() {
                   </div>
                 ))}
               </div>
-              <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+              <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
                 <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {filtered.length}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>

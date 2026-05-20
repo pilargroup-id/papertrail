@@ -287,6 +287,7 @@ export default function ApprovalPage() {
   })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
 
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -537,7 +538,7 @@ export default function ApprovalPage() {
   const filterGridStyle = useMemo(
     () => ({
       display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr 1fr' : getGridColumns(5, false, isTablet),
+      gridTemplateColumns: isMobile ? '1fr' : getGridColumns(5, false, isTablet),
       gap: isMobile ? '10px' : '15px',
       alignItems: 'flex-end',
     }),
@@ -570,7 +571,7 @@ export default function ApprovalPage() {
     <>
       <main
         className="dashboard-main"
-        style={{ display: 'flex', flexDirection: 'column' }}
+        style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}
       >
             {loading && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b' }}>
@@ -581,11 +582,32 @@ export default function ApprovalPage() {
               style={{
                 background: '#f1f5f9',
                 borderRadius: '16px',
-                padding: isMobile ? '12px' : '20px',
+                padding: isMobile ? '10px 12px' : '20px',
                 marginBottom: isMobile ? '12px' : '20px',
                 border: '1px solid #e2e8f0',
               }}
             >
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(v => !v)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: '2px 0', marginBottom: filtersOpen ? '10px' : 0, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="material-icons-round" style={{ fontSize: '17px' }}>tune</span>
+                    Filter & Pencarian
+                    {Object.values(filters).some(Boolean) && (
+                      <span style={{ background: '#2563eb', color: 'white', borderRadius: '999px', fontSize: '10px', fontWeight: 700, padding: '1px 7px', lineHeight: 1.6 }}>
+                        {Object.values(filters).filter(Boolean).length}
+                      </span>
+                    )}
+                  </span>
+                  <span className="material-icons-round" style={{ fontSize: '20px', color: '#94a3b8' }}>
+                    {filtersOpen ? 'expand_less' : 'expand_more'}
+                  </span>
+                </button>
+              )}
+              {(!isMobile || filtersOpen) && (
               <div
                 style={filterGridStyle}
               >
@@ -660,6 +682,7 @@ export default function ApprovalPage() {
                   ) : null,
                 )}
               </div>
+              )}
             </div>
 
             <div
@@ -750,7 +773,7 @@ export default function ApprovalPage() {
                     )
                   })}
                   </div>
-                  <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+                  <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {filtered.length}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>

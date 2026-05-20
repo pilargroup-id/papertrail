@@ -44,21 +44,21 @@ const VIEWS = [
   { key: 'rp',  label: 'RP',   subtitle: 'Request Pembelian',        color: '#7c3aed', icon: 'shopping_cart' },
 ]
 
-function StatCard({ label, value, detail, color, icon }) {
+function StatCard({ label, value, detail, color, icon, compact = false }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: '20px', padding: '18px 20px', border: '1px solid rgba(26,42,87,0.08)', boxShadow: '0 4px 20px rgba(15,23,42,0.05)', backdropFilter: 'blur(14px)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'rgba(255,255,255,0.9)', borderRadius: compact ? '16px' : '20px', padding: compact ? '14px 15px' : '18px 20px', border: '1px solid rgba(26,42,87,0.08)', boxShadow: '0 4px 20px rgba(15,23,42,0.05)', backdropFilter: 'blur(14px)', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <p style={{ margin: 0, fontSize: '0.68rem', fontFamily: '"IBM Plex Mono", monospace', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>{label}</p>
         <span className="material-icons-round" style={{ fontSize: '17px', color, opacity: 0.75 }}>{icon}</span>
       </div>
       <div style={{ height: '2px', borderRadius: '999px', background: color, marginBottom: '12px' }} />
-      <strong style={{ display: 'block', fontSize: '1.85rem', lineHeight: 1, color: '#163a6b', fontWeight: 800 }}>{value}</strong>
-      <p style={{ margin: '8px 0 0', fontSize: '11px', color: '#64748b', fontFamily: '"IBM Plex Mono", monospace' }}>{detail}</p>
+      <strong style={{ display: 'block', fontSize: compact ? '1.45rem' : '1.85rem', lineHeight: 1, color: '#163a6b', fontWeight: 800 }}>{value}</strong>
+      <p style={{ margin: '8px 0 0', fontSize: compact ? '10px' : '11px', color: '#64748b', fontFamily: '"IBM Plex Mono", monospace', wordBreak: 'break-word' }}>{detail}</p>
     </div>
   )
 }
 
-function ViewDropdown({ view, onChange }) {
+function ViewDropdown({ view, onChange, isMobile = false }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const current = VIEWS.find(v => v.key === view)
@@ -70,34 +70,38 @@ function ViewDropdown({ view, onChange }) {
   }, [])
 
   return (
-    <div ref={ref} style={{ position: 'relative', userSelect: 'none' }}>
+    <div ref={ref} style={{ position: 'relative', userSelect: 'none', width: isMobile ? '100%' : 'auto', zIndex: 20 }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
-          display: 'flex', alignItems: 'center', gap: '10px',
+          width: isMobile ? '100%' : 'auto',
+          minHeight: isMobile ? '58px' : 'auto',
+          display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-start', gap: '10px',
           background: 'rgba(255,255,255,0.95)', border: `1.5px solid ${current.color}22`,
-          borderRadius: '14px', padding: '8px 14px 8px 12px', cursor: 'pointer',
+          borderRadius: isMobile ? '16px' : '14px', padding: isMobile ? '10px 14px' : '8px 14px 8px 12px', cursor: 'pointer',
           boxShadow: '0 2px 12px rgba(15,23,42,0.07)', transition: 'box-shadow 0.15s',
+          boxSizing: 'border-box',
         }}
         onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 18px rgba(15,23,42,0.12)'}
         onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 12px rgba(15,23,42,0.07)'}
       >
-        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: current.color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+        <div style={{ width: isMobile ? '34px' : '28px', height: isMobile ? '34px' : '28px', borderRadius: '8px', background: current.color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
           <span className="material-icons-round" style={{ fontSize: '15px', color: 'white' }}>{current.icon}</span>
         </div>
-        <div style={{ textAlign: 'left' }}>
-          <div style={{ fontSize: '13px', fontWeight: 800, color: current.color, lineHeight: 1.1 }}>{current.label}</div>
-          <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 500, marginTop: '1px' }}>{current.subtitle}</div>
+        <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: isMobile ? '14px' : '13px', fontWeight: 800, color: current.color, lineHeight: 1.1 }}>{current.label}</div>
+          <div style={{ fontSize: isMobile ? '11px' : '10px', color: '#94a3b8', fontWeight: 500, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{current.subtitle}</div>
         </div>
-        <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', marginLeft: '4px', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
+        <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', marginLeft: 'auto', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>expand_more</span>
       </button>
 
       {open && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 100,
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: isMobile ? 0 : 'auto', zIndex: 100,
           background: 'white', borderRadius: '14px', overflow: 'hidden',
           boxShadow: '0 8px 30px rgba(15,23,42,0.14)', border: '1px solid rgba(26,42,87,0.08)',
-          minWidth: '220px',
+          minWidth: isMobile ? '100%' : '220px',
+          width: isMobile ? '100%' : 'max-content',
         }}>
           {VIEWS.map(v => (
             <button
@@ -116,9 +120,9 @@ function ViewDropdown({ view, onChange }) {
               <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: v.color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                 <span className="material-icons-round" style={{ fontSize: '15px', color: 'white' }}>{v.icon}</span>
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: view === v.key ? v.color : '#1e293b' }}>{v.label}</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8' }}>{v.subtitle}</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.subtitle}</div>
               </div>
               {view === v.key && (
                 <span className="material-icons-round" style={{ fontSize: '16px', color: v.color, marginLeft: 'auto' }}>check</span>
@@ -160,7 +164,7 @@ export default function DashboardPage() {
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
-  const statGridCols    = isMobile ? '1fr 1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)'
+  const statGridCols    = isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)'
   const chartGridCols   = isMobile ? '1fr' : '1fr 1.6fr'
   const companyGridCols = isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)'
   const DIVISI_COLORS   = ['#2563eb', '#7c3aed', '#10b981', '#ef4444', '#f59e0b', '#0891b2', '#be123c', '#d97706', '#059669', '#dc2626']
@@ -196,7 +200,7 @@ export default function DashboardPage() {
     .filter(d => d.value > 0) ?? []
 
   return (
-    <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '20px', paddingBottom: isMobile ? '18px' : undefined }}>
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b', gap: '10px' }}>
           <span className="material-icons-round" style={{ fontSize: '20px', animation: 'spin 1s linear infinite' }}>refresh</span>
@@ -207,8 +211,8 @@ export default function DashboardPage() {
       ) : (
         <>
           {/* ── View Dropdown ── */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <ViewDropdown view={dashView} onChange={setDashView} />
+          <div style={{ display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end', width: '100%' }}>
+            <ViewDropdown view={dashView} onChange={setDashView} isMobile={isMobile} />
           </div>
 
           {/* ══════════════════════════════
@@ -223,7 +227,7 @@ export default function DashboardPage() {
                   { label: 'Pending',   value: data.stats.pending,  detail: `IDR ${formatRupiah(data.stats.pendingAmount)}`,                   color: '#f59e0b', icon: 'pending_actions' },
                   { label: 'Approved',  value: data.stats.approved, detail: `IDR ${formatRupiah(data.stats.approvedAmount)}`,                  color: '#10b981', icon: 'check_circle' },
                   { label: 'Rejected',  value: data.stats.rejected, detail: `IDR ${formatRupiah(data.stats.rejectedAmount)}`,                  color: '#ef4444', icon: 'cancel' },
-                ].map(c => <StatCard key={c.label} {...c} />)}
+                ].map(c => <StatCard key={c.label} {...c} compact={isMobile} />)}
               </div>
 
               {/* Charts Row */}
@@ -232,7 +236,7 @@ export default function DashboardPage() {
                 {/* Donut — status */}
                 <CardBigBox eyebrow="Distribusi Status" title="Status FRP">
                   {frpDonutData.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
                       <PieChart
                         series={[{ 
                           innerRadius: isMobile ? 40 : 55, 
@@ -250,7 +254,7 @@ export default function DashboardPage() {
                           popper: { strategy: 'fixed', sx: { zIndex: 9999 } }
                         }}
                       />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, width: '100%' }}>
                         {frpDonutData.map(d => (
                           <div key={d.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -386,22 +390,22 @@ export default function DashboardPage() {
                       <div key={co.name} style={{ border: '1px solid rgba(26,42,87,0.1)', borderRadius: '16px', padding: '16px', background: 'linear-gradient(180deg,#f8fafc,#fff)' }}>
                         <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '2px' }}>PT</div>
                         <div style={{ fontSize: '14px', fontWeight: 700, color: '#163a6b', marginBottom: '14px', lineHeight: 1.3 }}>{shortName}</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: isMobile ? '6px' : '8px', marginBottom: '12px' }}>
                           {[
                             { label: 'Pending',  val: co.pending,  bg: '#fefce8', color: '#854d0e' },
                             { label: 'Approved', val: co.approved, bg: '#f0fdf4', color: '#166534' },
                             { label: 'Rejected', val: co.rejected, bg: '#fff1f2', color: '#991b1b' },
                           ].map(({ label, val, bg, color }) => (
-                            <div key={label} style={{ background: bg, borderRadius: '10px', padding: '8px 6px', textAlign: 'center' }}>
-                              <div style={{ fontSize: '20px', fontWeight: 800, color, lineHeight: 1 }}>{val}</div>
-                              <div style={{ fontSize: '9px', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '3px' }}>{label}</div>
+                            <div key={label} style={{ background: bg, borderRadius: '10px', padding: isMobile ? '7px 4px' : '8px 6px', textAlign: 'center', minWidth: 0 }}>
+                              <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 800, color, lineHeight: 1 }}>{val}</div>
+                              <div style={{ fontSize: isMobile ? '8px' : '9px', fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '3px' }}>{label}</div>
                             </div>
                           ))}
                         </div>
                         <div style={{ height: '5px', borderRadius: '999px', background: '#e2e8f0', overflow: 'hidden', marginBottom: '8px' }}>
                           <div style={{ height: '100%', borderRadius: '999px', background: 'linear-gradient(90deg,#10b981,#34d399)', width: `${Math.round(co.approved / total * 100)}%`, transition: 'width 0.6s ease' }} />
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
+                        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', gap: isMobile ? '3px' : 0, fontSize: '11px', color: '#64748b' }}>
                           <span style={{ fontWeight: 600 }}>Approved {Math.round(co.approved / total * 100)}%</span>
                           <span style={{ fontFamily: 'monospace', color: '#166534', fontWeight: 700 }}>{formatRupiahFull(co.approvedAmount)}</span>
                         </div>
@@ -489,14 +493,14 @@ export default function DashboardPage() {
                       const ss = STATUS_STYLE[r.status] || {}
                       return (
                         <div key={r.id} style={{ border: '1px solid rgba(26,42,87,0.08)', borderRadius: '14px', padding: '12px 14px', background: 'linear-gradient(180deg,#f8fafc,#fff)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                            <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                            <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 700, color: '#1e40af', fontSize: '13px' }}>{r.frpNo}</div>
                               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{formatDate(r.tanggalFrp)}</div>
                             </div>
-                            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: ss.bg, color: ss.color }}>{r.status}</span>
+                            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: ss.bg, color: ss.color, flexShrink: 0 }}>{r.status}</span>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', fontSize: '12px', marginBottom: '6px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px 12px', fontSize: '12px', marginBottom: '6px' }}>
                             <div><span style={{ color: '#94a3b8' }}>Pemohon: </span><span style={{ color: '#334155', fontWeight: 500 }}>{r.dimintaOleh || '-'}</span></div>
                             <div><span style={{ color: '#94a3b8' }}>Divisi: </span><span style={{ color: '#334155', fontWeight: 500 }}>{r.divisi || '-'}</span></div>
                             <div style={{ gridColumn: '1/-1' }}><span style={{ color: '#94a3b8' }}>Vendor: </span><span style={{ color: '#334155', fontWeight: 500 }}>{r.vendor || '-'}</span></div>
@@ -559,7 +563,7 @@ export default function DashboardPage() {
                   { label: 'Menunggu',  value: rpTotalPending,        detail: `IDR ${formatRupiah(data.rpStats.pendingAmount)}`,      color: '#f59e0b', icon: 'hourglass_empty' },
                   { label: 'Approved',  value: rpTotalDone,           detail: `IDR ${formatRupiah(data.rpStats.approvedAmount)}`,     color: '#10b981', icon: 'task_alt' },
                   { label: 'Rejected',  value: data.rpStats.rejected, detail: `IDR ${formatRupiah(data.rpStats.rejectedAmount)}`,    color: '#ef4444', icon: 'cancel' },
-                ].map(c => <StatCard key={c.label} {...c} />)}
+                ].map(c => <StatCard key={c.label} {...c} compact={isMobile} />)}
               </div>
 
               {/* RP Charts */}
@@ -568,7 +572,7 @@ export default function DashboardPage() {
                 {/* RP Donut */}
                 <CardBigBox eyebrow="Distribusi Status" title="Status RP">
                   {rpDonutData.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
                       <PieChart
                         series={[{ 
                           innerRadius: isMobile ? 40 : 55, 
@@ -586,7 +590,7 @@ export default function DashboardPage() {
                           popper: { strategy: 'fixed', sx: { zIndex: 9999 } }
                         }}
                       />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, width: '100%' }}>
                         {rpDonutData.map(d => (
                           <div key={d.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -714,14 +718,14 @@ export default function DashboardPage() {
                       const rs = RP_STATUS_STYLE[r.status] || { bg: '#f1f5f9', color: '#64748b', label: r.status }
                       return (
                         <div key={r.id} style={{ border: '1px solid rgba(124,58,237,0.1)', borderRadius: '14px', padding: '12px 14px', background: 'linear-gradient(180deg,#faf5ff,#fff)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                            <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                            <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 700, color: '#6d28d9', fontSize: '13px' }}>{r.rpNo}</div>
                               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{formatDate(r.createdAt)}</div>
                             </div>
-                            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: rs.bg, color: rs.color }}>{rs.label}</span>
+                            <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: 700, background: rs.bg, color: rs.color, flexShrink: 0 }}>{rs.label}</span>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', fontSize: '12px', marginBottom: '6px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px 12px', fontSize: '12px', marginBottom: '6px' }}>
                             <div><span style={{ color: '#94a3b8' }}>Dibuat: </span><span style={{ color: '#334155', fontWeight: 500 }}>{r.dibuatOleh || '-'}</span></div>
                             <div><span style={{ color: '#94a3b8' }}>Divisi: </span><span style={{ color: '#334155', fontWeight: 500 }}>{r.divisi || '-'}</span></div>
                             <div style={{ gridColumn: '1/-1' }}><span style={{ color: '#94a3b8' }}>Kategori: </span><span style={{ color: '#334155', fontWeight: 500 }}>{r.kategoriPembelian || '-'}</span></div>

@@ -3485,3 +3485,11 @@ select {
 .sidebar {
   transition: transform 0.3s ease;
 }
+
+@media (max-width: 1024px) {
+  .sidebar,
+  .sidebar.collapsed {
+    width: var(--sidebar-width);
+    max-width: 80vw;
+  }
+}

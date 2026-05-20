@@ -144,7 +144,7 @@ function SearchableSelect({ name, value, onChange, options, placeholder = 'Pilih
       }
 
   return (
-    <div ref={ref} style={{ position: 'relative', zIndex: open ? 40 : 1 }}>
+    <div ref={ref} style={{ position: 'relative', zIndex: open ? 40 : 1, width: '100%', minWidth: 0 }}>
       <button
         ref={triggerRef}
         type="button"
@@ -160,6 +160,7 @@ function SearchableSelect({ name, value, onChange, options, placeholder = 'Pilih
           opacity: disabled ? 0.7 : 1,
           minHeight: style?.minHeight || '42px',
           boxShadow: style?.boxShadow || 'inset 0 1px 0 rgba(255,255,255,0.65)',
+          boxSizing: 'border-box',
         }}
       >
         <span style={{ display: 'block', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '12px', color: selected ? '#1e293b' : '#94a3b8' }}>{selected ? selected.label : placeholder}</span>
@@ -185,17 +186,17 @@ const S = {
   sectionTitle: { display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 1.25rem', fontSize: '0.95rem', fontWeight: 700, color: '#1e293b' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
   grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
+  formGroup: { display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 },
   label: { fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.5px' },
-  input: { width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)', transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s' },
-  inputReadonly: { width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', background: '#eef2f7', color: '#475569' },
-  textarea: { width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', resize: 'vertical', minHeight: '72px', background: '#f8fafc', color: '#1e293b', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)', transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s' },
-  select: { width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)' },
+  input: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)', transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s' },
+  inputReadonly: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #e2e8f0', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', background: '#eef2f7', color: '#475569' },
+  textarea: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', resize: 'vertical', minHeight: '72px', background: '#f8fafc', color: '#1e293b', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)', transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s' },
+  select: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)' },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: { padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', background: '#f8fafc', fontWeight: 700, color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' },
   td: { padding: '8px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' },
-  tdInput: { width: '100%', padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.875rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc' },
-  tdSelect: { width: '100%', padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.875rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', cursor: 'pointer' },
+  tdInput: { width: '100%', minWidth: 0, padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.875rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc' },
+  tdSelect: { width: '100%', minWidth: 0, padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.875rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', cursor: 'pointer' },
   btnPrimary: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '0.65rem 1.4rem', background: '#1f4e8c', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.9rem', transition: 'background 0.2s' },
   btnSecondary: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '0.65rem 1.4rem', background: '#f1f5f9', color: '#475569', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.9rem' },
   btnAdd: { display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 },
@@ -203,8 +204,8 @@ const S = {
   totalRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' },
   totalLabel: { fontSize: '0.9rem', fontWeight: 600, color: '#475569' },
   totalValue: { fontSize: '1.1rem', fontWeight: 800, color: '#1f4e8c' },
-  itemCard: { padding: '1rem', borderRadius: '14px', border: '1px solid #e2e8f0', background: '#fbfdff', marginBottom: '0.85rem' },
-  itemCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '0.9rem' },
+  itemCard: { padding: '1rem', borderRadius: '14px', border: '1px solid #e2e8f0', background: '#fbfdff', marginBottom: '0.85rem', minWidth: 0, overflow: 'visible' },
+  itemCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '0.9rem', flexWrap: 'wrap' },
   itemCardTitle: { fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' },
   itemCardAmount: { marginTop: '0.9rem', paddingTop: '0.9rem', borderTop: '1px solid #e2e8f0' },
 }
@@ -272,6 +273,8 @@ export default function RpFormPage() {
   const isAdmin = D.user?.role === 'administrator'
   const isMobile = vw < MOBILE_BREAKPOINT
   const isTablet = vw >= MOBILE_BREAKPOINT && vw < TABLET_BREAKPOINT
+  const selectMenuPosition = isMobile ? 'fixed' : 'absolute'
+  const mobileDropdownStyle = isMobile ? { maxWidth: 'calc(100vw - 32px)' } : undefined
 
   const updateField = (f, v) => setValues(p => ({ ...p, [f]: v }))
   const updateItem = (i, f, v) => setValues(p => ({ ...p, items: p.items.map((it, idx) => idx === i ? { ...it, [f]: v } : it) }))
@@ -414,10 +417,12 @@ export default function RpFormPage() {
                         name="companyName"
                         value={values.companyName}
                         onChange={selectedValue => setValues(prev => ({ ...prev, companyName: selectedValue, divisi: '', class: '' }))}
-                        options={companyOptions}
-                        placeholder="Pilih Company"
-                        style={S.select}
-                      />
+                      options={companyOptions}
+                      placeholder="Pilih Company"
+                      style={S.select}
+                      dropdownStyle={mobileDropdownStyle}
+                      menuPosition={selectMenuPosition}
+                    />
                     ) : (
                       <input style={S.inputReadonly} value={values.companyName} readOnly />
                     )}
@@ -438,6 +443,8 @@ export default function RpFormPage() {
                         options={divisionOptions}
                         placeholder="Pilih Divisi"
                         style={S.select}
+                        dropdownStyle={mobileDropdownStyle}
+                        menuPosition={selectMenuPosition}
                       />
                     ) : (
                       <input style={S.inputReadonly} value={values.divisi} readOnly />
@@ -445,7 +452,7 @@ export default function RpFormPage() {
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Class</label>
-                    <SearchableSelect name="class" value={values.class} onChange={v => updateField('class', v)} options={rpClassOptions} placeholder="Pilih Class" style={S.select} />
+                    <SearchableSelect name="class" value={values.class} onChange={v => updateField('class', v)} options={rpClassOptions} placeholder="Pilih Class" style={S.select} dropdownStyle={mobileDropdownStyle} menuPosition={selectMenuPosition} />
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Dibuat Oleh</label>
@@ -466,15 +473,15 @@ export default function RpFormPage() {
                 <div style={grid3Style}>
                   <div style={S.formGroup}>
                     <label style={S.label}>Kategori Pembelian</label>
-                    <SearchableSelect name="kategoriPembelian" value={values.kategoriPembelian} onChange={v => updateField('kategoriPembelian', v)} options={kategoriOptions} placeholder="Pilih Kategori" style={S.select} />
+                    <SearchableSelect name="kategoriPembelian" value={values.kategoriPembelian} onChange={v => updateField('kategoriPembelian', v)} options={kategoriOptions} placeholder="Pilih Kategori" style={S.select} dropdownStyle={mobileDropdownStyle} menuPosition={selectMenuPosition} />
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Diproses Oleh</label>
-                    <SearchableSelect name="diprosesOleh" value={values.diprosesOleh} onChange={v => updateField('diprosesOleh', v)} options={processDivOptions} placeholder="Pilih Divisi Pemroses" style={S.select} />
+                    <SearchableSelect name="diprosesOleh" value={values.diprosesOleh} onChange={v => updateField('diprosesOleh', v)} options={processDivOptions} placeholder="Pilih Divisi Pemroses" style={S.select} dropdownStyle={mobileDropdownStyle} menuPosition={selectMenuPosition} />
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Vendor Suggestion</label>
-                    <SearchableSelect name="vendorSuggestion" value={values.vendorSuggestion} onChange={v => updateField('vendorSuggestion', v)} options={vendorOptions} placeholder="Pilih Vendor" style={S.select} />
+                    <SearchableSelect name="vendorSuggestion" value={values.vendorSuggestion} onChange={v => updateField('vendorSuggestion', v)} options={vendorOptions} placeholder="Pilih Vendor" style={S.select} dropdownStyle={mobileDropdownStyle} menuPosition={selectMenuPosition} />
                   </div>
                 </div>
                 <div style={{ ...grid2Style, marginTop: '1rem' }}>
@@ -491,22 +498,25 @@ export default function RpFormPage() {
                   Detail Item
                 </h3>
                 {isMobile ? (
-                  <div>
+                  <div style={{ display: 'grid', gap: '12px' }}>
                     {values.items.map((item, idx) => {
                       const remaining = getBudgetRemaining(item.budgetId)
                       const subtotal = normalizeNumber(item.qty) * normalizeNumber(item.estimatedValue)
                       return (
                         <div key={idx} style={S.itemCard}>
                           <div style={S.itemCardHeader}>
-                            <div style={S.itemCardTitle}>Item {idx + 1}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                              <span style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', borderRadius: '8px', background: '#eff6ff', color: '#1d4ed8', fontSize: '12px', fontWeight: 800, flexShrink: 0 }}>{idx + 1}</span>
+                              <div style={{ ...S.itemCardTitle, minWidth: 0 }}>Item Request</div>
+                            </div>
                             <button type="button" style={S.btnDel} onClick={() => removeRow(idx)}>
                               <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
                             </button>
                           </div>
-                          <div style={grid2Style}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.85rem' }}>
                             <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
                               <label style={S.label}>Budget</label>
-                              <SearchableSelect name={`items[${idx}][budgetId]`} value={item.budgetId} onChange={v => updateItem(idx, 'budgetId', v)} options={budgetSelectOpts} placeholder="Pilih Budget" style={S.select} />
+                              <SearchableSelect name={`items[${idx}][budgetId]`} value={item.budgetId} onChange={v => updateItem(idx, 'budgetId', v)} options={budgetSelectOpts} placeholder="Pilih Budget" style={S.select} dropdownStyle={mobileDropdownStyle} menuPosition="fixed" />
                             </div>
                             <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
                               <label style={S.label}>Memo</label>
@@ -525,11 +535,15 @@ export default function RpFormPage() {
                               <input type="text" name={`items[${idx}][estimatedValue]`} style={S.input} value={formatNumberInput(item.estimatedValue)} onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))} />
                             </div>
                           </div>
-                          <div style={S.itemCardAmount}>
-                            <div style={S.totalLabel}>Budget Remaining</div>
-                            <div style={{ ...S.totalValue, fontSize: '1rem', color: remaining !== null && remaining < 0 ? '#ef4444' : '#16a34a', marginTop: '0.25rem' }}>{remaining !== null ? `Rp ${formatCurrency(remaining)}` : '-'}</div>
-                            <div style={{ ...S.totalLabel, marginTop: '0.75rem' }}>Subtotal Estimated</div>
-                            <div style={{ ...S.totalValue, fontSize: '1rem', marginTop: '0.25rem' }}>Rp {formatCurrency(subtotal)}</div>
+                          <div style={{ ...S.itemCardAmount, display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '9px 10px', borderRadius: '10px', border: '1px solid #dcfce7', background: '#f0fdf4' }}>
+                              <span style={S.totalLabel}>Budget Remaining</span>
+                              <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: remaining !== null && remaining < 0 ? '#ef4444' : '#16a34a', overflowWrap: 'anywhere' }}>{remaining !== null ? `Rp ${formatCurrency(remaining)}` : '-'}</strong>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '9px 10px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#eff6ff' }}>
+                              <span style={S.totalLabel}>Subtotal Estimated</span>
+                              <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: '#1f4e8c', overflowWrap: 'anywhere' }}>Rp {formatCurrency(subtotal)}</strong>
+                            </div>
                           </div>
                         </div>
                       )
