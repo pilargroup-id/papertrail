@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 
@@ -355,8 +355,8 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
   }, [])
 
   const handleCompanyChange = val => {
-    onUpdate(idx, 'name', val)
-    onUpdate(idx, 'class', '')
+    // Atomic: update name + reset class in one call to avoid stale-closure override
+    onUpdate(idx, { name: val, class: '' })
   }
 
   const classMatchesDept = deptOptions.some(d => d.class === assignment.class || d.name === assignment.class)
@@ -436,7 +436,12 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
 function EmployeeFormFields({ form, onChange, onAssignmentsChange, companyNames, styles }) {
   const addAssignment = () => onAssignmentsChange([...form.companies, { name: companyNames[0] || COMPANIES[0], class: '', jobLevel: 'Staff' }])
   const removeAssignment = idx => onAssignmentsChange(form.companies.filter((_, i) => i !== idx))
-  const updateAssignment = (idx, field, val) => onAssignmentsChange(form.companies.map((a, i) => i === idx ? { ...a, [field]: val } : a))
+  const updateAssignment = (idx, fieldOrPatch, val) => onAssignmentsChange(
+    form.companies.map((a, i) => i === idx
+      ? { ...a, ...(typeof fieldOrPatch === 'object' ? fieldOrPatch : { [fieldOrPatch]: val }) }
+      : a
+    )
+  )
 
   return (
     <>
