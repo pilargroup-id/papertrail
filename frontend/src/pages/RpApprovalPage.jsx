@@ -601,21 +601,17 @@ export default function RpApprovalPage() {
 
   const actionButtonStyle = variant => {
     const variants = {
-      approve: { background: '#dcfce7', color: '#15803d', border: 'none' },
-      reject: { background: '#fee2e2', color: '#dc2626', border: 'none' },
-      neutral: { background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1' },
-      primary: { background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' },
-      warning: { background: '#fef9c3', color: '#92400e', border: '1px solid #fde68a' },
+      approve: { background: '#dcfce7', color: '#15803d', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
+      reject: { background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
+      neutral: { background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
+      primary: { background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
+      warning: { background: '#fef9c3', color: '#92400e', border: 'none', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
     }
+    const currentVariant = variants[variant] || variants.neutral;
     return {
-      padding: '8px',
-      borderRadius: '8px',
       cursor: actionLoading ? 'not-allowed' : 'pointer',
-      fontWeight: 700,
-      fontSize: '13px',
-      fontFamily: 'inherit',
       opacity: actionLoading ? 0.7 : 1,
-      ...variants[variant],
+      ...currentVariant,
     }
   }
 
@@ -656,7 +652,7 @@ export default function RpApprovalPage() {
         {showDetail && (
           <button type="button" onClick={() => setSelected(rp)} style={actionButtonStyle('primary')}>Detail</button>
         )}
-        {showPreview && (
+        {showPreview && rp.status === 'APPROVED' && (
           <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
         )}
         {canManagerApprove && (
@@ -798,8 +794,12 @@ export default function RpApprovalPage() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-                <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
-                <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
+                {selected.status === 'APPROVED' && (
+                  <>
+                    <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
+                    <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
+                  </>
+                )}
                 {renderRowActions(selected, { showDetail: false, showPreview: false, showKeFrp: false })}
               </div>
             </div>
