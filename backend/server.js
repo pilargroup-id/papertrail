@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const path = require('path');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -131,31 +131,42 @@ function dbRowsToEmployees(rows) {
 
     rows.forEach(row => {
         if (!grouped.has(row.id)) {
-            grouped.set(row.id, { row, assignments: [], assignmentKeys: new Set(), isAdmin: false });
+            grouped.set(row.id, { row, assignments: [], assignmentMap: new Map(), isAdmin: false });
         }
 
         const entry = grouped.get(row.id);
-        const deptName = row.dept_name || row.dept_class || '';
+        const deptDisplayName = row.dept_name || '';
+        const deptClass = row.dept_class || '';
         const jobLevel = mapJobLevel(row.job_level_name);
         const companyName = normalizeCompanyName(row.company_code, row.company_name);
 
-        if (row.department_id === 8 || deptName.toUpperCase() === 'IT') {
+        if (row.department_id === 8 || deptClass.toUpperCase() === 'IT' || deptDisplayName.toUpperCase() === 'IT') {
             entry.isAdmin = true;
         }
 
-        if (deptName || row.company_code || row.company_name) {
-            const key = `${companyName}|${deptName}|${jobLevel}`;
-            if (!entry.assignmentKeys.has(key)) {
-                entry.assignmentKeys.add(key);
-                entry.assignments.push({
+        if (deptDisplayName || deptClass || row.company_code || row.company_name) {
+            // Group by company + dept name (not class) → enables multi-class per dept
+            const groupKey = `${companyName}|${deptDisplayName || deptClass}|${jobLevel}`;
+            if (!entry.assignmentMap.has(groupKey)) {
+                const asgn = {
                     id: row.company_id || '',
                     companyId: row.company_id || '',
                     code: normalizeCompanyCode(row.company_code || row.company_name),
                     companyCode: normalizeCompanyCode(row.company_code || row.company_name),
                     name: companyName,
-                    class: deptName,
+                    deptName: deptDisplayName,
+                    class: deptClass,   // backward compat (primary class)
+                    classes: deptClass ? [deptClass] : [],
                     jobLevel
-                });
+                };
+                entry.assignmentMap.set(groupKey, asgn);
+                entry.assignments.push(asgn);
+            } else {
+                // Accumulate additional classes for the same dept group
+                const existing = entry.assignmentMap.get(groupKey);
+                if (deptClass && !existing.classes.includes(deptClass)) {
+                    existing.classes.push(deptClass);
+                }
             }
         }
     });
@@ -164,7 +175,7 @@ function dbRowsToEmployees(rows) {
         const jobLevel = mapJobLevel(row.job_level_name);
         const fallbackAssignments = assignments.length
             ? assignments
-            : [{ name: COMPANY_MAP.PNM, class: '', jobLevel }];
+            : [{ name: COMPANY_MAP.PNM, deptName: '', class: '', classes: [], jobLevel }];
 
         return {
             fullName: row.name,
@@ -216,6 +227,7 @@ async function saveUserAssignments(client, userId, assignments) {
     await client.query('DELETE FROM central_user_companies WHERE user_id = ?', [userId]);
 
     const companyIds = new Set();
+    let isPrimaryDept = true;
     for (const [index, assignment] of list.entries()) {
         const company = await getCompanyRow(assignment.name, client);
         if (company && !companyIds.has(company.id)) {
@@ -226,12 +238,20 @@ async function saveUserAssignments(client, userId, assignments) {
             );
         }
 
-        const deptId = await getDeptId(assignment.class || '', assignment.name, client);
-        if (deptId) {
-            await client.query(
-                'INSERT IGNORE INTO central_user_departments (id, user_id, department_id, is_primary) VALUES (UUID(), ?, ?, ?)',
-                [userId, deptId, index === 0 ? 1 : 0]
-            );
+        // Support both classes[] (new, multi-class) and class string (old, backward compat)
+        const classList = (assignment.classes && assignment.classes.length > 0)
+            ? assignment.classes
+            : [assignment.class].filter(Boolean);
+
+        for (const cls of classList) {
+            const deptId = await getDeptId(cls, assignment.name, client);
+            if (deptId) {
+                await client.query(
+                    'INSERT IGNORE INTO central_user_departments (id, user_id, department_id, is_primary) VALUES (UUID(), ?, ?, ?)',
+                    [userId, deptId, isPrimaryDept ? 1 : 0]
+                );
+                isPrimaryDept = false;
+            }
         }
     }
 }
@@ -439,7 +459,7 @@ const checkAuth = (req, res, next) => {
 
             const divisions = u.allAssignments
                 .filter(a => a.name === (u.selectedCompany || uniqueCompanies[0]))
-                .map(a => a.class);
+                .flatMap(a => a.classes && a.classes.length > 0 ? a.classes : [a.class].filter(Boolean));
             if (!u.selectedDivision && divisions.length > 1) {
                 if (req.path.startsWith('/api/')) {
                     return res.status(401).json({ error: 'Unauthorized', redirect: '/select-division' });
@@ -583,7 +603,10 @@ app.get('/api/data/select-division', checkAuth, (req, res) => {
     const user = req.session.user;
     const divisions = user.allAssignments
         .filter(a => a.name === user.selectedCompany)
-        .map(a => ({ class: a.class, jobLevel: a.jobLevel }));
+        .flatMap(a => {
+            const classes = a.classes && a.classes.length > 0 ? a.classes : [a.class].filter(Boolean);
+            return classes.map(cls => ({ class: cls, deptName: a.deptName || cls, jobLevel: a.jobLevel }));
+        });
     res.json({
         divisions,
         selectedCompany: user.selectedCompany,
@@ -604,9 +627,12 @@ app.get('/api/data/select-division', checkAuth, (req, res) => {
 
 app.post('/api/auth/select-division', checkAuth, (req, res) => {
     const user = req.session.user;
-    const assignment = user.allAssignments.find(a => a.name === user.selectedCompany && a.class === req.body.division);
+    const div = req.body.division;
+    const assignment = user.allAssignments.find(a => a.name === user.selectedCompany && (
+        (a.classes && a.classes.includes(div)) || a.class === div
+    ));
     if (assignment) {
-        req.session.user.selectedDivision = assignment.class;
+        req.session.user.selectedDivision = div;
         req.session.user.selectedJobLevel = assignment.jobLevel;
     }
     res.json({ success: true, redirect: '/' });

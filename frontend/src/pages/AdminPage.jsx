@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+﻿import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 
@@ -16,7 +16,7 @@ const PAGE_META = {
   roles: { title: 'Master Role', noun: 'Role', icon: 'manage_accounts', accent: '#be123c', description: 'Susun peran dan deskripsi akses untuk pengguna sistem.' },
 }
 
-const blankAssignment = () => ({ name: COMPANIES[0], class: '', jobLevel: 'Staff' })
+const blankAssignment = () => ({ name: COMPANIES[0], deptName: '', classes: [], jobLevel: 'Staff' })
 
 function getBlankForm(type) {
   if (type === 'employees') return { fullName: '', email: '', companies: [blankAssignment()] }
@@ -337,6 +337,7 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
   const [jobLevels, setJobLevels] = useState(JOB_LEVELS.map(j => ({ name: j })))
   const [loadingDepts, setLoadingDepts] = useState(false)
 
+  // Load departments when company changes
   useEffect(() => {
     if (!assignment.name) return
     setLoadingDepts(true)
@@ -347,6 +348,7 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
       .finally(() => setLoadingDepts(false))
   }, [assignment.name])
 
+  // Load job levels from DB once
   useEffect(() => {
     fetch('/api/job-levels')
       .then(r => r.ok ? r.json() : null)
@@ -354,48 +356,57 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
       .catch(() => {})
   }, [])
 
+  // Unique dept names from options
+  const deptNames = [...new Set(deptOptions.map(d => d.name).filter(Boolean))]
+
+  // Classes available under selected dept name
+  const availableClasses = deptOptions.filter(d => d.name === assignment.deptName).map(d => d.class).filter(Boolean)
+  const hasMultiClass = availableClasses.length > 1
+  const currentClasses = Array.isArray(assignment.classes) ? assignment.classes : (assignment.class ? [assignment.class] : [])
+
   const handleCompanyChange = val => {
-    // Atomic: update name + reset class in one call to avoid stale-closure override
-    onUpdate(idx, { name: val, class: '' })
+    onUpdate(idx, { name: val, deptName: '', classes: [] })
   }
 
-  const classMatchesDept = deptOptions.some(d => d.class === assignment.class || d.name === assignment.class)
+  const handleDeptNameChange = val => {
+    const cls = deptOptions.filter(d => d.name === val).map(d => d.class).filter(Boolean)
+    // Auto-select if only one class
+    onUpdate(idx, { deptName: val, classes: cls.length === 1 ? cls : [] })
+  }
+
+  const toggleClass = (cls, checked) => {
+    const next = checked ? [...currentClasses, cls] : currentClasses.filter(c => c !== cls)
+    onUpdate(idx, 'classes', next)
+  }
 
   return (
     <div style={{ ...styles.assignCard, position: 'relative', paddingTop: '1.5rem' }}>
       <div style={{ position: 'absolute', top: '-10px', left: '14px', background: '#2563eb', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em' }}>
         Assignment {idx + 1}
       </div>
+
+      {/* Company */}
       <div style={styles.formGroup}>
         <label style={styles.label}>Perusahaan</label>
         <select style={styles.select} value={assignment.name} onChange={e => handleCompanyChange(e.target.value)}>
           {companyNames.map(company => <option key={company} value={company}>{company}</option>)}
         </select>
       </div>
+
+      {/* Dept Name + Job Level */}
       <div style={styles.grid2}>
         <div style={styles.formGroup}>
-          <label style={styles.label}>Divisi / Departemen</label>
+          <label style={styles.label}>Departemen</label>
           {loadingDepts ? (
-            <div style={{ ...styles.input, color: '#94a3b8' }}>Memuat divisi...</div>
+            <div style={{ ...styles.input, color: '#94a3b8' }}>Memuat...</div>
           ) : (
-            <select
-              style={{ ...styles.select, borderColor: assignment.class && !classMatchesDept ? '#f59e0b' : '#d7e0ea' }}
-              value={assignment.class}
-              onChange={e => onUpdate(idx, 'class', e.target.value)}
-            >
-              <option value="">— Pilih Divisi —</option>
-              {deptOptions.map(d => (
-                <option key={`${d.class}-${d.name}`} value={d.class}>
-                  {d.name}{d.class && d.class !== d.name ? ` (${d.class})` : ''}
-                </option>
-              ))}
-              {assignment.class && !classMatchesDept && (
-                <option value={assignment.class}>{assignment.class} ⚠</option>
+            <select style={styles.select} value={assignment.deptName || ''} onChange={e => handleDeptNameChange(e.target.value)}>
+              <option value="">— Pilih Departemen —</option>
+              {deptNames.map(n => <option key={n} value={n}>{n}</option>)}
+              {assignment.deptName && !deptNames.includes(assignment.deptName) && (
+                <option value={assignment.deptName}>{assignment.deptName} ⚠</option>
               )}
             </select>
-          )}
-          {deptOptions.length === 0 && !loadingDepts && assignment.name && (
-            <span style={{ fontSize: '11px', color: '#f59e0b' }}>⚠ Belum ada divisi terdaftar</span>
           )}
         </div>
         <div style={styles.formGroup}>
@@ -407,14 +418,50 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
           </select>
         </div>
       </div>
-      {(assignment.class || assignment.jobLevel) && (
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-          {assignment.class && (
-            <span style={{ ...styles.badge, ...styles.badgeClass }}>
-              <span className="material-icons-round" style={{ fontSize: '11px', marginRight: '3px' }}>domain</span>
-              {assignment.class}
-            </span>
+
+      {/* Class multi-select (shown when dept name selected and has classes) */}
+      {assignment.deptName && availableClasses.length > 0 && (
+        <div style={{ marginBottom: '0.85rem' }}>
+          <label style={{ ...styles.label, display: 'block', marginBottom: '8px' }}>
+            {hasMultiClass ? 'Pilih Class / Lokasi (bisa lebih dari satu)' : 'Class'}
+          </label>
+          {hasMultiClass && (
+            <div style={{ marginBottom: '6px' }}>
+              <button type="button" style={{ ...styles.btnAdd, padding: '4px 10px', fontSize: '11px' }}
+                onClick={() => onUpdate(idx, 'classes', availableClasses)}>
+                <span className="material-icons-round" style={{ fontSize: '13px' }}>select_all</span> Pilih Semua
+              </button>
+              <button type="button" style={{ ...styles.btnRemove, padding: '4px 10px', fontSize: '11px', marginLeft: '6px', minHeight: 'unset', display: 'inline-flex' }}
+                onClick={() => onUpdate(idx, 'classes', [])}>
+                <span className="material-icons-round" style={{ fontSize: '13px' }}>deselect</span> Reset
+              </button>
+            </div>
           )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '6px' }}>
+            {availableClasses.map(cls => {
+              const checked = currentClasses.includes(cls)
+              return (
+                <label key={cls} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderRadius: '10px', border: `1.5px solid ${checked ? '#3b82f6' : '#e2e8f0'}`, background: checked ? '#eff6ff' : '#f8fafc', cursor: 'pointer', fontSize: '0.85rem', fontWeight: checked ? 700 : 400, color: checked ? '#1d4ed8' : '#334155', transition: 'all 0.15s' }}>
+                  <input type="checkbox" checked={checked} onChange={e => toggleClass(cls, e.target.checked)} style={{ accentColor: '#3b82f6' }} />
+                  {cls}
+                </label>
+              )
+            })}
+          </div>
+          {hasMultiClass && currentClasses.length === 0 && (
+            <span style={{ fontSize: '11px', color: '#f59e0b', display: 'block', marginTop: '4px' }}>⚠ Pilih minimal satu class</span>
+          )}
+        </div>
+      )}
+
+      {/* Summary chips */}
+      {(currentClasses.length > 0 || assignment.jobLevel) && (
+        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+          {currentClasses.map(cls => (
+            <span key={cls} style={{ ...styles.badge, ...styles.badgeClass }}>
+              <span className="material-icons-round" style={{ fontSize: '11px', marginRight: '3px' }}>domain</span>{cls}
+            </span>
+          ))}
           {assignment.jobLevel && (
             <span style={{ ...styles.badge, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
               <span className="material-icons-round" style={{ fontSize: '11px', marginRight: '3px' }}>badge</span>
@@ -423,6 +470,7 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
           )}
         </div>
       )}
+
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button type="button" style={{ ...styles.btnRemove, opacity: canRemove ? 1 : 0.4, gap: '6px', fontSize: '0.82rem', padding: '7px 12px' }} onClick={() => onRemove(idx)} disabled={!canRemove}>
           <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
@@ -607,12 +655,18 @@ function renderCompanies(item, styles) {
   if (!Array.isArray(item.companies)) return item.company || 'N/A'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      {item.companies.map((company, index) => (
-        <div key={index} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '6px 9px', borderRadius: '10px' }}>
-          <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.82rem' }}>{company.name}</div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{company.class} - {company.jobLevel}</div>
-        </div>
-      ))}
+      {item.companies.map((company, index) => {
+        const cls = company.classes && company.classes.length > 0 ? company.classes : (company.class ? [company.class] : [])
+        return (
+          <div key={index} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '6px 9px', borderRadius: '10px' }}>
+            <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.82rem' }}>{company.name}</div>
+            {company.deptName && <div style={{ fontSize: '11px', color: '#0369a1', marginTop: '1px' }}>{company.deptName}</div>}
+            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+              {cls.length > 0 ? cls.join(', ') : '-'} — {company.jobLevel}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -868,6 +922,13 @@ export default function AdminPage() {
   const handleEdit = item => {
     const copy = JSON.parse(JSON.stringify(item))
     if (type === 'employees' && !Array.isArray(copy.companies)) copy.companies = [blankAssignment()]
+    if (type === 'employees') {
+      copy.companies = copy.companies.map(c => ({
+        ...c,
+        deptName: c.deptName || c.class || '',
+        classes: Array.isArray(c.classes) && c.classes.length > 0 ? c.classes : (c.class ? [c.class] : [])
+      }))
+    }
     setEditItem(copy)
   }
 
