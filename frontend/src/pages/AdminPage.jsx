@@ -953,7 +953,7 @@ export default function AdminPage() {
 
       {editItem && createPortal(
         <div className="dashboard-popup-overlay" role="presentation" onClick={() => setEditItem(null)}>
-          <div className="dashboard-popup" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ width: 'min(92vw, 920px)', maxWidth: 'none' }}>
+          <div className="dashboard-popup" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ width: 'min(92vw, 920px)', maxWidth: 'none', maxHeight: '95vh', display: 'flex', flexDirection: 'column' }}>
             <div className="dashboard-popup__header">
               <div>
                 <p className="dashboard-popup__eyebrow">Edit Data</p>
@@ -963,7 +963,7 @@ export default function AdminPage() {
                 <XClose size={18} />
               </button>
             </div>
-            <div className="dashboard-popup__body">
+            <div className="dashboard-popup__body" style={{ overflowY: 'auto', flex: 1, padding: '1.25rem' }}>
               <form onSubmit={handleEditSave}>
                 <FormFields type={type} form={editItem} onChange={updateEditForm} onAssignmentsChange={updateEditAssignments} employeeList={data?.employeeList} companyNames={companyNames} styles={styles} />
                 <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: '100%', marginTop: '0.75rem', opacity: saving ? 0.7 : 1 }}>
