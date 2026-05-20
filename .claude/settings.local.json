@@ -33,7 +33,9 @@
       "Bash(Get-ChildItem c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend -Exclude node_modules)",
       "Bash(Select-Object Name, PSIsContainer)",
       "PowerShell(Get-ChildItem \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne 'node_modules' } | Select-Object Name)",
-      "PowerShell(dir \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne 'node_modules' })"
+      "PowerShell(dir \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne 'node_modules' })",
+      "Bash(git pull *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
