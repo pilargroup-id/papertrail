@@ -789,9 +789,10 @@ export default function FormPage() {
                       value={values.vendor}
                       onChange={selectedValue => {
                         const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
+                        console.log('Selected vendor:', selected)
                         updateField('vendor', selectedValue)
-                        if (selected?.bank) updateField('bankTujuan', selected.bank)
-                        if (selected?.account) updateField('rekBankTujuan', selected.account)
+                        updateField('bankTujuan', selected?.bank || '')
+                        updateField('rekBankTujuan', selected?.no_rekening || '')
                       }}
                       options={vendorSelectOptions}
                       placeholder="Pilih Vendor"

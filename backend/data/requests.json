@@ -16,13 +16,9 @@
     "paymentDate": "2026-05-12",
     "bankTujuan": "Citibank N.A/Oracle Corporation Singapore Pte Ltd",
     "rekBankTujuan": "816419093",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "bayar internet biznet metronet 1D",
-    "items[0][budgetId]": "SIT2603",
-    "items[0][qty]": "1",
-    "items[0][hargaSatuan]": "2.340.000",
-    "items[0][amount]": "2.340.000",
-    "frpNo": "FRP-IT-26-00001",
+    "checkDocs": [
+      "Form Request Payment"
+    ],
     "items": [
       {
         "memo": "bayar internet biznet metronet 1D",
@@ -32,58 +28,13 @@
         "amount": "2.340.000"
       }
     ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
+    "frpNo": "FRP-IT-26-00001",
     "status": "APPROVED",
     "createdBy": "Bayu Noegroho",
     "createdAt": "2026-05-12T10:08:45.240Z",
     "approvedByActual": "Bayu Noegroho",
     "approvedBy": "Yulliemty",
     "approvedAt": "2026-05-18T02:27:05.464Z"
-  },
-  {
-    "id": "mp2gza82",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-12",
-    "divisi": "Finance",
-    "dimintaOleh": "Yosefhin Tesalonika",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "credit note",
-    "vendor": "PT. APLIKANUSA LINTASARTA",
-    "internalPoNumber": "123inv",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123098765",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-12",
-    "bankTujuan": "Bank Mandiri/PT. Lintasarta",
-    "rekBankTujuan": "1030089540302",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "cn memo",
-    "items[0][budgetId]": "FIN2608",
-    "items[0][qty]": "1",
-    "items[0][hargaSatuan]": "900.000",
-    "items[0][amount]": "900.000",
-    "frpNo": "FRP-FIN-26-00001",
-    "items": [
-      {
-        "memo": "cn memo",
-        "budgetId": "FIN2608",
-        "qty": "1",
-        "hargaSatuan": "900.000",
-        "amount": "900.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "status": "APPROVED",
-    "createdBy": "Bayu Noegroho",
-    "createdAt": "2026-05-12T10:10:20.930Z",
-    "approvedBy": "Mulyasi Rahardja",
-    "approvedByActual": "Apriyanto",
-    "approvedAt": "2026-05-16T10:59:51.622Z"
   },
   {
     "id": "mp3ewnpj",
@@ -102,13 +53,9 @@
     "paymentDate": "2026-05-13",
     "bankTujuan": "BCA",
     "rekBankTujuan": "7540276743 / PT BERKAH TUMBUH BERSAMA I",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "listrik",
-    "items[0][budgetId]": "S260117",
-    "items[0][qty]": "3",
-    "items[0][hargaSatuan]": "500.000",
-    "items[0][amount]": "1.500.000",
-    "frpNo": "FRP-GOT-26-00001",
+    "checkDocs": [
+      "Form Request Payment"
+    ],
     "items": [
       {
         "memo": "listrik",
@@ -116,444 +63,13 @@
         "amount": "1.500.000"
       }
     ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
+    "frpNo": "FRP-GOT-26-00001",
     "status": "PENDING",
     "createdBy": "Bayu Noegroho",
     "createdAt": "2026-05-13T02:00:05.383Z",
     "attachLink": "",
     "requestBy": "Khuzaima Desri",
     "approvedBy": "Johan Setyo"
-  },
-  {
-    "id": "mp3mgp16",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-13",
-    "divisi": "Product",
-    "dimintaOleh": "Khuzaima Desri",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "FRP",
-    "vendor": "KMTC",
-    "internalPoNumber": "PO1234",
-    "extDocType": "invoice",
-    "extDocNumber": "11234",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-13",
-    "bankTujuan": "BANK MANDIRI PT.SAMUDRA AGENCIES INDONESIA",
-    "rekBankTujuan": "1220003366633",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "FRP",
-    "items[0][budgetId]": "PRO2611",
-    "items[0][qty]": "1",
-    "items[0][hargaSatuan]": "500.000",
-    "items[0][amount]": "500.000",
-    "frpNo": "FRP-PRO-26-00001",
-    "items": [
-      {
-        "memo": "FRP",
-        "budgetId": "PRO2611",
-        "amount": "500.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "status": "APPROVED",
-    "createdBy": "Khuzaima Desri",
-    "createdAt": "2026-05-13T05:31:37.530Z",
-    "approvedBy": "Ernest Hianto",
-    "approvedByActual": "Ernest Hianto",
-    "approvedAt": "2026-05-13T05:41:38.424Z",
-    "requestBy": "Khuzaima Desri"
-  },
-  {
-    "id": "mp3s9k8f",
-    "companyName": "PT PILAR KARANG SAMUDERA",
-    "tanggalFrp": "2026-05-13",
-    "divisi": "",
-    "dimintaOleh": "Neneng Khodijah",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "VENDOR PIKASA",
-    "vendor": "KMTC",
-    "internalPoNumber": "PO1234",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123098765",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-13",
-    "bankTujuan": "BANK MANDIRI PT.SAMUDRA AGENCIES INDONESIA",
-    "rekBankTujuan": "1220003366633",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "FRP",
-    "items[0][budgetId]": "PKS06",
-    "items[0][qty]": "10",
-    "items[0][hargaSatuan]": "200.000",
-    "items[0][amount]": "2.000.000",
-    "frpNo": "FRP-GEN-26-00001",
-    "items": [
-      {
-        "memo": "FRP",
-        "budgetId": "PKS06",
-        "amount": "2.000.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "requestBy": "Neneng Khodijah",
-    "status": "APPROVED",
-    "createdBy": "Bayu Noegroho",
-    "createdAt": "2026-05-13T08:14:02.415Z",
-    "approvedBy": "Ivon Yuanita Miharja",
-    "approvedByActual": "Bayu Noegroho",
-    "approvedAt": "2026-05-13T08:14:23.769Z"
-  },
-  {
-    "id": "mp3unf0q",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-13",
-    "divisi": "IT",
-    "dimintaOleh": "Bayu Noegroho",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "pembayaran",
-    "vendor": "PT. DEVOTEAM CLOUD SERVICES",
-    "internalPoNumber": "123inv",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-13",
-    "bankTujuan": "BANK MANDIRI/PT DEVOTEAM CLOUD SERVICES",
-    "rekBankTujuan": "102-00-0784292-2",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "bayar internet biznet metronet 1D",
-    "items[0][budgetId]": "SIT2602",
-    "items[0][qty]": "1",
-    "items[0][hargaSatuan]": "1.090.000",
-    "items[0][amount]": "1.090.000",
-    "frpNo": "FRP-SIT-26-00001",
-    "items": [
-      {
-        "memo": "bayar internet biznet metronet 1D",
-        "budgetId": "SIT2602",
-        "amount": "1.090.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "requestBy": "Bayu Noegroho",
-    "status": "APPROVED",
-    "createdBy": "Bayu Noegroho",
-    "createdAt": "2026-05-13T09:20:48.074Z",
-    "approvedBy": "Yulliemty",
-    "approvedByActual": "Bayu Noegroho",
-    "approvedAt": "2026-05-13T09:21:04.968Z"
-  },
-  {
-    "id": "mp6ch0z8",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "Gosave GT",
-    "dimintaOleh": "Egy Irsandi",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "Customer payment",
-    "vendor": "PT. STAR SHIPPING INDONESIA",
-    "internalPoNumber": "PO1234",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123098765",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "bankTujuan": "BANK HSBC  A/n PT STAR SHIPPING INDONESIA",
-    "rekBankTujuan": "050-297977-068",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "FRP",
-    "items[0][budgetId]": "GSG2612",
-    "items[0][qty]": "10",
-    "items[0][hargaSatuan]": "500.000",
-    "items[0][amount]": "5.000.000",
-    "items[1][memo]": "FRP2",
-    "items[1][budgetId]": "GSG2613",
-    "items[1][qty]": "1",
-    "items[1][hargaSatuan]": "100.000",
-    "items[1][amount]": "100.000",
-    "frpNo": "FRP-GOS-26-00001",
-    "items": [
-      {
-        "memo": "FRP",
-        "budgetId": "GSG2612",
-        "qty": "10",
-        "hargaSatuan": "500.000",
-        "amount": "5.000.000"
-      },
-      {
-        "memo": "FRP2",
-        "budgetId": "GSG2613",
-        "qty": "1",
-        "hargaSatuan": "100.000",
-        "amount": "100.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "requestBy": "Egy Irsandi",
-    "status": "APPROVED",
-    "createdBy": "Egy Irsandi",
-    "createdAt": "2026-05-15T03:15:15.380Z",
-    "approvedBy": "Chandra",
-    "approvedByActual": "Chandra",
-    "approvedAt": "2026-05-15T13:00:56.732Z"
-  },
-  {
-    "id": "mp6d78e3",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "Product",
-    "dimintaOleh": "Khuzaima Desri",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "Bayar Vendor",
-    "vendor": "SITC INDONESIA, PT",
-    "internalPoNumber": "123inv",
-    "extDocType": "invoice",
-    "extDocNumber": "11234",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "bankTujuan": "PT.SITC INDONESIA CIMB NIAGA CAB TANJUNG PRIOK",
-    "rekBankTujuan": "800.097.921.000",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "kontainer",
-    "items[0][budgetId]": "PRO2603",
-    "items[0][qty]": "1",
-    "items[0][hargaSatuan]": "5.000.000",
-    "items[0][amount]": "5.000.000",
-    "frpNo": "FRP-PRO-26-00002",
-    "items": [
-      {
-        "memo": "kontainer",
-        "budgetId": "PRO2603",
-        "qty": "1",
-        "hargaSatuan": "5.000.000",
-        "amount": "5.000.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "requestBy": "Khuzaima Desri",
-    "status": "APPROVED",
-    "createdBy": "Khuzaima Desri",
-    "createdAt": "2026-05-15T03:35:38.043Z",
-    "approvedBy": "Ernest Hianto",
-    "approvedAt": "2026-05-15T03:37:09.492Z"
-  },
-  {
-    "id": "mp6dfvin",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "Product",
-    "dimintaOleh": "Khuzaima Desri",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "bayar kontainer",
-    "vendor": "COSCO SHIPPING LINES INDONESIA, PT",
-    "internalPoNumber": "PO123",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "bankTujuan": "VA BCA",
-    "rekBankTujuan": "1234567890",
-    "attachLink": "https://docs.google.com/",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "cn memo",
-    "items[0][budgetId]": "PRO2619",
-    "items[0][qty]": "1",
-    "items[0][hargaSatuan]": "200.000",
-    "items[0][amount]": "200.000",
-    "frpNo": "FRP-PRO-26-00003",
-    "items": [
-      {
-        "memo": "cn memo",
-        "budgetId": "PRO2619",
-        "qty": "1",
-        "hargaSatuan": "200.000",
-        "amount": "200.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "requestBy": "Khuzaima Desri",
-    "status": "PENDING",
-    "createdBy": "Khuzaima Desri",
-    "createdAt": "2026-05-15T03:42:21.263Z",
-    "approvedBy": "Ernest Hianto"
-  },
-  {
-    "id": "mp6dxhx6",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "Product",
-    "dimintaOleh": "Khuzaima Desri",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "pembayaran kontainer",
-    "vendor": "KMTC",
-    "internalPoNumber": "PO123",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123098765",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "bankTujuan": "BANK MANDIRI PT.SAMUDRA AGENCIES INDONESIA",
-    "rekBankTujuan": "1220003366633",
-    "attachLink": "https://docs.google.com/",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "pembayaran kontainer",
-    "items[0][budgetId]": "PRO2603",
-    "items[0][qty]": "10",
-    "items[0][hargaSatuan]": "200.000",
-    "items[0][amount]": "2.000.000",
-    "frpNo": "FRP-PRO-26-00004",
-    "items": [
-      {
-        "memo": "pembayaran kontainer",
-        "budgetId": "PRO2603",
-        "amount": "2.000.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "requestBy": "Khuzaima Desri",
-    "status": "APPROVED",
-    "createdBy": "Khuzaima Desri",
-    "createdAt": "2026-05-15T03:56:03.451Z",
-    "approvedBy": "Ernest Hianto",
-    "approvedAt": "2026-05-15T04:35:56.238Z"
-  },
-  {
-    "id": "mp6hnkxp",
-    "companyName": "PT PILAR KARGO PERKASA",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "Pikasa",
-    "dimintaOleh": "Neneng Khodijah",
-    "currency": "IDR",
-    "kurs": "1",
-    "keteranganFrp": "pikasa",
-    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
-    "internalPoNumber": "123inv",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "bankTujuan": "P.T.EVERGREEN SHIPPING AGENCY INDONESIA (MANDIRI)",
-    "rekBankTujuan": "124.001.6768690",
-    "attachLink": "https://docs.google.com/",
-    "checkDocs[]": "Form Request Payment",
-    "items[0][memo]": "pikaasa",
-    "items[0][budgetId]": "PKS10",
-    "items[0][qty]": "1",
-    "items[0][hargaSatuan]": "200.000",
-    "items[0][amount]": "200.000",
-    "frpNo": "FRP-PKS-26-00001",
-    "items": [
-      {
-        "memo": "pikaasa",
-        "budgetId": "PKS10",
-        "qty": "1",
-        "hargaSatuan": "200.000",
-        "amount": "200.000"
-      }
-    ],
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "requestBy": "Neneng Khodijah",
-    "status": "APPROVED",
-    "createdBy": "Neneng Khodijah",
-    "createdAt": "2026-05-15T05:40:19.261Z",
-    "approvedBy": "Ivon Yuanita Miharja",
-    "approvedAt": "2026-05-15T05:47:08.465Z"
-  },
-  {
-    "id": "mp6wkjy9vp0t",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "Finance",
-    "dimintaOleh": "Yosefhin Tesalonika",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
-    "internalPoNumber": "",
-    "extDocType": "invoice",
-    "extDocNumber": "",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "attachLink": "",
-    "keteranganFrp": "testing",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "indihome",
-        "budgetId": "FIN2604",
-        "qty": "1",
-        "hargaSatuan": "10000000",
-        "amount": 10000000
-      }
-    ],
-    "bankTujuan": "BCA",
-    "rekBankTujuan": "35332223",
-    "frpNo": "FRP-FIN-26-00002",
-    "requestBy": "Yosefhin Tesalonika",
-    "status": "APPROVED",
-    "createdBy": "Apriyanto",
-    "createdAt": "2026-05-15T12:11:28.348Z",
-    "approvedBy": "Mulyasi Rahardja",
-    "approvedByActual": "Apriyanto",
-    "approvedAt": "2026-05-15T14:06:31.556Z"
-  },
-  {
-    "id": "mp6wkjy9rksv",
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
-    "divisi": "HCGA",
-    "dimintaOleh": "Cahyaningtyas Merry Nugraheni",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
-    "internalPoNumber": "",
-    "extDocType": "",
-    "extDocNumber": "",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "attachLink": "",
-    "keteranganFrp": "tesing ",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "indihome",
-        "budgetId": "",
-        "qty": "1",
-        "hargaSatuan": "100000000",
-        "amount": 100000000
-      }
-    ],
-    "bankTujuan": "BCA",
-    "rekBankTujuan": "35332223",
-    "frpNo": "FRP-HCG-26-00001",
-    "requestBy": "Cahyaningtyas Merry Nugraheni",
-    "status": "PENDING",
-    "createdBy": "Apriyanto",
-    "createdAt": "2026-05-15T12:18:25.201Z"
   },
   {
     "id": "mp6wkjy93uqv",
@@ -594,328 +110,41 @@
   },
   {
     "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-15",
+    "tanggalFrp": "2026-05-21",
     "divisi": "Gosave GT",
-    "dimintaOleh": "Egy Irsandi",
+    "dimintaOleh": "Denny Kurniawan",
     "currency": "IDR",
     "kurs": "1",
-    "vendor": "COSCO SHIPPING LINES INDONESIA, PT",
+    "vendor": "PT BIGSELLER TECHNOLOGY INDONESIA",
     "internalPoNumber": "",
     "extDocType": "invoice",
-    "extDocNumber": "",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-15",
-    "attachLink": "",
-    "keteranganFrp": "testing",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "indihome",
-        "budgetId": "",
-        "qty": "1",
-        "hargaSatuan": "1000000",
-        "amount": 1000000
-      }
-    ],
-    "id": "mp6xft3i",
-    "bankTujuan": "BCA",
-    "rekBankTujuan": "35332223",
-    "frpNo": "FRP-GOS-26-00003",
-    "requestBy": "Egy Irsandi",
-    "status": "APPROVED",
-    "createdBy": "Egy Irsandi",
-    "createdAt": "2026-05-15T13:02:10.451Z",
-    "approvedByActual": "Bayu Noegroho",
-    "approvedBy": "Chandra",
-    "approvedAt": "2026-05-18T02:27:20.859Z"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-18",
-    "divisi": "Gosave GT",
-    "dimintaOleh": "Egy Irsandi",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
-    "internalPoNumber": "123123",
-    "extDocType": "invoice",
-    "extDocNumber": "321321inv",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-18",
-    "attachLink": "",
-    "keteranganFrp": "paket",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "paket",
-        "budgetId": "GSG2601",
-        "qty": "1",
-        "hargaSatuan": "1000000",
-        "amount": 1000000
-      }
-    ],
-    "id": "mpali29n",
-    "bankTujuan": "P.T.EVERGREEN SHIPPING AGENCY INDONESIA (MANDIRI)",
-    "rekBankTujuan": "124.001.6768690",
-    "frpNo": "FRP-GSG-26-00001",
-    "requestBy": "Egy Irsandi",
-    "status": "APPROVED",
-    "createdBy": "Egy Irsandi",
-    "createdAt": "2026-05-18T02:39:04.955Z",
-    "approvedByActual": "Chandra",
-    "approvedBy": "Chandra",
-    "approvedAt": "2026-05-18T02:39:45.554Z"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-18",
-    "divisi": "Product",
-    "dimintaOleh": "Egy Irsandi",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "ONE",
-    "internalPoNumber": "",
-    "extDocType": "",
-    "extDocNumber": "",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-18",
-    "attachLink": "",
-    "keteranganFrp": "pembelian barang baru",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "barang 1",
-        "budgetId": "GSG2603",
-        "qty": "1",
-        "hargaSatuan": "150,000",
-        "amount": 150000
-      },
-      {
-        "memo": "barang 2",
-        "budgetId": "GSG2602",
-        "qty": "1",
-        "hargaSatuan": "400,000",
-        "amount": 400000
-      }
-    ],
-    "id": "mpaxgb93",
-    "rpReference": "RP-GSG-26-00001",
-    "fromRpId": "rp-1779078806900-y12qqmfwf",
-    "bankTujuan": "BCA",
-    "rekBankTujuan": "9876543210",
-    "frpNo": "FRP-PRD-26-00001",
-    "requestBy": "Egy Irsandi",
-    "status": "PENDING",
-    "createdBy": "Agus Rifaldi",
-    "createdAt": "2026-05-18T08:13:38.679Z"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-18",
-    "divisi": "Product",
-    "dimintaOleh": "Egy Irsandi",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "ONE",
-    "internalPoNumber": "PO123",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-18",
-    "attachLink": "https://docs.google.com/",
-    "keteranganFrp": "pembelian barang baru",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "barang 1",
-        "budgetId": "GSG2603",
-        "qty": "1",
-        "hargaSatuan": "150,000",
-        "amount": 150000
-      },
-      {
-        "memo": "barang 2",
-        "budgetId": "GSG2602",
-        "qty": "1",
-        "hargaSatuan": "400,000",
-        "amount": 400000
-      }
-    ],
-    "id": "mpaxvuzu",
-    "rpReference": "RP-GSG-26-00001",
-    "fromRpId": "rp-1779078806900-y12qqmfwf",
-    "bankTujuan": "BCA",
-    "rekBankTujuan": "1234567890",
-    "frpNo": "FRP-PRD-26-00002",
-    "requestBy": "Egy Irsandi",
-    "status": "APPROVED",
-    "createdBy": "Agus Rifaldi",
-    "createdAt": "2026-05-18T08:25:44.106Z",
-    "approvedByActual": "Jeanever",
-    "approvedBy": "Jeanever",
-    "approvedAt": "2026-05-18T08:26:30.242Z"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-18",
-    "divisi": "IT",
-    "dimintaOleh": "Bayu Noegroho",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
-    "internalPoNumber": "123inv",
-    "extDocType": "invoice",
-    "extDocNumber": "inv123098765",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-18",
-    "attachLink": "",
-    "keteranganFrp": "laptop",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "barang 1",
-        "budgetId": "SIT2604",
-        "qty": "1",
-        "hargaSatuan": "100,000",
-        "amount": 100000
-      }
-    ],
-    "id": "mpb1bej5",
-    "rpReference": "RP-SIT-26-00001",
-    "fromRpId": "rp-1779097406015-jivyed8ul",
-    "bankTujuan": "BCA",
-    "rekBankTujuan": "1234567890",
-    "frpNo": "FRP-SIT-26-00002",
-    "requestBy": "Bayu Noegroho",
-    "status": "PENDING",
-    "createdBy": "Bayu Noegroho",
-    "createdAt": "2026-05-18T10:01:48.113Z",
-    "approvedBy": "Yulliemty"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-19",
-    "divisi": "Gosave GT",
-    "dimintaOleh": "Egy Irsandi",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "ONE",
-    "internalPoNumber": "",
-    "extDocType": "",
     "extDocNumber": "",
     "paymentMethod": "Transfer",
     "paymentDate": "2026-05-18",
     "attachLink": "google.com",
-    "keteranganFrp": "beli mobil sales",
+    "keteranganFrp": "barang pajangan",
     "checkDocs": [
       "Form Request Payment"
     ],
     "items": [
       {
-        "memo": "beli mobil sales",
-        "budgetId": "GSG2602",
+        "memo": "barang pajangan",
+        "budgetId": "GSG2601",
         "qty": "1",
-        "hargaSatuan": "10,000,000",
-        "amount": 10000000
+        "hargaSatuan": "1,000,000",
+        "amount": 1000000
       }
     ],
-    "id": "mpc1f3kb",
-    "rpReference": "RP-GSG-26-00006",
-    "fromRpId": "rp-1779085752861-hq9voj24m",
-    "frpNo": "FRP-GSG-26-00002",
-    "requestBy": "Egy Irsandi",
-    "status": "PENDING",
-    "createdBy": "Trisha",
-    "createdAt": "2026-05-19T02:52:26.699Z"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-19",
-    "divisi": "Product",
-    "dimintaOleh": "Trisha",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
-    "internalPoNumber": "",
-    "extDocType": "",
-    "extDocNumber": "",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-19",
-    "attachLink": "",
-    "keteranganFrp": "beli botol",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "botol",
-        "budgetId": "PRO2620",
-        "qty": "4",
-        "hargaSatuan": "1000",
-        "amount": 4000
-      }
-    ],
-    "id": "mpc1go4q",
-    "rpReference": "",
-    "fromRpId": "",
-    "bankTujuan": "P.T.EVERGREEN SHIPPING AGENCY INDONESIA (MANDIRI)",
-    "rekBankTujuan": "124.001.6768690",
-    "frpNo": "FRP-PRO-26-00005",
-    "requestBy": "Trisha",
-    "status": "PENDING",
-    "createdBy": "Trisha",
-    "createdAt": "2026-05-19T02:53:40.010Z",
-    "approvedBy": "Ernest Hianto"
-  },
-  {
-    "companyName": "PT PILAR NIAGA MAKMUR",
-    "tanggalFrp": "2026-05-19",
-    "divisi": "Product",
-    "dimintaOleh": "Trisha",
-    "currency": "IDR",
-    "kurs": "1",
-    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
-    "internalPoNumber": "",
-    "extDocType": "",
-    "extDocNumber": "",
-    "paymentMethod": "Transfer",
-    "paymentDate": "2026-05-19",
-    "attachLink": "",
-    "keteranganFrp": "beli botol",
-    "checkDocs": [
-      "Form Request Payment"
-    ],
-    "items": [
-      {
-        "memo": "botol",
-        "budgetId": "PRO2620",
-        "qty": "4",
-        "hargaSatuan": "1000",
-        "amount": 4000
-      }
-    ],
-    "id": "mpc1h2cs",
-    "rpReference": "",
-    "fromRpId": "",
-    "bankTujuan": "P.T.EVERGREEN SHIPPING AGENCY INDONESIA (MANDIRI)",
-    "rekBankTujuan": "124.001.6768690",
-    "frpNo": "FRP-PRO-26-00006",
-    "requestBy": "Trisha",
+    "id": "mpexftl9",
+    "rpReference": "RP-GSG-26-00005",
+    "fromRpId": "rp-1779083327677-z4xliuxdy",
+    "frpNo": "FRP-GSG-26-00001",
+    "requestBy": "Denny Kurniawan",
     "status": "APPROVED",
-    "createdBy": "Trisha",
-    "createdAt": "2026-05-19T02:53:58.444Z",
-    "approvedByActual": "Apriyanto",
-    "approvedBy": "Ernest Hianto",
-    "approvedAt": "2026-05-19T03:50:10.552Z"
+    "createdBy": "Al Fatih Zainul Falah",
+    "createdAt": "2026-05-21T03:24:20.493Z",
+    "approvedByActual": "Al Fatih Zainul Falah",
+    "approvedBy": "Chandra",
+    "approvedAt": "2026-05-21T03:24:33.798Z"
   }
 ]

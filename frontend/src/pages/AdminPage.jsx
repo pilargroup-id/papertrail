@@ -32,7 +32,7 @@ const blankAssignment = () => ({ name: COMPANIES[0], deptName: '', classes: [], 
 
 function getBlankForm(type) {
   if (type === 'employees') return { fullName: '', email: '', companies: [blankAssignment()] }
-  if (type === 'vendors') return { name: '', bank: '', account: '' }
+  if (type === 'vendors') return { name: '', bank: '', no_rekening: '' }
   if (type === 'departments') return { name: '', class: '', kodeFrp: '', company: COMPANIES[0], manager: '' }
   if (type === 'budgets') return { id: '', department: '', company: COMPANIES[0], class: '', type: '', description: '', totalAmount: '' }
   if (type === 'roles') return { role: '', description: '' }
@@ -424,7 +424,7 @@ function VendorFormFields({ form, onChange, styles }) {
       </div>
       <div style={styles.formGroup}>
         <label style={styles.label}>Nomor Rekening</label>
-        <input style={styles.input} required value={form.account} onChange={e => onChange('account', e.target.value)} placeholder="1234567890" />
+        <input style={styles.input} required value={form.no_rekening} onChange={e => onChange('no_rekening', e.target.value)} placeholder="1234567890" />
       </div>
     </div>
   )
@@ -577,7 +577,7 @@ function matchesSearch(type, item, search) {
   if (!search) return true
   const q = search.toLowerCase()
   if (type === 'employees') return (item.fullName || '').toLowerCase().includes(q) || (item.email || '').toLowerCase().includes(q)
-  if (type === 'vendors') return (item.name || '').toLowerCase().includes(q) || (item.bank || '').toLowerCase().includes(q) || String(item.account || '').toLowerCase().includes(q)
+  if (type === 'vendors') return (item.name || '').toLowerCase().includes(q) || (item.bank || '').toLowerCase().includes(q) || String(item.no_rekening || '').toLowerCase().includes(q)
   if (type === 'departments') return (item.name || '').toLowerCase().includes(q) || (item.manager || '').toLowerCase().includes(q)
   if (type === 'budgets') return (item.id || '').toLowerCase().includes(q) || (item.department || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q)
   if (type === 'roles') return (item.role || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q)
@@ -623,7 +623,7 @@ function TableRows({ type, listData, onEdit, onDelete, companyFilter, search, co
       {type === 'vendors' && <>
         <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
         <td style={styles.td}>{item.bank}</td>
-        <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace' }}>{item.account}</td>
+        <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</td>
       </>}
       {type === 'departments' && <>
         <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
@@ -724,7 +724,7 @@ function MobileList({ type, listData, onEdit, onDelete, companyFilter, search, c
         {type === 'vendors' && <>
           <div>
             <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Rekening</div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace' }}>{item.account}</div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</div>
           </div>
         </>}
         {type === 'departments' && <>

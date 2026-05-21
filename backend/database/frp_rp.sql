@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS `frp_rp`;
+USE `frp_rp`;
+
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.19  Distrib 10.11.14-MariaDB, for debian-linux-gnu (x86_64)
 --
