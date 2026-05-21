@@ -92,6 +92,86 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
 // LOOKUP ENDPOINTS
 // ============================================================
 
+router.get('/api/company', checkAuth, async (req, res) => {
+    try {
+        const companiesData = await getCompanies();
+        res.json(companiesData);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/api/user/departement', checkAuth, async (req, res) => {
+    try {
+        const u = req.session.user;
+        const departmentEmployees = await getDepartmentEmployeesByUserId(u.id);
+        res.json(departmentEmployees);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/api/vendors', checkAuth, async (req, res) => {
+    try {
+        const vendorsData = readJson('vendors.json');
+        res.json(vendorsData);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/api/budgets/all', checkAuth, async (req, res) => {
+    try {
+        const budgetsData = readJson('budgets.json');
+        const requests = readJson('requests.json');
+        const usedBudgets = {};
+        requests.forEach(r => {
+            if (r.status === 'APPROVED' && r.items) {
+                r.items.forEach(item => {
+                    const bId = item.budgetId;
+                    const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                    usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
+                });
+            }
+        });
+        const budgetsWithRemaining = budgetsData.map(b => ({
+            ...b,
+            remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
+        }));
+        res.json(budgetsWithRemaining);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/api/employees', checkAuth, async (req, res) => {
+    try {
+        const employees = await getAllEmployees();
+        res.json(employees);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/api/user/info', checkAuth, (req, res) => {
+    const u = req.session.user;
+    res.json({
+        ...u,
+        selectedCompany: u.selectedCompany || '',
+        selectedDivision: u.selectedDivision || '',
+        selectedJobLevel: u.selectedJobLevel || '',
+    });
+});
+
+router.get('/api/departments/all', checkAuth, async (req, res) => {
+    try {
+        const departments = await getDepartmentRows();
+        res.json(departments);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 router.get('/api/employees/:department', checkAuth, async (req, res) => {
     try {
         const dept = req.params.department;
