@@ -150,15 +150,21 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/data/dashboard')
-      .then(r => {
-        if (r.status === 403) { navigate('/'); return null }
-        if (!r.ok) { navigate('/login'); return null }
-        return r.json()
-      })
-      .then(d => { if (d) { setData(d); setUser(d.user) } })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    const fetchDashboard = () => {
+      fetch('/api/data/dashboard')
+        .then(r => {
+          if (r.status === 403) { navigate('/'); return null }
+          if (!r.ok) { navigate('/login'); return null }
+          return r.json()
+        })
+        .then(d => { if (d) { setData(d); setUser(d.user) } })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    }
+
+    fetchDashboard()
+    const interval = setInterval(fetchDashboard, 30000) // auto-refresh setiap 30 detik
+    return () => clearInterval(interval)
   }, [])
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT

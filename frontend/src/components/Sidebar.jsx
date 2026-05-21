@@ -102,7 +102,7 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
     { label: 'FRP', icon: 'receipt_long', children: [
       { label: 'New FRP', href: '/frp', icon: 'note_add' },
-      { label: 'FRP Approval', href: '/approval', icon: 'rule' },
+      { label: 'Status FRP', href: '/status_frp', icon: 'rule' },
       { label: 'FRP Approved', href: '/approved', icon: 'task_alt' },
     ]},
     { label: 'RP', icon: 'shopping_bag', children: [

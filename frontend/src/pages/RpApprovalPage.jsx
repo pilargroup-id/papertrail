@@ -378,6 +378,8 @@ export default function RpApprovalPage() {
 
   useEffect(() => {
     loadData(tab)
+    const interval = setInterval(() => loadData(tab), 30000) // auto-refresh setiap 30 detik
+    return () => clearInterval(interval)
   }, [tab])
 
   useEffect(() => {

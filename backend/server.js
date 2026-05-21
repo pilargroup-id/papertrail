@@ -24,6 +24,7 @@ const pdfRoutes       = require('./src/routes/pdf');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 const pdfPath      = path.join(__dirname, 'generated-pdfs');
@@ -72,9 +73,30 @@ app.use(dashboardRoutes);
 app.use(pdfRoutes);
 
 // ============================================================
+// DEV MODE — Proxy ke Vite untuk HMR (Hot Module Replacement)
+// ============================================================
+if (IS_DEV) {
+    const { createProxyMiddleware } = require('http-proxy-middleware');
+    const viteProxy = createProxyMiddleware({
+        target: 'http://localhost:5173',
+        changeOrigin: true,
+        ws: true, // penting untuk WebSocket HMR
+        on: {
+            error: (err, req, res) => {
+                // Fallback ke dist jika Vite tidak berjalan
+                if (res.sendFile) {
+                    res.sendFile(path.join(frontendPath, 'dist', 'index.html'));
+                }
+            },
+        },
+    });
+    app.use('/', viteProxy);
+}
+
+// ============================================================
 // START SERVER
 // ============================================================
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     const os   = require('os');
     const nets = os.networkInterfaces();
     const localIPs = Object.values(nets)
@@ -85,5 +107,15 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n FRP Backend running:`);
     console.log(`   Local:   http://localhost:${PORT}`);
     localIPs.forEach(ip => console.log(`   Network: http://${ip}:${PORT}`));
+    if (IS_DEV) console.log(`   Mode:    DEV (proxy HMR → Vite :5173)`);
     console.log('');
 });
+
+// Forward WebSocket upgrade untuk HMR
+if (IS_DEV) {
+    server.on('upgrade', (req, socket, head) => {
+        const { createProxyMiddleware } = require('http-proxy-middleware');
+        const wsProxy = createProxyMiddleware({ target: 'http://localhost:5173', ws: true });
+        wsProxy.upgrade(req, socket, head);
+    });
+}
