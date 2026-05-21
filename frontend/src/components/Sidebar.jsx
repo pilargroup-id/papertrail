@@ -76,7 +76,7 @@ function SidebarNavItem({ item, pathname, collapsed, expandedGroups, onToggleGro
 function getInitialExpanded(pathname) {
   const map = {
     'FRP': ['/', '/frp', '/approval', '/approved'],
-    'Request Purchase': ['/rp', '/rp-approval', '/rp-approved'],
+    'Request Purchase': ['/rp', '/rp-approval'],
     'Master Data': null,
   }
   const initial = {}
@@ -107,8 +107,7 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
     ]},
     { label: 'RP', icon: 'shopping_bag', children: [
       { label: 'New RP', href: '/rp', icon: 'note_add' },
-      { label: 'RP Approval', href: '/rp-approval', icon: 'rule' },
-      { label: 'RP Approved', href: '/rp-approved', icon: 'task_alt' },
+      { label: 'Status RP', href: '/rp-approval', icon: 'rule' },
     ]},
     ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{ label: 'Report', href: '/laporan', icon: 'analytics' }] : []),
     ...(userIsAdmin ? [{

@@ -15,6 +15,9 @@ const COMPANY_CODE_BY_NAME = Object.entries(COMPANY_MAP).reduce((acc, [code, nam
 
 // --- SQL Queries ---
 
+// --- USERS ---
+
+// all users
 const USER_SQL = `
     SELECT cu.id, cu.name, cu.email, cu.username, cu.job_position,
            cud.department_id,
@@ -30,6 +33,45 @@ const USER_SQL = `
     LEFT JOIN master_companies uc ON cuc.company_id = uc.id
     LEFT JOIN master_job_levels mjl ON cu.job_level_id = mjl.id
     WHERE cu.is_active = 1
+`;
+
+// user departement
+const USER_DEPARTEMENT_SQL = `
+    SELECT 
+    cu.id, 
+    cu.name, 
+    cu.email, 
+    cu.username, 
+    cu.job_position,
+    cud.department_id,
+    md.name AS dept_name, 
+    md.class AS dept_class, 
+    md.code AS dept_code,
+    COALESCE(mc.id, uc.id) AS company_id,
+    COALESCE(mc.code, uc.code) AS company_code, 
+    COALESCE(mc.name, uc.name) AS company_name,
+    mjl.name AS job_level_name, 
+    mjl.level AS job_level_rank
+FROM central_users cu
+LEFT JOIN central_user_departments cud 
+    ON cud.user_id = cu.id
+LEFT JOIN master_departments md 
+    ON cud.department_id = md.id
+LEFT JOIN master_companies mc 
+    ON md.company_id = mc.id
+LEFT JOIN central_user_companies cuc 
+    ON cuc.user_id = cu.id 
+    AND cud.department_id IS NULL
+LEFT JOIN master_companies uc 
+    ON cuc.company_id = uc.id
+LEFT JOIN master_job_levels mjl 
+    ON cu.job_level_id = mjl.id
+WHERE cu.is_active = 1
+  AND cud.department_id IN (
+      SELECT department_id 
+      FROM central_user_departments 
+      WHERE user_id = ?
+  )
 `;
 
 const LOGIN_SQL = `
@@ -62,4 +104,5 @@ module.exports = {
     USER_SQL,
     LOGIN_SQL,
     DEPARTMENT_SQL,
+    USER_DEPARTEMENT_SQL,
 };

@@ -9,6 +9,7 @@ const {
     getDepartmentRows,
     getDeptCode,
     dbRowsToEmployees,
+    getDepartmentEmployeesByUserId,
 } = require('../services/dbService');
 const { normalizeCompanyCode } = require('../utils/company');
 
@@ -29,8 +30,9 @@ router.get('/frp/:id', checkAuth, (req, res) => res.sendSPA());
 router.get('/api/form-data', checkAuth, async (req, res) => {
     try {
         const u = req.session.user;
-        const [employees, budgetsData, companiesData, vendorsData, departments] = await Promise.all([
+        const [employees, departmentEmployees, budgetsData, companiesData, vendorsData, departments] = await Promise.all([
             getAllEmployees(),
+            getDepartmentEmployeesByUserId(u.id),
             Promise.resolve(readJson('budgets.json')),
             getCompanies(),
             Promise.resolve(readJson('vendors.json')),
@@ -64,6 +66,7 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
 
         res.json({
             employees,
+            departmentEmployees,
             budgets: budgetsWithRemaining,
             companies: companiesData,
             vendors: vendorsData,

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useUser } from '../contexts/UserContext'
-import SearchableSelect from '../components/SearchableSelect.jsx'
+import { useUser } from '../../contexts/UserContext'
+import SearchableSelect from '../../components/SearchableSelect.jsx'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -397,7 +397,7 @@ const S = {
   },
 }
 
-export default function FormPage() {
+export default function NewFRP() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [frpData, setFrpData] = useState(null)

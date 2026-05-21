@@ -6,13 +6,13 @@ import LoginPage from './pages/LoginPage'
 import SelectCompanyPage from './pages/SelectCompanyPage'
 import SelectDivisionPage from './pages/SelectDivisionPage'
 import ChoicePage from './pages/ChoicePage'
-import FormPage from './pages/FormPage'
+import NewFRP from './pages/frp/NewFRP'
 import ApprovalPage from './pages/ApprovalPage'
 import AdminPage from './pages/AdminPage'
 import FrpDetailPage from './pages/FrpDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import LaporanPage from './pages/LaporanPage'
-import RpFormPage from './pages/RpFormPage'
+import NewRP from './pages/rp/NewRP'
 import RpApprovalPage from './pages/RpApprovalPage'
 
 export default function App() {
@@ -26,14 +26,14 @@ export default function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/select-company" element={<SelectCompanyPage />} />
             <Route path="/select-division" element={<SelectDivisionPage />} />
-            <Route path="/" element={<FormPage />} />
-            <Route path="/frp" element={<FormPage />} />
+            <Route path="/" element={<NewFRP />} />
+            <Route path="/frp" element={<NewFRP />} />
             <Route path="/approval" element={<ApprovalPage />} />
             <Route path="/approved" element={<ApprovalPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/laporan" element={<LaporanPage />} />
             <Route path="/admin/:type" element={<AdminPage />} />
-            <Route path="/rp" element={<RpFormPage />} />
+            <Route path="/rp" element={<NewRP />} />
             <Route path="/rp-approval" element={<RpApprovalPage />} />
             <Route path="/rp-approved" element={<RpApprovalPage />} />
           </Route>

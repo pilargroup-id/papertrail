@@ -100,136 +100,52 @@ function getPrimaryAssignment(assignments) {
 }
 
 // ============================================================
-// DATABASE QUERIES
+// DATABASE QUERIES (DELEGATED TO QUERIES FILE)
 // ============================================================
+const queries = require('../queries');
 
 async function getCompanies() {
-    const [rows] = await db.query(`
-        SELECT id, code, name
-        FROM master_companies
-        WHERE is_active = 1
-        ORDER BY CASE code WHEN 'PNM' THEN 1 WHEN 'PKS' THEN 2 WHEN 'PKP' THEN 3 ELSE 9 END, code
-    `);
-    return rows.map(row => ({
-        id: row.id,
-        code: normalizeCompanyCode(row.code),
-        name: normalizeCompanyName(row.code, row.name),
-    }));
+    return queries.getCompanies(db);
 }
 
 async function getCompanyRow(companyName, client = db) {
-    const code = normalizeCompanyCode(companyName);
-    const [rows] = await client.query(
-        'SELECT id, code, name FROM master_companies WHERE code = ? OR UPPER(name) = UPPER(?) LIMIT 1',
-        [code, companyName || '']
-    );
-    return rows[0] || null;
+    return queries.getCompanyRow(client, companyName);
 }
 
 async function getCompanyId(companyName, client = db) {
-    const company = await getCompanyRow(companyName, client);
-    return company ? company.id : null;
+    return queries.getCompanyId(client, companyName);
 }
 
 async function getDepartmentRows() {
-    const [rows] = await db.query(DEPARTMENT_SQL + ' ORDER BY md.name');
-    return rows.map(dbRowToDepartment);
+    return queries.getDepartmentRows(db, dbRowToDepartment);
 }
 
 async function getDepartmentCompanyId(companyName, client = db) {
-    return getCompanyId(companyName || COMPANY_MAP.PNM, client);
+    return queries.getDepartmentCompanyId(client, companyName);
 }
 
 async function getDeptCode(deptName, companyName) {
-    const dept = (deptName || '').trim();
-    if (!dept) return 'GEN';
-    const params = [dept, dept];
-    let sql = `
-        SELECT md.code
-        FROM master_departments md
-        LEFT JOIN master_companies mc ON md.company_id = mc.id
-        WHERE (UPPER(md.name) = UPPER(?) OR UPPER(md.class) = UPPER(?))
-    `;
-    if (companyName) {
-        sql += ' AND mc.code = ?';
-        params.push(normalizeCompanyCode(companyName));
-    }
-    sql += ' ORDER BY md.parent_id IS NOT NULL, md.id LIMIT 1';
-
-    const [rows] = await db.query(sql, params);
-    if (rows.length && rows[0].code) return rows[0].code;
-    if (companyName) return getDeptCode(deptName); // retry without company
-    return dept.substring(0, 3).toUpperCase();
+    return queries.getDeptCode(db, deptName, companyName);
 }
 
 async function getDeptId(deptClass, companyName, client = db) {
-    const dept = (deptClass || '').trim();
-    if (!dept) return null;
-    const params = [dept, dept];
-    let sql = `
-        SELECT md.id
-        FROM master_departments md
-        LEFT JOIN master_companies mc ON md.company_id = mc.id
-        WHERE (md.name = ? OR md.class = ?)
-    `;
-    if (companyName) {
-        sql += ' AND mc.code = ?';
-        params.push(normalizeCompanyCode(companyName));
-    }
-    sql += ' ORDER BY md.parent_id IS NOT NULL, md.id LIMIT 1';
-
-    const [rows] = await client.query(sql, params);
-    if (rows.length) return rows[0].id;
-    if (companyName) return getDeptId(deptClass, null, client); // retry without company
-    return null;
+    return queries.getDeptId(client, deptClass, companyName);
 }
 
 async function getJobLevelId(jobLevelName, client = db) {
-    const mapped = { 'Komisaris': 'Commissioner', 'Direktur': 'President Director' };
-    const search = mapped[jobLevelName] || jobLevelName;
-    const [rows] = await client.query('SELECT id FROM master_job_levels WHERE name = ? LIMIT 1', [search]);
-    return rows.length ? rows[0].id : 8;
+    return queries.getJobLevelId(client, jobLevelName);
 }
 
 async function getAllEmployees() {
-    const [rows] = await db.query(USER_SQL + ' ORDER BY cu.name, cud.is_primary DESC, md.name');
-    return dbRowsToEmployees(rows);
+    return queries.getAllEmployees(db, dbRowsToEmployees);
+}
+
+async function getDepartmentEmployeesByUserId(userId) {
+    return queries.getDepartmentEmployeesByUserId(db, dbRowsToEmployees, userId);
 }
 
 async function saveUserAssignments(client, userId, assignments) {
-    const list = Array.isArray(assignments) ? assignments : Object.values(assignments || {});
-    await client.query('DELETE FROM central_user_departments WHERE user_id = ?', [userId]);
-    await client.query('DELETE FROM central_user_companies WHERE user_id = ?', [userId]);
-
-    const companyIds = new Set();
-    let isPrimaryDept = true;
-
-    for (const [index, assignment] of list.entries()) {
-        const company = await getCompanyRow(assignment.name, client);
-        if (company && !companyIds.has(company.id)) {
-            companyIds.add(company.id);
-            await client.query(
-                'INSERT IGNORE INTO central_user_companies (id, user_id, company_id, is_primary) VALUES (UUID(), ?, ?, ?)',
-                [userId, company.id, index === 0 ? 1 : 0]
-            );
-        }
-
-        // Support both classes[] (new, multi-class) and class string (old, backward compat)
-        const classList = (assignment.classes && assignment.classes.length > 0)
-            ? assignment.classes
-            : [assignment.class].filter(Boolean);
-
-        for (const cls of classList) {
-            const deptId = await getDeptId(cls, assignment.name, client);
-            if (deptId) {
-                await client.query(
-                    'INSERT IGNORE INTO central_user_departments (id, user_id, department_id, is_primary) VALUES (UUID(), ?, ?, ?)',
-                    [userId, deptId, isPrimaryDept ? 1 : 0]
-                );
-                isPrimaryDept = false;
-            }
-        }
-    }
+    return queries.saveUserAssignments(client, userId, assignments);
 }
 
 module.exports = {
@@ -249,5 +165,6 @@ module.exports = {
     getDeptId,
     getJobLevelId,
     getAllEmployees,
+    getDepartmentEmployeesByUserId,
     saveUserAssignments,
 };

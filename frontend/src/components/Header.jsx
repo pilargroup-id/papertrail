@@ -14,8 +14,7 @@ const ROUTE_TITLES = {
   '/select-company': 'Pilih Perusahaan',
   '/select-division': 'Pilih Divisi',
   '/rp': 'Request Purchase (RP)',
-  '/rp-approval': 'RP Approval',
-  '/rp-approved': 'RP Approved',
+  '/rp-approval': 'Status RP',
 }
 
 function getTitleFromPath(pathname) {
