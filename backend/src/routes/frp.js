@@ -266,11 +266,13 @@ router.get('/api/next-frp-number/:department', checkAuth, async (req, res) => {
 
 router.get('/approval', checkAuth, (req, res) => res.sendSPA());
 router.get('/approved', checkAuth, (req, res) => res.sendSPA());
+router.get('/status_frp', checkAuth, (req, res) => res.sendSPA());
 
 router.get('/api/data/approval', checkAuth, (req, res) => {
     const u = req.session.user;
     const { isRequestInUserScope } = require('../middleware/scope');
     const isApprovedView = req.query.view === 'approved';
+    const isAllView = req.query.view === 'all';
     let reqs = readJson('requests.json');
 
     const pendingCount = reqs.filter(r => r.status === 'PENDING' && isRequestInUserScope(r, u)).length;
@@ -278,9 +280,11 @@ router.get('/api/data/approval', checkAuth, (req, res) => {
         (r.status === 'APPROVED' || r.status === 'REJECTED') && isRequestInUserScope(r, u)
     ).length;
 
-    reqs = isApprovedView
-        ? reqs.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED')
-        : reqs.filter(r => r.status === 'PENDING');
+    if (!isAllView) {
+        reqs = isApprovedView
+            ? reqs.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED')
+            : reqs.filter(r => r.status === 'PENDING');
+    }
 
     if (u.role !== 'administrator') {
         reqs = reqs.filter(r => isRequestInUserScope(r, u));
