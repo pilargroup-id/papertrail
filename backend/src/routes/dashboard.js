@@ -1,6 +1,7 @@
 const express = require('express');
 const { checkAuth } = require('../middleware/auth');
 const { readJson } = require('../utils/json');
+const { fetchAllFrpRequests, fetchAllRpRequests } = require('../services/dbService');
 
 const router = express.Router();
 
@@ -18,14 +19,14 @@ router.get('/dashboard', checkAuth, (req, res) => {
 // DASHBOARD DATA
 // ============================================================
 
-router.get('/api/data/dashboard', checkAuth, (req, res) => {
+router.get('/api/data/dashboard', checkAuth, async (req, res) => {
     const u = req.session.user;
     if (u.role !== 'administrator' && u.selectedDivision !== 'IT') {
         return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const requests = readJson('requests.json');
-    const rpRequests = readJson('rp-requests.json');
+    const requests = await fetchAllFrpRequests();
+    const rpRequests = await fetchAllRpRequests();
 
     // --- Amount Parsers ---
     const parseItemAmount = (items) => {

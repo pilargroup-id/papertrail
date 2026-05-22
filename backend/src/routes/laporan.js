@@ -2,6 +2,7 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const { checkAuth, checkLaporan } = require('../middleware/auth');
 const { readJson } = require('../utils/json');
+const { fetchAllFrpRequests, fetchAllRpRequests } = require('../services/dbService');
 
 const router = express.Router();
 
@@ -28,9 +29,9 @@ router.get('/laporan', checkAuth, (req, res) => {
     res.sendSPA();
 });
 
-router.get('/api/data/laporan', checkAuth, checkLaporan, (req, res) => {
+router.get('/api/data/laporan', checkAuth, checkLaporan, async (req, res) => {
     const u = req.session.user;
-    const requests = readJson('requests.json');
+    const requests = await fetchAllFrpRequests();
 
     const companies = [...new Set(requests.map(r => r.companyName).filter(Boolean))].sort();
     const divisions = [...new Set(requests.map(r => r.divisi).filter(Boolean))].sort();
@@ -64,9 +65,9 @@ router.get('/api/data/laporan', checkAuth, checkLaporan, (req, res) => {
     });
 });
 
-router.get('/api/data/laporan-rp', checkAuth, checkLaporan, (req, res) => {
+router.get('/api/data/laporan-rp', checkAuth, checkLaporan, async (req, res) => {
     const u = req.session.user;
-    const rpRequests = readJson('rp-requests.json');
+    const rpRequests = await fetchAllRpRequests();
 
     const parseRpItemAmount = (items) => {
         if (!Array.isArray(items)) return 0;

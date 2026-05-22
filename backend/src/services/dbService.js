@@ -148,6 +148,88 @@ async function saveUserAssignments(client, userId, assignments) {
     return queries.saveUserAssignments(client, userId, assignments);
 }
 
+async function fetchAllRpRequests() {
+    const [rows] = await db.query(`
+        SELECT r.*, 
+               mc.name AS companyName, 
+               md.name AS divisi, 
+               mdc.class AS classStr 
+        FROM rp_request r
+        LEFT JOIN master_companies mc ON r.company_id = mc.id
+        LEFT JOIN master_departments md ON r.department_id = md.id
+        LEFT JOIN master_departments mdc ON r.class_id = mdc.id
+    `);
+    return rows.map(r => ({
+        id: r.id,
+        rpNo: r.rp_no || '',
+        status: r.status,
+        companyName: r.companyName || '',
+        divisi: r.divisi || '',
+        class: r.classStr || '',
+        dibuatOleh: r.dibuat_oleh || '',
+        kategoriPembelian: r.kategori_pembelian || '',
+        deskripsi: r.deskripsi || '',
+        diprosesOleh: r.diproses_oleh || '',
+        tanggalDibutuhkan: r.tanggal_dibutuhkan ? new Date(r.tanggal_dibutuhkan).toISOString().slice(0,10) : '',
+        vendorSuggestion: r.vendor_suggestion || '',
+        picPenerima: r.pic_penerima || '',
+        items: typeof r.items === 'string' ? JSON.parse(r.items) : (r.items || []),
+        createdAt: r.created_at,
+        createdBy: r.created_by,
+        managerApprovedBy: r.manager_approved_by,
+        managerApprovedAt: r.manager_approved_at,
+        processChanges: typeof r.process_changes === 'string' ? JSON.parse(r.process_changes) : (r.process_changes || []),
+        processUpdatedBy: r.process_updated_by,
+        processUpdatedAt: r.process_updated_at,
+        processManagerApprovedBy: r.process_manager_approved_by,
+        processManagerApprovedAt: r.process_manager_approved_at,
+        rejectedBy: r.rejected_by,
+        rejectedAt: r.rejected_at,
+        rejectedReason: r.rejected_reason,
+        rejectedStage: r.rejected_stage
+    }));
+}
+
+async function fetchAllFrpRequests() {
+    const [rows] = await db.query(`
+        SELECT f.*, 
+               mc.name AS companyName, 
+               md.name AS divisi 
+        FROM frp_request f
+        LEFT JOIN master_companies mc ON f.company_id = mc.id
+        LEFT JOIN master_departments md ON f.department_id = md.id
+    `);
+    
+    return rows.map(r => ({
+        id: r.id,
+        companyName: r.companyName || '',
+        tanggalFrp: r.tanggal_frp ? new Date(r.tanggal_frp).toISOString().slice(0, 10) : '',
+        divisi: r.divisi || '',
+        dimintaOleh: r.diminta_oleh || '',
+        currency: r.currency || 'IDR',
+        kurs: String(r.kurs || '1'),
+        vendor: r.vendor || '',
+        internalPoNumber: r.internal_po_number || '',
+        extDocType: r.ext_doc_type || '',
+        extDocNumber: r.ext_doc_number || '',
+        paymentMethod: r.payment_method || 'Transfer',
+        paymentDate: r.payment_date ? new Date(r.payment_date).toISOString().slice(0, 10) : '',
+        bankTujuan: r.bank_tujuan || '',
+        rekBankTujuan: r.rek_bank_tujuan || '',
+        keteranganFrp: r.keterangan_frp || '',
+        checkDocs: typeof r.check_docs === 'string' ? JSON.parse(r.check_docs) : (r.check_docs || []),
+        items: typeof r.items === 'string' ? JSON.parse(r.items) : (r.items || []),
+        frpNo: r.frp_no || '',
+        requestBy: r.diminta_oleh || '',
+        status: r.status,
+        createdBy: r.created_by,
+        createdAt: r.created_at,
+        approvedByActual: r.approved_by_actual,
+        approvedBy: r.approved_by,
+        approvedAt: r.approved_at
+    }));
+}
+
 module.exports = {
     // Mappers
     mapJobLevel,
@@ -167,4 +249,6 @@ module.exports = {
     getAllEmployees,
     getDepartmentEmployeesByUserId,
     saveUserAssignments,
+    fetchAllRpRequests,
+    fetchAllFrpRequests,
 };

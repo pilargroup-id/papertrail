@@ -1,54 +1,12 @@
 const express = require('express');
 const { checkAuth } = require('../middleware/auth');
 const { readJson, writeJson } = require('../utils/json');
-const { getAllEmployees, getCompanies, getDepartmentRows, getDeptCode, getCompanyId, getDeptId } = require('../services/dbService');
+const { getAllEmployees, getCompanies, getDepartmentRows, getDeptCode, getCompanyId, getDeptId, fetchAllFrpRequests, fetchAllRpRequests } = require('../services/dbService');
 const { sameCompanyName } = require('../utils/company');
 const { isRpInUserScope } = require('../middleware/scope');
 const db = require('../../db');
 
 const router = express.Router();
-
-async function fetchAllRpRequests() {
-    const [rows] = await db.query(`
-        SELECT r.*, 
-               mc.name AS companyName, 
-               md.name AS divisi, 
-               mdc.class AS classStr 
-        FROM rp_request r
-        LEFT JOIN master_companies mc ON r.company_id = mc.id
-        LEFT JOIN master_departments md ON r.department_id = md.id
-        LEFT JOIN master_departments mdc ON r.class_id = mdc.id
-    `);
-    return rows.map(r => ({
-        id: r.id,
-        rpNo: r.rp_no || '',
-        status: r.status,
-        companyName: r.companyName || '',
-        divisi: r.divisi || '',
-        class: r.classStr || '',
-        dibuatOleh: r.dibuat_oleh || '',
-        kategoriPembelian: r.kategori_pembelian || '',
-        deskripsi: r.deskripsi || '',
-        diprosesOleh: r.diproses_oleh || '',
-        tanggalDibutuhkan: r.tanggal_dibutuhkan ? new Date(r.tanggal_dibutuhkan).toISOString().slice(0,10) : '',
-        vendorSuggestion: r.vendor_suggestion || '',
-        picPenerima: r.pic_penerima || '',
-        items: typeof r.items === 'string' ? JSON.parse(r.items) : (r.items || []),
-        createdAt: r.created_at,
-        createdBy: r.created_by,
-        managerApprovedBy: r.manager_approved_by,
-        managerApprovedAt: r.manager_approved_at,
-        processChanges: typeof r.process_changes === 'string' ? JSON.parse(r.process_changes) : (r.process_changes || []),
-        processUpdatedBy: r.process_updated_by,
-        processUpdatedAt: r.process_updated_at,
-        processManagerApprovedBy: r.process_manager_approved_by,
-        processManagerApprovedAt: r.process_manager_approved_at,
-        rejectedBy: r.rejected_by,
-        rejectedAt: r.rejected_at,
-        rejectedReason: r.rejected_reason,
-        rejectedStage: r.rejected_stage
-    }));
-}
 
 async function updateRpRequest(rp) {
     const companyId = await getCompanyId(rp.companyName);
@@ -104,7 +62,7 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
         const budgetsData = readJson('budgets.json');
         const vendorsData = readJson('vendors.json');
         const rpRequests = await fetchAllRpRequests();
-        const frpRequests = readJson('requests.json');
+        const frpRequests = await fetchAllFrpRequests();
 
         // Calculate used budgets from both FRP (approved) and RP (approved)
         const usedBudgets = {};

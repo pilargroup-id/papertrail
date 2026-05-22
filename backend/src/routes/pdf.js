@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { checkAuth } = require('../middleware/auth');
 const { readJson } = require('../utils/json');
+const { fetchAllRpRequests } = require('../services/dbService');
 const { renderPdfDocument } = require('../../renderPdfDocument');
 const renderRpPdfDocument = require('../../renderRpPdfDocument');
 
@@ -76,8 +77,8 @@ router.post('/generate-pdf', checkAuth, async (req, res) => {
 // RP PDF
 // ============================================================
 
-router.get('/api/rp/:id/preview', checkAuth, (req, res) => {
-    const data = readJson('rp-requests.json').find(r => r.id === req.params.id);
+router.get('/api/rp/:id/preview', checkAuth, async (req, res) => {
+    const data = (await fetchAllRpRequests()).find(r => r.id === req.params.id);
     if (!data) return res.status(404).send('Not found');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(renderRpPdfDocument(data, true));
@@ -85,7 +86,7 @@ router.get('/api/rp/:id/preview', checkAuth, (req, res) => {
 
 router.get('/api/rp/:id/pdf', checkAuth, async (req, res) => {
     try {
-        const data = readJson('rp-requests.json').find(r => r.id === req.params.id);
+        const data = (await fetchAllRpRequests()).find(r => r.id === req.params.id);
         if (!data) return res.status(404).send('Not found');
         const html = renderRpPdfDocument(data, false);
         const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });

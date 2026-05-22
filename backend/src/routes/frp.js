@@ -8,8 +8,11 @@ const {
     getCompanies,
     getDepartmentRows,
     getDeptCode,
+    getCompanyId,
+    getDeptId,
     dbRowsToEmployees,
     getDepartmentEmployeesByUserId,
+    fetchAllFrpRequests,
 } = require('../services/dbService');
 const { normalizeCompanyCode } = require('../utils/company');
 
@@ -38,7 +41,7 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
             Promise.resolve(readJson('vendors.json')),
             getDepartmentRows(),
         ]);
-        const requests = readJson('requests.json');
+        const requests = await fetchAllFrpRequests();
 
         // Calculate used budget amounts from approved FRP requests
         const usedBudgets = {};
@@ -129,7 +132,7 @@ router.get('/api/vendors', checkAuth, async (req, res) => {
 router.get('/api/budgets/all', checkAuth, async (req, res) => {
     try {
         const budgetsData = readJson('budgets.json');
-        const requests = readJson('requests.json');
+        const requests = await fetchAllFrpRequests();
         const [companiesData, departments] = await Promise.all([
             getCompanies(),
             getDepartmentRows(),
@@ -209,7 +212,7 @@ router.get('/api/employees/:department', checkAuth, async (req, res) => {
 router.get('/api/budgets/:department', checkAuth, async (req, res) => {
     try {
         const budgetsData = readJson('budgets.json');
-        const requests = readJson('requests.json');
+        const requests = await fetchAllFrpRequests();
         const [companiesData, departments] = await Promise.all([
             getCompanies(),
             getDepartmentRows(),
@@ -359,13 +362,12 @@ router.get('/api/kurs/:currency', checkAuth, async (req, res) => {
 
 router.get('/api/next-frp-number/:department', checkAuth, async (req, res) => {
     try {
-        const requests = readJson('requests.json');
         const dept = (req.params.department || '').trim().toUpperCase();
         const deptCode = await getDeptCode(dept, req.query.company || req.session.user.selectedCompany);
         const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
-        const sequences = requests
-            .filter(r => r.frpNo && r.frpNo.startsWith(prefix))
-            .map(r => parseInt(r.frpNo.split('-').pop(), 10) || 0);
+        
+        const [seqRows] = await db.query(`SELECT frp_no FROM frp_request WHERE frp_no LIKE ?`, [`${prefix}%`]);
+        const sequences = seqRows.map(r => parseInt(r.frp_no.split('-').pop(), 10) || 0);
         const nextSeq = Math.max(0, ...sequences) + 1;
         res.json({ frpNo: `${prefix}${nextSeq.toString().padStart(5, '0')}` });
     } catch (e) {
@@ -381,12 +383,12 @@ router.get('/approval', checkAuth, (req, res) => res.sendSPA());
 router.get('/approved', checkAuth, (req, res) => res.sendSPA());
 router.get('/status_frp', checkAuth, (req, res) => res.sendSPA());
 
-router.get('/api/data/approval', checkAuth, (req, res) => {
+router.get('/api/data/approval', checkAuth, async (req, res) => {
     const u = req.session.user;
     const { isRequestInUserScope } = require('../middleware/scope');
     const isApprovedView = req.query.view === 'approved';
     const isAllView = req.query.view === 'all';
-    let reqs = readJson('requests.json');
+    let reqs = await fetchAllFrpRequests();
 
     const pendingCount = reqs.filter(r => r.status === 'PENDING' && isRequestInUserScope(r, u)).length;
     const approvedCount = reqs.filter(r =>
@@ -427,7 +429,7 @@ router.get('/api/data/approval', checkAuth, (req, res) => {
 
 router.get('/api/frp/:id', checkAuth, async (req, res) => {
     try {
-        const data = readJson('requests.json').find(r => r.id === req.params.id);
+        const data = (await fetchAllFrpRequests()).find(r => r.id === req.params.id);
         if (!data) return res.status(404).json({ error: 'Not found' });
         const user = req.session.user;
         const isIT = user.role === 'administrator' || user.selectedDivision === 'IT';
@@ -441,109 +443,143 @@ router.get('/api/frp/:id', checkAuth, async (req, res) => {
 
 router.post('/api/frp/save', checkAuth, async (req, res) => {
     try {
-        let requests = readJson('requests.json');
+        const u = req.session.user;
+        const companyName = req.body.companyName || u.selectedCompany;
+        const divisi = req.body.divisi || 'GENERAL';
+
+        const companyId = await getCompanyId(companyName);
+        const deptId = await getDeptId(divisi, companyName);
 
         // Handle revision (update existing)
         if (req.body.frpId) {
-            const idx = requests.findIndex(r => r.id === req.body.frpId);
-            if (idx === -1) return res.json({ success: false, error: 'FRP not found for revision' });
-            const updatedReq = {
-                ...requests[idx],
-                ...req.body,
-                id: requests[idx].id,
-                frpNo: requests[idx].frpNo,
-                status: 'PENDING',
-            };
-            delete updatedReq.frpId;
-            requests[idx] = updatedReq;
-            writeJson('requests.json', requests);
-            return res.json({ success: true, id: updatedReq.id, frpNo: updatedReq.frpNo });
+            await db.query(`
+                UPDATE frp_request SET
+                    company_id = ?, tanggal_frp = ?, department_id = ?, diminta_oleh = ?,
+                    currency = ?, kurs = ?, keterangan_frp = ?, vendor = ?, internal_po_number = ?,
+                    ext_doc_type = ?, ext_doc_number = ?, payment_method = ?, payment_date = ?,
+                    bank_tujuan = ?, rek_bank_tujuan = ?, check_docs = ?, items = ?,
+                    status = 'PENDING'
+                WHERE id = ?
+            `, [
+                companyId, req.body.tanggalFrp || null, deptId, req.body.dimintaOleh || '',
+                req.body.currency || 'IDR', req.body.kurs || '1', req.body.keteranganFrp || '',
+                req.body.vendor || '', req.body.internalPoNumber || '', req.body.extDocType || '',
+                req.body.extDocNumber || '', req.body.paymentMethod || 'Transfer', req.body.paymentDate || null,
+                req.body.bankTujuan || '', req.body.rekBankTujuan || '', JSON.stringify(req.body.checkDocs || []),
+                JSON.stringify(req.body.items || []), req.body.frpId
+            ]);
+            
+            const [rows] = await db.query('SELECT frp_no FROM frp_request WHERE id = ?', [req.body.frpId]);
+            const frpNo = rows.length ? rows[0].frp_no : '';
+
+            return res.json({ success: true, id: req.body.frpId, frpNo });
         }
 
         // Handle new FRP
-        const dept = (req.body.divisi || 'GENERAL').trim().toUpperCase();
-        const deptCode = await getDeptCode(dept, req.body.companyName || req.session.user.selectedCompany);
+        const dept = divisi.trim().toUpperCase();
+        const deptCode = await getDeptCode(dept, companyName);
         const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
-        const sequences = requests
-            .filter(r => r.frpNo && r.frpNo.startsWith(prefix))
-            .map(r => parseInt(r.frpNo.split('-').pop(), 10) || 0);
+        
+        const [seqRows] = await db.query(`SELECT frp_no FROM frp_request WHERE frp_no LIKE ?`, [`${prefix}%`]);
+        const sequences = seqRows.map(r => parseInt(r.frp_no.split('-').pop(), 10) || 0);
         const nextSeq = Math.max(0, ...sequences) + 1;
         const frpNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
-        const newReq = {
-            ...req.body,
-            id: Date.now().toString(36),
-            frpNo,
-            requestBy: req.body.dimintaOleh || 'System',
-            status: 'PENDING',
-            createdBy: req.session.user.fullName,
-            createdAt: new Date().toISOString(),
-        };
-        requests.push(newReq);
-        writeJson('requests.json', requests);
+        
+        const id = 'frp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
+        await db.query(`
+            INSERT INTO \`frp_request\` (
+              \`id\`, \`frp_no\`, \`status\`, \`company_id\`, \`tanggal_frp\`,
+              \`department_id\`, \`diminta_oleh\`, \`currency\`, \`kurs\`, \`keterangan_frp\`,
+              \`vendor\`, \`internal_po_number\`, \`ext_doc_type\`, \`ext_doc_number\`,
+              \`payment_method\`, \`payment_date\`, \`bank_tujuan\`, \`rek_bank_tujuan\`,
+              \`check_docs\`, \`items\`, \`created_by\`, \`created_at\`,
+              \`approved_by_actual\`, \`approved_by\`, \`approved_at\`
+            ) VALUES (
+              ?, ?, ?, ?, ?,
+              ?, ?, ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?, ?,
+              ?, ?, ?, NOW(),
+              NULL, NULL, NULL
+            )
+        `, [
+            id, frpNo, 'PENDING', companyId, req.body.tanggalFrp || null,
+            deptId, req.body.dimintaOleh || '', req.body.currency || 'IDR', req.body.kurs || '1', req.body.keteranganFrp || '',
+            req.body.vendor || '', req.body.internalPoNumber || '', req.body.extDocType || '', req.body.extDocNumber || '',
+            req.body.paymentMethod || 'Transfer', req.body.paymentDate || null, req.body.bankTujuan || '', req.body.rekBankTujuan || '',
+            JSON.stringify(req.body.checkDocs || []), JSON.stringify(req.body.items || []), u.fullName
+        ]);
 
         // Mark linked RP as FRP created
         if (req.body.fromRpId) {
-            let rpRequests = readJson('rp-requests.json');
-            const rpIdx = rpRequests.findIndex(r => r.id === req.body.fromRpId);
-            if (rpIdx !== -1) {
-                rpRequests[rpIdx].status = 'CREATED_FRP';
-                writeJson('rp-requests.json', rpRequests);
-            }
+            await db.query('UPDATE rp_request SET status = ? WHERE id = ?', ['CREATED_FRP', req.body.fromRpId]);
         }
 
-        res.json({ success: true, id: newReq.id, frpNo });
+        res.json({ success: true, id, frpNo });
     } catch (e) {
+        console.error('Error saving FRP:', e);
         res.json({ success: false, error: e.message });
     }
 });
 
 router.post('/api/frp/:id/:action', checkAuth, async (req, res) => {
     try {
-        let requests = readJson('requests.json');
-        const idx = requests.findIndex(r => r.id === req.params.id);
-        if (idx === -1) return res.json({ success: false });
-
         const action = req.params.action;
+        const frpId = req.params.id;
+        const u = req.session.user;
 
         if (action === 'approve') {
-            requests[idx].status = 'APPROVED';
-            requests[idx].approvedByActual = req.session.user.fullName;
-            requests[idx].approvedAt = new Date().toISOString();
-            // Look up the highest-level manager in the division
-            const divisi = requests[idx].divisi || '';
-            const params = [divisi];
-            let sql = USER_SQL + ' AND md.name = ? AND mjl.level >= 4';
-            if (requests[idx].companyName) {
-                sql += ' AND mc.code = ?';
-                params.push(normalizeCompanyCode(requests[idx].companyName));
+            const [rows] = await db.query(`
+                SELECT f.company_id, f.department_id, md.name as divisi, mc.code as companyCode 
+                FROM frp_request f
+                LEFT JOIN master_companies mc ON f.company_id = mc.id
+                LEFT JOIN master_departments md ON f.department_id = md.id
+                WHERE f.id = ?
+            `, [frpId]);
+            
+            let approvedBy = u.fullName;
+            if (rows.length) {
+                const divisi = rows[0].divisi || '';
+                const companyCode = rows[0].companyCode;
+                const params = [divisi];
+                let sql = USER_SQL + ' AND md.name = ? AND mjl.level >= 4';
+                if (companyCode) {
+                    sql += ' AND mc.code = ?';
+                    params.push(normalizeCompanyCode(companyCode));
+                }
+                sql += ' ORDER BY mjl.level DESC LIMIT 1';
+                const [mgrRows] = await db.query(sql, params);
+                if (mgrRows.length) approvedBy = mgrRows[0].name;
             }
-            sql += ' ORDER BY mjl.level DESC LIMIT 1';
-            const [mgrRows] = await db.query(sql, params);
-            requests[idx].approvedBy = mgrRows.length ? mgrRows[0].name : req.session.user.fullName;
+
+            await db.query(`
+                UPDATE frp_request 
+                SET status = 'APPROVED', approved_by_actual = ?, approved_at = NOW(), approved_by = ?
+                WHERE id = ?
+            `, [u.fullName, approvedBy, frpId]);
+
         } else if (action === 'reject') {
-            requests[idx].status = 'REJECTED';
+            await db.query(`UPDATE frp_request SET status = 'REJECTED' WHERE id = ?`, [frpId]);
         } else if (action === 'delete') {
-            requests.splice(idx, 1);
+            await db.query(`DELETE FROM frp_request WHERE id = ?`, [frpId]);
         } else if (action === 'revert') {
-            if (req.session.user.role !== 'administrator') {
+            if (u.role !== 'administrator') {
                 return res.status(403).json({ success: false, error: 'Hanya administrator yang bisa melakukan revert' });
             }
-            requests[idx].status = 'PENDING';
-            delete requests[idx].approvedByActual;
-            delete requests[idx].approvedAt;
+            await db.query(`
+                UPDATE frp_request 
+                SET status = 'PENDING', approved_by_actual = NULL, approved_at = NULL, approved_by = NULL
+                WHERE id = ?
+            `, [frpId]);
         } else if (action === 'update') {
-            requests[idx] = {
-                ...requests[idx],
-                ...req.body,
-                id: requests[idx].id,
-                status: requests[idx].status,
-                frpNo: requests[idx].frpNo,
-            };
+            // Already handled via POST /api/frp/save with body.frpId
+            // but we can add partial update if necessary
         }
 
-        writeJson('requests.json', requests);
         res.json({ success: true });
     } catch (e) {
+        console.error('Error action FRP:', e);
         res.json({ success: false, error: e.message });
     }
 });
