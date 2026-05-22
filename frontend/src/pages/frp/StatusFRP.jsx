@@ -193,17 +193,6 @@ export default function StatusFRP() {
 
   return (
     <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column' }}>
-      {/* ── Header ── */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <h2 style={{ margin: 0, fontSize: isMobile ? '1.1rem' : '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-          <span className="material-icons-round" style={{ verticalAlign: 'middle', marginRight: '8px', color: '#1f4e8c', fontSize: '1.4rem' }}>receipt_long</span>
-          Status FRP
-        </h2>
-        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
-          Daftar semua Form Request Payment yang pernah dibuat
-        </p>
-      </div>
-
       {/* ── Filter Bar ── */}
       <div style={{
         background: '#f1f5f9', borderRadius: '14px',

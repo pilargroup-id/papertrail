@@ -1,8 +1,8 @@
 import { useLocation, Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
-import { useSidebarState } from '../hooks/useSidebarState'
-import { useUser } from '../contexts/UserContext'
+import { useSidebarState } from '../../hooks/useSidebarState'
+import { useUser } from '../../contexts/UserContext'
 
 const HIDE_MENU_PATHS = new Set(['/select-company', '/select-division'])
 

@@ -93,7 +93,6 @@ select {
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  z-index: 1;
 }
 
 .dashboard-main {
@@ -105,7 +104,6 @@ select {
   overscroll-behavior: contain;
   color: #1e293b;
   position: relative;
-  z-index: 1;
   animation: page-in 0.12s ease;
 }
 

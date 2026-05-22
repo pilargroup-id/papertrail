@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import logoPiagam from '../assets/logo-piagam.png'
-import logoPiagamTransparent from '../assets/logo-piagam2.png'
+import logoPiagam from '../../assets/logo-piagam.png'
+import logoPiagamTransparent from '../../assets/logo-piagam2.png'
 
 const ROUTE_TITLES = {
   '/': 'New Request',

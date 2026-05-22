@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { PieChart } from '@mui/x-charts/PieChart'
 import { useUser } from '../contexts/UserContext'
 import CardBigBox from '../components/cardbox/CardBigBox'
-import RevenueLastUpdate from '../components/RevenueLastUpdate'
+import RevenueLastUpdate from '../components/template/RevenueLastUpdate'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -25,23 +25,23 @@ function formatDate(value) {
 }
 
 const STATUS_STYLE = {
-  PENDING:  { bg: '#fef08a', color: '#854d0e' },
+  PENDING: { bg: '#fef08a', color: '#854d0e' },
   APPROVED: { bg: '#bbf7d0', color: '#166534' },
   REJECTED: { bg: '#fecaca', color: '#991b1b' },
 }
 
 const RP_STATUS_STYLE = {
-  waiting_manager:          { bg: '#fef9c3', color: '#92400e', label: 'Menunggu Manager' },
-  division_review:          { bg: '#dbeafe', color: '#1e40af', label: 'Diproses' },
+  waiting_manager: { bg: '#fef9c3', color: '#92400e', label: 'Menunggu Manager' },
+  division_review: { bg: '#dbeafe', color: '#1e40af', label: 'Diproses' },
   final_approved: { bg: '#e0e7ff', color: '#3730a3', label: 'Menunggu Persetujuan' },
-  approved:                 { bg: '#bbf7d0', color: '#166534', label: 'Approved' },
-  REJECTED:                 { bg: '#fecaca', color: '#991b1b', label: 'Rejected' },
-  CREATED_FRP:              { bg: '#d1fae5', color: '#065f46', label: 'FRP Dibuat' },
+  approved: { bg: '#bbf7d0', color: '#166534', label: 'Approved' },
+  REJECTED: { bg: '#fecaca', color: '#991b1b', label: 'Rejected' },
+  CREATED_FRP: { bg: '#d1fae5', color: '#065f46', label: 'FRP Dibuat' },
 }
 
 const VIEWS = [
-  { key: 'frp', label: 'FRP',  subtitle: 'Fund Request Procurement', color: '#2563eb', icon: 'receipt_long' },
-  { key: 'rp',  label: 'RP',   subtitle: 'Request Pembelian',        color: '#7c3aed', icon: 'shopping_cart' },
+  { key: 'frp', label: 'FRP', subtitle: 'Fund Request Procurement', color: '#2563eb', icon: 'receipt_long' },
+  { key: 'rp', label: 'RP', subtitle: 'Request Pembelian', color: '#7c3aed', icon: 'shopping_cart' },
 ]
 
 function StatCard({ label, value, detail, color, icon, compact = false }) {
@@ -158,7 +158,7 @@ export default function DashboardPage() {
           return r.json()
         })
         .then(d => { if (d) { setData(d); setUser(d.user) } })
-        .catch(() => {})
+        .catch(() => { })
         .finally(() => setLoading(false))
     }
 
@@ -170,15 +170,15 @@ export default function DashboardPage() {
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
-  const statGridCols    = isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)'
-  const chartGridCols   = isMobile ? '1fr' : '1fr 1.6fr'
+  const statGridCols = isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(4, 1fr)'
+  const chartGridCols = isMobile ? '1fr' : '1fr 1.6fr'
   const companyGridCols = isMobile ? '1fr' : isTablet ? '1fr 1fr' : 'repeat(3, 1fr)'
-  const DIVISI_COLORS   = ['#2563eb', '#7c3aed', '#10b981', '#ef4444', '#f59e0b', '#0891b2', '#be123c', '#d97706', '#059669', '#dc2626']
-  const COMPANY_COLORS  = ['#2563eb', '#7c3aed', '#0891b2', '#be123c', '#d97706']
+  const DIVISI_COLORS = ['#2563eb', '#7c3aed', '#10b981', '#ef4444', '#f59e0b', '#0891b2', '#be123c', '#d97706', '#059669', '#dc2626']
+  const COMPANY_COLORS = ['#2563eb', '#7c3aed', '#0891b2', '#be123c', '#d97706']
 
   // ── FRP derived data ──
   const frpDonutData = data ? [
-    { label: 'Pending',  value: data.stats.pending,  color: '#f59e0b' },
+    { label: 'Pending', value: data.stats.pending, color: '#f59e0b' },
     { label: 'Approved', value: data.stats.approved, color: '#10b981' },
     { label: 'Rejected', value: data.stats.rejected, color: '#ef4444' },
   ].filter(d => d.value > 0) : []
@@ -193,11 +193,11 @@ export default function DashboardPage() {
 
   // ── RP derived data ──
   const rpTotalPending = data ? (data.rpStats.pendingManager + data.rpStats.pendingProcess + data.rpStats.pendingProcessApproval) : 0
-  const rpTotalDone    = data ? (data.rpStats.approved + data.rpStats.createdFrp) : 0
+  const rpTotalDone = data ? (data.rpStats.approved + data.rpStats.createdFrp) : 0
 
   const rpDonutData = data?.rpStats ? [
-    { label: 'Menunggu', value: rpTotalPending,           color: '#f59e0b' },
-    { label: 'Approved', value: rpTotalDone,              color: '#10b981' },
+    { label: 'Menunggu', value: rpTotalPending, color: '#f59e0b' },
+    { label: 'Approved', value: rpTotalDone, color: '#10b981' },
     { label: 'Rejected', value: data.rpStats.rejected || 0, color: '#ef4444' },
   ].filter(d => d.value > 0) : []
 
@@ -229,10 +229,10 @@ export default function DashboardPage() {
               {/* Stat Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: statGridCols, gap: '14px' }}>
                 {[
-                  { label: 'Total FRP', value: data.stats.total,   detail: `${data.stats.pending} pending · ${data.stats.approved} approved`, color: '#2563eb', icon: 'receipt_long' },
-                  { label: 'Pending',   value: data.stats.pending,  detail: `IDR ${formatRupiah(data.stats.pendingAmount)}`,                   color: '#f59e0b', icon: 'pending_actions' },
-                  { label: 'Approved',  value: data.stats.approved, detail: `IDR ${formatRupiah(data.stats.approvedAmount)}`,                  color: '#10b981', icon: 'check_circle' },
-                  { label: 'Rejected',  value: data.stats.rejected, detail: `IDR ${formatRupiah(data.stats.rejectedAmount)}`,                  color: '#ef4444', icon: 'cancel' },
+                  { label: 'Total FRP', value: data.stats.total, detail: `${data.stats.pending} pending · ${data.stats.approved} approved`, color: '#2563eb', icon: 'receipt_long' },
+                  { label: 'Pending', value: data.stats.pending, detail: `IDR ${formatRupiah(data.stats.pendingAmount)}`, color: '#f59e0b', icon: 'pending_actions' },
+                  { label: 'Approved', value: data.stats.approved, detail: `IDR ${formatRupiah(data.stats.approvedAmount)}`, color: '#10b981', icon: 'check_circle' },
+                  { label: 'Rejected', value: data.stats.rejected, detail: `IDR ${formatRupiah(data.stats.rejectedAmount)}`, color: '#ef4444', icon: 'cancel' },
                 ].map(c => <StatCard key={c.label} {...c} compact={isMobile} />)}
               </div>
 
@@ -244,10 +244,10 @@ export default function DashboardPage() {
                   {frpDonutData.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
                       <PieChart
-                        series={[{ 
-                          innerRadius: isMobile ? 40 : 55, 
-                          outerRadius: isMobile ? 65 : 85, 
-                          paddingAngle: 4, 
+                        series={[{
+                          innerRadius: isMobile ? 40 : 55,
+                          outerRadius: isMobile ? 65 : 85,
+                          paddingAngle: 4,
                           data: frpDonutData,
                           highlightScope: { faded: 'global', highlighted: 'item' },
                           faded: { innerRadius: 30, additionalRadius: -10, color: 'gray' },
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                         }]}
                         width={isMobile ? 160 : 220} height={isMobile ? 160 : 220}
                         margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                        slotProps={{ 
+                        slotProps={{
                           legend: { hidden: true },
                           popper: { strategy: 'fixed', sx: { zIndex: 9999 } }
                         }}
@@ -287,10 +287,10 @@ export default function DashboardPage() {
                   {companyPieData.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
                       <PieChart
-                        series={[{ 
-                          innerRadius: 0, 
-                          outerRadius: isMobile ? 70 : 90, 
-                          paddingAngle: 3, 
+                        series={[{
+                          innerRadius: 0,
+                          outerRadius: isMobile ? 70 : 90,
+                          paddingAngle: 3,
                           data: companyPieData,
                           highlightScope: { faded: 'global', highlighted: 'item' },
                           faded: { innerRadius: 30, additionalRadius: -10, color: 'gray' },
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                         }]}
                         width={isMobile ? 200 : 240} height={isMobile ? 170 : 220}
                         margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                        slotProps={{ 
+                        slotProps={{
                           legend: { hidden: true },
                           popper: { strategy: 'fixed', sx: { zIndex: 9999 } }
                         }}
@@ -338,10 +338,10 @@ export default function DashboardPage() {
                 <CardBigBox eyebrow="Distribusi FRP" title="Per Divisi">
                   <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'flex-start', gap: '24px', paddingTop: '8px' }}>
                     <PieChart
-                      series={[{ 
-                        innerRadius: 0, 
-                        outerRadius: isMobile ? 70 : 90, 
-                        paddingAngle: 3, 
+                      series={[{
+                        innerRadius: 0,
+                        outerRadius: isMobile ? 70 : 90,
+                        paddingAngle: 3,
                         data: divisiPieData,
                         highlightScope: { faded: 'global', highlighted: 'item' },
                         faded: { innerRadius: 30, additionalRadius: -10, color: 'gray' },
@@ -349,7 +349,7 @@ export default function DashboardPage() {
                       }]}
                       width={isMobile ? 200 : 260} height={isMobile ? 180 : 240}
                       margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                      slotProps={{ 
+                      slotProps={{
                         legend: { hidden: true },
                         popper: { strategy: 'fixed', sx: { zIndex: 9999 } }
                       }}
@@ -398,7 +398,7 @@ export default function DashboardPage() {
                         <div style={{ fontSize: '14px', fontWeight: 700, color: '#163a6b', marginBottom: '14px', lineHeight: 1.3 }}>{shortName}</div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: isMobile ? '6px' : '8px', marginBottom: '12px' }}>
                           {[
-                            { label: 'Pending',  val: co.pending,  bg: '#fefce8', color: '#854d0e' },
+                            { label: 'Pending', val: co.pending, bg: '#fefce8', color: '#854d0e' },
                             { label: 'Approved', val: co.approved, bg: '#f0fdf4', color: '#166534' },
                             { label: 'Rejected', val: co.rejected, bg: '#fff1f2', color: '#991b1b' },
                           ].map(({ label, val, bg, color }) => (
@@ -565,10 +565,10 @@ export default function DashboardPage() {
               {/* RP Stat Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: statGridCols, gap: '14px' }}>
                 {[
-                  { label: 'Total RP',  value: data.rpStats.total,   detail: `${rpTotalPending} menunggu · ${rpTotalDone} selesai`,  color: '#7c3aed', icon: 'shopping_cart' },
-                  { label: 'Menunggu',  value: rpTotalPending,        detail: `IDR ${formatRupiah(data.rpStats.pendingAmount)}`,      color: '#f59e0b', icon: 'hourglass_empty' },
-                  { label: 'Approved',  value: rpTotalDone,           detail: `IDR ${formatRupiah(data.rpStats.approvedAmount)}`,     color: '#10b981', icon: 'task_alt' },
-                  { label: 'Rejected',  value: data.rpStats.rejected, detail: `IDR ${formatRupiah(data.rpStats.rejectedAmount)}`,    color: '#ef4444', icon: 'cancel' },
+                  { label: 'Total RP', value: data.rpStats.total, detail: `${rpTotalPending} menunggu · ${rpTotalDone} selesai`, color: '#7c3aed', icon: 'shopping_cart' },
+                  { label: 'Menunggu', value: rpTotalPending, detail: `IDR ${formatRupiah(data.rpStats.pendingAmount)}`, color: '#f59e0b', icon: 'hourglass_empty' },
+                  { label: 'Approved', value: rpTotalDone, detail: `IDR ${formatRupiah(data.rpStats.approvedAmount)}`, color: '#10b981', icon: 'task_alt' },
+                  { label: 'Rejected', value: data.rpStats.rejected, detail: `IDR ${formatRupiah(data.rpStats.rejectedAmount)}`, color: '#ef4444', icon: 'cancel' },
                 ].map(c => <StatCard key={c.label} {...c} compact={isMobile} />)}
               </div>
 
@@ -580,10 +580,10 @@ export default function DashboardPage() {
                   {rpDonutData.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
                       <PieChart
-                        series={[{ 
-                          innerRadius: isMobile ? 40 : 55, 
-                          outerRadius: isMobile ? 65 : 85, 
-                          paddingAngle: 4, 
+                        series={[{
+                          innerRadius: isMobile ? 40 : 55,
+                          outerRadius: isMobile ? 65 : 85,
+                          paddingAngle: 4,
                           data: rpDonutData,
                           highlightScope: { faded: 'global', highlighted: 'item' },
                           faded: { innerRadius: 30, additionalRadius: -10, color: 'gray' },
@@ -591,7 +591,7 @@ export default function DashboardPage() {
                         }]}
                         width={isMobile ? 160 : 220} height={isMobile ? 160 : 220}
                         margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                        slotProps={{ 
+                        slotProps={{
                           legend: { hidden: true },
                           popper: { strategy: 'fixed', sx: { zIndex: 9999 } }
                         }}
@@ -615,9 +615,9 @@ export default function DashboardPage() {
                         <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {[
                             { label: 'Menunggu Manager', val: data.rpStats.pendingManager },
-                            { label: 'Diproses',          val: data.rpStats.pendingProcess },
+                            { label: 'Diproses', val: data.rpStats.pendingProcess },
                             { label: 'Menunggu Persetujuan', val: data.rpStats.pendingProcessApproval },
-                            { label: 'FRP Dibuat',        val: data.rpStats.createdFrp },
+                            { label: 'FRP Dibuat', val: data.rpStats.createdFrp },
                           ].filter(x => x.val > 0).map(x => (
                             <div key={x.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
                               <span style={{ color: '#94a3b8' }}>{x.label}</span>
@@ -637,10 +637,10 @@ export default function DashboardPage() {
                   <CardBigBox eyebrow="Distribusi RP" title="Per Divisi">
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', paddingTop: '8px' }}>
                       <PieChart
-                        series={[{ 
-                          innerRadius: 0, 
-                          outerRadius: isMobile ? 70 : 90, 
-                          paddingAngle: 3, 
+                        series={[{
+                          innerRadius: 0,
+                          outerRadius: isMobile ? 70 : 90,
+                          paddingAngle: 3,
                           data: rpDivisiPieData,
                           highlightScope: { faded: 'global', highlighted: 'item' },
                           faded: { innerRadius: 30, additionalRadius: -10, color: 'gray' },
@@ -648,7 +648,7 @@ export default function DashboardPage() {
                         }]}
                         width={isMobile ? 200 : 240} height={isMobile ? 170 : 220}
                         margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
-                        slotProps={{ 
+                        slotProps={{
                           legend: { hidden: true },
                           popper: { strategy: 'fixed', sx: { zIndex: 9999 } }
                         }}

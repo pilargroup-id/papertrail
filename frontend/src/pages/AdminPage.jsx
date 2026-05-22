@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useParams, Navigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import { XClose } from '../components/template/TemplateIcons.jsx'
-import SearchableSelect from '../components/SearchableSelect.jsx'
+import SearchableSelect from '../components/template/SearchableSelect.jsx'
 import CreateButton from '../components/button/CreateButton.jsx'
 
 const MOBILE_BREAKPOINT = 768
@@ -21,11 +21,11 @@ const PAGE_META = {
 }
 
 const COLUMN_WIDTHS = {
-  employees:   ['4%', '17%', '14%', '21%', '13%', '10%', '10%', '11%'],
-  vendors:     ['5%', '33%', '30%', '22%', '10%'],
+  employees: ['4%', '17%', '14%', '21%', '13%', '10%', '10%', '11%'],
+  vendors: ['5%', '33%', '30%', '22%', '10%'],
   departments: ['4%', '22%', '19%', '12%', '10%', '23%', '10%'],
-  budgets:     ['4%', '10%', '13%', '10%', '7%', '7%', '22%', '18%', '9%'],
-  roles:       ['5%', '25%', '60%', '10%'],
+  budgets: ['4%', '10%', '13%', '10%', '7%', '7%', '22%', '18%', '9%'],
+  roles: ['5%', '25%', '60%', '10%'],
 }
 
 const blankAssignment = () => ({ name: COMPANIES[0], deptName: '', classes: [], jobLevel: 'Staff' })
@@ -247,7 +247,7 @@ function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canR
     fetch('/api/job-levels')
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (Array.isArray(data) && data.length) setJobLevels(data) })
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   // Unique dept names from options
@@ -600,59 +600,59 @@ function TableRows({ type, listData, onEdit, onDelete, companyFilter, search, co
   return filtered.map((item, idx) => {
     const rowBg = idx % 2 === 0 ? 'white' : '#fafbfc'
     return (
-    <tr key={item.originalIndex ?? idx} style={{ background: rowBg }} onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff' }} onMouseLeave={e => { e.currentTarget.style.background = rowBg }}>
-      <td style={styles.td}>{idx + 1}</td>
-      {type === 'employees' && <>
+      <tr key={item.originalIndex ?? idx} style={{ background: rowBg }} onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff' }} onMouseLeave={e => { e.currentTarget.style.background = rowBg }}>
+        <td style={styles.td}>{idx + 1}</td>
+        {type === 'employees' && <>
+          <td style={styles.td}>
+            <div style={{ fontWeight: 700, color: '#1e293b' }}>{item.fullName}</div>
+          </td>
+          <td style={styles.td}>{item.email || '-'}</td>
+          <td style={styles.td}>{renderCompanies(item, styles)}</td>
+          <td style={styles.td}>
+            {Array.isArray(item.companies)
+              ? [...new Set(item.companies.map(c => c.class).filter(Boolean))].map(cls => <span key={cls} style={{ ...styles.badge, ...styles.badgeSoft, marginRight: '6px', marginBottom: '6px' }}>{cls}</span>)
+              : <span style={{ ...styles.badge, ...styles.badgeSoft }}>{item.class}</span>}
+          </td>
+          <td style={styles.td}>{Array.isArray(item.companies) ? item.companies.map(c => c.jobLevel).join(', ') : item.jobLevel}</td>
+          <td style={styles.td}>
+            <span style={{ ...styles.badge, background: item.role === 'administrator' ? '#dcfce7' : '#fef3c7', color: item.role === 'administrator' ? '#166534' : '#92400e' }}>
+              {item.role || 'user'}
+            </span>
+          </td>
+        </>}
+        {type === 'vendors' && <>
+          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
+          <td style={styles.td}>{item.bank}</td>
+          <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</td>
+        </>}
+        {type === 'departments' && <>
+          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
+          <td style={{ ...styles.td, fontSize: '0.82rem', fontWeight: 700 }}>{item.company || defaultCompany}</td>
+          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeClass }}>{item.class}</span></td>
+          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeCode }}>{item.kodeFrp}</span></td>
+          <td style={styles.td}>{item.manager}</td>
+        </>}
+        {type === 'budgets' && <>
+          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.id}</strong></td>
+          <td style={{ ...styles.td, fontSize: '0.82rem', fontWeight: 700 }}>{item.company || defaultCompany}</td>
+          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeSoft }}>{item.department}</span></td>
+          <td style={styles.td}>{item.class}</td>
+          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeCode }}>{item.type}</span></td>
+          <td style={{ ...styles.td, fontSize: '0.85rem', color: '#64748b' }}>{item.description}</td>
+          <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>{formatCurrency(item.totalAmount || 0)}</td>
+        </>}
+        {type === 'roles' && <>
+          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.role}</strong></td>
+          <td style={styles.td}>{item.description}</td>
+        </>}
         <td style={styles.td}>
-          <div style={{ fontWeight: 700, color: '#1e293b' }}>{item.fullName}</div>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <CreateButton variant="accordion" tone="primary" onClick={() => onEdit(item)}><span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span></CreateButton>
+            <CreateButton variant="accordion" tone="danger" onClick={() => onDelete(typeof item.originalIndex !== 'undefined' ? item.originalIndex : idx)}><span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span></CreateButton>
+          </div>
         </td>
-        <td style={styles.td}>{item.email || '-'}</td>
-        <td style={styles.td}>{renderCompanies(item, styles)}</td>
-        <td style={styles.td}>
-          {Array.isArray(item.companies)
-            ? [...new Set(item.companies.map(c => c.class).filter(Boolean))].map(cls => <span key={cls} style={{ ...styles.badge, ...styles.badgeSoft, marginRight: '6px', marginBottom: '6px' }}>{cls}</span>)
-            : <span style={{ ...styles.badge, ...styles.badgeSoft }}>{item.class}</span>}
-        </td>
-        <td style={styles.td}>{Array.isArray(item.companies) ? item.companies.map(c => c.jobLevel).join(', ') : item.jobLevel}</td>
-        <td style={styles.td}>
-          <span style={{ ...styles.badge, background: item.role === 'administrator' ? '#dcfce7' : '#fef3c7', color: item.role === 'administrator' ? '#166534' : '#92400e' }}>
-            {item.role || 'user'}
-          </span>
-        </td>
-      </>}
-      {type === 'vendors' && <>
-        <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
-        <td style={styles.td}>{item.bank}</td>
-        <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</td>
-      </>}
-      {type === 'departments' && <>
-        <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
-        <td style={{ ...styles.td, fontSize: '0.82rem', fontWeight: 700 }}>{item.company || defaultCompany}</td>
-        <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeClass }}>{item.class}</span></td>
-        <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeCode }}>{item.kodeFrp}</span></td>
-        <td style={styles.td}>{item.manager}</td>
-      </>}
-      {type === 'budgets' && <>
-        <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.id}</strong></td>
-        <td style={{ ...styles.td, fontSize: '0.82rem', fontWeight: 700 }}>{item.company || defaultCompany}</td>
-        <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeSoft }}>{item.department}</span></td>
-        <td style={styles.td}>{item.class}</td>
-        <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeCode }}>{item.type}</span></td>
-        <td style={{ ...styles.td, fontSize: '0.85rem', color: '#64748b' }}>{item.description}</td>
-        <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>{formatCurrency(item.totalAmount || 0)}</td>
-      </>}
-      {type === 'roles' && <>
-        <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.role}</strong></td>
-        <td style={styles.td}>{item.description}</td>
-      </>}
-      <td style={styles.td}>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <CreateButton variant="accordion" tone="primary" onClick={() => onEdit(item)}><span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span></CreateButton>
-          <CreateButton variant="accordion" tone="danger" onClick={() => onDelete(typeof item.originalIndex !== 'undefined' ? item.originalIndex : idx)}><span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span></CreateButton>
-        </div>
-      </td>
-    </tr>
-  )
+      </tr>
+    )
   })
 }
 
@@ -799,7 +799,7 @@ export default function AdminPage() {
     fetch(`/api/data/admin?type=${type}`)
       .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
       .then(d => { setData(d); setUser(d?.user) })
-      .catch(() => {})
+      .catch(() => { })
   }, [type])
 
   useEffect(() => { loadData() }, [loadData])
@@ -882,73 +882,73 @@ export default function AdminPage() {
   return (
     <>
       <main className="dashboard-main">
-            {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
+        {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
 
-            {!loading && <>
-              <section style={styles.card}>
-                <SectionHeading icon="add_circle" title={`Tambah ${meta.noun} Baru`} subtitle={`Isi form berikut untuk menambahkan data ${meta.noun.toLowerCase()} baru ke sistem.`} accent={meta.accent} />
-                <form onSubmit={handleAdd}>
-                  <FormFields type={type} form={addForm} onChange={updateAddForm} onAssignmentsChange={updateAddAssignments} employeeList={data?.employeeList} companyNames={companyNames} styles={styles} />
-                  <div style={{ display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
-                    <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: isMobile ? '100%' : 'auto', opacity: saving ? 0.7 : 1 }}>
-                      <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
-                      {saving ? 'Menyimpan...' : 'Simpan Data'}
-                    </CreateButton>
-                  </div>
-                </form>
-              </section>
+        {!loading && <>
+          <section style={styles.card}>
+            <SectionHeading icon="add_circle" title={`Tambah ${meta.noun} Baru`} subtitle={`Isi form berikut untuk menambahkan data ${meta.noun.toLowerCase()} baru ke sistem.`} accent={meta.accent} />
+            <form onSubmit={handleAdd}>
+              <FormFields type={type} form={addForm} onChange={updateAddForm} onAssignmentsChange={updateAddAssignments} employeeList={data?.employeeList} companyNames={companyNames} styles={styles} />
+              <div style={{ display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
+                <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: isMobile ? '100%' : 'auto', opacity: saving ? 0.7 : 1 }}>
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
+                  {saving ? 'Menyimpan...' : 'Simpan Data'}
+                </CreateButton>
+              </div>
+            </form>
+          </section>
 
-              <section style={styles.listShell}>
-                <div style={styles.toolbar}>
-                  <div>
-                    <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1rem' }}>Daftar {meta.noun}</h3>
-                    <p style={{ margin: '0.3rem 0 0', color: '#64748b', fontSize: '0.84rem' }}>Lihat, filter, edit, dan hapus data {meta.noun.toLowerCase()} dari satu tampilan.</p>
-                  </div>
-                  <div style={styles.filterWrap}>
-                    <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Cari</label>
-                      <div style={{ position: 'relative' }}>
-                        <span className="material-icons-round" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '18px', pointerEvents: 'none' }}>search</span>
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Cari ${meta.noun.toLowerCase()}...`}
-                          style={{ ...styles.select, paddingLeft: '36px', cursor: 'text' }} />
-                      </div>
-                    </div>
-                    {showFilter && (
-                      <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Filter PT</label>
-                        <SearchableSelect
-                          style={styles.select}
-                          value={companyFilter}
-                          onChange={val => setCompanyFilter(val)}
-                          options={companyNames}
-                          placeholder="Semua Perusahaan"
-                          menuPosition="fixed"
-                        />
-                      </div>
-                    )}
+          <section style={styles.listShell}>
+            <div style={styles.toolbar}>
+              <div>
+                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1rem' }}>Daftar {meta.noun}</h3>
+                <p style={{ margin: '0.3rem 0 0', color: '#64748b', fontSize: '0.84rem' }}>Lihat, filter, edit, dan hapus data {meta.noun.toLowerCase()} dari satu tampilan.</p>
+              </div>
+              <div style={styles.filterWrap}>
+                <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Cari</label>
+                  <div style={{ position: 'relative' }}>
+                    <span className="material-icons-round" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '18px', pointerEvents: 'none' }}>search</span>
+                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Cari ${meta.noun.toLowerCase()}...`}
+                      style={{ ...styles.select, paddingLeft: '36px', cursor: 'text' }} />
                   </div>
                 </div>
-
-                {isMobile ? (
-                  <MobileList type={type} listData={listData} onEdit={handleEdit} onDelete={handleDelete} companyFilter={companyFilter} search={search} companyNames={companyNames} styles={styles} />
-                ) : (
-                  <div style={styles.tableContain}>
-                    <table style={styles.table}>
-                      <colgroup>{(COLUMN_WIDTHS[type] || []).map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
-                      <TableHeadRow type={type} styles={styles} />
-                    </table>
-                    <div style={styles.scrollBody}>
-                      <table style={styles.table}>
-                        <colgroup>{(COLUMN_WIDTHS[type] || []).map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
-                        <tbody>
-                          <TableRows type={type} listData={listData} onEdit={handleEdit} onDelete={handleDelete} companyFilter={companyFilter} search={search} companyNames={companyNames} styles={styles} />
-                        </tbody>
-                      </table>
-                    </div>
+                {showFilter && (
+                  <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Filter PT</label>
+                    <SearchableSelect
+                      style={styles.select}
+                      value={companyFilter}
+                      onChange={val => setCompanyFilter(val)}
+                      options={companyNames}
+                      placeholder="Semua Perusahaan"
+                      menuPosition="fixed"
+                    />
                   </div>
                 )}
-              </section>
-            </>}
+              </div>
+            </div>
+
+            {isMobile ? (
+              <MobileList type={type} listData={listData} onEdit={handleEdit} onDelete={handleDelete} companyFilter={companyFilter} search={search} companyNames={companyNames} styles={styles} />
+            ) : (
+              <div style={styles.tableContain}>
+                <table style={styles.table}>
+                  <colgroup>{(COLUMN_WIDTHS[type] || []).map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
+                  <TableHeadRow type={type} styles={styles} />
+                </table>
+                <div style={styles.scrollBody}>
+                  <table style={styles.table}>
+                    <colgroup>{(COLUMN_WIDTHS[type] || []).map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
+                    <tbody>
+                      <TableRows type={type} listData={listData} onEdit={handleEdit} onDelete={handleDelete} companyFilter={companyFilter} search={search} companyNames={companyNames} styles={styles} />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+        </>}
       </main>
 
       {editItem && createPortal(
