@@ -7,10 +7,10 @@ const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
 
 const STATUS_META = {
-  PENDING_MANAGER: { label: 'Menunggu Manager', background: '#fef3c7', color: '#92400e' },
-  PENDING_PROCESS: { label: 'Menunggu Proses', background: '#dbeafe', color: '#1d4ed8' },
-  PENDING_PROCESS_APPROVAL: { label: 'Approval Proses', background: '#ede9fe', color: '#6d28d9' },
-  APPROVED: { label: 'Approved', background: '#bbf7d0', color: '#166534' },
+  waiting_manager: { label: 'Menunggu Manager', background: '#fef3c7', color: '#92400e' },
+  division_review: { label: 'Menunggu Proses', background: '#dbeafe', color: '#1d4ed8' },
+  final_approved: { label: 'Approval Proses', background: '#ede9fe', color: '#6d28d9' },
+  approved: { label: 'Approved', background: '#bbf7d0', color: '#166534' },
   REJECTED: { label: 'Rejected', background: '#fecaca', color: '#991b1b' },
   CREATED_FRP: { label: 'Created FRP', background: '#cffafe', color: '#0e7490' },
 }
@@ -641,12 +641,12 @@ export default function RpApprovalPage() {
   const renderRowActions = (rp, options = {}) => {
     const { showDetail = true, showPreview = true, showKeFrp = true } = options
     const canManagerApprove =
-      rp.status === 'PENDING_MANAGER' &&
+      rp.status === 'waiting_manager' &&
       (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && userDivision === rp.divisi))
-    const canProcess = rp.status === 'PENDING_PROCESS' && (isAdmin || isProcessDivision(rp.diprosesOleh))
-    const canFinalApprove = rp.status === 'PENDING_PROCESS_APPROVAL' && (isAdmin || isProcessManager(rp.diprosesOleh))
+    const canProcess = rp.status === 'division_review' && (isAdmin || isProcessDivision(rp.diprosesOleh))
+    const canFinalApprove = rp.status === 'final_approved' && (isAdmin || isProcessManager(rp.diprosesOleh))
     const canCreateFrp =
-      rp.status === 'APPROVED' &&
+      rp.status === 'approved' &&
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
 
     return (
@@ -654,7 +654,7 @@ export default function RpApprovalPage() {
         {showDetail && (
           <button type="button" onClick={() => setSelected(rp)} style={actionButtonStyle('primary')}>Detail</button>
         )}
-        {showPreview && ['APPROVED', 'CREATED_FRP'].includes(rp.status) && (
+        {showPreview && ['approved', 'CREATED_FRP'].includes(rp.status) && (
           <>
             <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
             <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
@@ -681,7 +681,7 @@ export default function RpApprovalPage() {
         {canCreateFrp && showKeFrp && (
           <button type="button" onClick={() => navigate(`/frp?fromRp=${rp.id}`)} style={actionButtonStyle('primary')}>Ke FRP</button>
         )}
-        {isAdmin && rp.status !== 'PENDING_MANAGER' && (
+        {isAdmin && rp.status !== 'waiting_manager' && (
           <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'revert')} style={actionButtonStyle('warning')}>Revert</button>
         )}
       </div>
@@ -799,7 +799,7 @@ export default function RpApprovalPage() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-                {['APPROVED', 'CREATED_FRP'].includes(selected.status) && (
+                {['approved', 'CREATED_FRP'].includes(selected.status) && (
                   <>
                     <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
                     <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>

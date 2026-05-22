@@ -119,10 +119,10 @@ router.get('/api/data/dashboard', checkAuth, (req, res) => {
         .sort((a, b) => b.approvedAmount - a.approvedAmount);
 
     // --- RP Stats ---
-    const rpPendingMgr       = rpRequests.filter(r => r.status === 'PENDING_MANAGER');
-    const rpPendingProc      = rpRequests.filter(r => r.status === 'PENDING_PROCESS');
-    const rpPendingProcApproval = rpRequests.filter(r => r.status === 'PENDING_PROCESS_APPROVAL');
-    const rpApproved         = rpRequests.filter(r => r.status === 'APPROVED');
+    const rpPendingMgr       = rpRequests.filter(r => r.status === 'waiting_manager');
+    const rpPendingProc      = rpRequests.filter(r => r.status === 'division_review');
+    const rpPendingProcApproval = rpRequests.filter(r => r.status === 'final_approved');
+    const rpApproved         = rpRequests.filter(r => r.status === 'approved');
     const rpRejected         = rpRequests.filter(r => r.status === 'REJECTED');
     const rpCreatedFrp       = rpRequests.filter(r => r.status === 'CREATED_FRP');
 
@@ -141,10 +141,10 @@ router.get('/api/data/dashboard', checkAuth, (req, res) => {
     rpRequests.forEach(r => {
         const d = r.divisi || 'Unknown';
         if (!rpDivisiMap[d]) rpDivisiMap[d] = { pendingManager: 0, pendingProcess: 0, approved: 0, rejected: 0, createdFrp: 0, approvedAmount: 0, pendingAmount: 0 };
-        if (r.status === 'PENDING_MANAGER')          { rpDivisiMap[d].pendingManager++; rpDivisiMap[d].pendingAmount  += parseRpItemAmount(r.items); }
-        else if (r.status === 'PENDING_PROCESS')     { rpDivisiMap[d].pendingProcess++; rpDivisiMap[d].pendingAmount  += parseRpItemAmount(r.items); }
-        else if (r.status === 'PENDING_PROCESS_APPROVAL') { rpDivisiMap[d].pendingProcess++; rpDivisiMap[d].pendingAmount += parseRpItemAmount(r.items); }
-        else if (r.status === 'APPROVED')            { rpDivisiMap[d].approved++;       rpDivisiMap[d].approvedAmount += parseRpItemAmount(r.items); }
+        if (r.status === 'waiting_manager')          { rpDivisiMap[d].pendingManager++; rpDivisiMap[d].pendingAmount  += parseRpItemAmount(r.items); }
+        else if (r.status === 'division_review')     { rpDivisiMap[d].pendingProcess++; rpDivisiMap[d].pendingAmount  += parseRpItemAmount(r.items); }
+        else if (r.status === 'final_approved') { rpDivisiMap[d].pendingProcess++; rpDivisiMap[d].pendingAmount += parseRpItemAmount(r.items); }
+        else if (r.status === 'approved')            { rpDivisiMap[d].approved++;       rpDivisiMap[d].approvedAmount += parseRpItemAmount(r.items); }
         else if (r.status === 'CREATED_FRP')         { rpDivisiMap[d].createdFrp++;     rpDivisiMap[d].approvedAmount += parseRpItemAmount(r.items); }
         else if (r.status === 'REJECTED')              rpDivisiMap[d].rejected++;
     });

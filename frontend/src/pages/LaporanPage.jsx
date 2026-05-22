@@ -6,10 +6,10 @@ const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
 
 const RP_STATUS_META = {
-  PENDING_MANAGER:         { label: 'Menunggu Manager',  background: '#fef3c7', color: '#92400e' },
-  PENDING_PROCESS:         { label: 'Menunggu Proses',   background: '#dbeafe', color: '#1d4ed8' },
-  PENDING_PROCESS_APPROVAL:{ label: 'Approval Proses',   background: '#ede9fe', color: '#6d28d9' },
-  APPROVED:                { label: 'Approved',          background: '#bbf7d0', color: '#166534' },
+  waiting_manager:         { label: 'Menunggu Manager',  background: '#fef3c7', color: '#92400e' },
+  division_review:         { label: 'Menunggu Proses',   background: '#dbeafe', color: '#1d4ed8' },
+  final_approved:{ label: 'Approval Proses',   background: '#ede9fe', color: '#6d28d9' },
+  approved:                { label: 'Approved',          background: '#bbf7d0', color: '#166534' },
   REJECTED:                { label: 'Rejected',          background: '#fecaca', color: '#991b1b' },
   CREATED_FRP:             { label: 'Created FRP',       background: '#cffafe', color: '#0e7490' },
 }

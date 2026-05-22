@@ -205,5 +205,59 @@
     "rejectedAt": "2026-05-21T03:42:58.349Z",
     "rejectedReason": "",
     "rejectedStage": "process-manager"
+  },
+  {
+    "id": "rp-1779351549195-b1kgsieye",
+    "rpNo": "RP-SIT-26-00001",
+    "status": "PENDING_MANAGER",
+    "companyName": "PT PILAR NIAGA MAKMUR",
+    "divisi": "IT2",
+    "class": "IT2",
+    "dibuatOleh": "Al Fatih Zainul Falah",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "dasd",
+    "diprosesOleh": "Board Of Director",
+    "tanggalDibutuhkan": "2026-05-21",
+    "vendorSuggestion": "ONE",
+    "picPenerima": "dsda",
+    "items": [
+      {
+        "budgetId": "SIT2602",
+        "memo": "barang pajangan",
+        "linkPembelian": "google.com",
+        "qty": "1",
+        "estimatedValue": "0"
+      }
+    ],
+    "createdAt": "2026-05-21T08:19:09.195Z",
+    "createdBy": "Al Fatih Zainul Falah"
+  },
+  {
+    "id": "rp-1779351606979-zn0pv47ix",
+    "rpNo": "RP-PKS-26-00001",
+    "status": "PENDING_PROCESS",
+    "companyName": "PT PILAR KARANG SAMUDERA",
+    "divisi": "Pilkada",
+    "class": "Pilkada",
+    "dibuatOleh": "Al Fatih Zainul Falah",
+    "kategoriPembelian": "Pengadaan Barang Baru",
+    "deskripsi": "dadasa",
+    "diprosesOleh": "Pilkada",
+    "tanggalDibutuhkan": "2026-05-21",
+    "vendorSuggestion": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
+    "picPenerima": "dsadas",
+    "items": [
+      {
+        "budgetId": "PKD03",
+        "memo": "dsadsa",
+        "linkPembelian": "",
+        "qty": "1",
+        "estimatedValue": "1000000"
+      }
+    ],
+    "createdAt": "2026-05-21T08:20:06.979Z",
+    "createdBy": "Al Fatih Zainul Falah",
+    "managerApprovedBy": "Al Fatih Zainul Falah",
+    "managerApprovedAt": "2026-05-21T08:20:37.377Z"
   }
 ]

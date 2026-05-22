@@ -1,11 +1,82 @@
 const express = require('express');
 const { checkAuth } = require('../middleware/auth');
 const { readJson, writeJson } = require('../utils/json');
-const { getAllEmployees, getCompanies, getDepartmentRows, getDeptCode } = require('../services/dbService');
+const { getAllEmployees, getCompanies, getDepartmentRows, getDeptCode, getCompanyId, getDeptId } = require('../services/dbService');
 const { sameCompanyName } = require('../utils/company');
 const { isRpInUserScope } = require('../middleware/scope');
+const db = require('../../db');
 
 const router = express.Router();
+
+async function fetchAllRpRequests() {
+    const [rows] = await db.query(`
+        SELECT r.*, 
+               mc.name AS companyName, 
+               md.name AS divisi, 
+               mdc.class AS classStr 
+        FROM rp_request r
+        LEFT JOIN master_companies mc ON r.company_id = mc.id
+        LEFT JOIN master_departments md ON r.department_id = md.id
+        LEFT JOIN master_departments mdc ON r.class_id = mdc.id
+    `);
+    return rows.map(r => ({
+        id: r.id,
+        rpNo: r.rp_no || '',
+        status: r.status,
+        companyName: r.companyName || '',
+        divisi: r.divisi || '',
+        class: r.classStr || '',
+        dibuatOleh: r.dibuat_oleh || '',
+        kategoriPembelian: r.kategori_pembelian || '',
+        deskripsi: r.deskripsi || '',
+        diprosesOleh: r.diproses_oleh || '',
+        tanggalDibutuhkan: r.tanggal_dibutuhkan ? new Date(r.tanggal_dibutuhkan).toISOString().slice(0,10) : '',
+        vendorSuggestion: r.vendor_suggestion || '',
+        picPenerima: r.pic_penerima || '',
+        items: typeof r.items === 'string' ? JSON.parse(r.items) : (r.items || []),
+        createdAt: r.created_at,
+        createdBy: r.created_by,
+        managerApprovedBy: r.manager_approved_by,
+        managerApprovedAt: r.manager_approved_at,
+        processChanges: typeof r.process_changes === 'string' ? JSON.parse(r.process_changes) : (r.process_changes || []),
+        processUpdatedBy: r.process_updated_by,
+        processUpdatedAt: r.process_updated_at,
+        processManagerApprovedBy: r.process_manager_approved_by,
+        processManagerApprovedAt: r.process_manager_approved_at,
+        rejectedBy: r.rejected_by,
+        rejectedAt: r.rejected_at,
+        rejectedReason: r.rejected_reason,
+        rejectedStage: r.rejected_stage
+    }));
+}
+
+async function updateRpRequest(rp) {
+    const companyId = await getCompanyId(rp.companyName);
+    const deptId = await getDeptId(rp.divisi, rp.companyName);
+    const classId = await getDeptId(rp.class, rp.companyName);
+
+    await db.query(`
+        UPDATE rp_request SET 
+            rp_no = ?, status = ?, company_id = ?, department_id = ?, class_id = ?, 
+            dibuat_oleh = ?, kategori_pembelian = ?, deskripsi = ?, diproses_oleh = ?, 
+            tanggal_dibutuhkan = ?, vendor_suggestion = ?, pic_penerima = ?, items = ?, 
+            manager_approved_by = ?, manager_approved_at = ?, process_changes = ?, 
+            process_updated_by = ?, process_updated_at = ?, process_manager_approved_by = ?, 
+            process_manager_approved_at = ?, rejected_by = ?, rejected_at = ?, 
+            rejected_reason = ?, rejected_stage = ?
+        WHERE id = ?
+    `, [
+        rp.rpNo, rp.status, companyId, deptId, classId,
+        rp.dibuatOleh, rp.kategoriPembelian, rp.deskripsi, rp.diprosesOleh,
+        rp.tanggalDibutuhkan || null, rp.vendorSuggestion, rp.picPenerima, JSON.stringify(rp.items),
+        rp.managerApprovedBy || null, rp.managerApprovedAt ? new Date(rp.managerApprovedAt) : null, JSON.stringify(rp.processChanges || []),
+        rp.processUpdatedBy || null, rp.processUpdatedAt ? new Date(rp.processUpdatedAt) : null, rp.processManagerApprovedBy || null,
+        rp.processManagerApprovedAt ? new Date(rp.processManagerApprovedAt) : null, rp.rejectedBy || null, rp.rejectedAt ? new Date(rp.rejectedAt) : null,
+        rp.rejectedReason || null, rp.rejectedStage || null,
+        rp.id
+    ]);
+}
+
 
 // ============================================================
 // RP PAGES
@@ -32,7 +103,7 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
 
         const budgetsData = readJson('budgets.json');
         const vendorsData = readJson('vendors.json');
-        const rpRequests = readJson('rp-requests.json');
+        const rpRequests = await fetchAllRpRequests();
         const frpRequests = readJson('requests.json');
 
         // Calculate used budgets from both FRP (approved) and RP (approved)
@@ -47,7 +118,7 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
             }
         });
         rpRequests.forEach(r => {
-            if (r.status === 'APPROVED' && r.items) {
+            if (r.status === 'approved' && r.items) {
                 r.items.forEach(item => {
                     const bId = item.budgetId;
                     const amt = parseInt(String(item.estimatedValue || '0').replace(/[^0-9]/g, ''), 10) || 0;
@@ -56,10 +127,18 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
             }
         });
 
-        const budgetsWithRemaining = budgetsData.map(b => ({
-            ...b,
-            remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
-        }));
+        const budgetsWithRemaining = budgetsData.map(b => {
+            const bCompany = companiesData.find(c => String(c.id) === String(b.companyId) || c.code === b.companyId);
+            const bDept = departmentsData.find(d => String(d.id) === String(b.departmentId));
+            const bClass = departmentsData.find(d => String(d.id) === String(b.classId));
+            return {
+                ...b,
+                company: bCompany ? (bCompany.name || bCompany.code) : (b.company || 'PT PILAR NIAGA MAKMUR'),
+                department: bDept ? bDept.name : (b.department || ''),
+                class: bClass ? bClass.class : (b.class || ''),
+                remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
+            };
+        });
 
         let editData = null;
         if (req.query.revisi) {
@@ -96,7 +175,7 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
 
 router.get('/api/rp/next-number/:department', checkAuth, async (req, res) => {
     try {
-        const rpRequests = readJson('rp-requests.json');
+        const rpRequests = await fetchAllRpRequests();
         const dept = (req.params.department || '').trim().toUpperCase();
         const deptCode = await getDeptCode(dept, req.query.company || req.session.user.selectedCompany);
         const prefix = `RP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
@@ -114,9 +193,9 @@ router.get('/api/rp/next-number/:department', checkAuth, async (req, res) => {
 // RP SAVE
 // ============================================================
 
-router.post('/api/rp/save', checkAuth, (req, res) => {
+router.post('/api/rp/save', checkAuth, async (req, res) => {
     try {
-        let rpRequests = readJson('rp-requests.json');
+        let rpRequests = await fetchAllRpRequests();
         const u = req.session.user;
 
         // Handle revision (update existing)
@@ -128,23 +207,27 @@ router.post('/api/rp/save', checkAuth, (req, res) => {
                 ...req.body,
                 id: rpRequests[idx].id,
                 rpNo: rpRequests[idx].rpNo,
-                status: 'PENDING_MANAGER',
+                status: 'waiting_manager',
             };
             delete updatedReq.rpId;
             rpRequests[idx] = updatedReq;
-            writeJson('rp-requests.json', rpRequests);
+            await updateRpRequest(updatedReq);
             return res.json({ success: true, rpNo: rpRequests[idx].rpNo, id: rpRequests[idx].id });
         }
 
         // Handle new RP
         const id = 'rp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        const companyName = req.body.companyName || u.selectedCompany || '';
+        const divisi = req.body.divisi || u.selectedDivision || '';
+        const reqClass = req.body.class || '';
+
         const newRp = {
             id,
             rpNo: req.body.rpNo || '',
-            status: 'PENDING_MANAGER',
-            companyName: req.body.companyName || u.selectedCompany || '',
-            divisi: req.body.divisi || u.selectedDivision || '',
-            class: req.body.class || '',
+            status: 'waiting_manager',
+            companyName,
+            divisi,
+            class: reqClass,
             dibuatOleh: req.body.dibuatOleh || u.fullName,
             kategoriPembelian: req.body.kategoriPembelian || '',
             deskripsi: req.body.deskripsi || '',
@@ -157,9 +240,62 @@ router.post('/api/rp/save', checkAuth, (req, res) => {
             createdBy: u.fullName,
         };
         rpRequests.push(newRp);
-        writeJson('rp-requests.json', rpRequests);
+        
+
+        // Insert into database
+        const companyId = await getCompanyId(companyName);
+        const deptId = await getDeptId(divisi, companyName);
+        const classId = await getDeptId(reqClass, companyName);
+
+        await db.query(`
+            INSERT INTO \`frp_db\`.\`rp_request\` (
+              \`id\`,
+              \`rp_no\`,
+              \`status\`,
+              \`company_id\`,
+              \`department_id\`,
+              \`class_id\`,
+              \`dibuat_oleh\`,
+              \`kategori_pembelian\`,
+              \`deskripsi\`,
+              \`diproses_oleh\`,
+              \`tanggal_dibutuhkan\`,
+              \`vendor_suggestion\`,
+              \`pic_penerima\`,
+              \`items\`,
+              \`created_at\`,
+              \`created_by\`,
+              \`manager_approved_by\`,
+              \`manager_approved_at\`,
+              \`process_changes\`,
+              \`process_updated_by\`,
+              \`process_updated_at\`,
+              \`process_manager_approved_by\`,
+              \`process_manager_approved_at\`
+            ) VALUES (
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+            )
+        `, [
+            id,
+            newRp.rpNo,
+            newRp.status,
+            companyId,
+            deptId,
+            classId,
+            newRp.dibuatOleh,
+            newRp.kategoriPembelian,
+            newRp.deskripsi,
+            newRp.diprosesOleh,
+            newRp.tanggalDibutuhkan || null,
+            newRp.vendorSuggestion,
+            newRp.picPenerima,
+            JSON.stringify(newRp.items),
+            newRp.createdBy
+        ]);
+
         res.json({ success: true, rpNo: newRp.rpNo, id: newRp.id });
     } catch (e) {
+        console.error('Error saving RP:', e);
         res.json({ success: false, error: e.message });
     }
 });
@@ -168,35 +304,37 @@ router.post('/api/rp/save', checkAuth, (req, res) => {
 // RP APPROVAL DATA
 // ============================================================
 
-router.get('/api/data/rp-approval', checkAuth, (req, res) => {
+router.get('/api/data/rp-approval', checkAuth, async (req, res) => {
     const u = req.session.user;
     const view = req.query.view || 'pending';
-    let reqs = readJson('rp-requests.json');
+    let reqs = await fetchAllRpRequests();
 
     const isApprovedScope = r => u.role === 'administrator' || (
         sameCompanyName(r.companyName, u.selectedCompany) &&
         (r.divisi === u.selectedDivision || r.diprosesOleh === u.selectedDivision)
     );
 
-    const pendingCount = reqs.filter(r => r.status === 'PENDING_MANAGER' && isRpInUserScope(r, u)).length;
-    const processCount = reqs.filter(r => r.status === 'PENDING_PROCESS' && isRpInUserScope(r, u, true)).length;
-    const processApprovalCount = reqs.filter(r => r.status === 'PENDING_PROCESS_APPROVAL' && isRpInUserScope(r, u, true)).length;
+    const pendingCount = reqs.filter(r => r.status === 'waiting_manager' && isRpInUserScope(r, u)).length;
+    const processCount = reqs.filter(r => r.status === 'division_review' && isRpInUserScope(r, u, true)).length;
+    const processApprovalCount = reqs.filter(r => r.status === 'final_approved' && isRpInUserScope(r, u, true)).length;
     const approvedCount = reqs.filter(r =>
-        (r.status === 'APPROVED' || r.status === 'REJECTED' || r.status === 'CREATED_FRP') &&
+        (r.status === 'approved' || r.status === 'REJECTED' || r.status === 'CREATED_FRP') &&
         isApprovedScope(r)
     ).length;
 
     if (view === 'approved') {
-        reqs = reqs.filter(r => ['APPROVED', 'REJECTED', 'CREATED_FRP'].includes(r.status));
+        reqs = reqs.filter(r => ['approved', 'REJECTED', 'CREATED_FRP'].includes(r.status));
         if (u.role !== 'administrator') reqs = reqs.filter(r => isApprovedScope(r));
     } else if (view === 'process') {
-        reqs = reqs.filter(r => r.status === 'PENDING_PROCESS');
+        reqs = reqs.filter(r => r.status === 'division_review');
         if (u.role !== 'administrator') reqs = reqs.filter(r => isRpInUserScope(r, u, true));
     } else if (view === 'process-approval') {
-        reqs = reqs.filter(r => r.status === 'PENDING_PROCESS_APPROVAL');
+        reqs = reqs.filter(r => r.status === 'final_approved');
         if (u.role !== 'administrator') reqs = reqs.filter(r => isRpInUserScope(r, u, true));
+    } else if (view === 'all') {
+        if (u.role !== 'administrator') reqs = reqs.filter(r => isApprovedScope(r));
     } else {
-        reqs = reqs.filter(r => r.status === 'PENDING_MANAGER');
+        reqs = reqs.filter(r => r.status === 'waiting_manager');
         if (u.role !== 'administrator') reqs = reqs.filter(r => isRpInUserScope(r, u));
     }
 
@@ -229,18 +367,35 @@ router.get('/api/data/rp-approval', checkAuth, (req, res) => {
 
 router.get('/api/rp/:id', checkAuth, async (req, res) => {
     try {
-        const data = readJson('rp-requests.json').find(r => r.id === req.params.id);
+        const data = (await fetchAllRpRequests()).find(r => r.id === req.params.id);
         if (!data) return res.status(404).json({ error: 'Not found' });
         const user = req.session.user;
         const isAdmin = user.role === 'administrator';
         const canApprove = isAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
         const isProcessDivision = isAdmin || user.selectedDivision === data.diprosesOleh;
         const employees = await getAllEmployees();
+        const budgetsData = readJson('budgets.json');
+        const [companiesData, departmentsData] = await Promise.all([
+            getCompanies(),
+            getDepartmentRows(),
+        ]);
+        const mappedBudgets = budgetsData.map(b => {
+            const bCompany = companiesData.find(c => String(c.id) === String(b.companyId) || c.code === b.companyId);
+            const bDept = departmentsData.find(d => String(d.id) === String(b.departmentId));
+            const bClass = departmentsData.find(d => String(d.id) === String(b.classId));
+            return {
+                ...b,
+                company: bCompany ? (bCompany.name || bCompany.code) : (b.company || 'PT PILAR NIAGA MAKMUR'),
+                department: bDept ? bDept.name : (b.department || ''),
+                class: bClass ? bClass.class : (b.class || ''),
+            };
+        });
+
         res.json({
             data,
             employees,
             vendors: readJson('vendors.json'),
-            budgets: readJson('budgets.json'),
+            budgets: mappedBudgets,
             user,
             isAdmin,
             canApprove,
@@ -251,8 +406,8 @@ router.get('/api/rp/:id', checkAuth, async (req, res) => {
     }
 });
 
-router.post('/api/rp/:id/:action', checkAuth, (req, res) => {
-    let rpRequests = readJson('rp-requests.json');
+router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
+    let rpRequests = await fetchAllRpRequests();
     const idx = rpRequests.findIndex(r => r.id === req.params.id);
     if (idx === -1) return res.json({ success: false, error: 'RP not found' });
 
@@ -300,13 +455,13 @@ router.post('/api/rp/:id/:action', checkAuth, (req, res) => {
 
     // --- Action Handlers ---
     if (action === 'manager-approve') {
-        if (rp.status !== 'PENDING_MANAGER') return res.json({ success: false, error: 'Invalid status for this action' });
-        rp.status = 'PENDING_PROCESS';
+        if (rp.status !== 'waiting_manager') return res.json({ success: false, error: 'Invalid status for this action' });
+        rp.status = 'division_review';
         rp.managerApprovedBy = u.fullName;
         rp.managerApprovedAt = new Date().toISOString();
 
     } else if (action === 'manager-reject') {
-        if (rp.status !== 'PENDING_MANAGER') return res.json({ success: false, error: 'Invalid status' });
+        if (rp.status !== 'waiting_manager') return res.json({ success: false, error: 'Invalid status' });
         rp.status = 'REJECTED';
         rp.rejectedBy = u.fullName;
         rp.rejectedAt = new Date().toISOString();
@@ -314,7 +469,7 @@ router.post('/api/rp/:id/:action', checkAuth, (req, res) => {
         rp.rejectedStage = 'manager';
 
     } else if (action === 'process-update') {
-        if (rp.status !== 'PENDING_PROCESS') return res.json({ success: false, error: 'Invalid status' });
+        if (rp.status !== 'division_review') return res.json({ success: false, error: 'Invalid status' });
         const headerFields = ['vendorSuggestion', 'tanggalDibutuhkan', 'picPenerima', 'deskripsi'];
         const changes = [];
         headerFields.forEach(field => {
@@ -337,17 +492,17 @@ router.post('/api/rp/:id/:action', checkAuth, (req, res) => {
         rp.processChanges = changes;
         rp.processUpdatedBy = u.fullName;
         rp.processUpdatedAt = new Date().toISOString();
-        rp.status = 'PENDING_PROCESS_APPROVAL';
+        rp.status = 'final_approved';
 
     } else if (action === 'process-direct') {
-        if (rp.status !== 'PENDING_PROCESS') return res.json({ success: false, error: 'Invalid status' });
+        if (rp.status !== 'division_review') return res.json({ success: false, error: 'Invalid status' });
         rp.processUpdatedBy = u.fullName;
         rp.processUpdatedAt = new Date().toISOString();
         rp.processChanges = [];
-        rp.status = 'PENDING_PROCESS_APPROVAL';
+        rp.status = 'final_approved';
 
     } else if (action === 'process-reject') {
-        if (rp.status !== 'PENDING_PROCESS') return res.json({ success: false, error: 'Invalid status' });
+        if (rp.status !== 'division_review') return res.json({ success: false, error: 'Invalid status' });
         rp.status = 'REJECTED';
         rp.rejectedBy = u.fullName;
         rp.rejectedAt = new Date().toISOString();
@@ -355,13 +510,13 @@ router.post('/api/rp/:id/:action', checkAuth, (req, res) => {
         rp.rejectedStage = 'process';
 
     } else if (action === 'process-manager-approve') {
-        if (rp.status !== 'PENDING_PROCESS_APPROVAL') return res.json({ success: false, error: 'Invalid status' });
-        rp.status = 'APPROVED';
+        if (rp.status !== 'final_approved') return res.json({ success: false, error: 'Invalid status' });
+        rp.status = 'approved';
         rp.processManagerApprovedBy = u.fullName;
         rp.processManagerApprovedAt = new Date().toISOString();
 
     } else if (action === 'process-manager-reject') {
-        if (rp.status !== 'PENDING_PROCESS_APPROVAL') return res.json({ success: false, error: 'Invalid status' });
+        if (rp.status !== 'final_approved') return res.json({ success: false, error: 'Invalid status' });
         rp.status = 'REJECTED';
         rp.rejectedBy = u.fullName;
         rp.rejectedAt = new Date().toISOString();
@@ -369,13 +524,13 @@ router.post('/api/rp/:id/:action', checkAuth, (req, res) => {
         rp.rejectedStage = 'process-manager';
 
     } else if (action === 'delete') {
-        rpRequests.splice(idx, 1);
+        await db.query('DELETE FROM rp_request WHERE id = ?', [rp.id]);
 
     } else if (action === 'revert') {
         if (u.role !== 'administrator') {
             return res.status(403).json({ success: false, error: 'Hanya administrator' });
         }
-        rp.status = 'PENDING_MANAGER';
+        rp.status = 'waiting_manager';
         ['managerApprovedBy', 'managerApprovedAt', 'processUpdatedBy', 'processUpdatedAt',
          'processChanges', 'processManagerApprovedBy', 'processManagerApprovedAt',
          'rejectedBy', 'rejectedAt', 'rejectedReason', 'rejectedStage'].forEach(k => delete rp[k]);
@@ -385,7 +540,7 @@ router.post('/api/rp/:id/:action', checkAuth, (req, res) => {
     }
 
     rpRequests[idx] = rp;
-    writeJson('rp-requests.json', rpRequests);
+    if (action !== 'delete') await updateRpRequest(rp);
     res.json({ success: true });
 });
 

@@ -146,5 +146,77 @@
     "approvedByActual": "Al Fatih Zainul Falah",
     "approvedBy": "Chandra",
     "approvedAt": "2026-05-21T03:24:33.798Z"
+  },
+  {
+    "companyName": "PT Pilar Niaga Makmur",
+    "tanggalFrp": "2026-05-22",
+    "divisi": "IT2",
+    "dimintaOleh": "Al Fatih Zainul Falah",
+    "currency": "IDR",
+    "kurs": "1",
+    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
+    "internalPoNumber": "",
+    "extDocType": "",
+    "extDocNumber": "",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-18",
+    "attachLink": "",
+    "keteranganFrp": "dsadad",
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "items": [
+      {
+        "memo": "dsdada",
+        "budgetId": "SIT2602",
+        "qty": "1",
+        "hargaSatuan": "100,000",
+        "amount": 100000
+      }
+    ],
+    "id": "mpg868t8",
+    "rpReference": "RP-SIT-26-00001",
+    "fromRpId": "rp-1779412275886-96km9q4ve",
+    "frpNo": "FRP-SIT-26-00001",
+    "requestBy": "Al Fatih Zainul Falah",
+    "status": "PENDING",
+    "createdBy": "Al Fatih Zainul Falah",
+    "createdAt": "2026-05-22T01:12:35.612Z"
+  },
+  {
+    "companyName": "PT Pilar Niaga Makmur",
+    "tanggalFrp": "2026-05-22",
+    "divisi": "IT2",
+    "dimintaOleh": "Al Fatih Zainul Falah",
+    "currency": "IDR",
+    "kurs": "1",
+    "vendor": "EVERGREEN SHIPPING AGENCY INDONESIA, PT",
+    "internalPoNumber": "",
+    "extDocType": "",
+    "extDocNumber": "",
+    "paymentMethod": "Transfer",
+    "paymentDate": "2026-05-18",
+    "attachLink": "",
+    "keteranganFrp": "dsadad",
+    "checkDocs": [
+      "Form Request Payment"
+    ],
+    "items": [
+      {
+        "memo": "dsdada",
+        "budgetId": "SIT2602",
+        "qty": "1",
+        "hargaSatuan": "100,000",
+        "amount": 100000
+      }
+    ],
+    "id": "mpg87ks0",
+    "rpReference": "RP-SIT-26-00001",
+    "fromRpId": "rp-1779412275886-96km9q4ve",
+    "frpNo": "FRP-SIT-26-00002",
+    "requestBy": "Al Fatih Zainul Falah",
+    "status": "PENDING",
+    "createdBy": "Al Fatih Zainul Falah",
+    "createdAt": "2026-05-22T01:13:37.776Z"
   }
 ]

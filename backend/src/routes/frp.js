@@ -52,10 +52,16 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
             }
         });
 
-        const budgetsWithRemaining = budgetsData.map(b => ({
-            ...b,
-            remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
-        }));
+        const budgetsWithRemaining = budgetsData.map(b => {
+            const comp = companiesData.find(c => String(c.id) === String(b.companyId) || c.code === b.companyId);
+            const dept = departments.find(d => String(d.id) === String(b.departmentId));
+            return {
+                ...b,
+                company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
+                department: dept ? dept.name : (b.department || ''),
+                remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
+            };
+        });
 
         let editData = null;
         if (req.query.revisi) {
@@ -124,6 +130,10 @@ router.get('/api/budgets/all', checkAuth, async (req, res) => {
     try {
         const budgetsData = readJson('budgets.json');
         const requests = readJson('requests.json');
+        const [companiesData, departments] = await Promise.all([
+            getCompanies(),
+            getDepartmentRows(),
+        ]);
         const usedBudgets = {};
         requests.forEach(r => {
             if (r.status === 'APPROVED' && r.items) {
@@ -134,10 +144,16 @@ router.get('/api/budgets/all', checkAuth, async (req, res) => {
                 });
             }
         });
-        const budgetsWithRemaining = budgetsData.map(b => ({
-            ...b,
-            remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
-        }));
+        const budgetsWithRemaining = budgetsData.map(b => {
+            const comp = companiesData.find(c => String(c.id) === String(b.companyId) || c.code === b.companyId);
+            const dept = departments.find(d => String(d.id) === String(b.departmentId));
+            return {
+                ...b,
+                company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
+                department: dept ? dept.name : (b.department || ''),
+                remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
+            };
+        });
         res.json(budgetsWithRemaining);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -190,23 +206,40 @@ router.get('/api/employees/:department', checkAuth, async (req, res) => {
     }
 });
 
-router.get('/api/budgets/:department', checkAuth, (req, res) => {
-    const budgetsData = readJson('budgets.json');
-    const requests = readJson('requests.json');
-    const usedBudgets = {};
-    requests.forEach(r => {
-        if (r.status === 'APPROVED' && r.items) {
-            r.items.forEach(item => {
-                const bId = item.budgetId;
-                const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
-            });
-        }
-    });
-    const filtered = budgetsData
-        .filter(b => (b.department || '').toLowerCase() === req.params.department.toLowerCase())
-        .map(b => ({ ...b, remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0) }));
-    res.json(filtered);
+router.get('/api/budgets/:department', checkAuth, async (req, res) => {
+    try {
+        const budgetsData = readJson('budgets.json');
+        const requests = readJson('requests.json');
+        const [companiesData, departments] = await Promise.all([
+            getCompanies(),
+            getDepartmentRows(),
+        ]);
+        const usedBudgets = {};
+        requests.forEach(r => {
+            if (r.status === 'APPROVED' && r.items) {
+                r.items.forEach(item => {
+                    const bId = item.budgetId;
+                    const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                    usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
+                });
+            }
+        });
+        const filtered = budgetsData
+            .map(b => {
+                const comp = companiesData.find(c => String(c.id) === String(b.companyId) || c.code === b.companyId);
+                const dept = departments.find(d => String(d.id) === String(b.departmentId));
+                return {
+                    ...b,
+                    company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
+                    department: dept ? dept.name : (b.department || ''),
+                };
+            })
+            .filter(b => (b.department || '').toLowerCase() === req.params.department.toLowerCase())
+            .map(b => ({ ...b, remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0) }));
+        res.json(filtered);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 router.get('/api/departments', checkAuth, async (req, res) => {

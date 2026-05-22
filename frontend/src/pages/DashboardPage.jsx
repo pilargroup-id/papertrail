@@ -31,10 +31,10 @@ const STATUS_STYLE = {
 }
 
 const RP_STATUS_STYLE = {
-  PENDING_MANAGER:          { bg: '#fef9c3', color: '#92400e', label: 'Menunggu Manager' },
-  PENDING_PROCESS:          { bg: '#dbeafe', color: '#1e40af', label: 'Diproses' },
-  PENDING_PROCESS_APPROVAL: { bg: '#e0e7ff', color: '#3730a3', label: 'Menunggu Persetujuan' },
-  APPROVED:                 { bg: '#bbf7d0', color: '#166534', label: 'Approved' },
+  waiting_manager:          { bg: '#fef9c3', color: '#92400e', label: 'Menunggu Manager' },
+  division_review:          { bg: '#dbeafe', color: '#1e40af', label: 'Diproses' },
+  final_approved: { bg: '#e0e7ff', color: '#3730a3', label: 'Menunggu Persetujuan' },
+  approved:                 { bg: '#bbf7d0', color: '#166534', label: 'Approved' },
   REJECTED:                 { bg: '#fecaca', color: '#991b1b', label: 'Rejected' },
   CREATED_FRP:              { bg: '#d1fae5', color: '#065f46', label: 'FRP Dibuat' },
 }

@@ -15,6 +15,7 @@ import LaporanPage from './pages/LaporanPage'
 import NewRP from './pages/rp/NewRP'
 import RpApprovalPage from './pages/RpApprovalPage'
 import StatusFRP from './pages/frp/StatusFRP'
+import StatusRP from './pages/rp/StatusRP'
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/rp-approval" element={<RpApprovalPage />} />
             <Route path="/rp-approved" element={<RpApprovalPage />} />
             <Route path="/status_frp" element={<StatusFRP />} />
+            <Route path="/status_rp" element={<StatusRP />} />
           </Route>
         </Routes>
       </UserProvider>
