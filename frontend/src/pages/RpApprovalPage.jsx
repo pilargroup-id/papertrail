@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import DialogConfirm from '../components/Dialog/DialogConfirm'
+import BackgroundDialog from '../components/template/BackgroundDialog'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -688,8 +689,6 @@ export default function RpApprovalPage() {
     )
   }
 
-  // renderConfirmDialog has been replaced with DialogConfirm component
-
   const renderDetail = () => {
     if (!selected) return null
     const items = selected.items || []
@@ -703,8 +702,10 @@ export default function RpApprovalPage() {
           aria-modal="true"
           aria-labelledby="rp-detail-title"
           onClick={event => event.stopPropagation()}
+          style={{ position: 'relative', overflow: 'hidden', maxHeight: '82vh' }}
         >
-          <div className="dashboard-popup__header">
+          <BackgroundDialog />
+          <div className="dashboard-popup__header" style={{ padding: '14px 24px' }}>
             <div>
               <p className="dashboard-popup__eyebrow">{tab === 'approved' ? 'Completed Request' : 'Request Purchase'}</p>
               <h2 className="dashboard-popup__title" id="rp-detail-title">{selected.rpNo || 'Draft RP'}</h2>
@@ -715,9 +716,9 @@ export default function RpApprovalPage() {
               </button>
             </div>
           </div>
-          <div className="dashboard-popup__body dashboard-popup__body--frp-detail" style={{ overflowY: 'auto' }}>
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: getGridColumns(3, isMobile, isTablet), gap: '1rem' }}>
+          <div className="dashboard-popup__body dashboard-popup__body--frp-detail" style={{ overflowY: 'auto', maxHeight: 'calc(82vh - 130px)' }}>
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: getGridColumns(3, isMobile, isTablet), gap: '0.75rem' }}>
                 {[
                   ['Company', selected.companyName],
                   ['Divisi', selected.divisi],
@@ -775,22 +776,22 @@ export default function RpApprovalPage() {
                         const subtotal = parseNumber(item.qty) * parseNumber(item.estimatedValue)
                         return (
                           <tr key={`${item.budgetId}-${index}`}>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>{index + 1}</td>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700 }}>{item.budgetId || '-'}</td>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.memo || '-'}</td>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{index + 1}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700 }}>{item.budgetId || '-'}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.memo || '-'}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
                               {item.linkPembelian ? <a href={item.linkPembelian} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>Buka Link</a> : '-'}
                             </td>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.qty || '-'}</td>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700 }}>{formatCurrency(item.estimatedValue)}</td>
-                            <td style={{ padding: '10px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 800 }}>{formatCurrency(subtotal)}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.qty || '-'}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700 }}>{formatCurrency(item.estimatedValue)}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 800 }}>{formatCurrency(subtotal)}</td>
                           </tr>
                         )
                       })}
                     </tbody>
                   </table>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 14px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '10px 14px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '3px' }}>Total Estimated</div>
                     <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1f4e8c', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(total)}</div>

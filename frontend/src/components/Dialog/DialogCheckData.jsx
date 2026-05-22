@@ -41,6 +41,7 @@ function DialogFrpDetail({
                 aria-modal="true"
                 aria-labelledby="dialog-frp-detail-title"
                 onClick={(event) => event.stopPropagation()}
+                style={{ position: 'relative', overflow: 'hidden', background: '#ffffff', borderRadius: '24px' }}
             >
                 <BackgroundDialog />
                 <div className="dashboard-popup__header">

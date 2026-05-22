@@ -63,17 +63,6 @@ export default function BackgroundDialog() {
           animation: 'bg-float 12s ease-in-out infinite'
         }} />
 
-        {/* Top Left Spinning Ring */}
-        <div style={{
-          position: 'absolute',
-          top: '-80px',
-          left: '-80px',
-          width: '240px',
-          height: '240px',
-          borderRadius: '50%',
-          border: '3px dashed rgba(42,157,143,0.4)',
-          animation: 'bg-spin 45s linear infinite'
-        }} />
 
         {/* Decorative Dots Pattern */}
         <div style={{

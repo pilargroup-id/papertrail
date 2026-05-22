@@ -1472,7 +1472,7 @@ select {
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
-  background: transparent;
+  background: #ffffff;
 }
 
 .dashboard-popup__body--frp-detail {
