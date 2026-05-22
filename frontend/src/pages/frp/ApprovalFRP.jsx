@@ -320,7 +320,13 @@ export default function ApprovalFRP() {
 
         return response.json()
       })
-      .then(d => { setData(d); setUser(d?.user) })
+      .then(d => { 
+        setData(d)
+        setUser(d?.user)
+        if (d?.requests?.length > 0) {
+          setSelectedRequest(current => current || d.requests[0])
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }

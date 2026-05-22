@@ -1,91 +1,119 @@
-const dialogBgStyles = {
-  root: {
-    position: 'absolute',
-    inset: 0,
-    overflow: 'hidden',
-    pointerEvents: 'none',
-    borderRadius: 'inherit',
-    background:
-      'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,247,251,1) 100%)',
-  },
-
-  softGlowTop: {
-    position: 'absolute',
-    top: '-120px',
-    right: '-120px',
-    width: '280px',
-    height: '280px',
-    borderRadius: '50%',
-    background:
-      'radial-gradient(circle, rgba(31,78,140,0.14) 0%, rgba(31,78,140,0) 70%)',
-    filter: 'blur(4px)',
-  },
-
-  softGlowBottom: {
-    position: 'absolute',
-    left: '-110px',
-    bottom: '-130px',
-    width: '260px',
-    height: '260px',
-    borderRadius: '50%',
-    background:
-      'radial-gradient(circle, rgba(244,169,64,0.13) 0%, rgba(244,169,64,0) 72%)',
-    filter: 'blur(5px)',
-  },
-
-  curve: {
-    position: 'absolute',
-    right: '-22%',
-    bottom: '-30%',
-    width: '58%',
-    height: '48%',
-    borderRadius: '50%',
-    background:
-      'radial-gradient(circle at center, rgba(214,224,236,0.5) 0%, rgba(214,224,236,0.35) 42%, rgba(214,224,236,0) 74%)',
-  },
-
-  ring: {
-    position: 'absolute',
-    top: '-90px',
-    left: '-90px',
-    width: '180px',
-    height: '180px',
-    borderRadius: '50%',
-    border: '16px solid rgba(31,78,140,0.06)',
-  },
-
-  dots: {
-    position: 'absolute',
-    top: '28px',
-    right: '32px',
-    width: '96px',
-    height: '72px',
-    opacity: 0.45,
-    backgroundImage:
-      'radial-gradient(rgba(31,78,140,0.22) 1.2px, transparent 1.2px)',
-    backgroundSize: '14px 14px',
-  },
-
-  accentDot: {
-    position: 'absolute',
-    right: '42px',
-    bottom: '38px',
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-    background: 'rgba(244,169,64,0.32)',
-  },
-}
-
 export default function BackgroundDialog() {
   return (
-    <div aria-hidden="true" style={dialogBgStyles.root}>
-      <div style={dialogBgStyles.softGlowTop} />
-      <div style={dialogBgStyles.softGlowBottom} />
-      <div style={dialogBgStyles.curve} />
-      <div style={dialogBgStyles.ring} />
-      <div style={dialogBgStyles.dots} />
-      <div style={dialogBgStyles.accentDot} />
-    </div>
+    <>
+      <style>{`
+        @keyframes bg-float {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-12px) scale(1.03); }
+        }
+        @keyframes bg-pulse {
+          0%, 100% { opacity: 0.5; transform: scale(1); }
+          50% { opacity: 0.95; transform: scale(1.08); }
+        }
+        @keyframes bg-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+      <div aria-hidden="true" style={{
+        position: 'absolute',
+        inset: 0,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        borderRadius: 'inherit',
+        background: 'linear-gradient(135deg, #ffffff 0%, #f4f7fb 100%)',
+        zIndex: 0
+      }}>
+        {/* Top Right Teal Glow */}
+        <div style={{
+          position: 'absolute',
+          top: '-150px',
+          right: '-100px',
+          width: '450px',
+          height: '450px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(42,157,143,0.22) 0%, rgba(42,157,143,0) 70%)',
+          filter: 'blur(25px)',
+          animation: 'bg-pulse 8s ease-in-out infinite'
+        }} />
+        
+        {/* Bottom Left Gold Glow */}
+        <div style={{
+          position: 'absolute',
+          left: '-150px',
+          bottom: '-150px',
+          width: '450px',
+          height: '450px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(233,196,106,0.22) 0%, rgba(233,196,106,0) 70%)',
+          filter: 'blur(25px)',
+          animation: 'bg-pulse 10s ease-in-out infinite alternate'
+        }} />
+
+        {/* Center Accent Purple Glow */}
+        <div style={{
+          position: 'absolute',
+          left: '30%',
+          top: '35%',
+          width: '350px',
+          height: '350px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(157,78,221,0.08) 0%, rgba(157,78,221,0) 65%)',
+          filter: 'blur(30px)',
+          animation: 'bg-float 12s ease-in-out infinite'
+        }} />
+
+        {/* Top Left Spinning Ring */}
+        <div style={{
+          position: 'absolute',
+          top: '-80px',
+          left: '-80px',
+          width: '240px',
+          height: '240px',
+          borderRadius: '50%',
+          border: '3px dashed rgba(42,157,143,0.4)',
+          animation: 'bg-spin 45s linear infinite'
+        }} />
+
+        {/* Decorative Dots Pattern */}
+        <div style={{
+          position: 'absolute',
+          top: '50px',
+          right: '50px',
+          width: '140px',
+          height: '120px',
+          opacity: 0.8,
+          backgroundImage: 'radial-gradient(rgba(31,78,140,0.3) 1.5px, transparent 1.5px)',
+          backgroundSize: '16px 16px',
+          animation: 'bg-float 9s ease-in-out infinite'
+        }} />
+
+        {/* Bottom Right Floating Square */}
+        <div style={{
+          position: 'absolute',
+          right: '8%',
+          bottom: '12%',
+          width: '70px',
+          height: '70px',
+          border: '4px solid rgba(233,196,106,0.5)',
+          borderRadius: '16px',
+          transform: 'rotate(45deg)',
+          animation: 'bg-spin 30s linear infinite reverse'
+        }} />
+
+        {/* Coral Accent Dot */}
+        <div style={{
+          position: 'absolute',
+          left: '12%',
+          top: '25%',
+          width: '14px',
+          height: '14px',
+          borderRadius: '50%',
+          background: 'rgba(231,111,81,0.7)',
+          boxShadow: '0 0 10px rgba(231,111,81,0.5)',
+          animation: 'bg-pulse 4s ease-in-out infinite'
+        }} />
+      </div>
+    </>
   )
 }
