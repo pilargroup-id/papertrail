@@ -239,7 +239,7 @@ const S = {
     fontFamily: 'inherit',
     outline: 'none',
     resize: 'vertical',
-    minHeight: '72px',
+    minHeight: '140px',
     background: '#f8fafc',
     color: '#1e293b',
   },
@@ -564,7 +564,7 @@ export default function NewFRP() {
       ...S.card,
       padding: isMobile ? '1rem' : '1.5rem',
       borderRadius: isMobile ? '14px' : '16px',
-      marginBottom: isMobile ? '1rem' : '1.5rem',
+      marginBottom: isMobile ? '0.75rem' : '1rem',
     }),
     [isMobile],
   )
@@ -674,185 +674,6 @@ export default function NewFRP() {
 
           <div style={cardStyle}>
             <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
-              Informasi FRP
-            </h3>
-            <div style={grid2Style}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Company Name</label>
-                {visibleCompanyField ? (
-                  <SearchableSelect
-                    name="companyName"
-                    value={values.companyName}
-                    onChange={selectedValue => updateField('companyName', selectedValue)}
-                    options={companySelectOptions}
-                    placeholder="Pilih Company"
-                    style={S.select}
-                  />
-                ) : (
-                  <input style={S.inputReadonly} value={values.companyName} readOnly />
-                )}
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Tanggal FRP</label>
-                <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
-              </div>
-            </div>
-            <div style={{ ...grid3Style, marginTop: '1rem' }}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Divisi</label>
-                {FRP.user?.role === 'administrator' ? (
-                  <SearchableSelect
-                    name="divisi"
-                    value={values.divisi}
-                    onChange={selectedValue => updateField('divisi', selectedValue)}
-                    options={divisionSelectOptions}
-                    placeholder="Pilih Divisi"
-                    style={S.select}
-                  />
-                ) : (
-                  <input style={S.inputReadonly} value={values.divisi} readOnly />
-                )}
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Diminta Oleh</label>
-                <SearchableSelect
-                  name="dimintaOleh"
-                  value={values.dimintaOleh}
-                  onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
-                  options={employeeSelectOptions}
-                  placeholder="Pilih Karyawan"
-                  style={S.select}
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Currency</label>
-                <SearchableSelect
-                  name="currency"
-                  value={values.currency}
-                  onChange={async selectedValue => {
-                    updateField('currency', selectedValue)
-                    if (selectedValue === 'IDR') {
-                      updateField('kurs', '1')
-                    } else {
-                      updateField('kurs', 'Memuat...')
-                      try {
-                        const res = await fetch(`/api/kurs/${selectedValue}`)
-                        const data = await res.json()
-                        if (data.success && data.rate) {
-                          updateField('kurs', String(data.rate))
-                        } else {
-                          updateField('kurs', '1') // fallback
-                          console.error('API Error:', data.error)
-                        }
-                      } catch (e) {
-                        updateField('kurs', '1')
-                        console.error('Gagal mengambil kurs:', e)
-                      }
-                    }
-                  }}
-                  options={currencySelectOptions}
-                  placeholder="Pilih Currency"
-                  style={S.select}
-                />
-              </div>
-            </div>
-            {values.currency !== 'IDR' && (
-              <div style={{ ...S.formGroup, marginTop: '1rem', maxWidth: isMobile ? '100%' : '200px' }}>
-                <label style={S.label}>Kurs</label>
-                <input name="kurs" style={S.input} value={values.kurs} onChange={e => updateField('kurs', e.target.value)} />
-              </div>
-            )}
-            <div style={{ ...S.formGroup, marginTop: '1rem' }}>
-              <label style={S.label}>Keterangan FRP</label>
-              <textarea
-                name="keteranganFrp"
-                style={S.textarea}
-                value={values.keteranganFrp}
-                onChange={e => updateField('keteranganFrp', e.target.value)}
-                placeholder="Tulis keterangan..."
-              />
-            </div>
-          </div>
-
-          <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>store</span>
-              Vendor &amp; Pembayaran
-            </h3>
-            <div style={grid2Style}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Vendor</label>
-                <SearchableSelect
-                  name="vendor"
-                  value={values.vendor}
-                  onChange={selectedValue => {
-                    const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
-                    console.log('Selected vendor:', selected)
-                    updateField('vendor', selectedValue)
-                    updateField('bankTujuan', selected?.bank || '')
-                    updateField('rekBankTujuan', selected?.no_rekening || '')
-                  }}
-                  options={vendorSelectOptions}
-                  placeholder="Pilih Vendor"
-                  style={S.select}
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Internal PO Number</label>
-                <input name="internalPoNumber" style={S.input} value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
-              </div>
-            </div>
-            <div style={{ ...grid3Style, marginTop: '1rem' }}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Ext Doc Type</label>
-                <SearchableSelect
-                  name="extDocType"
-                  value={values.extDocType}
-                  onChange={selectedValue => updateField('extDocType', selectedValue)}
-                  options={extDocTypeOptions}
-                  placeholder="Pilih"
-                  style={S.select}
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Ext Doc Number</label>
-                <input name="extDocNumber" style={S.input} value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Payment Method</label>
-                <SearchableSelect
-                  name="paymentMethod"
-                  value={values.paymentMethod}
-                  onChange={selectedValue => updateField('paymentMethod', selectedValue)}
-                  options={paymentMethodOptions}
-                  placeholder="Pilih Metode"
-                  style={S.select}
-                />
-              </div>
-            </div>
-            <div style={{ ...grid3Style, marginTop: '1rem' }}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Payment Date</label>
-                <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Bank Tujuan</label>
-                <input name="bankTujuan" style={S.input} value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Rekening Bank Tujuan</label>
-                <input name="rekBankTujuan" style={S.input} value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
-              </div>
-            </div>
-            <div style={{ ...S.formGroup, marginTop: '1rem' }}>
-              <label style={S.label}>Attach Link</label>
-              <input name="attachLink" style={S.input} value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} placeholder="https://..." />
-            </div>
-          </div>
-
-          <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
               <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>checklist</span>
               Checklist Documents
             </h3>
@@ -878,6 +699,193 @@ export default function NewFRP() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '4.5fr 5.5fr',
+            gap: isMobile ? '0.75rem' : '1rem',
+            marginBottom: isMobile ? '0.75rem' : '1rem',
+            alignItems: 'stretch'
+          }}>
+            <div style={{ ...cardStyle, height: '100%', boxSizing: 'border-box', marginBottom: 0 }}>
+              <h3 style={S.sectionTitle}>
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
+                Informasi FRP
+              </h3>
+              <div style={grid2Style}>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Company Name</label>
+                  {visibleCompanyField ? (
+                    <SearchableSelect
+                      name="companyName"
+                      value={values.companyName}
+                      onChange={selectedValue => updateField('companyName', selectedValue)}
+                      options={companySelectOptions}
+                      placeholder="Pilih Company"
+                      style={S.select}
+                    />
+                  ) : (
+                    <input style={S.inputReadonly} value={values.companyName} readOnly />
+                  )}
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Tanggal FRP</label>
+                  <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
+                </div>
+              </div>
+              <div style={{ ...grid3Style, marginTop: '1rem' }}>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Divisi</label>
+                  {FRP.user?.role === 'administrator' ? (
+                    <SearchableSelect
+                      name="divisi"
+                      value={values.divisi}
+                      onChange={selectedValue => updateField('divisi', selectedValue)}
+                      options={divisionSelectOptions}
+                      placeholder="Pilih Divisi"
+                      style={S.select}
+                    />
+                  ) : (
+                    <input style={S.inputReadonly} value={values.divisi} readOnly />
+                  )}
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Diminta Oleh</label>
+                  <SearchableSelect
+                    name="dimintaOleh"
+                    value={values.dimintaOleh}
+                    onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
+                    options={employeeSelectOptions}
+                    placeholder="Pilih Karyawan"
+                    style={S.select}
+                  />
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Currency</label>
+                  <SearchableSelect
+                    name="currency"
+                    value={values.currency}
+                    onChange={async selectedValue => {
+                      updateField('currency', selectedValue)
+                      if (selectedValue === 'IDR') {
+                        updateField('kurs', '1')
+                      } else {
+                        updateField('kurs', 'Memuat...')
+                        try {
+                          const res = await fetch(`/api/kurs/${selectedValue}`)
+                          const data = await res.json()
+                          if (data.success && data.rate) {
+                            updateField('kurs', String(data.rate))
+                          } else {
+                            updateField('kurs', '1') // fallback
+                            console.error('API Error:', data.error)
+                          }
+                        } catch (e) {
+                          updateField('kurs', '1')
+                          console.error('Gagal mengambil kurs:', e)
+                        }
+                      }
+                    }}
+                    options={currencySelectOptions}
+                    placeholder="Pilih Currency"
+                    style={S.select}
+                  />
+                </div>
+              </div>
+              {values.currency !== 'IDR' && (
+                <div style={{ ...S.formGroup, marginTop: '1rem', maxWidth: isMobile ? '100%' : '200px' }}>
+                  <label style={S.label}>Kurs</label>
+                  <input name="kurs" style={S.input} value={values.kurs} onChange={e => updateField('kurs', e.target.value)} />
+                </div>
+              )}
+              <div style={{ ...S.formGroup, marginTop: '1rem' }}>
+                <label style={S.label}>Keterangan FRP</label>
+                <textarea
+                  name="keteranganFrp"
+                  style={S.textarea}
+                  value={values.keteranganFrp}
+                  onChange={e => updateField('keteranganFrp', e.target.value)}
+                  placeholder="Tulis keterangan..."
+                />
+              </div>
+            </div>
+
+            <div style={{ ...cardStyle, height: '100%', boxSizing: 'border-box', marginBottom: 0 }}>
+              <h3 style={S.sectionTitle}>
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>store</span>
+                Vendor &amp; Pembayaran
+              </h3>
+              <div style={grid2Style}>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Vendor</label>
+                  <SearchableSelect
+                    name="vendor"
+                    value={values.vendor}
+                    onChange={selectedValue => {
+                      const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
+                      console.log('Selected vendor:', selected)
+                      updateField('vendor', selectedValue)
+                      updateField('bankTujuan', selected?.bank || '')
+                      updateField('rekBankTujuan', selected?.no_rekening || '')
+                    }}
+                    options={vendorSelectOptions}
+                    placeholder="Pilih Vendor"
+                    style={S.select}
+                  />
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Internal PO Number</label>
+                  <input name="internalPoNumber" style={S.input} value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
+                </div>
+              </div>
+              <div style={{ ...grid3Style, marginTop: '1rem' }}>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Ext Doc Type</label>
+                  <SearchableSelect
+                    name="extDocType"
+                    value={values.extDocType}
+                    onChange={selectedValue => updateField('extDocType', selectedValue)}
+                    options={extDocTypeOptions}
+                    placeholder="Pilih"
+                    style={S.select}
+                  />
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Ext Doc Number</label>
+                  <input name="extDocNumber" style={S.input} value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Payment Method</label>
+                  <SearchableSelect
+                    name="paymentMethod"
+                    value={values.paymentMethod}
+                    onChange={selectedValue => updateField('paymentMethod', selectedValue)}
+                    options={paymentMethodOptions}
+                    placeholder="Pilih Metode"
+                    style={S.select}
+                  />
+                </div>
+              </div>
+              <div style={{ ...grid3Style, marginTop: '1rem' }}>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Payment Date</label>
+                  <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Bank Tujuan</label>
+                  <input name="bankTujuan" style={S.input} value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
+                </div>
+                <div style={S.formGroup}>
+                  <label style={S.label}>Rekening Bank Tujuan</label>
+                  <input name="rekBankTujuan" style={S.input} value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
+                </div>
+              </div>
+              <div style={{ ...S.formGroup, marginTop: '1rem' }}>
+                <label style={S.label}>Attach Link</label>
+                <input name="attachLink" style={S.input} value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} placeholder="https://..." />
+              </div>
             </div>
           </div>
 
