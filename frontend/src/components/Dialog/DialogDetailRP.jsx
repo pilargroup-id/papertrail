@@ -16,13 +16,47 @@ const formatDisplayDate = value => {
   }).format(date)
 }
 
-const fieldStyle = { width: '100%', padding: '2px 6px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#f8fafc', fontSize: '0.75rem', boxSizing: 'border-box', fontFamily: 'inherit', minHeight: '24px' }
-const sectionStyle = { background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px', marginBottom: '6px' }
-const labelStyle = { display: 'block', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '2px' }
-const headingStyle = { margin: '0 0 4px', fontSize: '0.8rem', color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }
-const iconStyle = { fontSize: '13px' }
-const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '4px' }
-const grid3 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '4px' }
+const fieldStyle = {
+  width: '100%',
+  padding: '6px 10px',
+  border: '1.5px solid #dde3ed',
+  borderRadius: '8px',
+  background: '#f8fafc',
+  fontSize: '0.825rem',
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+  color: '#334155',
+  fontWeight: '500',
+}
+const sectionStyle = {
+  background: 'white',
+  border: '1px solid #e2e8f0',
+  borderRadius: '12px',
+  padding: '12px 16px',
+  marginBottom: '8px',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+}
+const labelStyle = {
+  display: 'block',
+  fontSize: '10px',
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  color: '#64748b',
+  marginBottom: '4px',
+  letterSpacing: '0.04em',
+}
+const headingStyle = {
+  margin: '0 0 8px',
+  fontSize: '0.875rem',
+  color: '#1e293b',
+  fontWeight: 700,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+}
+const iconStyle = { fontSize: '16px', color: '#1e3a8a' }
+const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '6px' }
+const grid3 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '6px' }
 
 function DialogDetailRP({
   isOpen = false,
@@ -64,6 +98,86 @@ function DialogDetailRP({
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+
+        /* Modern premium styles for inputs and panels */
+        .dialog-section-premium {
+          transition: all 0.2s ease-in-out !important;
+        }
+        .dialog-section-premium:hover {
+          border-color: #cbd5e1 !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04) !important;
+        }
+        .dialog-input-premium {
+          transition: border-color 0.2s, background 0.2s !important;
+        }
+        .dialog-input-premium:focus {
+          border-color: #3b82f6 !important;
+          background: #ffffff !important;
+          outline: none !important;
+        }
+
+        /* Footer buttons styling */
+        .btn-dialog {
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 8px !important;
+          min-width: 120px !important;
+          border-radius: 10px !important;
+          padding: 8px 18px !important;
+          font-weight: 600 !important;
+          font-size: 0.8rem !important;
+          cursor: pointer !important;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          border: none !important;
+          outline: none !important;
+          font-family: inherit !important;
+          box-sizing: border-box !important;
+        }
+        .btn-dialog:hover {
+          transform: translateY(-2px) !important;
+        }
+        .btn-dialog:active {
+          transform: translateY(0) !important;
+        }
+        
+        .btn-dialog-duplicate {
+          background: #ffffff !important;
+          color: #334155 !important;
+          border: 1.5px solid #cbd5e1 !important;
+        }
+        .btn-dialog-duplicate:hover {
+          background: #f8fafc !important;
+          border-color: #94a3b8 !important;
+          box-shadow: 0 4px 12px rgba(148, 163, 184, 0.15) !important;
+        }
+        
+        .btn-dialog-preview {
+          background: linear-gradient(135deg, #1a2a57 0%, #2d4a8c 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 6px 18px rgba(26, 42, 87, 0.25) !important;
+        }
+        .btn-dialog-preview:hover {
+          box-shadow: 0 8px 24px rgba(26, 42, 87, 0.38) !important;
+        }
+        
+        .btn-dialog-print {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25) !important;
+        }
+        .btn-dialog-print:hover {
+          box-shadow: 0 8px 24px rgba(16, 185, 129, 0.38) !important;
+        }
+        
+        .btn-dialog-close {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+          color: #ffffff !important;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2) !important;
+        }
+        .btn-dialog-close:hover {
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3) !important;
+        }
       `}</style>
       <div
         className="dashboard-popup dashboard-popup--frp-detail"
@@ -71,7 +185,7 @@ function DialogDetailRP({
         aria-modal="true"
         aria-labelledby="dialog-rp-detail-title"
         onClick={(event) => event.stopPropagation()}
-        style={{ height: 'auto', maxHeight: '40vh', width: 'min(1180px, calc(100vw - 48px))', margin: 'auto', background: '#ffffff', borderRadius: '24px', overflow: 'hidden', position: 'relative' }}
+        style={{ height: 'auto', maxHeight: '85vh', width: 'min(1180px, calc(100vw - 48px))', margin: 'auto', background: '#ffffff', borderRadius: '24px', overflow: 'hidden', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
       >
         <BackgroundDialog />
         <div className="dashboard-popup__header" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
@@ -83,20 +197,20 @@ function DialogDetailRP({
               {title}
             </h2>
           </div>
-          
+
           <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-            <span style={{ 
-              background: 'rgba(255,255,255,0.06)', 
-              border: '1px solid rgba(255,255,255,0.1)', 
-              padding: '4px 10px', 
-              borderRadius: '8px', 
-              color: '#cbd5e1', 
-              fontSize: '0.7rem', 
-              fontWeight: '500', 
-              fontFamily: 'monospace', 
-              whiteSpace: 'nowrap', 
-              textOverflow: 'ellipsis', 
-              overflow: 'hidden' 
+            <span style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              color: '#cbd5e1',
+              fontSize: '0.7rem',
+              fontWeight: '500',
+              fontFamily: 'monospace',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden'
             }}>
               {request.rpNo ? `No: ${request.rpNo}` : `ID: ${request.id}`}
             </span>
@@ -104,23 +218,23 @@ function DialogDetailRP({
               const statusStr = request.status || 'Waiting Approval'
               const sLow = statusStr.toLowerCase()
               let bg = 'rgba(245, 158, 11, 0.12)', border = 'rgba(245, 158, 11, 0.25)', color = '#fbbf24'
-              
-              if (sLow.includes('approve') || sLow.includes('completed')) { 
+
+              if (sLow.includes('approve') || sLow.includes('completed')) {
                 bg = 'rgba(16, 185, 129, 0.12)'; border = 'rgba(16, 185, 129, 0.25)'; color = '#34d399'
-              } else if (sLow.includes('reject')) { 
+              } else if (sLow.includes('reject')) {
                 bg = 'rgba(239, 68, 68, 0.12)'; border = 'rgba(239, 68, 68, 0.25)'; color = '#f87171'
-              } else if (sLow.includes('draft')) { 
+              } else if (sLow.includes('draft')) {
                 bg = 'rgba(148, 163, 184, 0.12)'; border = 'rgba(148, 163, 184, 0.25)'; color = '#cbd5e1'
               }
 
               return (
-                <span style={{ 
-                  background: bg, 
+                <span style={{
+                  background: bg,
                   border: `1px solid ${border}`,
-                  color: color, 
-                  padding: '4px 10px', 
-                  borderRadius: '8px', 
-                  fontSize: '0.65rem', 
+                  color: color,
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  fontSize: '0.65rem',
                   fontWeight: '700',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
@@ -148,50 +262,50 @@ function DialogDetailRP({
           </div>
         </div>
 
-        <div className="dashboard-popup__body dashboard-popup__body--frp-detail">
-          <div className="frp-detail-content hide-scrollbar" style={{ 
-            padding: '4px 8px', 
-            overflowY: 'auto', 
-            maxHeight: 'calc(40vh - 120px)',
+        <div className="dashboard-popup__body dashboard-popup__body--frp-detail" style={{ flex: '0 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '16px 24px 8px 24px' }}>
+          <div className="frp-detail-content hide-scrollbar" style={{
+            padding: '4px 8px',
+            overflowY: 'auto',
+            maxHeight: 'calc(85vh - 160px)',
             scrollBehavior: 'smooth',
             WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 8px, black calc(100% - 8px), transparent 100%)',
             maskImage: 'linear-gradient(to bottom, transparent 0%, black 8px, black calc(100% - 8px), transparent 100%)'
           }}>
-            
-            <div style={sectionStyle}>
+
+            <div style={sectionStyle} className="dialog-section-premium">
               <h3 style={headingStyle}><span className="material-icons-round" style={iconStyle}>info</span> Informasi Request Purchase</h3>
               <div style={grid2}>
-                <div><label style={labelStyle}>Company Name</label><input readOnly value={request.companyName || ''} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Tanggal Dibutuhkan</label><input readOnly value={formatDisplayDate(request.tanggalDibutuhkan || request.tanggalRp)} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Company Name</label><input readOnly value={request.companyName || ''} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>Tanggal Dibutuhkan</label><input readOnly value={formatDisplayDate(request.tanggalDibutuhkan || request.tanggalRp)} style={fieldStyle} className="dialog-input-premium" /></div>
               </div>
               <div style={grid3}>
-                <div><label style={labelStyle}>Divisi</label><input readOnly value={request.divisi || ''} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Class</label><input readOnly value={request.class || ''} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Dibuat Oleh</label><input readOnly value={request.dibuatOleh || ''} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Divisi</label><input readOnly value={request.divisi || ''} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>Class</label><input readOnly value={request.class || ''} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>Dibuat Oleh</label><input readOnly value={request.dibuatOleh || ''} style={fieldStyle} className="dialog-input-premium" /></div>
               </div>
-              <div><label style={labelStyle}>Deskripsi (Alasan Permintaan Barang)</label><textarea rows="2" readOnly value={request.deskripsi || request.keteranganRp || ''} style={{ ...fieldStyle, resize: 'none' }} /></div>
+              <div><label style={labelStyle}>Deskripsi (Alasan Permintaan Barang)</label><textarea rows="2" readOnly value={request.deskripsi || request.keteranganRp || ''} style={{ ...fieldStyle, resize: 'none' }} className="dialog-input-premium" /></div>
             </div>
 
-            <div style={sectionStyle}>
+            <div style={sectionStyle} className="dialog-section-premium">
               <h3 style={headingStyle}><span className="material-icons-round" style={iconStyle}>store</span> Vendor & Proses</h3>
               <div style={grid2}>
-                <div><label style={labelStyle}>Kategori Pembelian</label><input readOnly value={request.kategoriPembelian || ''} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Diproses Oleh</label><input readOnly value={request.diprosesOleh || ''} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Kategori Pembelian</label><input readOnly value={request.kategoriPembelian || ''} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>Diproses Oleh</label><input readOnly value={request.diprosesOleh || ''} style={fieldStyle} className="dialog-input-premium" /></div>
               </div>
               <div style={grid2}>
-                <div><label style={labelStyle}>Vendor Suggestion</label><input readOnly value={request.vendorSuggestion || ''} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>PIC Penerima</label><input readOnly value={request.picPenerima || ''} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Vendor Suggestion</label><input readOnly value={request.vendorSuggestion || ''} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>PIC Penerima</label><input readOnly value={request.picPenerima || ''} style={fieldStyle} className="dialog-input-premium" /></div>
               </div>
             </div>
 
-            <div style={sectionStyle}>
+            <div style={sectionStyle} className="dialog-section-premium">
               <h3 style={headingStyle}><span className="material-icons-round" style={iconStyle}>table_rows</span> Detail Item</h3>
-              <div className="hide-scrollbar" style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <div className="hide-scrollbar" style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                   <thead>
-                    <tr>
+                    <tr style={{ background: '#f8fafc' }}>
                       {['No', 'Budget ID', 'Memo', 'Link Pembelian', 'Qty', 'Est. Value', 'Subtotal'].map(h => (
-                        <th key={h} style={{ padding: '6px 10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', color: '#475569', fontWeight: 600, fontSize: '10px', textTransform: 'uppercase' }}>{h}</th>
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', color: '#475569', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -202,25 +316,25 @@ function DialogDetailRP({
                       const sub = qty * val
                       return (
                         <tr key={idx}>
-                          <td style={{ padding: '6px 10px', borderBottom: '1px solid #f1f5f9', width: '36px' }}>{idx + 1}</td>
-                          <td style={{ padding: '6px 10px', borderBottom: '1px solid #f1f5f9' }}><input readOnly value={item.budgetId || ''} style={{ ...fieldStyle, margin: 0 }} /></td>
-                          <td style={{ padding: '6px 10px', borderBottom: '1px solid #f1f5f9' }}><input readOnly value={item.memo || item.description || ''} style={{ ...fieldStyle, margin: 0 }} /></td>
-                          <td style={{ padding: '6px 10px', borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', width: '36px', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}><input readOnly value={item.budgetId || ''} style={{ ...fieldStyle, margin: 0 }} className="dialog-input-premium" /></td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}><input readOnly value={item.memo || item.description || ''} style={{ ...fieldStyle, margin: 0 }} className="dialog-input-premium" /></td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
                             {item.linkPembelian ? (
-                              <a href={item.linkPembelian} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', display: 'block', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.linkPembelian}</a>
+                              <a href={item.linkPembelian} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', display: 'block', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>{item.linkPembelian}</a>
                             ) : '-'}
                           </td>
-                          <td style={{ padding: '6px 10px', borderBottom: '1px solid #f1f5f9', textAlign: 'center' }}>{qty}</td>
-                          <td style={{ padding: '6px 10px', borderBottom: '1px solid #f1f5f9', textAlign: 'right' }}>{val.toLocaleString('id-ID')}</td>
-                          <td style={{ padding: '6px 10px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', fontWeight: 600 }}>{sub.toLocaleString('id-ID')}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', fontWeight: 600, color: '#334155' }}>{qty}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', fontWeight: 500, color: '#475569' }}>{val.toLocaleString('id-ID')}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{sub.toLocaleString('id-ID')}</td>
                         </tr>
                       )
                     })}
                   </tbody>
                   <tfoot>
-                    <tr>
-                      <td colSpan="6" style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#475569', fontSize: '12px' }}>Total Estimasi</td>
-                      <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontWeight: 700, fontSize: '13px', color: '#1e293b', textAlign: 'right' }}>
+                    <tr style={{ background: '#f8fafc' }}>
+                      <td colSpan="6" style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Estimasi</td>
+                      <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 700, fontSize: '13px', color: '#1e3a8a', textAlign: 'right', borderTop: '2px solid #e2e8f0' }}>
                         IDR {((request.items || []).reduce((sum, item) => sum + (normalizeNumber(item.qty) || 1) * normalizeNumber(item.estimatedValue), 0)).toLocaleString('id-ID')}
                       </td>
                     </tr>
@@ -231,22 +345,49 @@ function DialogDetailRP({
           </div>
         </div>
 
-        <div className="dashboard-popup__actions" style={{ position: 'relative', zIndex: 1, padding: '8px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 24px 24px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        {/* Footer actions with elegant design, transitions and shadow */}
+        <div className="dashboard-popup__actions" style={{ position: 'relative', zIndex: 1, padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 24px 24px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {extraFooter}
+          
           <button
             type="button"
-            className="dashboard-popup__button"
-            onClick={onClose}
-            style={{ 
-              display: 'inline-flex', alignItems: 'center', gap: '6px', minWidth: '80px', justifyContent: 'center',
-              background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-              color: '#fff', border: 'none',
-              borderRadius: '6px', padding: '6px 16px', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer',
-              boxShadow: '0 4px 10px rgba(15, 23, 42, 0.2)', transition: 'all 0.2s'
+            className="dashboard-popup__button btn-dialog btn-dialog-duplicate"
+            onClick={() => {
+              window.location.href = `/rp?revisi=${request.id}&duplicate=1`
             }}
-            onMouseOver={(e) => { e.currentTarget.style.boxShadow = '0 6px 15px rgba(15, 23, 42, 0.3)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseOut={(e) => { e.currentTarget.style.boxShadow = '0 4px 10px rgba(15, 23, 42, 0.2)'; e.currentTarget.style.transform = 'none' }}
           >
+            <span className="material-icons-round" style={{ fontSize: '18px' }}>content_copy</span>
+            Duplicate
+          </button>
+
+          {['approved', 'CREATED_FRP'].includes(request.status) && (
+            <>
+              <button
+                type="button"
+                className="dashboard-popup__button btn-dialog btn-dialog-preview"
+                onClick={() => window.open(`/api/rp/${request.id}/preview`, '_blank')}
+              >
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>visibility</span>
+                Preview
+              </button>
+
+              <button
+                type="button"
+                className="dashboard-popup__button btn-dialog btn-dialog-print"
+                onClick={() => window.open(`/api/rp/${request.id}/pdf`, '_blank')}
+              >
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>download</span>
+                Print PDF
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            className="dashboard-popup__button btn-dialog btn-dialog-close"
+            onClick={onClose}
+          >
+            <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
             Tutup
           </button>
         </div>

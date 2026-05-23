@@ -673,358 +673,370 @@ export default function NewFRP() {
           )}
 
           <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>checklist</span>
-              Checklist Documents
-            </h3>
-            <div style={{ ...S.checkRow, gap: isMobile ? '8px' : '10px' }}>
-              {CHECK_DOCS.map(doc => {
-                const checked = values.checkDocs.includes(doc)
-                return (
-                  <div
-                    key={doc}
-                    style={{
-                      ...S.checkItem,
-                      ...(checked ? S.checkItemActive : {}),
-                      width: isMobile ? '100%' : 'auto',
-                      padding: isMobile ? '10px 12px' : '8px 14px',
-                    }}
-                    onClick={() => handleCheckDocToggle(doc)}
-                  >
-                    <span className="material-icons-round" style={{ fontSize: '16px' }}>
-                      {checked ? 'check_box' : 'check_box_outline_blank'}
-                    </span>
-                    <input type="checkbox" name="checkDocs[]" value={doc} checked={checked} onChange={() => { }} style={{ display: 'none' }} />
-                    {doc}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '4.5fr 5.5fr',
-            gap: isMobile ? '0.75rem' : '1rem',
-            marginBottom: isMobile ? '0.75rem' : '1rem',
-            alignItems: 'stretch'
-          }}>
-            <div style={{ ...cardStyle, height: '100%', boxSizing: 'border-box', marginBottom: 0 }}>
-              <h3 style={S.sectionTitle}>
-                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
-                Informasi FRP
-              </h3>
-              <div style={grid2Style}>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Company Name</label>
-                  {visibleCompanyField ? (
-                    <SearchableSelect
-                      name="companyName"
-                      value={values.companyName}
-                      onChange={selectedValue => updateField('companyName', selectedValue)}
-                      options={companySelectOptions}
-                      placeholder="Pilih Company"
-                      style={S.select}
-                    />
-                  ) : (
-                    <input style={S.inputReadonly} value={values.companyName} readOnly />
-                  )}
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Tanggal FRP</label>
-                  <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
-                </div>
-              </div>
-              <div style={{ ...grid3Style, marginTop: '1rem' }}>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Divisi</label>
-                  {FRP.user?.role === 'administrator' ? (
-                    <SearchableSelect
-                      name="divisi"
-                      value={values.divisi}
-                      onChange={selectedValue => updateField('divisi', selectedValue)}
-                      options={divisionSelectOptions}
-                      placeholder="Pilih Divisi"
-                      style={S.select}
-                    />
-                  ) : (
-                    <input style={S.inputReadonly} value={values.divisi} readOnly />
-                  )}
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Diminta Oleh</label>
-                  <SearchableSelect
-                    name="dimintaOleh"
-                    value={values.dimintaOleh}
-                    onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
-                    options={employeeSelectOptions}
-                    placeholder="Pilih Karyawan"
-                    style={S.select}
-                  />
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Currency</label>
-                  <SearchableSelect
-                    name="currency"
-                    value={values.currency}
-                    onChange={async selectedValue => {
-                      updateField('currency', selectedValue)
-                      if (selectedValue === 'IDR') {
-                        updateField('kurs', '1')
-                      } else {
-                        updateField('kurs', 'Memuat...')
-                        try {
-                          const res = await fetch(`/api/kurs/${selectedValue}`)
-                          const data = await res.json()
-                          if (data.success && data.rate) {
-                            updateField('kurs', String(data.rate))
-                          } else {
-                            updateField('kurs', '1') // fallback
-                            console.error('API Error:', data.error)
-                          }
-                        } catch (e) {
-                          updateField('kurs', '1')
-                          console.error('Gagal mengambil kurs:', e)
-                        }
-                      }
-                    }}
-                    options={currencySelectOptions}
-                    placeholder="Pilih Currency"
-                    style={S.select}
-                  />
-                </div>
-              </div>
-              {values.currency !== 'IDR' && (
-                <div style={{ ...S.formGroup, marginTop: '1rem', maxWidth: isMobile ? '100%' : '200px' }}>
-                  <label style={S.label}>Kurs</label>
-                  <input name="kurs" style={S.input} value={values.kurs} onChange={e => updateField('kurs', e.target.value)} />
-                </div>
-              )}
-              <div style={{ ...S.formGroup, marginTop: '1rem' }}>
-                <label style={S.label}>Keterangan FRP</label>
-                <textarea
-                  name="keteranganFrp"
-                  style={S.textarea}
-                  value={values.keteranganFrp}
-                  onChange={e => updateField('keteranganFrp', e.target.value)}
-                  placeholder="Tulis keterangan..."
-                />
-              </div>
-            </div>
-
-            <div style={{ ...cardStyle, height: '100%', boxSizing: 'border-box', marginBottom: 0 }}>
-              <h3 style={S.sectionTitle}>
-                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>store</span>
-                Vendor &amp; Pembayaran
-              </h3>
-              <div style={grid2Style}>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Vendor</label>
-                  <SearchableSelect
-                    name="vendor"
-                    value={values.vendor}
-                    onChange={selectedValue => {
-                      const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
-                      console.log('Selected vendor:', selected)
-                      updateField('vendor', selectedValue)
-                      updateField('bankTujuan', selected?.bank || '')
-                      updateField('rekBankTujuan', selected?.no_rekening || '')
-                    }}
-                    options={vendorSelectOptions}
-                    placeholder="Pilih Vendor"
-                    style={S.select}
-                  />
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Internal PO Number</label>
-                  <input name="internalPoNumber" style={S.input} value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
-                </div>
-              </div>
-              <div style={{ ...grid3Style, marginTop: '1rem' }}>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Ext Doc Type</label>
-                  <SearchableSelect
-                    name="extDocType"
-                    value={values.extDocType}
-                    onChange={selectedValue => updateField('extDocType', selectedValue)}
-                    options={extDocTypeOptions}
-                    placeholder="Pilih"
-                    style={S.select}
-                  />
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Ext Doc Number</label>
-                  <input name="extDocNumber" style={S.input} value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Payment Method</label>
-                  <SearchableSelect
-                    name="paymentMethod"
-                    value={values.paymentMethod}
-                    onChange={selectedValue => updateField('paymentMethod', selectedValue)}
-                    options={paymentMethodOptions}
-                    placeholder="Pilih Metode"
-                    style={S.select}
-                  />
-                </div>
-              </div>
-              <div style={{ ...grid3Style, marginTop: '1rem' }}>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Payment Date</label>
-                  <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Bank Tujuan</label>
-                  <input name="bankTujuan" style={S.input} value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
-                </div>
-                <div style={S.formGroup}>
-                  <label style={S.label}>Rekening Bank Tujuan</label>
-                  <input name="rekBankTujuan" style={S.input} value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
-                </div>
-              </div>
-              <div style={{ ...S.formGroup, marginTop: '1rem' }}>
-                <label style={S.label}>Attach Link</label>
-                <input name="attachLink" style={S.input} value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} placeholder="https://..." />
-              </div>
-            </div>
-          </div>
-
-          <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>table_rows</span>
-              Line Items
-            </h3>
-            {isMobile ? (
+            {/* Informasi FRP & Vendor Pembayaran Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '4.5fr 5.5fr',
+              gap: isMobile ? '1.5rem' : '2.5rem',
+              alignItems: 'start'
+            }}>
+              {/* Informasi FRP */}
               <div>
-                {values.items.map((item, idx) => (
-                  <div key={idx} style={S.itemCard}>
-                    <div style={S.itemCardHeader}>
-                      <div style={S.itemCardTitle}>Item {idx + 1}</div>
-                      <button type="button" style={S.btnDel} onClick={() => handleRemoveRow(idx)}>
-                        <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
-                      </button>
-                    </div>
-                    <div style={grid2Style}>
-                      <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
-                        <label style={S.label}>Memo</label>
-                        <input name={`items[${idx}][memo]`} style={S.input} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
-                      </div>
-                      <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
-                        <label style={S.label}>Budget</label>
-                        <SearchableSelect
-                          name={`items[${idx}][budgetId]`}
-                          value={item.budgetId}
-                          onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
-                          options={budgetSelectOptions}
-                          placeholder="Pilih Budget"
-                          style={S.select}
-                        />
-                      </div>
-                      <div style={S.formGroup}>
-                        <label style={S.label}>Qty</label>
-                        <input type="number" name={`items[${idx}][qty]`} style={S.input} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
-                      </div>
-                      <div style={S.formGroup}>
-                        <label style={S.label}>Harga Satuan</label>
-                        <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.input} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
-                      </div>
-                    </div>
-                    <div style={S.itemCardAmount}>
-                      <div style={S.totalLabel}>Amount (IDR)</div>
-                      <div style={{ ...S.totalValue, fontSize: '1rem', marginTop: '0.3rem' }}>Rp {formatCurrency(calculateRowAmount(item))}</div>
-                    </div>
+                <h3 style={S.sectionTitle}>
+                  <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
+                  Informasi FRP
+                </h3>
+                <div style={grid2Style}>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Company Name</label>
+                    {visibleCompanyField ? (
+                      <SearchableSelect
+                        name="companyName"
+                        value={values.companyName}
+                        onChange={selectedValue => updateField('companyName', selectedValue)}
+                        options={companySelectOptions}
+                        placeholder="Pilih Company"
+                        style={S.select}
+                      />
+                    ) : (
+                      <input style={S.inputReadonly} value={values.companyName} readOnly />
+                    )}
                   </div>
-                ))}
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Tanggal FRP</label>
+                    <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
+                  </div>
+                </div>
+                <div style={{ ...grid3Style, marginTop: '1rem' }}>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Divisi</label>
+                    {FRP.user?.role === 'administrator' ? (
+                      <SearchableSelect
+                        name="divisi"
+                        value={values.divisi}
+                        onChange={selectedValue => updateField('divisi', selectedValue)}
+                        options={divisionSelectOptions}
+                        placeholder="Pilih Divisi"
+                        style={S.select}
+                      />
+                    ) : (
+                      <input style={S.inputReadonly} value={values.divisi} readOnly />
+                    )}
+                  </div>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Diminta Oleh</label>
+                    <SearchableSelect
+                      name="dimintaOleh"
+                      value={values.dimintaOleh}
+                      onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
+                      options={employeeSelectOptions}
+                      placeholder="Pilih Karyawan"
+                      style={S.select}
+                    />
+                  </div>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Currency</label>
+                    <SearchableSelect
+                      name="currency"
+                      value={values.currency}
+                      onChange={async selectedValue => {
+                        updateField('currency', selectedValue)
+                        if (selectedValue === 'IDR') {
+                          updateField('kurs', '1')
+                        } else {
+                          updateField('kurs', 'Memuat...')
+                          try {
+                            const res = await fetch(`/api/kurs/${selectedValue}`)
+                            const data = await res.json()
+                            if (data.success && data.rate) {
+                              updateField('kurs', String(data.rate))
+                            } else {
+                              updateField('kurs', '1') // fallback
+                              console.error('API Error:', data.error)
+                            }
+                          } catch (e) {
+                            updateField('kurs', '1')
+                            console.error('Gagal mengambil kurs:', e)
+                          }
+                        }
+                      }}
+                      options={currencySelectOptions}
+                      placeholder="Pilih Currency"
+                      style={S.select}
+                    />
+                  </div>
+                </div>
+                {values.currency !== 'IDR' && (
+                  <div style={{ ...S.formGroup, marginTop: '1rem', maxWidth: isMobile ? '100%' : '200px' }}>
+                    <label style={S.label}>Kurs</label>
+                    <input name="kurs" style={S.input} value={values.kurs} onChange={e => updateField('kurs', e.target.value)} />
+                  </div>
+                )}
+                <div style={{ ...S.formGroup, marginTop: '1rem' }}>
+                  <label style={S.label}>Keterangan FRP</label>
+                  <textarea
+                    name="keteranganFrp"
+                    style={S.textarea}
+                    value={values.keteranganFrp}
+                    onChange={e => updateField('keteranganFrp', e.target.value)}
+                    placeholder="Tulis keterangan..."
+                  />
+                </div>
               </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={S.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...S.th, width: '30%' }}>Memo</th>
-                      <th style={{ ...S.th, width: '28%' }}>Budget</th>
-                      <th style={{ ...S.th, width: '9%' }}>Qty</th>
-                      <th style={{ ...S.th, width: '14%' }}>Harga Satuan</th>
-                      <th style={{ ...S.th, width: '14%' }}>Amount (IDR)</th>
-                      <th style={{ ...S.th, width: '5%' }} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {values.items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td style={S.td}>
-                          <input name={`items[${idx}][memo]`} style={S.tdInput} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
-                        </td>
-                        <td style={S.td}>
+
+              {/* Vendor & Pembayaran */}
+              <div>
+                <h3 style={S.sectionTitle}>
+                  <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>store</span>
+                  Vendor &amp; Pembayaran
+                </h3>
+                <div style={grid2Style}>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Vendor</label>
+                    <SearchableSelect
+                      name="vendor"
+                      value={values.vendor}
+                      onChange={selectedValue => {
+                        const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
+                        console.log('Selected vendor:', selected)
+                        updateField('vendor', selectedValue)
+                        updateField('bankTujuan', selected?.bank || '')
+                        updateField('rekBankTujuan', selected?.no_rekening || '')
+                      }}
+                      options={vendorSelectOptions}
+                      placeholder="Pilih Vendor"
+                      style={S.select}
+                    />
+                  </div>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Internal PO Number</label>
+                    <input name="internalPoNumber" style={S.input} value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
+                  </div>
+                </div>
+                <div style={{ ...grid3Style, marginTop: '1rem' }}>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Ext Doc Type</label>
+                    <SearchableSelect
+                      name="extDocType"
+                      value={values.extDocType}
+                      onChange={selectedValue => updateField('extDocType', selectedValue)}
+                      options={extDocTypeOptions}
+                      placeholder="Pilih"
+                      style={S.select}
+                    />
+                  </div>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Ext Doc Number</label>
+                    <input name="extDocNumber" style={S.input} value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
+                  </div>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Payment Method</label>
+                    <SearchableSelect
+                      name="paymentMethod"
+                      value={values.paymentMethod}
+                      onChange={selectedValue => updateField('paymentMethod', selectedValue)}
+                      options={paymentMethodOptions}
+                      placeholder="Pilih Metode"
+                      style={S.select}
+                    />
+                  </div>
+                </div>
+                <div style={{ ...grid3Style, marginTop: '1rem' }}>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Payment Date</label>
+                    <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
+                  </div>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Bank Tujuan</label>
+                    <input name="bankTujuan" style={S.input} value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
+                  </div>
+                  <div style={S.formGroup}>
+                    <label style={S.label}>Rekening Bank Tujuan</label>
+                    <input name="rekBankTujuan" style={S.input} value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
+                  </div>
+                </div>
+                <div style={{ ...S.formGroup, marginTop: '1rem' }}>
+                  <label style={S.label}>Attach Link</label>
+                  <input name="attachLink" style={S.input} value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} placeholder="https://..." />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
+
+            {/* Checklist Documents Section */}
+            <div>
+              <h3 style={S.sectionTitle}>
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>checklist</span>
+                Checklist Documents
+              </h3>
+              <div style={{ ...S.checkRow, gap: isMobile ? '8px' : '10px' }}>
+                {CHECK_DOCS.map(doc => {
+                  const checked = values.checkDocs.includes(doc)
+                  return (
+                    <div
+                      key={doc}
+                      style={{
+                        ...S.checkItem,
+                        ...(checked ? S.checkItemActive : {}),
+                        width: isMobile ? '100%' : 'auto',
+                        padding: isMobile ? '10px 12px' : '8px 14px',
+                      }}
+                      onClick={() => handleCheckDocToggle(doc)}
+                    >
+                      <span className="material-icons-round" style={{ fontSize: '16px' }}>
+                        {checked ? 'check_box' : 'check_box_outline_blank'}
+                      </span>
+                      <input type="checkbox" name="checkDocs[]" value={doc} checked={checked} onChange={() => { }} style={{ display: 'none' }} />
+                      {doc}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
+
+            {/* Line Items Section */}
+            <div>
+              <h3 style={S.sectionTitle}>
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>table_rows</span>
+                Line Items
+              </h3>
+              {isMobile ? (
+                <div>
+                  {values.items.map((item, idx) => (
+                    <div key={idx} style={S.itemCard}>
+                      <div style={S.itemCardHeader}>
+                        <div style={S.itemCardTitle}>Item {idx + 1}</div>
+                        <button type="button" style={S.btnDel} onClick={() => handleRemoveRow(idx)}>
+                          <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
+                        </button>
+                      </div>
+                      <div style={grid2Style}>
+                        <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
+                          <label style={S.label}>Memo</label>
+                          <input name={`items[${idx}][memo]`} style={S.input} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
+                        </div>
+                        <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
+                          <label style={S.label}>Budget</label>
                           <SearchableSelect
                             name={`items[${idx}][budgetId]`}
                             value={item.budgetId}
                             onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
                             options={budgetSelectOptions}
                             placeholder="Pilih Budget"
-                            style={S.tdSelect}
-                            menuPosition="fixed"
+                            style={S.select}
                           />
-                        </td>
-                        <td style={S.td}>
-                          <input type="number" name={`items[${idx}][qty]`} style={S.tdInput} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
-                        </td>
-                        <td style={S.td}>
-                          <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.tdInput} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
-                        </td>
-                        <td style={S.td}>
-                          <input
-                            name={`items[${idx}][amount]`}
-                            style={{ ...S.tdInput, background: '#f8fafc', color: '#475569', fontWeight: 600 }}
-                            value={formatCurrency(calculateRowAmount(item))}
-                            readOnly
-                          />
-                        </td>
-                        <td style={S.td}>
-                          <button type="button" style={S.btnDel} onClick={() => handleRemoveRow(idx)}>
-                            <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
-                          </button>
-                        </td>
+                        </div>
+                        <div style={S.formGroup}>
+                          <label style={S.label}>Qty</label>
+                          <input type="number" name={`items[${idx}][qty]`} style={S.input} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
+                        </div>
+                        <div style={S.formGroup}>
+                          <label style={S.label}>Harga Satuan</label>
+                          <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.input} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
+                        </div>
+                      </div>
+                      <div style={S.itemCardAmount}>
+                        <div style={S.totalLabel}>Amount (IDR)</div>
+                        <div style={{ ...S.totalValue, fontSize: '1rem', marginTop: '0.3rem' }}>Rp {formatCurrency(calculateRowAmount(item))}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={S.table}>
+                    <thead>
+                      <tr>
+                        <th style={{ ...S.th, width: '30%' }}>Memo</th>
+                        <th style={{ ...S.th, width: '28%' }}>Budget</th>
+                        <th style={{ ...S.th, width: '9%' }}>Qty</th>
+                        <th style={{ ...S.th, width: '14%' }}>Harga Satuan</th>
+                        <th style={{ ...S.th, width: '14%' }}>Amount (IDR)</th>
+                        <th style={{ ...S.th, width: '5%' }} />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {values.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td style={S.td}>
+                            <input name={`items[${idx}][memo]`} style={S.tdInput} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
+                          </td>
+                          <td style={S.td}>
+                            <SearchableSelect
+                              name={`items[${idx}][budgetId]`}
+                              value={item.budgetId}
+                              onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
+                              options={budgetSelectOptions}
+                              placeholder="Pilih Budget"
+                              style={S.tdSelect}
+                              menuPosition="fixed"
+                            />
+                          </td>
+                          <td style={S.td}>
+                            <input type="number" name={`items[${idx}][qty]`} style={S.tdInput} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
+                          </td>
+                          <td style={S.td}>
+                            <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.tdInput} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
+                          </td>
+                          <td style={S.td}>
+                            <input
+                              name={`items[${idx}][amount]`}
+                              style={{ ...S.tdInput, background: '#f8fafc', color: '#475569', fontWeight: 600 }}
+                              value={formatCurrency(calculateRowAmount(item))}
+                              readOnly
+                            />
+                          </td>
+                          <td style={S.td}>
+                            <button type="button" style={S.btnDel} onClick={() => handleRemoveRow(idx)}>
+                              <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div
+                style={{
+                  ...S.totalRow,
+                  flexDirection: isMobile ? 'column' : 'row',
+                  alignItems: isMobile ? 'stretch' : 'center',
+                  gap: isMobile ? '0.85rem' : '1rem',
+                }}
+              >
+                <button type="button" style={{ ...S.btnAdd, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={handleAddRow}>
+                  <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
+                  Tambah Baris
+                </button>
+                <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+                  <span style={S.totalLabel}>Total Pembayaran</span>
+                  <div style={S.totalValue}>Rp {formatCurrency(totalAmount)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
+
+            {submitError && (
+              <div style={{ background: '#fee2e2', color: '#991b1b', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                {submitError}
               </div>
             )}
-            <div
-              style={{
-                ...S.totalRow,
-                flexDirection: isMobile ? 'column' : 'row',
-                alignItems: isMobile ? 'stretch' : 'center',
-                gap: isMobile ? '0.85rem' : '1rem',
-              }}
-            >
-              <button type="button" style={{ ...S.btnAdd, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={handleAddRow}>
-                <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-                Tambah Baris
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end' }}>
+              <button type="button" style={{ ...S.btnSecondary, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting}>
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
+                Reset
               </button>
-              <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                <span style={S.totalLabel}>Total Pembayaran</span>
-                <div style={S.totalValue}>Rp {formatCurrency(totalAmount)}</div>
-              </div>
+              <button type="submit" style={{ ...S.btnPrimary, opacity: submitting ? 0.7 : 1, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} disabled={submitting}>
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
+                {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
+              </button>
             </div>
-          </div>
-
-          {submitError && (
-            <div style={{ background: '#fee2e2', color: '#991b1b', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 500 }}>
-              {submitError}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingBottom: '2rem', flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end' }}>
-            <button type="button" style={{ ...S.btnSecondary, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting}>
-              <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
-              Reset
-            </button>
-            <button type="submit" style={{ ...S.btnPrimary, opacity: submitting ? 0.7 : 1, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} disabled={submitting}>
-              <span className="material-icons-round" style={{ fontSize: '18px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
-              {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
-            </button>
           </div>
         </form>
       )}
