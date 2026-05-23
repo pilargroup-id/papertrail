@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useUser } from '../contexts/UserContext'
-import DialogConfirm from '../components/Dialog/DialogConfirm'
-import BackgroundDialog from '../components/template/BackgroundDialog'
+import { useUser } from '../../contexts/UserContext'
+import DialogConfirm from '../../components/Dialog/DialogConfirm'
+import BackgroundDialog from '../../components/template/BackgroundDialog'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100

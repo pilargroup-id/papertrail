@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import BackgroundDialog from '../template/BackgroundDialog'
 import { XClose } from '../template/TemplateIcons.jsx'
 
+import ButtonApprove from '../button/ButtonApprove.jsx'
+
 const normalizeNumber = v => parseInt(String(v || '0').replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0
 
 const formatDisplayDate = value => {
@@ -348,7 +350,7 @@ function DialogDetailRP({
         {/* Footer actions with elegant design, transitions and shadow */}
         <div className="dashboard-popup__actions" style={{ position: 'relative', zIndex: 1, padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 24px 24px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {extraFooter}
-          
+
           <button
             type="button"
             className="dashboard-popup__button btn-dialog btn-dialog-duplicate"

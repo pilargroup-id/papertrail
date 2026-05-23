@@ -684,7 +684,7 @@ export default function NewFRP() {
               <div>
                 <h3 style={S.sectionTitle}>
                   <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
-                  Informasi FRP
+                  Informasi FRP2
                 </h3>
                 <div style={grid2Style}>
                   <div style={S.formGroup}>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useUser } from '../contexts/UserContext'
-import DialogConfirm from '../components/Dialog/DialogConfirm'
+import { useUser } from '../../contexts/UserContext'
+import DialogConfirm from '../../components/Dialog/DialogConfirm'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100

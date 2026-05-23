@@ -6,6 +6,9 @@ export default defineConfig({
   root: '.',
   server: {
     port: 5173,
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       '/api':          { target: 'http://localhost:3000', changeOrigin: true },
       '/logout':       { target: 'http://localhost:3000', changeOrigin: true },
