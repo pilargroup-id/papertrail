@@ -1,7 +1,7 @@
-function ButtonApprove({
+function ButtonKeFrp({
   children,
   className = '',
-  tone = 'approve',
+  tone = 'primary',
   type = 'button',
   ...buttonProps
 }) {
@@ -14,11 +14,11 @@ function ButtonApprove({
       {...buttonProps}
     >
       <span className="material-icons-round" style={{ fontSize: '15px' }}>
-        check_circle
+        arrow_forward
       </span>
       {children}
     </button>
   )
 }
 
-export default ButtonApprove
+export default ButtonKeFrp

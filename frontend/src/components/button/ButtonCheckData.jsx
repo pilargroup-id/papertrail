@@ -1,7 +1,7 @@
-function ButtonApprove({
+function ButtonCheckData({
   children,
   className = '',
-  tone = 'approve',
+  tone = 'warning',
   type = 'button',
   ...buttonProps
 }) {
@@ -14,11 +14,11 @@ function ButtonApprove({
       {...buttonProps}
     >
       <span className="material-icons-round" style={{ fontSize: '15px' }}>
-        check_circle
+        manage_search
       </span>
       {children}
     </button>
   )
 }
 
-export default ButtonApprove
+export default ButtonCheckData

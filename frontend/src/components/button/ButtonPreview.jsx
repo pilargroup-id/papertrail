@@ -1,7 +1,7 @@
-function ButtonApprove({
+function ButtonPreview({
   children,
   className = '',
-  tone = 'approve',
+  tone = 'neutral',
   type = 'button',
   ...buttonProps
 }) {
@@ -14,11 +14,11 @@ function ButtonApprove({
       {...buttonProps}
     >
       <span className="material-icons-round" style={{ fontSize: '15px' }}>
-        check_circle
+        visibility
       </span>
       {children}
     </button>
   )
 }
 
-export default ButtonApprove
+export default ButtonPreview

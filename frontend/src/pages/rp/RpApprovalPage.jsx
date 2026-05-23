@@ -3,6 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
+import DataTableRp from './DataTableRp'
+import ButtonApprove from '../../components/button/ButtonApprove.jsx'
+import ButtonReject from '../../components/button/ButtonReject.jsx'
+import ButtonRevert from '../../components/button/ButtonRevert.jsx'
+import ButtonDetail from '../../components/button/ButtonDetail.jsx'
+import ButtonPreview from '../../components/button/ButtonPreview.jsx'
+import ButtonPrintPdf from '../../components/button/ButtonPrintPdf.jsx'
+import ButtonCheckData from '../../components/button/ButtonCheckData.jsx'
+import ButtonKeFrp from '../../components/button/ButtonKeFrp.jsx'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -651,39 +660,39 @@ export default function RpApprovalPage() {
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
 
     return (
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
         {showDetail && (
-          <button type="button" onClick={() => setSelected(rp)} style={actionButtonStyle('primary')}>Detail</button>
+          <ButtonDetail onClick={() => setSelected(rp)}>Detail</ButtonDetail>
         )}
         {showPreview && ['approved', 'CREATED_FRP'].includes(rp.status) && (
           <>
-            <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
-            <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
+            <ButtonPreview onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')}>Preview</ButtonPreview>
+            <ButtonPrintPdf onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')}>Print PDF</ButtonPrintPdf>
           </>
         )}
         {canManagerApprove && (
           <>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')} style={actionButtonStyle('approve')}>Approve</button>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'manager-reject')} style={actionButtonStyle('reject')}>Reject</button>
+            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')}>Approve</ButtonApprove>
+            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'manager-reject')}>Reject</ButtonReject>
           </>
         )}
         {canProcess && (
           <>
-            <button type="button" onClick={() => navigate(`/rp?process=${rp.id}`)} style={actionButtonStyle('warning')}>Check Data</button>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')} style={actionButtonStyle('reject')}>Reject</button>
+            <ButtonCheckData onClick={() => navigate(`/rp?process=${rp.id}`)}>Check Data</ButtonCheckData>
+            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')}>Reject</ButtonReject>
           </>
         )}
         {canFinalApprove && (
           <>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')} style={actionButtonStyle('approve')}>Final Approve</button>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-reject')} style={actionButtonStyle('reject')}>Reject</button>
+            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Final Approve</ButtonApprove>
+            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-reject')}>Reject</ButtonReject>
           </>
         )}
         {canCreateFrp && showKeFrp && (
-          <button type="button" onClick={() => navigate(`/frp?fromRp=${rp.id}`)} style={actionButtonStyle('primary')}>Ke FRP</button>
+          <ButtonKeFrp onClick={() => navigate(`/frp?fromRp=${rp.id}`)}>Ke FRP</ButtonKeFrp>
         )}
         {isAdmin && rp.status !== 'waiting_manager' && (
-          <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'revert')} style={actionButtonStyle('warning')}>Revert</button>
+          <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
         )}
       </div>
     )
@@ -1122,135 +1131,24 @@ export default function RpApprovalPage() {
         </div>
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b', padding: '4rem 2rem' }}>Memuat data...</div>
-          ) : filtered.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#94a3b8', padding: '4rem 2rem' }}>
-              <span className="material-icons-round" style={{ fontSize: '48px', marginBottom: '1rem', opacity: 0.5 }}>inventory_2</span>
-              <h3 style={{ margin: '0 0 0.5rem', color: '#64748b', fontWeight: 600 }}>Belum Ada Data</h3>
-            </div>
-          ) : isMobile ? (
-            <>
-              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {paginated.map(rp => (
-                  <div key={rp.id} style={{ background: 'white', border: '1px solid #e8edf4', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
-                      <div>
-                        <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem', marginBottom: '4px' }}>{rp.rpNo || 'Draft'}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>{formatDate(rp.createdAt || rp.tanggalDibutuhkan)}</div>
-                      </div>
-                      {renderStatus(rp.status)}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: '12px' }}>
-                      {[
-                        ['Pemohon', rp.dibuatOleh || '-'],
-                        ['Divisi', rp.divisi || '-'],
-                        ['Kategori', rp.kategoriPembelian || '-'],
-                        ['Diproses', rp.diprosesOleh || '-'],
-                      ].map(([label, value]) => (
-                        <div key={label}>
-                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>{label}</div>
-                          <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: 500 }}>{value}</div>
-                        </div>
-                      ))}
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Total</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', color: '#0f172a' }}>{formatCurrency(calcTotal(rp))}</div>
-                      </div>
-                    </div>
-                    {renderRowActions(rp)}
-                  </div>
-                ))}
-              </div>
-              <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {filtered.length}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>
-                  <select value={rowsPerPage} onChange={event => setRowsPerPage(Number(event.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px' }}>
-                    {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
-                  </select>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.max(1, page - 1))} disabled={safeCurrentPage === 1} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Prev</button>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))} disabled={safeCurrentPage === totalPages} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Next</button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
-                  <colgroup>
-                    {desktopColumnWidths.map((width, index) => <col key={`desktop-head-col-${index}`} style={{ width }} />)}
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      {desktopHeaders.map(header => (
-                        <th key={header.label} onClick={() => requestSort(header.key)} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', boxShadow: '0 2px 4px -1px rgba(15,23,42,0.06)', cursor: header.key ? 'pointer' : 'default', userSelect: 'none' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                            {header.label}
-                            {renderSortIcon(header.key)}
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                </table>
-                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
-                  <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
-                    <colgroup>
-                      {desktopColumnWidths.map((width, index) => <col key={`desktop-body-col-${index}`} style={{ width }} />)}
-                    </colgroup>
-                    <tbody>
-                      {paginated.map((rp, index) => {
-                        const rowBg = index % 2 === 0 ? 'white' : '#fafbfc'
-                        const td = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }
-                        return (
-                          <tr
-                            key={rp.id}
-                            style={{ background: rowBg }}
-                            onMouseEnter={event => { event.currentTarget.style.background = '#eff6ff' }}
-                            onMouseLeave={event => { event.currentTarget.style.background = rowBg }}
-                          >
-                              <td style={td}>
-                                <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.82rem', marginBottom: '4px', wordBreak: 'break-word' }}>{rp.rpNo || 'Draft'}</div>
-                                <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.45 }}>{formatDate(rp.createdAt || rp.tanggalDibutuhkan)}</div>
-                              </td>
-                              <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                                <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>{rp.dibuatOleh || '-'}</div>
-                                <div style={{ fontSize: '12px', color: '#64748b' }}>{rp.kategoriPembelian || '-'}</div>
-                              </td>
-                              <td style={{ ...td, whiteSpace: 'normal' }}><span style={{ background: '#e0e7ef', color: '#334155', borderRadius: '6px', padding: '2px 8px', fontSize: '12px', fontWeight: 700, display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word' }}>{rp.divisi || '-'}</span></td>
-                              <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word' }}>{rp.diprosesOleh || '-'}</td>
-                              <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 800, whiteSpace: 'normal', color: '#0f172a', wordBreak: 'break-word' }}>{formatCurrency(calcTotal(rp))}</td>
-                              <td style={td}>{renderStatus(rp.status)}</td>
-                              <td style={{ ...td, whiteSpace: 'normal' }}>
-                                {renderRowActions(rp, { showDetail: false, showPreview: false })}
-                              </td>
-                              <td style={{ ...td, whiteSpace: 'normal' }}>
-                                <button type="button" onClick={() => setSelected(rp)} style={actionButtonStyle('primary')}>Detail</button>
-                              </td>
-                            </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px 14px', display: 'flex', flexWrap: 'nowrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
-                <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>{rangeStart}-{rangeEnd} dari {filtered.length} data</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>Rows per page</span>
-                    <select value={rowsPerPage} onChange={event => setRowsPerPage(Number(event.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px', background: 'white' }}>
-                      {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
-                    </select>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>Page {safeCurrentPage} / {totalPages}</div>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.max(1, page - 1))} disabled={safeCurrentPage === 1} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: '12px' }}>Prev</button>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))} disabled={safeCurrentPage === totalPages} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: '12px' }}>Next</button>
-                </div>
-              </div>
-            </>
-          )}
+          <DataTableRp
+            loading={loading}
+            isMobile={isMobile}
+            paginated={paginated}
+            filtered={filtered}
+            safeCurrentPage={safeCurrentPage}
+            totalPages={totalPages}
+            rowsPerPage={rowsPerPage}
+            setRowsPerPage={setRowsPerPage}
+            setCurrentPage={setCurrentPage}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            sortConfig={sortConfig}
+            requestSort={requestSort}
+            renderRowActions={renderRowActions}
+            setSelected={setSelected}
+            calcTotal={calcTotal}
+          />
         </div>
       </main>
       {renderDetail()}
