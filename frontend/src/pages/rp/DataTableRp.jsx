@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import ButtonDetail from '../../components/button/ButtonDetail.jsx'
+import { useState } from 'react'
+import ButtonDetailStatusRp from '../../components/button/ButtonDetailStatusRp.jsx'
 
 
 const STATUS_META = {
@@ -58,10 +58,9 @@ const desktopHeaders = [
   { label: 'Proses', key: 'processor' },
   { label: 'Total', key: 'total' },
   { label: 'Status', key: 'status' },
-  { label: 'Aksi', key: null },
   { label: 'Detail', key: null },
 ]
-const desktopColumnWidths = ['14%', '14%', '9%', '11%', '12%', '13%', '18%', '9%']
+const desktopColumnWidths = ['19%', '15%', '9%', '11%', '13%', '13%', '9%']
 
 export default function DataTableRp({
   loading,
@@ -81,6 +80,13 @@ export default function DataTableRp({
   setSelected,
   calcTotal,
 }) {
+  const [expandedId, setExpandedId] = useState(null)
+
+  const toggleExpand = (id, e) => {
+    e.stopPropagation()
+    setExpandedId(prev => (prev === id ? null : id))
+  }
+
   const renderSortIcon = (key) => {
     if (!key) return null
     if (sortConfig.key !== key) {
@@ -163,89 +169,150 @@ export default function DataTableRp({
             gap: '10px',
           }}
         >
-          {paginated.map((rp) => (
-            <div
-              key={rp.id}
-              style={{
-                background: 'white',
-                border: '1px solid #e8edf4',
-                borderRadius: '14px',
-                padding: '14px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-              }}
-            >
+          {paginated.map((rp) => {
+            const isOpen = expandedId === rp.id
+            return (
               <div
+                key={rp.id}
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: '10px',
-                  alignItems: 'flex-start',
-                  marginBottom: '10px',
+                  background: 'white',
+                  border: `1.5px solid ${isOpen ? '#bfdbfe' : '#e8edf4'}`,
+                  borderRadius: '14px',
+                  boxShadow: isOpen ? '0 4px 16px rgba(37,99,235,0.08)' : '0 1px 4px rgba(0,0,0,0.05)',
+                  overflow: 'hidden',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
                 }}
               >
-                <div>
-                  <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem', marginBottom: '4px' }}>
-                    {rp.rpNo || 'Draft'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    {formatDate(rp.createdAt || rp.tanggalDibutuhkan)}
-                  </div>
-                </div>
-                {renderStatus(rp.status)}
-              </div>
-              <div
-                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: '12px' }}
-              >
-                {[
-                  ['Pemohon', rp.dibuatOleh || '-'],
-                  ['Divisi', rp.divisi || '-'],
-                  ['Kategori', rp.kategoriPembelian || '-'],
-                  ['Diproses', rp.diprosesOleh || '-'],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <div
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        color: '#94a3b8',
-                        letterSpacing: '0.04em',
-                        marginBottom: '2px',
-                      }}
-                    >
-                      {label}
+                {/* Card header — klik untuk buka detail */}
+                <div
+                  style={{ padding: '14px', cursor: 'pointer' }}
+                  onClick={() => setSelected(rp)}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      alignItems: 'flex-start',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {/* Chevron toggle */}
+                      <button
+                        type="button"
+                        onClick={(e) => toggleExpand(rp.id, e)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '8px',
+                          border: '1.5px solid #dbe5f0',
+                          background: isOpen ? '#eff6ff' : 'white',
+                          color: isOpen ? '#2563eb' : '#94a3b8',
+                          display: 'grid',
+                          placeItems: 'center',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          transition: 'background 0.2s, color 0.2s, border-color 0.2s',
+                        }}
+                        aria-label={isOpen ? 'Tutup aksi' : 'Buka aksi'}
+                      >
+                        <span
+                          className="material-icons-round"
+                          style={{
+                            fontSize: '16px',
+                            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.25s cubic-bezier(0.4,0,0.2,1)',
+                          }}
+                        >
+                          expand_more
+                        </span>
+                      </button>
+                      <div>
+                        <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem', marginBottom: '2px' }}>
+                          {rp.rpNo || 'Draft'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>
+                          {formatDate(rp.createdAt || rp.tanggalDibutuhkan)}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: 500 }}>{value}</div>
-                  </div>
-                ))}
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <div
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      color: '#94a3b8',
-                      letterSpacing: '0.04em',
-                      marginBottom: '2px',
-                    }}
-                  >
-                    Total
+                    {renderStatus(rp.status)}
                   </div>
                   <div
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: 800,
-                      fontFamily: 'IBM Plex Mono, monospace',
-                      color: '#0f172a',
-                    }}
+                    style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}
                   >
-                    {formatCurrency(calcTotal(rp))}
+                    {[
+                      ['Pemohon', rp.dibuatOleh || '-'],
+                      ['Divisi', rp.divisi || '-'],
+                      ['Kategori', rp.kategoriPembelian || '-'],
+                      ['Diproses', rp.diprosesOleh || '-'],
+                    ].map(([label, value]) => (
+                      <div key={label}>
+                        <div
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            color: '#94a3b8',
+                            letterSpacing: '0.04em',
+                            marginBottom: '2px',
+                          }}
+                        >
+                          {label}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: 500 }}>{value}</div>
+                      </div>
+                    ))}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <div
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          color: '#94a3b8',
+                          letterSpacing: '0.04em',
+                          marginBottom: '2px',
+                        }}
+                      >
+                        Total
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '14px',
+                          fontWeight: 800,
+                          fontFamily: 'IBM Plex Mono, monospace',
+                          color: '#0f172a',
+                        }}
+                      >
+                        {formatCurrency(calcTotal(rp))}
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Accordion aksi */}
+                {isOpen && (
+                  <div
+                    style={{
+                      borderTop: '1.5px solid #dbeafe',
+                      background: 'linear-gradient(135deg, #f0f7ff 0%, #eff6ff 100%)',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: '4px' }}>
+                      Aksi:
+                    </span>
+                    {renderRowActions(rp)}
+                  </div>
+                )}
               </div>
-              {renderRowActions(rp)}
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Mobile pagination */}
@@ -326,6 +393,47 @@ export default function DataTableRp({
   /* ── Desktop table ── */
   return (
     <>
+      <style>{`
+        @keyframes accordionSlideDown {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .accordion-row-actions {
+          animation: accordionSlideDown 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+        .chevron-btn {
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          border: 1.5px solid #dbe5f0;
+          background: white;
+          color: #94a3b8;
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+        }
+        .chevron-btn:hover {
+          background: #eff6ff;
+          color: #2563eb;
+          border-color: #93c5fd;
+          box-shadow: 0 2px 8px rgba(37,99,235,0.12);
+        }
+        .chevron-btn.is-open {
+          background: #eff6ff;
+          color: #2563eb;
+          border-color: #93c5fd;
+        }
+        .chevron-icon {
+          font-size: 16px;
+          transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+        .chevron-icon.is-open {
+          transform: rotate(180deg);
+        }
+      `}</style>
+
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Fixed header */}
         <table
@@ -347,7 +455,7 @@ export default function DataTableRp({
             <tr>
               {desktopHeaders.map((header) => (
                 <th
-                  key={header.label}
+                  key={header.label || `hdr-${header.key}`}
                   onClick={() => requestSort(header.key)}
                   style={{
                     padding: '10px 14px',
@@ -394,83 +502,147 @@ export default function DataTableRp({
             </colgroup>
             <tbody>
               {paginated.map((rp, index) => {
+                const isOpen = expandedId === rp.id
                 const rowBg = index % 2 === 0 ? 'white' : '#fafbfc'
-                const td = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }
+                const td = { padding: '11px 14px', borderBottom: isOpen ? 'none' : '1px solid #f1f5f9', verticalAlign: 'top' }
+                const tdAccordion = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }
                 return (
-                  <tr
-                    key={rp.id}
-                    style={{ background: rowBg }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#eff6ff'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = rowBg
-                    }}
-                  >
-                    <td style={td}>
-                      <div
-                        style={{
-                          fontWeight: 800,
-                          color: '#1e40af',
-                          fontSize: '0.82rem',
-                          marginBottom: '4px',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {rp.rpNo || 'Draft'}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.45 }}>
-                        {formatDate(rp.createdAt || rp.tanggalDibutuhkan)}
-                      </div>
-                    </td>
-                    <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                      <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
-                        {rp.dibuatOleh || '-'}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>{rp.kategoriPembelian || '-'}</div>
-                    </td>
-                    <td style={{ ...td, whiteSpace: 'normal' }}>
-                      <span
-                        style={{
-                          background: '#e0e7ef',
-                          color: '#334155',
-                          borderRadius: '6px',
-                          padding: '2px 8px',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                          display: 'inline-block',
-                          maxWidth: '100%',
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {rp.divisi || '-'}
-                      </span>
-                    </td>
-                    <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                      {rp.diprosesOleh || '-'}
-                    </td>
-                    <td
-                      style={{
-                        ...td,
-                        fontFamily: 'IBM Plex Mono, monospace',
-                        fontWeight: 800,
-                        whiteSpace: 'normal',
-                        color: '#0f172a',
-                        wordBreak: 'break-word',
+                  <>
+                    <tr
+                      key={rp.id}
+                      style={{ background: isOpen ? '#eff6ff' : rowBg, cursor: 'pointer' }}
+                      onClick={() => setSelected(rp)}
+                      onMouseEnter={(e) => {
+                        if (!isOpen) e.currentTarget.style.background = '#eff6ff'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isOpen) e.currentTarget.style.background = rowBg
                       }}
                     >
-                      {formatCurrency(calcTotal(rp))}
-                    </td>
-                    <td style={td}>{renderStatus(rp.status)}</td>
-                    <td style={{ ...td, whiteSpace: 'normal' }}>
-                      {renderRowActions(rp, { showDetail: false, showPreview: false })}
-                    </td>
-                    <td style={{ ...td, whiteSpace: 'normal' }}>
-                      <ButtonDetail onClick={() => setSelected(rp)}>
-                        Detail
-                      </ButtonDetail>
-                    </td>
-                  </tr>
+                      <td style={td}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                          {/* Chevron toggle — di dalam sel Ringkasan */}
+                          <button
+                            type="button"
+                            onClick={(e) => toggleExpand(rp.id, e)}
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              borderRadius: '10px',
+                              border: '1px solid #cbd5e1',
+                              background: isOpen ? '#dbeafe' : '#f8fafc',
+                              color: isOpen ? '#1d4ed8' : '#64748b',
+                              display: 'grid',
+                              placeItems: 'center',
+                              cursor: 'pointer',
+                              padding: 0,
+                              flexShrink: 0,
+                              transition: 'background 0.18s, color 0.18s, border-color 0.18s',
+                            }}
+                            aria-label={isOpen ? 'Sembunyikan aksi' : 'Lihat aksi'}
+                          >
+                            <span className="material-icons-round" style={{ fontSize: '18px' }}>
+                              {isOpen ? 'expand_less' : 'expand_more'}
+                            </span>
+                          </button>
+                          <div style={{ minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontWeight: 800,
+                                color: '#1e40af',
+                                fontSize: '0.82rem',
+                                marginBottom: '4px',
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {rp.rpNo || 'Draft'}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.45 }}>
+                              {formatDate(rp.createdAt || rp.tanggalDibutuhkan)}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
+                          {rp.dibuatOleh || '-'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>{rp.kategoriPembelian || '-'}</div>
+                      </td>
+                      <td style={{ ...td, whiteSpace: 'normal' }}>
+                        <span
+                          style={{
+                            background: '#e0e7ef',
+                            color: '#334155',
+                            borderRadius: '6px',
+                            padding: '2px 8px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            display: 'inline-block',
+                            maxWidth: '100%',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {rp.divisi || '-'}
+                        </span>
+                      </td>
+                      <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                        {rp.diprosesOleh || '-'}
+                      </td>
+                      <td
+                        style={{
+                          ...td,
+                          fontFamily: 'IBM Plex Mono, monospace',
+                          fontWeight: 800,
+                          whiteSpace: 'normal',
+                          color: '#0f172a',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {formatCurrency(calcTotal(rp))}
+                      </td>
+                      <td style={td}>{renderStatus(rp.status)}</td>
+                      <td style={{ ...td, whiteSpace: 'normal' }} onClick={(e) => e.stopPropagation()}>
+                        <ButtonDetailStatusRp onClick={() => setSelected(rp)}>
+                          Detail
+                        </ButtonDetailStatusRp>
+                      </td>
+                    </tr>
+
+                    {/* Accordion row — tombol aksi */}
+                    {isOpen && (
+                      <tr key={`${rp.id}-accordion`} style={{ background: '#f0f7ff' }}>
+                        <td
+                          colSpan={desktopColumnWidths.length}
+                          style={{
+                            ...tdAccordion,
+                            padding: '10px 20px 12px 52px',
+                            borderTop: '1px dashed #bfdbfe',
+                          }}
+                        >
+                          <div className="accordion-row-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: '#3b82f6',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                marginRight: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              <span className="material-icons-round" style={{ fontSize: '14px' }}>bolt</span>
+                              Aksi Cepat
+                            </span>
+                            {renderRowActions(rp, { showDetail: false, showPreview: true, showKeFrp: true })}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 )
               })}
             </tbody>
