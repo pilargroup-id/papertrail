@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import BackgroundDialog from '../template/BackgroundDialog'
+import BackgroundDialog from '../template/BackgroundDialog.jsx'
 
 import { XClose } from '../template/TemplateIcons.jsx'
 
@@ -137,7 +137,7 @@ function DialogFrpDetail({
               textOverflow: 'ellipsis', 
               overflow: 'hidden' 
             }}>
-              ID: {request.id}
+              FRP No: {request.frpNo}
             </span>
             {(() => {
               const statusStr = request.status || 'Waiting Approval'

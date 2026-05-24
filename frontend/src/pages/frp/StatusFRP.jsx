@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
+import DialogDetailStatusFrp from '../../components/Dialog/DialogDetailStatusFrp'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -83,6 +84,7 @@ export default function StatusFRP() {
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [expandedId, setExpandedId]   = useState(null)
   const [copiedId, setCopiedId]       = useState(null)
+  const [selectedFrp, setSelectedFrp] = useState(null)
   const [viewportWidth, setViewportWidth] = useState(
     () => (typeof window === 'undefined' ? 1280 : window.innerWidth)
   )
@@ -307,7 +309,7 @@ export default function StatusFRP() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => navigate(`/frp/${req.id}`)}
+                        onClick={() => setSelectedFrp(req)}
                         style={{ width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}
                       >
                         Lihat Detail
@@ -389,7 +391,7 @@ export default function StatusFRP() {
                           <td style={td}>
                             <button
                               type="button"
-                              onClick={() => navigate(`/frp/${req.id}`)}
+                              onClick={() => setSelectedFrp(req)}
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '4px',
                                 background: '#eff6ff', color: '#1d4ed8',
@@ -428,6 +430,12 @@ export default function StatusFRP() {
           )}
         </div>
       )}
+
+      <DialogDetailStatusFrp
+        isOpen={!!selectedFrp}
+        request={selectedFrp}
+        onClose={() => setSelectedFrp(null)}
+      />
     </main>
   )
 }

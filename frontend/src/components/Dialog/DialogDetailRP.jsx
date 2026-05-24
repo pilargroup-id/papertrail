@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import BackgroundDialog from '../template/BackgroundDialog'
-import { XClose } from '../template/TemplateIcons.jsx'
 
 import ButtonApprove from '../button/ButtonApprove.jsx'
 
@@ -248,20 +247,6 @@ function DialogDetailRP({
               )
             })()}
           </div>
-
-          <div className="frp-detail-header-actions" style={{ flexShrink: 0, marginLeft: '6px' }}>
-            <button
-              type="button"
-              className="dashboard-popup__close"
-              aria-label="Tutup dialog"
-              onClick={onClose}
-              style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', transition: 'color 0.2s', borderRadius: '8px' }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#f8fafc'}
-              onMouseOut={(e) => e.currentTarget.style.color = '#94a3b8'}
-            >
-              <XClose size={20} />
-            </button>
-          </div>
         </div>
 
         <div className="dashboard-popup__body dashboard-popup__body--frp-detail" style={{ flex: '0 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '16px 24px 8px 24px' }}>
@@ -383,15 +368,6 @@ function DialogDetailRP({
               </button>
             </>
           )}
-
-          <button
-            type="button"
-            className="dashboard-popup__button btn-dialog btn-dialog-close"
-            onClick={onClose}
-          >
-            <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
-            Tutup
-          </button>
         </div>
       </div>
     </div>

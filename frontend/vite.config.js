@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     port: 5173,
     watch: {
-      usePolling: true,
+      usePolling: false, // ubah ke false untuk Windows Native agar HMR lebih responsif
     },
     proxy: {
       '/api':          { target: 'http://localhost:3000', changeOrigin: true },

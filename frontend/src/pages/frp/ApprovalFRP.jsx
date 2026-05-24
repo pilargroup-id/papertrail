@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
-import DialogFrpDetail from '../../components/Dialog/DialogFrpDetail'
+import DialogFrpDetail from '../../components/Dialog/DialogDetailFrp'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import { useUser } from '../../contexts/UserContext'
 

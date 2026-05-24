@@ -450,6 +450,19 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
         const companyId = await getCompanyId(companyName);
         const deptId = await getDeptId(divisi, companyName);
 
+        // Fetch old items if updating to reverse previous deduction
+        let oldItems = [];
+        if (req.body.frpId) {
+            const [rows] = await db.query('SELECT items FROM frp_request WHERE id = ?', [req.body.frpId]);
+            if (rows.length && rows[0].items) {
+                try {
+                    oldItems = typeof rows[0].items === 'string' ? JSON.parse(rows[0].items) : rows[0].items;
+                } catch (e) {
+                    console.error('Error parsing old items', e);
+                }
+            }
+        }
+
         // Handle revision (update existing)
         if (req.body.frpId) {
             await db.query(`
@@ -471,6 +484,41 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             
             const [rows] = await db.query('SELECT frp_no FROM frp_request WHERE id = ?', [req.body.frpId]);
             const frpNo = rows.length ? rows[0].frp_no : '';
+
+            // Update budgets.json
+            try {
+                const { readJson, writeJson } = require('../utils/json');
+                const budgetsData = readJson('budgets.json');
+                let isModified = false;
+
+                // Revert old items
+                oldItems.forEach(item => {
+                    if (item.budgetId) {
+                        const b = budgetsData.find(x => x.id === item.budgetId);
+                        if (b) {
+                            b.totalAmount = (b.totalAmount || 0) + (parseFloat(item.amount) || 0);
+                            isModified = true;
+                        }
+                    }
+                });
+
+                // Deduct new items
+                (req.body.items || []).forEach(item => {
+                    if (item.budgetId) {
+                        const b = budgetsData.find(x => x.id === item.budgetId);
+                        if (b) {
+                            b.totalAmount = (b.totalAmount || 0) - (parseFloat(item.amount) || 0);
+                            isModified = true;
+                        }
+                    }
+                });
+
+                if (isModified) {
+                    writeJson('budgets.json', budgetsData);
+                }
+            } catch (err) {
+                console.error('Failed to update budgets.json:', err);
+            }
 
             return res.json({ success: true, id: req.body.frpId, frpNo });
         }
@@ -514,6 +562,29 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
         // Mark linked RP as FRP created
         if (req.body.fromRpId) {
             await db.query('UPDATE rp_request SET status = ? WHERE id = ?', ['CREATED_FRP', req.body.fromRpId]);
+        }
+
+        // Update budgets.json for new FRP
+        try {
+            const { readJson, writeJson } = require('../utils/json');
+            const budgetsData = readJson('budgets.json');
+            let isModified = false;
+
+            (req.body.items || []).forEach(item => {
+                if (item.budgetId) {
+                    const b = budgetsData.find(x => x.id === item.budgetId);
+                    if (b) {
+                        b.totalAmount = (b.totalAmount || 0) - (parseFloat(item.amount) || 0);
+                        isModified = true;
+                    }
+                }
+            });
+
+            if (isModified) {
+                writeJson('budgets.json', budgetsData);
+            }
+        } catch (err) {
+            console.error('Failed to update budgets.json:', err);
         }
 
         res.json({ success: true, id, frpNo });
