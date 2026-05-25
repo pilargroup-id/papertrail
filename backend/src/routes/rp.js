@@ -86,15 +86,18 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
         });
 
         const budgetsWithRemaining = budgetsData.map(b => {
-            const bCompany = companiesData.find(c => String(c.id) === String(b.companyId) || c.code === b.companyId);
-            const bDept = departmentsData.find(d => String(d.id) === String(b.departmentId));
-            const bClass = departmentsData.find(d => String(d.id) === String(b.classId));
+            const bCompanyId = b.company_id !== undefined ? b.company_id : b.companyId;
+            const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
+            const bClassId = b.class_id !== undefined ? b.class_id : b.classId;
+            const bCompany = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+            const bDept = departmentsData.find(d => String(d.id) === String(bDepartmentId));
+            const bClass = departmentsData.find(d => String(d.id) === String(bClassId));
             return {
                 ...b,
                 company: bCompany ? (bCompany.name || bCompany.code) : (b.company || 'PT PILAR NIAGA MAKMUR'),
                 department: bDept ? bDept.name : (b.department || ''),
                 class: bClass ? bClass.class : (b.class || ''),
-                remainingAmount: (b.totalAmount || 0) - (usedBudgets[b.id] || 0),
+                remainingAmount: (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0),
             };
         });
 
@@ -338,9 +341,12 @@ router.get('/api/rp/:id', checkAuth, async (req, res) => {
             getDepartmentRows(),
         ]);
         const mappedBudgets = budgetsData.map(b => {
-            const bCompany = companiesData.find(c => String(c.id) === String(b.companyId) || c.code === b.companyId);
-            const bDept = departmentsData.find(d => String(d.id) === String(b.departmentId));
-            const bClass = departmentsData.find(d => String(d.id) === String(b.classId));
+            const bCompanyId = b.company_id !== undefined ? b.company_id : b.companyId;
+            const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
+            const bClassId = b.class_id !== undefined ? b.class_id : b.classId;
+            const bCompany = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+            const bDept = departmentsData.find(d => String(d.id) === String(bDepartmentId));
+            const bClass = departmentsData.find(d => String(d.id) === String(bClassId));
             return {
                 ...b,
                 company: bCompany ? (bCompany.name || bCompany.code) : (b.company || 'PT PILAR NIAGA MAKMUR'),

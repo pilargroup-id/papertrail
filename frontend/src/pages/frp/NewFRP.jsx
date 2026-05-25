@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import SearchableSelect from '../../components/template/SearchableSelect.jsx'
+import DataTableItemsFrp from '../../components/table/DataTableItemsFrp.jsx'
 import { frpService } from '../../services/frp/new-frp'
 import '../../styles/frp/new-frp.css';
 
@@ -285,19 +286,18 @@ export default function NewFRP() {
       (FRP.budgets || []).filter(b => {
         const tc = (b.company || 'PT PILAR NIAGA MAKMUR').trim().toUpperCase()
         const sc = (values.companyName || '').trim().toUpperCase()
-        const td = (b.department || '').trim().toLowerCase()
-        const sd = (values.divisi || '').trim().toLowerCase()
-        return (!sc || tc === sc) && (!sd || td === sd)
+        return !sc || tc === sc
       }),
-    [values.companyName, values.divisi, FRP.budgets],
+    [values.companyName, FRP.budgets],
   )
 
   const calculateRowAmount = item =>
     normalizeNumber(item.qty) * normalizeNumber(item.hargaSatuan) * (normalizeNumber(values.kurs) || 1)
 
   const getBudgetAmount = budgetId => {
-    const b = (FRP.budgets || []).find(x => x.id === budgetId)
-    return b ? (b.remainingAmount !== undefined ? b.remainingAmount : b.totalAmount) : 0
+    const b = (frpData?.budgets || []).find(x => x.id === budgetId)
+    if (!b) return 0
+    return b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : (b.remainingAmount !== undefined ? b.remainingAmount : 0))
   }
 
   const totalAmount = useMemo(
@@ -665,121 +665,18 @@ export default function NewFRP() {
             <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
 
             {/* Line Items Section */}
-            <div>
-              <h3 className="frp-section-title">
-                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>table_rows</span>
-                Line Items
-              </h3>
-              {isMobile ? (
-                <div>
-                  {values.items.map((item, idx) => (
-                    <div key={idx} className="frp-item-card">
-                      <div className="frp-item-card-header">
-                        <div className="frp-item-card-title">Item {idx + 1}</div>
-                        <button type="button" className="frp-btn-del" onClick={() => handleRemoveRow(idx)}>
-                          <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
-                        </button>
-                      </div>
-                      <div className="frp-grid-2">
-                        <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
-                          <label className="frp-label">Memo</label>
-                          <input name={`items[${idx}][memo]`} className="frp-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
-                        </div>
-                        <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
-                          <label className="frp-label">Budget</label>
-                          <SearchableSelect
-                            name={`items[${idx}][budgetId]`}
-                            value={item.budgetId}
-                            onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
-                            options={budgetSelectOptions}
-                            placeholder="Pilih Budget"
-                            className="frp-select"
-                          />
-                        </div>
-                        <div className="frp-form-group">
-                          <label className="frp-label">Qty</label>
-                          <input type="number" name={`items[${idx}][qty]`} className="frp-input" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
-                        </div>
-                        <div className="frp-form-group">
-                          <label className="frp-label">Harga Satuan</label>
-                          <input type="text" name={`items[${idx}][hargaSatuan]`} className="frp-input" value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
-                        </div>
-                      </div>
-                      <div className="frp-item-card-amount">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div className="frp-total-label">Amount (IDR)</div>
-                        </div>
-                        <div className="frp-total-value" style={{ fontSize: "1rem", marginTop: "0.3rem" }}>Rp {formatCurrency(getBudgetAmount(item.budgetId))}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="frp-table">
-                    <thead>
-                      <tr>
-                        <th className="frp-th" style={{ width: "30%" }}>Memo</th>
-                        <th className="frp-th" style={{ width: "28%" }}>Budget</th>
-                        <th className="frp-th" style={{ width: "9%" }}>Qty</th>
-                        <th className="frp-th" style={{ width: "14%" }}>Harga Satuan</th>
-                        <th className="frp-th" style={{ width: "14%" }}>Amount (IDR)</th>
-                        <th className="frp-th" style={{ width: "5%" }} />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {values.items.map((item, idx) => (
-                        <tr key={idx}>
-                          <td className="frp-td">
-                            <input name={`items[${idx}][memo]`} className="frp-td-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
-                          </td>
-                          <td className="frp-td">
-                            <SearchableSelect
-                              name={`items[${idx}][budgetId]`}
-                              value={item.budgetId}
-                              onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
-                              options={budgetSelectOptions}
-                              placeholder="Pilih Budget"
-                              className="frp-td-select"
-                              menuPosition="fixed"
-                            />
-                          </td>
-                          <td className="frp-td">
-                            <input type="number" name={`items[${idx}][qty]`} className="frp-td-input" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
-                          </td>
-                          <td className="frp-td">
-                            <input type="text" name={`items[${idx}][hargaSatuan]`} className="frp-td-input" value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
-                          </td>
-                          <td className="frp-td">
-                            <input
-                              name={`items[${idx}][budgetAmountDisp]`}
-                              className="frp-td-input" style={{ background: "#f8fafc", color: "#475569", fontWeight: 600 }}
-                              value={formatCurrency(getBudgetAmount(item.budgetId))}
-                              readOnly
-                            />
-                          </td>
-                          <td className="frp-td">
-                            <button type="button" className="frp-btn-del" onClick={() => handleRemoveRow(idx)}>
-                              <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <div className="frp-total-row">
-                <button type="button" className="frp-btn-add" onClick={handleAddRow}>
-                  <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-                  Tambah Baris
-                </button>
-                <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                  <span className="frp-total-label">Total Pembayaran</span>
-                  <div className="frp-total-value">Rp {formatCurrency(totalAmount)}</div>
-                </div>
-              </div>
-            </div>
+            <DataTableItemsFrp
+              items={values.items}
+              isMobile={isMobile}
+              budgetSelectOptions={budgetSelectOptions}
+              updateItem={updateItem}
+              handleAddRow={handleAddRow}
+              handleRemoveRow={handleRemoveRow}
+              getBudgetAmount={getBudgetAmount}
+              totalAmount={totalAmount}
+              calculateRowAmount={calculateRowAmount}
+              budgets={frpData?.budgets || []}
+            />
 
             <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
 
