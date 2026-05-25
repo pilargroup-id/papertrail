@@ -3873,7 +3873,7 @@
     "id": "SIT2602",
     "description": "6100.02.05 - Biaya Internet",
     "type": "Cost",
-    "totalAmount": 36200000,
+    "totalAmount": 35200000,
     "companyId": "comp-pnm-0001",
     "departmentId": 8,
     "classId": 8
