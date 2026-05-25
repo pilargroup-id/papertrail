@@ -1,14 +1,5 @@
 [
   {
-    "id": "PRO2601",
-    "description": "1620.00.00 - Transit Aktiva Tetap",
-    "type": "Aktiva",
-    "totalAmount": 28500000,
-    "companyId": "comp-pnm-0001",
-    "departmentId": 13,
-    "classId": 13
-  },
-  {
     "id": "PRO2602",
     "description": "6001.01.00 - Biaya Iklan (royalty only)",
     "type": "Cost",

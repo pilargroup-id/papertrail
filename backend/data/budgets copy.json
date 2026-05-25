@@ -1,0 +1,65 @@
+[
+    {
+    "id": "PKD32",
+    "description": "Biaya asuransi Bangunan & Kendaraan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "companyId": "comp-pks-0001",
+    "departmentId": 20,
+    "classId": 20
+  },
+  {
+    "id": "PKD33",
+    "description": "Biaya Sewa Bangunan",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "companyId": "comp-pks-0001",
+    "departmentId": 20,
+    "classId": 20
+  },
+  {
+    "id": "PKD34",
+    "description": "Biaya Software",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "companyId": "comp-pks-0001",
+    "departmentId": 20,
+    "classId": 20
+  },
+  {
+    "id": "PKD35",
+    "description": "Biaya Training",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "companyId": "comp-pks-0001",
+    "departmentId": 20,
+    "classId": 20
+  },
+  {
+    "id": "PKD36",
+    "description": "Biaya Packaging / Re-packaging",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "companyId": "comp-pks-0001",
+    "departmentId": 20,
+    "classId": 20
+  },
+  {
+    "id": "PKD37",
+    "description": "Biaya Outsourcing",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "companyId": "comp-pks-0001",
+    "departmentId": 20,
+    "classId": 20
+  },
+  {
+    "id": "PKD38",
+    "description": "Biaya Penunjang Operasional",
+    "type": "Cost",
+    "totalAmount": 12000000000,
+    "companyId": "comp-pks-0001",
+    "departmentId": 20,
+    "classId": 20
+  }
+]

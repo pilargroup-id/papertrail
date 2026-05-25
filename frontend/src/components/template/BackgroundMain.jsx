@@ -1,3 +1,5 @@
+import React from 'react'
+
 const bgStyles = {
   root: { inset: 0, overflow: 'hidden', pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(238,243,249,1) 100%)' },
   texture: { position: 'absolute', inset: 0, opacity: 0.55, backgroundImage: 'linear-gradient(135deg, rgba(31,78,140,0.08) 0, rgba(31,78,140,0.08) 2px, transparent 2px, transparent 34px), radial-gradient(rgba(31,78,140,0.09) 1.2px, transparent 1.2px)', backgroundSize: '34px 34px, 24px 24px', backgroundPosition: '0 0, 12px 10px' },

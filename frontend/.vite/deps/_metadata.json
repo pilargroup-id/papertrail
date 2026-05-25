@@ -1,0 +1,67 @@
+{
+  "hash": "a0dc0106",
+  "configHash": "a27b7b06",
+  "lockfileHash": "eca3edc9",
+  "browserHash": "7036f382",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "4cdbe6e9",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "6b082896",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.js",
+      "file": "react-router-dom.js",
+      "fileHash": "3be65a74",
+      "needsInterop": false
+    },
+    "@mui/x-charts/PieChart": {
+      "src": "../../node_modules/@mui/x-charts/PieChart/index.mjs",
+      "file": "@mui_x-charts_PieChart.js",
+      "fileHash": "de5ddad9",
+      "needsInterop": false
+    },
+    "react-dom": {
+      "src": "../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "7e64b06b",
+      "needsInterop": true
+    },
+    "@mui/material": {
+      "src": "../../node_modules/@mui/material/index.js",
+      "file": "@mui_material.js",
+      "fileHash": "db8217cd",
+      "needsInterop": false
+    },
+    "@mui/icons-material/AccessTimeRounded": {
+      "src": "../../node_modules/@mui/icons-material/AccessTimeRounded.js",
+      "file": "@mui_icons-material_AccessTimeRounded.js",
+      "fileHash": "0d5ae6ee",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-P3LXF565": {
+      "file": "chunk-P3LXF565.js"
+    },
+    "chunk-XCG4GP6H": {
+      "file": "chunk-XCG4GP6H.js"
+    },
+    "chunk-QRKS2TRJ": {
+      "file": "chunk-QRKS2TRJ.js"
+    },
+    "chunk-KDZVPC47": {
+      "file": "chunk-KDZVPC47.js"
+    },
+    "chunk-LABQ442N": {
+      "file": "chunk-LABQ442N.js"
+    }
+  }
+}
