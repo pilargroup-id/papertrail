@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import SearchableSelect from '../../components/template/SearchableSelect.jsx'
+import { frpService } from '../../services/frp/new-frp'
+import '../../styles/frp/new-frp.css';
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -126,8 +128,8 @@ function DateField({ name, value, onChange }) {
         ref={inputRef}
         type="date"
         name={name}
+        className="frp-input"
         style={{
-          ...S.input,
           paddingRight: '3rem',
           cursor: 'pointer',
           WebkitAppearance: 'none',
@@ -175,228 +177,6 @@ function DateField({ name, value, onChange }) {
   )
 }
 
-
-const S = {
-  card: {
-    background: 'white',
-    borderRadius: '16px',
-    padding: '1.5rem',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-    border: '1px solid #e2e8f0',
-    marginBottom: '1.5rem',
-  },
-  sectionTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    margin: '0 0 1.25rem',
-    fontSize: '0.95rem',
-    fontWeight: 700,
-    color: '#1e293b',
-  },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
-  grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  label: {
-    fontSize: '11px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    color: '#64748b',
-    letterSpacing: '0.5px',
-  },
-  input: {
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #d7e0ea',
-    fontSize: '0.9rem',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    outline: 'none',
-    background: '#f8fafc',
-    color: '#1e293b',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
-    transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
-  },
-  inputReadonly: {
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #e2e8f0',
-    fontSize: '0.9rem',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    background: '#eef2f7',
-    color: '#475569',
-  },
-  textarea: {
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #d7e0ea',
-    fontSize: '0.9rem',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    outline: 'none',
-    resize: 'vertical',
-    minHeight: '72px',
-    background: '#f8fafc',
-    color: '#1e293b',
-  },
-  select: {
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #d7e0ea',
-    fontSize: '0.9rem',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    outline: 'none',
-    background: '#f8fafc',
-    color: '#1e293b',
-    cursor: 'pointer',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
-  },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: {
-    padding: '10px 12px',
-    textAlign: 'left',
-    borderBottom: '2px solid #e2e8f0',
-    background: '#f8fafc',
-    fontWeight: 700,
-    color: '#475569',
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    whiteSpace: 'nowrap',
-  },
-  td: { padding: '8px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' },
-  tdInput: {
-    width: '100%',
-    padding: '7px 10px',
-    borderRadius: '8px',
-    border: '1.5px solid #d7e0ea',
-    fontSize: '0.875rem',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    outline: 'none',
-    background: '#f8fafc',
-  },
-  tdSelect: {
-    width: '100%',
-    padding: '7px 10px',
-    borderRadius: '8px',
-    border: '1.5px solid #d7e0ea',
-    fontSize: '0.875rem',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    outline: 'none',
-    background: '#f8fafc',
-    cursor: 'pointer',
-  },
-  btnPrimary: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '0.65rem 1.4rem',
-    background: '#1f4e8c',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    fontSize: '0.9rem',
-    transition: 'background 0.2s',
-  },
-  btnSecondary: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '0.65rem 1.4rem',
-    background: '#f1f5f9',
-    color: '#475569',
-    border: '1.5px solid #e2e8f0',
-    borderRadius: '10px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    fontSize: '0.9rem',
-  },
-  btnAdd: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    background: '#e0f2fe',
-    color: '#0369a1',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '7px 14px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    fontWeight: 600,
-  },
-  btnDel: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    background: '#fee2e2',
-    color: '#ef4444',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '6px 8px',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-  },
-  totalRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: '1rem',
-    paddingTop: '1rem',
-    borderTop: '2px solid #e2e8f0',
-  },
-  totalLabel: { fontSize: '0.9rem', fontWeight: 600, color: '#475569' },
-  totalValue: { fontSize: '1.1rem', fontWeight: 800, color: '#1f4e8c' },
-  checkRow: { display: 'flex', flexWrap: 'wrap', gap: '10px' },
-  checkItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 14px',
-    borderRadius: '10px',
-    border: '1.5px solid #e2e8f0',
-    background: '#f8fafc',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    color: '#475569',
-    userSelect: 'none',
-    transition: 'all 0.15s',
-  },
-  checkItemActive: { borderColor: '#1f4e8c', background: '#eff6ff', color: '#1f4e8c' },
-  itemCard: {
-    padding: '1rem',
-    borderRadius: '14px',
-    border: '1px solid #e2e8f0',
-    background: '#fbfdff',
-    marginBottom: '0.85rem',
-  },
-  itemCardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '0.9rem',
-  },
-  itemCardTitle: { fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' },
-  itemCardAmount: {
-    marginTop: '0.9rem',
-    paddingTop: '0.9rem',
-    borderTop: '1px solid #e2e8f0',
-  },
-}
-
 export default function NewFRP() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -411,14 +191,7 @@ export default function NewFRP() {
 
   useEffect(() => {
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-    fetch(`/api/form-data${query}`)
-      .then(r => {
-        if (!r.ok) {
-          window.location.href = '/login'
-          throw new Error(`HTTP ${r.status}`)
-        }
-        return r.json()
-      })
+    frpService.getFormData(query)
       .then(async data => {
         setFrpData(data)
         setUser(data?.user)
@@ -428,8 +201,7 @@ export default function NewFRP() {
         const fromRpId = searchParams.get('fromRp')
         if (fromRpId) {
           try {
-            const rpRes = await fetch(`/api/rp/${fromRpId}`)
-            const rpJson = await rpRes.json()
+            const rpJson = await frpService.getRpData(fromRpId)
             if (rpJson && rpJson.data) {
               const rp = rpJson.data
 
@@ -470,7 +242,12 @@ export default function NewFRP() {
 
         setValues(initial)
       })
-      .catch(err => setError(err.message || 'Gagal memuat data'))
+      .catch(err => {
+        if (err.status === 401 || err.status === 403) {
+          window.location.href = '/login'
+        }
+        setError(err.message || 'Gagal memuat data')
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -518,6 +295,11 @@ export default function NewFRP() {
   const calculateRowAmount = item =>
     normalizeNumber(item.qty) * normalizeNumber(item.hargaSatuan) * (normalizeNumber(values.kurs) || 1)
 
+  const getBudgetAmount = budgetId => {
+    const b = (FRP.budgets || []).find(x => x.id === budgetId)
+    return b ? (b.remainingAmount !== undefined ? b.remainingAmount : b.totalAmount) : 0
+  }
+
   const totalAmount = useMemo(
     () => values.items.reduce((sum, item) => sum + calculateRowAmount(item), 0),
     [values.items, values.kurs],
@@ -551,24 +333,7 @@ export default function NewFRP() {
     }))
 
   const visibleCompanyField = FRP.user?.role === 'administrator'
-  const grid2Style = useMemo(
-    () => ({ ...S.grid2, gridTemplateColumns: getGridColumns(2, isMobile, isTablet), gap: isMobile ? '0.85rem' : '1rem' }),
-    [isMobile, isTablet],
-  )
-  const grid3Style = useMemo(
-    () => ({ ...S.grid3, gridTemplateColumns: getGridColumns(3, isMobile, isTablet), gap: isMobile ? '0.85rem' : '1rem' }),
-    [isMobile, isTablet],
-  )
-  const cardStyle = useMemo(
-    () => ({
-      ...S.card,
-      padding: isMobile ? '1rem' : '1.5rem',
-      borderRadius: isMobile ? '14px' : '16px',
-      marginBottom: isMobile ? '1rem' : '1.5rem',
-    }),
-    [isMobile],
-  )
-  const companySelectOptions = useMemo(
+        const companySelectOptions = useMemo(
     () => (FRP.companies || []).map(company => ({ value: company.name, label: company.name })),
     [FRP.companies],
   )
@@ -618,8 +383,21 @@ export default function NewFRP() {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    setSubmitting(true)
     setSubmitError(null)
+
+    // Validation: prevent submit if requested amount exceeds budget
+    for (const item of values.items) {
+      if (item.budgetId) {
+        const budgetAmount = getBudgetAmount(item.budgetId)
+        const reqAmount = calculateRowAmount(item)
+        if (reqAmount > budgetAmount) {
+          setSubmitError(`Amount pada budget ${item.budgetId} (Rp ${formatCurrency(reqAmount)}) melebihi batas budget yang tersedia (Rp ${formatCurrency(budgetAmount)}). Tidak bisa submit.`)
+          return
+        }
+      }
+    }
+
+    setSubmitting(true)
 
     try {
       const payload = {
@@ -630,20 +408,15 @@ export default function NewFRP() {
         })),
       }
 
-      const res = await fetch('/api/frp/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      const d = await frpService.saveFrp(payload)
 
-      const d = await res.json()
       if (d.success) {
         navigate('/approval')
       } else {
         setSubmitError(d.error || 'Gagal menyimpan, coba lagi.')
       }
-    } catch {
-      setSubmitError('Koneksi gagal, coba lagi.')
+    } catch (err) {
+      setSubmitError(err.message || 'Koneksi gagal, coba lagi.')
     } finally {
       setSubmitting(false)
     }
@@ -672,351 +445,360 @@ export default function NewFRP() {
             </div>
           )}
 
-          <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
-              Informasi FRP
-            </h3>
-            <div style={grid2Style}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Company Name</label>
-                {visibleCompanyField ? (
-                  <SearchableSelect
-                    name="companyName"
-                    value={values.companyName}
-                    onChange={selectedValue => updateField('companyName', selectedValue)}
-                    options={companySelectOptions}
-                    placeholder="Pilih Company"
-                    style={S.select}
-                  />
-                ) : (
-                  <input style={S.inputReadonly} value={values.companyName} readOnly />
-                )}
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Tanggal FRP</label>
-                <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
-              </div>
-            </div>
-            <div style={{ ...grid3Style, marginTop: '1rem' }}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Divisi</label>
-                {FRP.user?.role === 'administrator' ? (
-                  <SearchableSelect
-                    name="divisi"
-                    value={values.divisi}
-                    onChange={selectedValue => updateField('divisi', selectedValue)}
-                    options={divisionSelectOptions}
-                    placeholder="Pilih Divisi"
-                    style={S.select}
-                  />
-                ) : (
-                  <input style={S.inputReadonly} value={values.divisi} readOnly />
-                )}
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Diminta Oleh</label>
-                <SearchableSelect
-                  name="dimintaOleh"
-                  value={values.dimintaOleh}
-                  onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
-                  options={employeeSelectOptions}
-                  placeholder="Pilih Karyawan"
-                  style={S.select}
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Currency</label>
-                <SearchableSelect
-                  name="currency"
-                  value={values.currency}
-                  onChange={async selectedValue => {
-                    updateField('currency', selectedValue)
-                    if (selectedValue === 'IDR') {
-                      updateField('kurs', '1')
-                    } else {
-                      updateField('kurs', 'Memuat...')
-                      try {
-                        const res = await fetch(`/api/kurs/${selectedValue}`)
-                        const data = await res.json()
-                        if (data.success && data.rate) {
-                          updateField('kurs', String(data.rate))
-                        } else {
-                          updateField('kurs', '1') // fallback
-                          console.error('API Error:', data.error)
-                        }
-                      } catch (e) {
-                        updateField('kurs', '1')
-                        console.error('Gagal mengambil kurs:', e)
-                      }
-                    }
-                  }}
-                  options={currencySelectOptions}
-                  placeholder="Pilih Currency"
-                  style={S.select}
-                />
-              </div>
-            </div>
-            {values.currency !== 'IDR' && (
-              <div style={{ ...S.formGroup, marginTop: '1rem', maxWidth: isMobile ? '100%' : '200px' }}>
-                <label style={S.label}>Kurs</label>
-                <input name="kurs" style={S.input} value={values.kurs} onChange={e => updateField('kurs', e.target.value)} />
-              </div>
-            )}
-            <div style={{ ...S.formGroup, marginTop: '1rem' }}>
-              <label style={S.label}>Keterangan FRP</label>
-              <textarea
-                name="keteranganFrp"
-                style={S.textarea}
-                value={values.keteranganFrp}
-                onChange={e => updateField('keteranganFrp', e.target.value)}
-                placeholder="Tulis keterangan..."
-              />
-            </div>
-          </div>
-
-          <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>store</span>
-              Vendor &amp; Pembayaran
-            </h3>
-            <div style={grid2Style}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Vendor</label>
-                <SearchableSelect
-                  name="vendor"
-                  value={values.vendor}
-                  onChange={selectedValue => {
-                    const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
-                    console.log('Selected vendor:', selected)
-                    updateField('vendor', selectedValue)
-                    updateField('bankTujuan', selected?.bank || '')
-                    updateField('rekBankTujuan', selected?.no_rekening || '')
-                  }}
-                  options={vendorSelectOptions}
-                  placeholder="Pilih Vendor"
-                  style={S.select}
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Internal PO Number</label>
-                <input name="internalPoNumber" style={S.input} value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
-              </div>
-            </div>
-            <div style={{ ...grid3Style, marginTop: '1rem' }}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Ext Doc Type</label>
-                <SearchableSelect
-                  name="extDocType"
-                  value={values.extDocType}
-                  onChange={selectedValue => updateField('extDocType', selectedValue)}
-                  options={extDocTypeOptions}
-                  placeholder="Pilih"
-                  style={S.select}
-                />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Ext Doc Number</label>
-                <input name="extDocNumber" style={S.input} value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Payment Method</label>
-                <SearchableSelect
-                  name="paymentMethod"
-                  value={values.paymentMethod}
-                  onChange={selectedValue => updateField('paymentMethod', selectedValue)}
-                  options={paymentMethodOptions}
-                  placeholder="Pilih Metode"
-                  style={S.select}
-                />
-              </div>
-            </div>
-            <div style={{ ...grid3Style, marginTop: '1rem' }}>
-              <div style={S.formGroup}>
-                <label style={S.label}>Payment Date</label>
-                <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Bank Tujuan</label>
-                <input name="bankTujuan" style={S.input} value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
-              </div>
-              <div style={S.formGroup}>
-                <label style={S.label}>Rekening Bank Tujuan</label>
-                <input name="rekBankTujuan" style={S.input} value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
-              </div>
-            </div>
-            <div style={{ ...S.formGroup, marginTop: '1rem' }}>
-              <label style={S.label}>Attach Link</label>
-              <input name="attachLink" style={S.input} value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} placeholder="https://..." />
-            </div>
-          </div>
-
-          <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>checklist</span>
-              Checklist Documents
-            </h3>
-            <div style={{ ...S.checkRow, gap: isMobile ? '8px' : '10px' }}>
-              {CHECK_DOCS.map(doc => {
-                const checked = values.checkDocs.includes(doc)
-                return (
-                  <div
-                    key={doc}
-                    style={{
-                      ...S.checkItem,
-                      ...(checked ? S.checkItemActive : {}),
-                      width: isMobile ? '100%' : 'auto',
-                      padding: isMobile ? '10px 12px' : '8px 14px',
-                    }}
-                    onClick={() => handleCheckDocToggle(doc)}
-                  >
-                    <span className="material-icons-round" style={{ fontSize: '16px' }}>
-                      {checked ? 'check_box' : 'check_box_outline_blank'}
-                    </span>
-                    <input type="checkbox" name="checkDocs[]" value={doc} checked={checked} onChange={() => { }} style={{ display: 'none' }} />
-                    {doc}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          <div style={cardStyle}>
-            <h3 style={S.sectionTitle}>
-              <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>table_rows</span>
-              Line Items
-            </h3>
-            {isMobile ? (
+          <div className="frp-card">
+            {/* Informasi FRP & Vendor Pembayaran Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '4.5fr 5.5fr',
+              gap: isMobile ? '1.5rem' : '2.5rem',
+              alignItems: 'start'
+            }}>
+              {/* Informasi FRP */}
               <div>
-                {values.items.map((item, idx) => (
-                  <div key={idx} style={S.itemCard}>
-                    <div style={S.itemCardHeader}>
-                      <div style={S.itemCardTitle}>Item {idx + 1}</div>
-                      <button type="button" style={S.btnDel} onClick={() => handleRemoveRow(idx)}>
-                        <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
-                      </button>
-                    </div>
-                    <div style={grid2Style}>
-                      <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
-                        <label style={S.label}>Memo</label>
-                        <input name={`items[${idx}][memo]`} style={S.input} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
-                      </div>
-                      <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
-                        <label style={S.label}>Budget</label>
-                        <SearchableSelect
-                          name={`items[${idx}][budgetId]`}
-                          value={item.budgetId}
-                          onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
-                          options={budgetSelectOptions}
-                          placeholder="Pilih Budget"
-                          style={S.select}
-                        />
-                      </div>
-                      <div style={S.formGroup}>
-                        <label style={S.label}>Qty</label>
-                        <input type="number" name={`items[${idx}][qty]`} style={S.input} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
-                      </div>
-                      <div style={S.formGroup}>
-                        <label style={S.label}>Harga Satuan</label>
-                        <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.input} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
-                      </div>
-                    </div>
-                    <div style={S.itemCardAmount}>
-                      <div style={S.totalLabel}>Amount (IDR)</div>
-                      <div style={{ ...S.totalValue, fontSize: '1rem', marginTop: '0.3rem' }}>Rp {formatCurrency(calculateRowAmount(item))}</div>
-                    </div>
+                <h3 className="frp-section-title">
+                  <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
+                  Informasi FRP
+                </h3>
+                <div className="frp-grid-2">
+                  <div className="frp-form-group">
+                    <label className="frp-label">Company Name</label>
+                    {visibleCompanyField ? (
+                      <SearchableSelect
+                        name="companyName"
+                        value={values.companyName}
+                        onChange={selectedValue => updateField('companyName', selectedValue)}
+                        options={companySelectOptions}
+                        placeholder="Pilih Company"
+                        className="frp-select"
+                      />
+                    ) : (
+                      <input className="frp-input-readonly" value={values.companyName} readOnly />
+                    )}
                   </div>
-                ))}
+                  <div className="frp-form-group">
+                    <label className="frp-label">Tanggal FRP</label>
+                    <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
+                  </div>
+                </div>
+                <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Divisi</label>
+                    {FRP.user?.role === 'administrator' ? (
+                      <SearchableSelect
+                        name="divisi"
+                        value={values.divisi}
+                        onChange={selectedValue => updateField('divisi', selectedValue)}
+                        options={divisionSelectOptions}
+                        placeholder="Pilih Divisi"
+                        className="frp-select"
+                      />
+                    ) : (
+                      <input className="frp-input-readonly" value={values.divisi} readOnly />
+                    )}
+                  </div>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Diminta Oleh</label>
+                    <SearchableSelect
+                      name="dimintaOleh"
+                      value={values.dimintaOleh}
+                      onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
+                      options={employeeSelectOptions}
+                      placeholder="Pilih Karyawan"
+                      className="frp-select"
+                    />
+                  </div>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Currency</label>
+                    <SearchableSelect
+                      name="currency"
+                      value={values.currency}
+                      onChange={async selectedValue => {
+                        updateField('currency', selectedValue)
+                        if (selectedValue === 'IDR') {
+                          updateField('kurs', '1')
+                        } else {
+                          updateField('kurs', 'Memuat...')
+                          try {
+                            const data = await frpService.getKurs(selectedValue)
+                            if (data.success && data.rate) {
+                              updateField('kurs', String(data.rate))
+                            } else {
+                              updateField('kurs', '1') // fallback
+                              console.error('API Error:', data.error)
+                            }
+                          } catch (e) {
+                            updateField('kurs', '1')
+                            console.error('Gagal mengambil kurs:', e)
+                          }
+                        }
+                      }}
+                      options={currencySelectOptions}
+                      placeholder="Pilih Currency"
+                      className="frp-select"
+                    />
+                  </div>
+                </div>
+                {values.currency !== 'IDR' && (
+                  <div className="frp-form-group" style={{ marginTop: "1rem", maxWidth: isMobile ? "100%" : "200px" }}>
+                    <label className="frp-label">Kurs</label>
+                    <input name="kurs" className="frp-input" value={values.kurs} onChange={e => updateField('kurs', e.target.value)} />
+                  </div>
+                )}
+                <div className="frp-form-group" style={{ marginTop: "1rem" }}>
+                  <label className="frp-label">Keterangan FRP</label>
+                  <textarea
+                    name="keteranganFrp"
+                    className="frp-textarea"
+                    value={values.keteranganFrp}
+                    onChange={e => updateField('keteranganFrp', e.target.value)}
+                    placeholder="Tulis keterangan..."
+                  />
+                </div>
               </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={S.table}>
-                  <thead>
-                    <tr>
-                      <th style={{ ...S.th, width: '30%' }}>Memo</th>
-                      <th style={{ ...S.th, width: '28%' }}>Budget</th>
-                      <th style={{ ...S.th, width: '9%' }}>Qty</th>
-                      <th style={{ ...S.th, width: '14%' }}>Harga Satuan</th>
-                      <th style={{ ...S.th, width: '14%' }}>Amount (IDR)</th>
-                      <th style={{ ...S.th, width: '5%' }} />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {values.items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td style={S.td}>
-                          <input name={`items[${idx}][memo]`} style={S.tdInput} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
-                        </td>
-                        <td style={S.td}>
+
+              {/* Vendor & Pembayaran */}
+              <div>
+                <h3 className="frp-section-title">
+                  <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>store</span>
+                  Vendor &amp; Pembayaran
+                </h3>
+                <div className="frp-grid-2">
+                  <div className="frp-form-group">
+                    <label className="frp-label">Vendor</label>
+                    <SearchableSelect
+                      name="vendor"
+                      value={values.vendor}
+                      onChange={selectedValue => {
+                        const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
+                        console.log('Selected vendor:', selected)
+                        updateField('vendor', selectedValue)
+                        updateField('bankTujuan', selected?.bank || '')
+                        updateField('rekBankTujuan', selected?.no_rekening || '')
+                      }}
+                      options={vendorSelectOptions}
+                      placeholder="Pilih Vendor"
+                      className="frp-select"
+                    />
+                  </div>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Internal PO Number</label>
+                    <input name="internalPoNumber" className="frp-input" value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
+                  </div>
+                </div>
+                <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Ext Doc Type</label>
+                    <SearchableSelect
+                      name="extDocType"
+                      value={values.extDocType}
+                      onChange={selectedValue => updateField('extDocType', selectedValue)}
+                      options={extDocTypeOptions}
+                      placeholder="Pilih"
+                      className="frp-select"
+                    />
+                  </div>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Ext Doc Number</label>
+                    <input name="extDocNumber" className="frp-input" value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
+                  </div>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Payment Method</label>
+                    <SearchableSelect
+                      name="paymentMethod"
+                      value={values.paymentMethod}
+                      onChange={selectedValue => updateField('paymentMethod', selectedValue)}
+                      options={paymentMethodOptions}
+                      placeholder="Pilih Metode"
+                      className="frp-select"
+                    />
+                  </div>
+                </div>
+                <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Payment Date</label>
+                    <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
+                  </div>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Bank Tujuan</label>
+                    <input name="bankTujuan" className="frp-input" value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
+                  </div>
+                  <div className="frp-form-group">
+                    <label className="frp-label">Rekening Bank Tujuan</label>
+                    <input name="rekBankTujuan" className="frp-input" value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
+                  </div>
+                </div>
+                <div className="frp-form-group" style={{ marginTop: "1rem" }}>
+                  <label className="frp-label">Attach Link</label>
+                  <input name="attachLink" className="frp-input" value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} placeholder="https://..." />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
+
+            {/* Checklist Documents Section */}
+            <div>
+              <h3 className="frp-section-title">
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>checklist</span>
+                Checklist Documents
+              </h3>
+              <div className="frp-check-row">
+                {CHECK_DOCS.map(doc => {
+                  const checked = values.checkDocs.includes(doc)
+                  return (
+                    <div
+                      key={doc}
+                      className={`frp-check-item ${checked ? 'frp-check-item-active' : ''}`}
+                      onClick={() => handleCheckDocToggle(doc)}
+                    >
+                      <span className="material-icons-round" style={{ fontSize: '16px' }}>
+                        {checked ? 'check_box' : 'check_box_outline_blank'}
+                      </span>
+                      <input type="checkbox" name="checkDocs[]" value={doc} checked={checked} onChange={() => { }} style={{ display: 'none' }} />
+                      {doc}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
+
+            {/* Line Items Section */}
+            <div>
+              <h3 className="frp-section-title">
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>table_rows</span>
+                Line Items
+              </h3>
+              {isMobile ? (
+                <div>
+                  {values.items.map((item, idx) => (
+                    <div key={idx} className="frp-item-card">
+                      <div className="frp-item-card-header">
+                        <div className="frp-item-card-title">Item {idx + 1}</div>
+                        <button type="button" className="frp-btn-del" onClick={() => handleRemoveRow(idx)}>
+                          <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
+                        </button>
+                      </div>
+                      <div className="frp-grid-2">
+                        <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
+                          <label className="frp-label">Memo</label>
+                          <input name={`items[${idx}][memo]`} className="frp-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
+                        </div>
+                        <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
+                          <label className="frp-label">Budget</label>
                           <SearchableSelect
                             name={`items[${idx}][budgetId]`}
                             value={item.budgetId}
                             onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
                             options={budgetSelectOptions}
                             placeholder="Pilih Budget"
-                            style={S.tdSelect}
-                            menuPosition="fixed"
+                            className="frp-select"
                           />
-                        </td>
-                        <td style={S.td}>
-                          <input type="number" name={`items[${idx}][qty]`} style={S.tdInput} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
-                        </td>
-                        <td style={S.td}>
-                          <input type="text" name={`items[${idx}][hargaSatuan]`} style={S.tdInput} value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
-                        </td>
-                        <td style={S.td}>
-                          <input
-                            name={`items[${idx}][amount]`}
-                            style={{ ...S.tdInput, background: '#f8fafc', color: '#475569', fontWeight: 600 }}
-                            value={formatCurrency(calculateRowAmount(item))}
-                            readOnly
-                          />
-                        </td>
-                        <td style={S.td}>
-                          <button type="button" style={S.btnDel} onClick={() => handleRemoveRow(idx)}>
-                            <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
-                          </button>
-                        </td>
+                        </div>
+                        <div className="frp-form-group">
+                          <label className="frp-label">Qty</label>
+                          <input type="number" name={`items[${idx}][qty]`} className="frp-input" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
+                        </div>
+                        <div className="frp-form-group">
+                          <label className="frp-label">Harga Satuan</label>
+                          <input type="text" name={`items[${idx}][hargaSatuan]`} className="frp-input" value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
+                        </div>
+                      </div>
+                      <div className="frp-item-card-amount">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div className="frp-total-label">Amount (IDR)</div>
+                        </div>
+                        <div className="frp-total-value" style={{ fontSize: "1rem", marginTop: "0.3rem" }}>Rp {formatCurrency(getBudgetAmount(item.budgetId))}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="frp-table">
+                    <thead>
+                      <tr>
+                        <th className="frp-th" style={{ width: "30%" }}>Memo</th>
+                        <th className="frp-th" style={{ width: "28%" }}>Budget</th>
+                        <th className="frp-th" style={{ width: "9%" }}>Qty</th>
+                        <th className="frp-th" style={{ width: "14%" }}>Harga Satuan</th>
+                        <th className="frp-th" style={{ width: "14%" }}>Amount (IDR)</th>
+                        <th className="frp-th" style={{ width: "5%" }} />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {values.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="frp-td">
+                            <input name={`items[${idx}][memo]`} className="frp-td-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
+                          </td>
+                          <td className="frp-td">
+                            <SearchableSelect
+                              name={`items[${idx}][budgetId]`}
+                              value={item.budgetId}
+                              onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
+                              options={budgetSelectOptions}
+                              placeholder="Pilih Budget"
+                              className="frp-td-select"
+                              menuPosition="fixed"
+                            />
+                          </td>
+                          <td className="frp-td">
+                            <input type="number" name={`items[${idx}][qty]`} className="frp-td-input" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
+                          </td>
+                          <td className="frp-td">
+                            <input type="text" name={`items[${idx}][hargaSatuan]`} className="frp-td-input" value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
+                          </td>
+                          <td className="frp-td">
+                            <input
+                              name={`items[${idx}][budgetAmountDisp]`}
+                              className="frp-td-input" style={{ background: "#f8fafc", color: "#475569", fontWeight: 600 }}
+                              value={formatCurrency(getBudgetAmount(item.budgetId))}
+                              readOnly
+                            />
+                          </td>
+                          <td className="frp-td">
+                            <button type="button" className="frp-btn-del" onClick={() => handleRemoveRow(idx)}>
+                              <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className="frp-total-row">
+                <button type="button" className="frp-btn-add" onClick={handleAddRow}>
+                  <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
+                  Tambah Baris
+                </button>
+                <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+                  <span className="frp-total-label">Total Pembayaran</span>
+                  <div className="frp-total-value">Rp {formatCurrency(totalAmount)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
+
+            {submitError && (
+              <div style={{ background: '#fee2e2', color: '#991b1b', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                {submitError}
               </div>
             )}
-            <div
-              style={{
-                ...S.totalRow,
-                flexDirection: isMobile ? 'column' : 'row',
-                alignItems: isMobile ? 'stretch' : 'center',
-                gap: isMobile ? '0.85rem' : '1rem',
-              }}
-            >
-              <button type="button" style={{ ...S.btnAdd, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={handleAddRow}>
-                <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-                Tambah Baris
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end' }}>
+              <button type="button" className="frp-btn-secondary" onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting}>
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
+                Reset
               </button>
-              <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                <span style={S.totalLabel}>Total Pembayaran</span>
-                <div style={S.totalValue}>Rp {formatCurrency(totalAmount)}</div>
-              </div>
+              <button type="submit" className="frp-btn-primary" style={{ opacity: submitting ? 0.7 : 1 }} disabled={submitting}>
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
+                {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
+              </button>
             </div>
-          </div>
-
-          {submitError && (
-            <div style={{ background: '#fee2e2', color: '#991b1b', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 500 }}>
-              {submitError}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingBottom: '2rem', flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end' }}>
-            <button type="button" style={{ ...S.btnSecondary, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting}>
-              <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
-              Reset
-            </button>
-            <button type="submit" style={{ ...S.btnPrimary, opacity: submitting ? 0.7 : 1, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} disabled={submitting}>
-              <span className="material-icons-round" style={{ fontSize: '18px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
-              {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
-            </button>
           </div>
         </form>
       )}

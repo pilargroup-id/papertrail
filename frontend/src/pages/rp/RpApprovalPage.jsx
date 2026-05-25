@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useUser } from '../contexts/UserContext'
-import DialogConfirm from '../components/Dialog/DialogConfirm'
-import BackgroundDialog from '../components/template/BackgroundDialog'
+import { useUser } from '../../contexts/UserContext'
+import DialogConfirm from '../../components/Dialog/DialogConfirm'
+import BackgroundDialog from '../../components/template/BackgroundDialog'
+import DataTableRp from './DataTableRp'
+import ButtonApprove from '../../components/button/ButtonApprove.jsx'
+import ButtonReject from '../../components/button/ButtonReject.jsx'
+import ButtonRevert from '../../components/button/ButtonRevert.jsx'
+import ButtonDetail from '../../components/button/ButtonDetail.jsx'
+import ButtonPreview from '../../components/button/ButtonPreview.jsx'
+import ButtonPrintPdf from '../../components/button/ButtonPrintPdf.jsx'
+import ButtonCheckData from '../../components/button/ButtonCheckData.jsx'
+import ButtonKeFrp from '../../components/button/ButtonKeFrp.jsx'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -651,39 +660,39 @@ export default function RpApprovalPage() {
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
 
     return (
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
         {showDetail && (
-          <button type="button" onClick={() => setSelected(rp)} style={actionButtonStyle('primary')}>Detail</button>
+          <ButtonDetail onClick={() => setSelected(rp)}>Detail</ButtonDetail>
         )}
         {showPreview && ['approved', 'CREATED_FRP'].includes(rp.status) && (
           <>
-            <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
-            <button type="button" onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
+            <ButtonPreview onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')}>Preview</ButtonPreview>
+            <ButtonPrintPdf onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')}>Print PDF</ButtonPrintPdf>
           </>
         )}
         {canManagerApprove && (
           <>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')} style={actionButtonStyle('approve')}>Approve</button>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'manager-reject')} style={actionButtonStyle('reject')}>Reject</button>
+            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')}>Approve</ButtonApprove>
+            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'manager-reject')}>Reject</ButtonReject>
           </>
         )}
         {canProcess && (
           <>
-            <button type="button" onClick={() => navigate(`/rp?process=${rp.id}`)} style={actionButtonStyle('warning')}>Check Data</button>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')} style={actionButtonStyle('reject')}>Reject</button>
+            <ButtonCheckData onClick={() => navigate(`/rp?process=${rp.id}`)}>Check Data</ButtonCheckData>
+            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')}>Reject</ButtonReject>
           </>
         )}
         {canFinalApprove && (
           <>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')} style={actionButtonStyle('approve')}>Final Approve</button>
-            <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-reject')} style={actionButtonStyle('reject')}>Reject</button>
+            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Final Approve</ButtonApprove>
+            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-reject')}>Reject</ButtonReject>
           </>
         )}
         {canCreateFrp && showKeFrp && (
-          <button type="button" onClick={() => navigate(`/frp?fromRp=${rp.id}`)} style={actionButtonStyle('primary')}>Ke FRP</button>
+          <ButtonKeFrp onClick={() => navigate(`/frp?fromRp=${rp.id}`)}>Ke FRP</ButtonKeFrp>
         )}
         {isAdmin && rp.status !== 'waiting_manager' && (
-          <button type="button" disabled={actionLoading} onClick={() => requestAction(rp, 'revert')} style={actionButtonStyle('warning')}>Revert</button>
+          <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
         )}
       </div>
     )
@@ -694,15 +703,130 @@ export default function RpApprovalPage() {
     const items = selected.items || []
     const total = calcTotal(selected)
 
+    // Determine what actions should be rendered in the footer
+    const canManagerApprove =
+      selected.status === 'waiting_manager' &&
+      (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && userDivision === selected.divisi))
+    const canProcess = selected.status === 'division_review' && (isAdmin || isProcessDivision(selected.diprosesOleh))
+    const canFinalApprove = selected.status === 'final_approved' && (isAdmin || isProcessManager(selected.diprosesOleh))
+    const canCreateFrp =
+      selected.status === 'approved' &&
+      (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
+
     return (
       <div className="dashboard-popup-overlay" role="presentation" onClick={() => setSelected(null)}>
+        <style>{`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+          .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+
+          /* Modern premium styles for inputs and panels */
+          .dialog-section-premium {
+            transition: all 0.2s ease-in-out !important;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+          }
+          .dialog-section-premium:hover {
+            border-color: #cbd5e1 !important;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04) !important;
+          }
+
+          /* Footer buttons styling */
+          .btn-dialog {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            min-width: 120px !important;
+            border-radius: 10px !important;
+            padding: 8px 18px !important;
+            font-weight: 600 !important;
+            font-size: 0.8rem !important;
+            cursor: pointer !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border: none !important;
+            outline: none !important;
+            font-family: inherit !important;
+            box-sizing: border-box !important;
+          }
+          .btn-dialog:hover {
+            transform: translateY(-2px) !important;
+          }
+          .btn-dialog:active {
+            transform: translateY(0) !important;
+          }
+          
+          .btn-dialog-approve {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+          }
+          .btn-dialog-approve:hover {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important;
+          }
+
+          .btn-dialog-reject {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3) !important;
+          }
+          .btn-dialog-reject:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45) !important;
+          }
+
+          .btn-dialog-neutral {
+            background: #ffffff !important;
+            color: #334155 !important;
+            border: 1.5px solid #cbd5e1 !important;
+          }
+          .btn-dialog-neutral:hover {
+            background: #f8fafc !important;
+            border-color: #94a3b8 !important;
+            box-shadow: 0 4px 12px rgba(148, 163, 184, 0.15) !important;
+          }
+
+          .btn-dialog-primary {
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+          }
+          .btn-dialog-primary:hover {
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
+          }
+
+          .btn-dialog-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3) !important;
+          }
+          .btn-dialog-warning:hover {
+            box-shadow: 0 6px 20px rgba(217, 119, 6, 0.45) !important;
+          }
+
+          .btn-dialog-close {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2) !important;
+          }
+          .btn-dialog-close:hover {
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3) !important;
+          }
+        `}</style>
         <div
           className="dashboard-popup dashboard-popup--frp-detail"
           role="dialog"
           aria-modal="true"
           aria-labelledby="rp-detail-title"
           onClick={event => event.stopPropagation()}
-          style={{ position: 'relative', overflow: 'hidden', maxHeight: '82vh' }}
+          style={{ height: 'auto', maxHeight: '85vh', width: 'min(1180px, calc(100vw - 48px))', margin: 'auto', background: '#ffffff', borderRadius: '24px', overflow: 'hidden', position: 'relative', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
         >
           <BackgroundDialog />
           <div className="dashboard-popup__header" style={{ padding: '14px 24px' }}>
@@ -716,99 +840,173 @@ export default function RpApprovalPage() {
               </button>
             </div>
           </div>
-          <div className="dashboard-popup__body dashboard-popup__body--frp-detail" style={{ overflowY: 'auto', maxHeight: 'calc(82vh - 130px)' }}>
-            <div style={{ display: 'grid', gap: '0.75rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: getGridColumns(3, isMobile, isTablet), gap: '0.75rem' }}>
-                {[
-                  ['Company', selected.companyName],
-                  ['Divisi', selected.divisi],
-                  ['Class', selected.class],
-                  ['Dibuat Oleh', selected.dibuatOleh],
-                  ['Kategori', selected.kategoriPembelian],
-                  ['Diproses Oleh', selected.diprosesOleh],
-                  ['Tanggal Dibutuhkan', formatDate(selected.tanggalDibutuhkan)],
-                  ['Vendor Suggestion', selected.vendorSuggestion],
-                  ['PIC Penerima', selected.picPenerima],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>{label}</div>
-                    <div style={detailValueBox}>{value || '-'}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Deskripsi</div>
-                <div style={detailValueBox}>{selected.deskripsi || '-'}</div>
-              </div>
-
-              {selected.processChanges?.length > 0 && (
-                <div style={{ border: '1px solid #fde68a', background: '#fffbeb', borderRadius: '12px', padding: '14px 16px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#92400e', letterSpacing: '0.04em', marginBottom: '10px' }}>Perubahan Oleh Divisi Pemroses</div>
-                  <div style={{ display: 'grid', gap: '6px' }}>
-                    {selected.processChanges.map((change, index) => (
-                      <div key={`${change.field}-${index}`} style={{ fontSize: '0.85rem', color: '#78350f', lineHeight: 1.45 }}>
-                        <strong>{change.field}:</strong>{' '}
-                        <span style={{ color: '#dc2626', textDecoration: 'line-through' }}>{change.oldValue || '(kosong)'}</span>
-                        <span style={{ color: '#64748b' }}> -&gt; </span>
-                        <span style={{ color: '#16a34a', fontWeight: 700 }}>{change.newValue || '(kosong)'}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: '#92400e', marginTop: '8px' }}>
-                    Diubah oleh: {selected.processUpdatedBy || '-'} {selected.processUpdatedAt ? `(${formatDate(selected.processUpdatedAt)})` : ''}
-                  </div>
+          <div className="dashboard-popup__body dashboard-popup__body--frp-detail" style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0, padding: '16px 24px 8px 24px' }}>
+            <div className="frp-detail-content hide-scrollbar" style={{
+              padding: '4px 8px',
+              overflowY: 'auto',
+              maxHeight: 'calc(85vh - 160px)',
+              scrollBehavior: 'smooth',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 8px, black calc(100% - 8px), transparent 100%)',
+              maskImage: 'linear-gradient(to bottom, transparent 0%, black 8px, black calc(100% - 8px), transparent 100%)'
+            }}>
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: getGridColumns(3, isMobile, isTablet), gap: '0.75rem' }}>
+                  {[
+                    ['Company', selected.companyName],
+                    ['Divisi', selected.divisi],
+                    ['Class', selected.class],
+                    ['Dibuat Oleh', selected.dibuatOleh],
+                    ['Kategori', selected.kategoriPembelian],
+                    ['Diproses Oleh', selected.diprosesOleh],
+                    ['Tanggal Dibutuhkan', formatDate(selected.tanggalDibutuhkan)],
+                    ['Vendor Suggestion', selected.vendorSuggestion],
+                    ['PIC Penerima', selected.picPenerima],
+                  ].map(([label, value]) => (
+                    <div key={label} className="dialog-section-premium" style={{ marginBottom: 0 }}>
+                      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em', marginBottom: '4px' }}>{label}</div>
+                      <div style={{ ...detailValueBox, border: 'none', background: 'transparent', padding: 0, minHeight: 'auto', boxShadow: 'none' }}>{value || '-'}</div>
+                    </div>
+                  ))}
                 </div>
-              )}
 
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden', background: 'white' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', minWidth: '760px' }}>
-                    <thead>
-                      <tr>
-                        {['No', 'Item Group', 'Memo', 'Link', 'Qty', 'Est. Value', 'Subtotal'].map(header => (
-                          <th key={header} style={{ padding: '10px 12px', textAlign: 'left', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', color: '#64748b', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase' }}>{header}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item, index) => {
-                        const subtotal = parseNumber(item.qty) * parseNumber(item.estimatedValue)
-                        return (
-                          <tr key={`${item.budgetId}-${index}`}>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{index + 1}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700 }}>{item.budgetId || '-'}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.memo || '-'}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                              {item.linkPembelian ? <a href={item.linkPembelian} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>Buka Link</a> : '-'}
-                            </td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.qty || '-'}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700 }}>{formatCurrency(item.estimatedValue)}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 800 }}>{formatCurrency(subtotal)}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                <div className="dialog-section-premium">
+                  <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em', marginBottom: '4px' }}>Deskripsi</div>
+                  <div style={{ ...detailValueBox, border: 'none', background: 'transparent', padding: 0, minHeight: 'auto', boxShadow: 'none' }}>{selected.deskripsi || '-'}</div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '10px 14px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '3px' }}>Total Estimated</div>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1f4e8c', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(total)}</div>
+
+                {selected.processChanges?.length > 0 && (
+                  <div style={{ border: '1px solid #fde68a', background: '#fffbeb', borderRadius: '12px', padding: '14px 16px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#92400e', letterSpacing: '0.04em', marginBottom: '10px' }}>Perubahan Oleh Divisi Pemroses</div>
+                    <div style={{ display: 'grid', gap: '6px' }}>
+                      {selected.processChanges.map((change, index) => (
+                        <div key={`${change.field}-${index}`} style={{ fontSize: '0.85rem', color: '#78350f', lineHeight: 1.45 }}>
+                          <strong>{change.field}:</strong>{' '}
+                          <span style={{ color: '#dc2626', textDecoration: 'line-through' }}>{change.oldValue || '(kosong)'}</span>
+                          <span style={{ color: '#64748b' }}> -&gt; </span>
+                          <span style={{ color: '#16a34a', fontWeight: 700 }}>{change.newValue || '(kosong)'}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#92400e', marginTop: '8px' }}>
+                      Diubah oleh: {selected.processUpdatedBy || '-'} {selected.processUpdatedAt ? `(${formatDate(selected.processUpdatedAt)})` : ''}
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
-                {['approved', 'CREATED_FRP'].includes(selected.status) && (
-                  <>
-                    <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/preview`, '_blank')} style={actionButtonStyle('neutral')}>Preview</button>
-                    <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} style={actionButtonStyle('neutral')}>Print PDF</button>
-                  </>
                 )}
-                {renderRowActions(selected, { showDetail: false, showPreview: false, showKeFrp: false })}
+
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '14px', overflow: 'hidden', background: 'white' }} className="dialog-section-premium">
+                  <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.04em', marginBottom: '8px' }}>Detail Item</div>
+                  <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', minWidth: '760px' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc' }}>
+                          {['No', 'Item Group', 'Memo', 'Link', 'Qty', 'Est. Value', 'Subtotal'].map(header => (
+                            <th key={header} style={{ padding: '8px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{header}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((item, index) => {
+                          const subtotal = parseNumber(item.qty) * parseNumber(item.estimatedValue)
+                          return (
+                            <tr key={`${item.budgetId}-${index}`}>
+                              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', color: '#64748b' }}>{index + 1}</td>
+                              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, color: '#334155' }}>{item.budgetId || '-'}</td>
+                              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.memo || '-'}</td>
+                              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
+                                {item.linkPembelian ? <a href={item.linkPembelian} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>Buka Link</a> : '-'}
+                              </td>
+                              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 600, color: '#334155' }}>{item.qty || '-'}</td>
+                              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, color: '#475569' }}>{formatCurrency(item.estimatedValue)}</td>
+                              <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 800, color: '#0f172a' }}>{formatCurrency(subtotal)}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 14px', background: '#f8fafc', borderTop: '1.5px solid #e2e8f0', marginTop: '8px', borderRadius: '8px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '3px' }}>Total Estimated</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e3a8a', fontFamily: 'monospace' }}>{formatCurrency(total)}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+          
+          {/* Real fixed dialog footer containing all action buttons */}
+          <div className="dashboard-popup__actions" style={{ position: 'relative', zIndex: 1, padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 24px 24px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {['approved', 'CREATED_FRP'].includes(selected.status) && (
+              <>
+                <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/preview`, '_blank')} className="btn-dialog btn-dialog-neutral">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>visibility</span>
+                  Preview
+                </button>
+                <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} className="btn-dialog btn-dialog-neutral">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>download</span>
+                  Print PDF
+                </button>
+              </>
+            )}
+
+            {canManagerApprove && (
+              <>
+                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'manager-approve')} className="btn-dialog btn-dialog-approve">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
+                  Approve
+                </button>
+                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'manager-reject')} className="btn-dialog btn-dialog-reject">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
+                  Reject
+                </button>
+              </>
+            )}
+
+            {canProcess && (
+              <>
+                <button type="button" onClick={() => navigate(`/rp?process=${selected.id}`)} className="btn-dialog btn-dialog-warning">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>fact_check</span>
+                  Check Data
+                </button>
+                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-reject')} className="btn-dialog btn-dialog-reject">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
+                  Reject
+                </button>
+              </>
+            )}
+
+            {canFinalApprove && (
+              <>
+                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-manager-approve')} className="btn-dialog btn-dialog-approve">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
+                  Final Approve
+                </button>
+                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-manager-reject')} className="btn-dialog btn-dialog-reject">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
+                  Reject
+                </button>
+              </>
+            )}
+
+            {canCreateFrp && (
+              <button type="button" onClick={() => navigate(`/frp?fromRp=${selected.id}`)} className="btn-dialog btn-dialog-primary">
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>receipt_long</span>
+                Ke FRP
+              </button>
+            )}
+
+            {isAdmin && selected.status !== 'waiting_manager' && (
+              <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'revert')} className="btn-dialog btn-dialog-warning">
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>undo</span>
+                Revert
+              </button>
+            )}
+
+            <button type="button" onClick={() => setSelected(null)} className="btn-dialog btn-dialog-close">
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
+              Tutup
+            </button>
           </div>
         </div>
       </div>
@@ -933,135 +1131,24 @@ export default function RpApprovalPage() {
         </div>
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b', padding: '4rem 2rem' }}>Memuat data...</div>
-          ) : filtered.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#94a3b8', padding: '4rem 2rem' }}>
-              <span className="material-icons-round" style={{ fontSize: '48px', marginBottom: '1rem', opacity: 0.5 }}>inventory_2</span>
-              <h3 style={{ margin: '0 0 0.5rem', color: '#64748b', fontWeight: 600 }}>Belum Ada Data</h3>
-            </div>
-          ) : isMobile ? (
-            <>
-              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {paginated.map(rp => (
-                  <div key={rp.id} style={{ background: 'white', border: '1px solid #e8edf4', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'flex-start', marginBottom: '10px' }}>
-                      <div>
-                        <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem', marginBottom: '4px' }}>{rp.rpNo || 'Draft'}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>{formatDate(rp.createdAt || rp.tanggalDibutuhkan)}</div>
-                      </div>
-                      {renderStatus(rp.status)}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: '12px' }}>
-                      {[
-                        ['Pemohon', rp.dibuatOleh || '-'],
-                        ['Divisi', rp.divisi || '-'],
-                        ['Kategori', rp.kategoriPembelian || '-'],
-                        ['Diproses', rp.diprosesOleh || '-'],
-                      ].map(([label, value]) => (
-                        <div key={label}>
-                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>{label}</div>
-                          <div style={{ fontSize: '13px', color: '#1e293b', fontWeight: 500 }}>{value}</div>
-                        </div>
-                      ))}
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Total</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, fontFamily: 'IBM Plex Mono, monospace', color: '#0f172a' }}>{formatCurrency(calcTotal(rp))}</div>
-                      </div>
-                    </div>
-                    {renderRowActions(rp)}
-                  </div>
-                ))}
-              </div>
-              <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {filtered.length}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>
-                  <select value={rowsPerPage} onChange={event => setRowsPerPage(Number(event.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px' }}>
-                    {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
-                  </select>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.max(1, page - 1))} disabled={safeCurrentPage === 1} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Prev</button>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))} disabled={safeCurrentPage === totalPages} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Next</button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
-                  <colgroup>
-                    {desktopColumnWidths.map((width, index) => <col key={`desktop-head-col-${index}`} style={{ width }} />)}
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      {desktopHeaders.map(header => (
-                        <th key={header.label} onClick={() => requestSort(header.key)} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', boxShadow: '0 2px 4px -1px rgba(15,23,42,0.06)', cursor: header.key ? 'pointer' : 'default', userSelect: 'none' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                            {header.label}
-                            {renderSortIcon(header.key)}
-                          </span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                </table>
-                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
-                  <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
-                    <colgroup>
-                      {desktopColumnWidths.map((width, index) => <col key={`desktop-body-col-${index}`} style={{ width }} />)}
-                    </colgroup>
-                    <tbody>
-                      {paginated.map((rp, index) => {
-                        const rowBg = index % 2 === 0 ? 'white' : '#fafbfc'
-                        const td = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }
-                        return (
-                          <tr
-                            key={rp.id}
-                            style={{ background: rowBg }}
-                            onMouseEnter={event => { event.currentTarget.style.background = '#eff6ff' }}
-                            onMouseLeave={event => { event.currentTarget.style.background = rowBg }}
-                          >
-                              <td style={td}>
-                                <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.82rem', marginBottom: '4px', wordBreak: 'break-word' }}>{rp.rpNo || 'Draft'}</div>
-                                <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.45 }}>{formatDate(rp.createdAt || rp.tanggalDibutuhkan)}</div>
-                              </td>
-                              <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                                <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>{rp.dibuatOleh || '-'}</div>
-                                <div style={{ fontSize: '12px', color: '#64748b' }}>{rp.kategoriPembelian || '-'}</div>
-                              </td>
-                              <td style={{ ...td, whiteSpace: 'normal' }}><span style={{ background: '#e0e7ef', color: '#334155', borderRadius: '6px', padding: '2px 8px', fontSize: '12px', fontWeight: 700, display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word' }}>{rp.divisi || '-'}</span></td>
-                              <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word' }}>{rp.diprosesOleh || '-'}</td>
-                              <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 800, whiteSpace: 'normal', color: '#0f172a', wordBreak: 'break-word' }}>{formatCurrency(calcTotal(rp))}</td>
-                              <td style={td}>{renderStatus(rp.status)}</td>
-                              <td style={{ ...td, whiteSpace: 'normal' }}>
-                                {renderRowActions(rp, { showDetail: false, showPreview: false })}
-                              </td>
-                              <td style={{ ...td, whiteSpace: 'normal' }}>
-                                <button type="button" onClick={() => setSelected(rp)} style={actionButtonStyle('primary')}>Detail</button>
-                              </td>
-                            </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px 14px', display: 'flex', flexWrap: 'nowrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
-                <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>{rangeStart}-{rangeEnd} dari {filtered.length} data</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>Rows per page</span>
-                    <select value={rowsPerPage} onChange={event => setRowsPerPage(Number(event.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px', background: 'white' }}>
-                      {[10, 25, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
-                    </select>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>Page {safeCurrentPage} / {totalPages}</div>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.max(1, page - 1))} disabled={safeCurrentPage === 1} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: '12px' }}>Prev</button>
-                  <button type="button" onClick={() => setCurrentPage(page => Math.min(totalPages, page + 1))} disabled={safeCurrentPage === totalPages} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: '12px' }}>Next</button>
-                </div>
-              </div>
-            </>
-          )}
+          <DataTableRp
+            loading={loading}
+            isMobile={isMobile}
+            paginated={paginated}
+            filtered={filtered}
+            safeCurrentPage={safeCurrentPage}
+            totalPages={totalPages}
+            rowsPerPage={rowsPerPage}
+            setRowsPerPage={setRowsPerPage}
+            setCurrentPage={setCurrentPage}
+            rangeStart={rangeStart}
+            rangeEnd={rangeEnd}
+            sortConfig={sortConfig}
+            requestSort={requestSort}
+            renderRowActions={renderRowActions}
+            setSelected={setSelected}
+            calcTotal={calcTotal}
+          />
         </div>
       </main>
       {renderDetail()}

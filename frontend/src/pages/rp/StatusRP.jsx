@@ -291,11 +291,11 @@ export default function StatusRP() {
             /* ── Mobile Card View ── */
             <>
               <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {paginated.map(req => {
+                {paginated.map(req => { 
                   const total = calcTotal(req)
                   const isExpanded = expandedId === req.id
                   return (
-                    <div key={req.id} style={{ background: 'white', border: '1px solid #e8edf4', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                    <div key={req.id} onClick={() => setDetailRequest(req)} style={{ background: 'white', border: '1px solid #e8edf4', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <button
                           type="button"
@@ -322,13 +322,15 @@ export default function StatusRP() {
                           </div>
                         ))}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setDetailRequest(req)}
-                        style={{ width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}
-                      >
-                        Lihat Detail
-                      </button>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => setDetailRequest(req)}
+                          style={{ width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}
+                        >
+                          Lihat Detail
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
@@ -382,8 +384,10 @@ export default function StatusRP() {
                     {paginated.map(req => {
                       const total = calcTotal(req)
                       return (
-                        <tr key={req.id} style={{ transition: 'background 0.12s' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                        <tr key={req.id}
+                          style={{ transition: 'background 0.12s', cursor: 'pointer' }}
+                          onClick={() => setDetailRequest(req)}
+                          onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
                           <td style={td}>
@@ -403,7 +407,7 @@ export default function StatusRP() {
                           <td style={{ ...td, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#475569' }} title={req.divisi}>{req.divisi || '-'}</td>
                           <td style={{ ...td, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: '0.82rem' }}>{formatCurrency(total)}</td>
                           <td style={td}><StatusBadge status={req.status} /></td>
-                          <td style={td}>
+                          <td style={td} onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => setDetailRequest(req)}

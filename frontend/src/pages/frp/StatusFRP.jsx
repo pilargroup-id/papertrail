@@ -430,6 +430,7 @@ export default function StatusFRP() {
           )}
         </div>
       )}
+
       <DialogStatusFrp
         isOpen={!!selectedFrpId}
         frpId={selectedFrpId}

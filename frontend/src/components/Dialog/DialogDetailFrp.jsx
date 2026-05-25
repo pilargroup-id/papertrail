@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import BackgroundDialog from '../template/BackgroundDialog'
+import BackgroundDialog from '../template/BackgroundDialog.jsx'
 
 import { XClose } from '../template/TemplateIcons.jsx'
 
@@ -113,17 +113,64 @@ function DialogFrpDetail({
         style={{ height: 'auto', maxHeight: '75vh', margin: 'auto' }}
       >
         <BackgroundDialog />
-        <div className="dashboard-popup__header" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+        <div className="dashboard-popup__header" style={{ padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-            <span className="dashboard-popup__eyebrow" style={{ margin: '0 0 6px 0', fontSize: '0.65rem', lineHeight: 1, color: '#f0a500', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+            <span className="dashboard-popup__eyebrow" style={{ margin: '0 0 4px 0', fontSize: '0.65rem', lineHeight: 1, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
               {eyebrow}
             </span>
-            <h2 className="dashboard-popup__title" id="dialog-frp-detail-title" style={{ fontSize: '1.25rem', margin: 0, lineHeight: 1.2, color: '#f8fafc', fontWeight: 700, fontFamily: 'monospace' }}>
-              {request.frpNo || request.id}
+            <h2 className="dashboard-popup__title" id="dialog-frp-detail-title" style={{ fontSize: '1.1rem', margin: 0, lineHeight: 1.2, color: '#f8fafc', fontWeight: 600 }}>
+              {title}
             </h2>
           </div>
+          
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+            <span style={{ 
+              background: 'rgba(255,255,255,0.06)', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              padding: '4px 10px', 
+              borderRadius: '8px', 
+              color: '#cbd5e1', 
+              fontSize: '0.7rem', 
+              fontWeight: '500', 
+              fontFamily: 'monospace', 
+              whiteSpace: 'nowrap', 
+              textOverflow: 'ellipsis', 
+              overflow: 'hidden' 
+            }}>
+              FRP No: {request.frpNo}
+            </span>
+            {(() => {
+              const statusStr = request.status || 'Waiting Approval'
+              const sLow = statusStr.toLowerCase()
+              let bg = 'rgba(245, 158, 11, 0.12)', border = 'rgba(245, 158, 11, 0.25)', color = '#fbbf24' // Warning/Yellow
+              
+              if (sLow.includes('approve') || sLow.includes('completed')) { 
+                bg = 'rgba(16, 185, 129, 0.12)'; border = 'rgba(16, 185, 129, 0.25)'; color = '#34d399' // Success/Green
+              } else if (sLow.includes('reject')) { 
+                bg = 'rgba(239, 68, 68, 0.12)'; border = 'rgba(239, 68, 68, 0.25)'; color = '#f87171' // Danger/Red
+              } else if (sLow.includes('draft')) { 
+                bg = 'rgba(148, 163, 184, 0.12)'; border = 'rgba(148, 163, 184, 0.25)'; color = '#cbd5e1' // Neutral/Gray
+              }
 
-          <div style={{ flex: 1 }} />
+              return (
+                <span style={{ 
+                  background: bg, 
+                  border: `1px solid ${border}`,
+                  color: color, 
+                  padding: '4px 10px', 
+                  borderRadius: '8px', 
+                  fontSize: '0.65rem', 
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}>
+                  {statusStr}
+                </span>
+              )
+            })()}
+          </div>
 
           <div className="frp-detail-header-actions" style={{ flexShrink: 0, marginLeft: '6px' }}>
             <button

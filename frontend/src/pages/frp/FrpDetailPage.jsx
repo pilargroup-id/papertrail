@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
-import CreateButton from '../components/button/CreateButton'
-import DialogConfirm from '../components/Dialog/DialogConfirm'
+import CreateButton from '../../components/button/CreateButton'
+import DialogConfirm from '../../components/Dialog/DialogConfirm'
 
 const DOCS = ['Form Request Payment', 'Tanda Terima Asli', 'Invoice / Kontrak', 'Surat Jalan Asli / Berita Acara', 'Faktur Pajak', 'Purchase Order']
 

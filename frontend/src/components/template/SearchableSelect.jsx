@@ -7,6 +7,7 @@ export default function SearchableSelect({
   options,
   placeholder = 'Pilih...',
   style,
+  className,
   dropdownStyle,
   disabled = false,
   menuPosition = 'absolute',
@@ -88,6 +89,7 @@ export default function SearchableSelect({
       <button
         ref={triggerRef}
         type="button"
+        className={className}
         onClick={() => !disabled && setOpen(current => !current)}
         style={{
           ...style,

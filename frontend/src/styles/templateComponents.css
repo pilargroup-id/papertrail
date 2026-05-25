@@ -1701,6 +1701,55 @@ select {
   flex-shrink: 0;
 }
 
+/* ── Pill button variants (approve / danger / warning / primary / neutral) ── */
+.users-table-card__action--approve {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.28);
+}
+.users-table-card__action--approve:hover {
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.38);
+}
+
+.users-table-card__action--danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.28);
+}
+.users-table-card__action--danger:hover {
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.38);
+}
+
+.users-table-card__action--warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.28);
+}
+.users-table-card__action--warning:hover {
+  box-shadow: 0 12px 28px rgba(245, 158, 11, 0.38);
+}
+
+.users-table-card__action--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.28);
+}
+.users-table-card__action--primary:hover {
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.38);
+}
+
+.users-table-card__action--neutral {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  box-shadow: 0 8px 20px rgba(100, 116, 139, 0.22);
+}
+.users-table-card__action--neutral:hover {
+  box-shadow: 0 12px 28px rgba(100, 116, 139, 0.32);
+}
+
+.users-table-card__action:disabled,
+.users-table-card__action[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .users-table-wrapper {
   margin-top: 22px;
   overflow-x: auto;
