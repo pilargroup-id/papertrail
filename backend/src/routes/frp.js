@@ -36,7 +36,22 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
         const [employees, departmentEmployees, budgetsData, companiesData, vendorsData, departments] = await Promise.all([
             getAllEmployees(),
             getDepartmentEmployeesByUserId(u.id),
-            Promise.resolve(readJson('budgets.json')),
+            db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets').then(([r]) => r.map(row => ({
+                id: row.id,
+                company_id: row.company_id,
+                companyId: row.company_id,
+                department_id: row.departement_id,
+                departmentId: row.departement_id,
+                class: row.class,
+                description: row.description,
+                type: row.type,
+                total_amount: row.total_amount,
+                totalAmount: row.total_amount,
+                budget_remaining: row.budget_remaining,
+                sisa_budget: row.budget_remaining,
+                sisaBudget: row.budget_remaining,
+                remainingAmount: row.budget_remaining
+            }))),
             getCompanies(),
             Promise.resolve(readJson('vendors.json')),
             getDepartmentRows(),
@@ -60,11 +75,16 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
             const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
             const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
             const dept = departments.find(d => String(d.id) === String(bDepartmentId));
+            const classDept = departments.find(d => String(d.id) === String(b.class));
+            const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
             return {
                 ...b,
                 company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
                 department: dept ? dept.name : (b.department || ''),
-                remainingAmount: (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0),
+                class: classDept ? classDept.class : b.class,
+                remainingAmount: dynamicRemaining,
+                sisa_budget: dynamicRemaining,
+                sisaBudget: dynamicRemaining,
             };
         });
 
@@ -133,7 +153,23 @@ router.get('/api/vendors', checkAuth, async (req, res) => {
 
 router.get('/api/budgets/all', checkAuth, async (req, res) => {
     try {
-        const budgetsData = readJson('budgets.json');
+        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const budgetsData = budgetsRows.map(row => ({
+            id: row.id,
+            company_id: row.company_id,
+            companyId: row.company_id,
+            department_id: row.departement_id,
+            departmentId: row.departement_id,
+            class: row.class,
+            description: row.description,
+            type: row.type,
+            total_amount: row.total_amount,
+            totalAmount: row.total_amount,
+            budget_remaining: row.budget_remaining,
+            sisa_budget: row.budget_remaining,
+            sisaBudget: row.budget_remaining,
+            remainingAmount: row.budget_remaining
+        }));
         const requests = await fetchAllFrpRequests();
         const [companiesData, departments] = await Promise.all([
             getCompanies(),
@@ -154,11 +190,16 @@ router.get('/api/budgets/all', checkAuth, async (req, res) => {
             const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
             const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
             const dept = departments.find(d => String(d.id) === String(bDepartmentId));
+            const classDept = departments.find(d => String(d.id) === String(b.class));
+            const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
             return {
                 ...b,
                 company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
                 department: dept ? dept.name : (b.department || ''),
-                remainingAmount: (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0),
+                class: classDept ? classDept.class : b.class,
+                remainingAmount: dynamicRemaining,
+                sisa_budget: dynamicRemaining,
+                sisaBudget: dynamicRemaining,
             };
         });
         res.json(budgetsWithRemaining);
@@ -215,7 +256,23 @@ router.get('/api/employees/:department', checkAuth, async (req, res) => {
 
 router.get('/api/budgets/:department', checkAuth, async (req, res) => {
     try {
-        const budgetsData = readJson('budgets.json');
+        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const budgetsData = budgetsRows.map(row => ({
+            id: row.id,
+            company_id: row.company_id,
+            companyId: row.company_id,
+            department_id: row.departement_id,
+            departmentId: row.departement_id,
+            class: row.class,
+            description: row.description,
+            type: row.type,
+            total_amount: row.total_amount,
+            totalAmount: row.total_amount,
+            budget_remaining: row.budget_remaining,
+            sisa_budget: row.budget_remaining,
+            sisaBudget: row.budget_remaining,
+            remainingAmount: row.budget_remaining
+        }));
         const requests = await fetchAllFrpRequests();
         const [companiesData, departments] = await Promise.all([
             getCompanies(),
@@ -237,14 +294,24 @@ router.get('/api/budgets/:department', checkAuth, async (req, res) => {
                 const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
                 const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
                 const dept = departments.find(d => String(d.id) === String(bDepartmentId));
+                const classDept = departments.find(d => String(d.id) === String(b.class));
                 return {
                     ...b,
                     company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
                     department: dept ? dept.name : (b.department || ''),
+                    class: classDept ? classDept.class : b.class,
                 };
             })
             .filter(b => (b.department || '').toLowerCase() === req.params.department.toLowerCase())
-            .map(b => ({ ...b, remainingAmount: (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0) }));
+            .map(b => {
+                const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
+                return {
+                    ...b,
+                    remainingAmount: dynamicRemaining,
+                    sisa_budget: dynamicRemaining,
+                    sisaBudget: dynamicRemaining,
+                };
+            });
         res.json(filtered);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -491,49 +558,33 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             const [rows] = await db.query('SELECT frp_no FROM frp_request WHERE id = ?', [req.body.frpId]);
             const frpNo = rows.length ? rows[0].frp_no : '';
 
-            // Update budgets.json
+            // Update master_budgets database table
             try {
-                const { readJson, writeJson } = require('../utils/json');
-                const budgetsData = readJson('budgets.json');
-                let isModified = false;
-
                 // Revert old items
-                oldItems.forEach(item => {
+                for (const item of oldItems) {
                     if (item.budgetId) {
-                        const b = budgetsData.find(x => x.id === item.budgetId);
-                        if (b) {
-                            const amt = parseFloat(item.amount) || 0;
-                            // Revert sisa_budget/sisaBudget only (total_amount remains unchanged)
-                            const curSisa = b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : 0);
-                            b.sisa_budget = curSisa + amt;
-                            b.sisaBudget = b.sisa_budget;
-
-                            isModified = true;
-                        }
+                        const amt = parseFloat(item.amount) || 0;
+                        await db.query(`
+                            UPDATE master_budgets
+                            SET budget_remaining = budget_remaining + ?
+                            WHERE id = ?
+                        `, [amt, item.budgetId]);
                     }
-                });
+                }
 
                 // Deduct new items
-                (req.body.items || []).forEach(item => {
+                for (const item of (req.body.items || [])) {
                     if (item.budgetId) {
-                        const b = budgetsData.find(x => x.id === item.budgetId);
-                        if (b) {
-                            const amt = parseFloat(item.amount) || 0;
-                            // Deduct sisa_budget/sisaBudget only (total_amount remains unchanged)
-                            const curSisa = b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : 0);
-                            b.sisa_budget = curSisa - amt;
-                            b.sisaBudget = b.sisa_budget;
-
-                            isModified = true;
-                        }
+                        const amt = parseFloat(item.amount) || 0;
+                        await db.query(`
+                            UPDATE master_budgets
+                            SET budget_remaining = budget_remaining - ?
+                            WHERE id = ?
+                        `, [amt, item.budgetId]);
                     }
-                });
-
-                if (isModified) {
-                    writeJson('budgets.json', budgetsData);
                 }
             } catch (err) {
-                console.error('Failed to update budgets.json:', err);
+                console.error('Failed to update master_budgets:', err);
             }
 
             return res.json({ success: true, id: req.body.frpId, frpNo });
@@ -580,32 +631,20 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             await db.query('UPDATE rp_request SET status = ? WHERE id = ?', ['CREATED_FRP', req.body.fromRpId]);
         }
 
-        // Update budgets.json for new FRP
+        // Update master_budgets database table for new FRP
         try {
-            const { readJson, writeJson } = require('../utils/json');
-            const budgetsData = readJson('budgets.json');
-            let isModified = false;
-
-            (req.body.items || []).forEach(item => {
+            for (const item of (req.body.items || [])) {
                 if (item.budgetId) {
-                    const b = budgetsData.find(x => x.id === item.budgetId);
-                    if (b) {
-                        const amt = parseFloat(item.amount) || 0;
-                        // Deduct sisa_budget/sisaBudget only (total_amount remains unchanged)
-                        const curSisa = b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : 0);
-                        b.sisa_budget = curSisa - amt;
-                        b.sisaBudget = b.sisa_budget;
-
-                        isModified = true;
-                    }
+                    const amt = parseFloat(item.amount) || 0;
+                    await db.query(`
+                        UPDATE master_budgets
+                        SET budget_remaining = budget_remaining - ?
+                        WHERE id = ?
+                    `, [amt, item.budgetId]);
                 }
-            });
-
-            if (isModified) {
-                writeJson('budgets.json', budgetsData);
             }
         } catch (err) {
-            console.error('Failed to update budgets.json:', err);
+            console.error('Failed to update master_budgets:', err);
         }
 
         res.json({ success: true, id, frpNo });

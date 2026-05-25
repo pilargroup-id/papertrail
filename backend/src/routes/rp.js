@@ -59,7 +59,25 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
         ]);
         const processDivisions = [...new Set(departmentsData.map(d => d.name).filter(Boolean))].sort();
 
-        const budgetsData = readJson('budgets.json');
+        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const budgetsData = budgetsRows.map(row => ({
+            id: row.id,
+            company_id: row.company_id,
+            companyId: row.company_id,
+            department_id: row.departement_id,
+            departmentId: row.departement_id,
+            class_id: row.class,
+            classId: row.class,
+            class: row.class,
+            description: row.description,
+            type: row.type,
+            total_amount: row.total_amount,
+            totalAmount: row.total_amount,
+            budget_remaining: row.budget_remaining,
+            sisa_budget: row.budget_remaining,
+            sisaBudget: row.budget_remaining,
+            remainingAmount: row.budget_remaining
+        }));
         const vendorsData = readJson('vendors.json');
         const rpRequests = await fetchAllRpRequests();
         const frpRequests = await fetchAllFrpRequests();
@@ -335,7 +353,25 @@ router.get('/api/rp/:id', checkAuth, async (req, res) => {
         const canApprove = isAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
         const isProcessDivision = isAdmin || user.selectedDivision === data.diprosesOleh;
         const employees = await getAllEmployees();
-        const budgetsData = readJson('budgets.json');
+        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const budgetsData = budgetsRows.map(row => ({
+            id: row.id,
+            company_id: row.company_id,
+            companyId: row.company_id,
+            department_id: row.departement_id,
+            departmentId: row.departement_id,
+            class_id: row.class,
+            classId: row.class,
+            class: row.class,
+            description: row.description,
+            type: row.type,
+            total_amount: row.total_amount,
+            totalAmount: row.total_amount,
+            budget_remaining: row.budget_remaining,
+            sisa_budget: row.budget_remaining,
+            sisaBudget: row.budget_remaining,
+            remainingAmount: row.budget_remaining
+        }));
         const [companiesData, departmentsData] = await Promise.all([
             getCompanies(),
             getDepartmentRows(),

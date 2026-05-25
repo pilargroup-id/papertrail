@@ -5,6 +5,10 @@ import { useUser } from '../contexts/UserContext'
 import { XClose } from '../components/template/TemplateIcons.jsx'
 import SearchableSelect from '../components/template/SearchableSelect.jsx'
 import CreateButton from '../components/button/CreateButton.jsx'
+import ButtonCreateBudgets from '../components/button/ButtonCreateBudgets.jsx'
+import DataTableBudgets from '../components/table/DataTableBudgets.jsx'
+import DialogCreateBudgets from '../components/Dialog/DialogCreateBudgets.jsx'
+
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -22,9 +26,9 @@ const COLUMN_WIDTHS = {
   budgets: ['4%', '10%', '13%', '10%', '7%', '7%', '22%', '18%', '9%'],
 }
 
-function getBlankForm(type) {
+function getBlankForm(type, defaultCompany = '') {
   if (type === 'vendors') return { name: '', bank: '', no_rekening: '' }
-  if (type === 'budgets') return { id: '', department: '', company: COMPANIES[0], class: '', type: '', description: '', totalAmount: '' }
+  if (type === 'budgets') return { id: '', department: '', company: defaultCompany, class: '', type: '', description: '', totalAmount: '' }
   return {}
 }
 
@@ -238,7 +242,17 @@ function VendorFormFields({ form, onChange, styles }) {
 
 
 
-function BudgetFormFields({ form, onChange, companyNames, styles }) {
+function BudgetFormFields({ form, onChange, companyNames, departments = [], styles }) {
+  const departmentOptions = useMemo(() => {
+    const normalizeCompany = v => String(v || '').trim().toUpperCase()
+    const currentCompany = form.company || ''
+    const filtered = (departments || [])
+      .filter(d => !currentCompany || normalizeCompany(d.company) === normalizeCompany(currentCompany))
+      .map(d => d.name)
+      .filter(Boolean)
+    return [...new Set(filtered)].sort()
+  }, [departments, form.company])
+
   return (
     <>
       <div style={styles.grid3}>
@@ -247,8 +261,15 @@ function BudgetFormFields({ form, onChange, companyNames, styles }) {
           <input style={styles.input} required value={form.id} onChange={e => onChange('id', e.target.value)} placeholder="FIN-001" />
         </div>
         <div style={styles.formGroup}>
-          <label style={styles.label}>Departemen</label>
-          <input style={styles.input} required value={form.department} onChange={e => onChange('department', e.target.value)} placeholder="FINANCE" />
+          <label style={styles.label}>Divisi</label>
+          <SearchableSelect
+            style={styles.select}
+            value={form.department}
+            onChange={val => onChange('department', val)}
+            options={departmentOptions}
+            placeholder="Pilih Divisi"
+            menuPosition="fixed"
+          />
         </div>
         <div style={styles.formGroup}>
           <label style={styles.label}>Company</label>
@@ -288,9 +309,9 @@ function BudgetFormFields({ form, onChange, companyNames, styles }) {
 
 
 
-function FormFields({ type, form, onChange, companyNames = COMPANIES, styles }) {
+function FormFields({ type, form, onChange, companyNames = COMPANIES, departments = [], styles }) {
   if (type === 'vendors') return <VendorFormFields form={form} onChange={onChange} styles={styles} />
-  if (type === 'budgets') return <BudgetFormFields form={form} onChange={onChange} companyNames={companyNames} styles={styles} />
+  if (type === 'budgets') return <BudgetFormFields form={form} onChange={onChange} companyNames={companyNames} departments={departments} styles={styles} />
   return null
 }
 
@@ -420,6 +441,7 @@ export default function AdminPage() {
   const { setUser } = useUser()
   const [addForm, setAddForm] = useState(() => getBlankForm(type))
   const [editItem, setEditItem] = useState(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [companyFilter, setCompanyFilter] = useState('')
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
@@ -429,8 +451,9 @@ export default function AdminPage() {
   // Synchronous state reset — runs before browser paint, no stale-data flash
   if (renderedType !== type) {
     setRenderedType(type)
-    setAddForm(getBlankForm(type))
+    setAddForm(getBlankForm(type, companyNames[0] || ''))
     setEditItem(null)
+    setIsCreateOpen(false)
     setCompanyFilter('')
     setSearch('')
     setData(null)
@@ -476,6 +499,7 @@ export default function AdminPage() {
       const d = await res.json()
       if (d.success) {
         setAddForm(getBlankForm(type))
+        setIsCreateOpen(false)
         loadData()
       }
     } finally {
@@ -523,18 +547,20 @@ export default function AdminPage() {
         {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
 
         {!loading && <>
-          <section style={styles.card}>
-            <SectionHeading icon="add_circle" title={`Tambah ${meta.noun} Baru`} subtitle={`Isi form berikut untuk menambahkan data ${meta.noun.toLowerCase()} baru ke sistem.`} accent={meta.accent} />
-            <form onSubmit={handleAdd}>
-              <FormFields type={type} form={addForm} onChange={updateAddForm} companyNames={companyNames} styles={styles} />
-              <div style={{ display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
-                <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: isMobile ? '100%' : 'auto', opacity: saving ? 0.7 : 1 }}>
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
-                  {saving ? 'Menyimpan...' : 'Simpan Data'}
-                </CreateButton>
-              </div>
-            </form>
-          </section>
+          {type !== 'budgets' && (
+            <section style={styles.card}>
+              <SectionHeading icon="add_circle" title={`Tambah ${meta.noun} Baru`} subtitle={`Isi form berikut untuk menambahkan data ${meta.noun.toLowerCase()} baru ke sistem.`} accent={meta.accent} />
+              <form onSubmit={handleAdd}>
+                <FormFields type={type} form={addForm} onChange={updateAddForm} companyNames={companyNames} departments={data?.departments || []} styles={styles} />
+                <div style={{ display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
+                  <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: isMobile ? '100%' : 'auto', opacity: saving ? 0.7 : 1 }}>
+                    <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
+                    {saving ? 'Menyimpan...' : 'Simpan Data'}
+                  </CreateButton>
+                </div>
+              </form>
+            </section>
+          )}
 
           <section style={styles.listShell}>
             <div style={styles.toolbar}>
@@ -552,22 +578,40 @@ export default function AdminPage() {
                   </div>
                 </div>
                 {showFilter && (
-                  <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Filter PT</label>
-                    <SearchableSelect
-                      style={styles.select}
-                      value={companyFilter}
-                      onChange={val => setCompanyFilter(val)}
-                      options={companyNames}
-                      placeholder="Semua Perusahaan"
-                      menuPosition="fixed"
+                  <>
+                    <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Filter PT</label>
+                      <SearchableSelect
+                        style={styles.select}
+                        value={companyFilter}
+                        onChange={val => setCompanyFilter(val)}
+                        options={companyNames}
+                        placeholder="Semua Perusahaan"
+                        menuPosition="fixed"
+                      />
+                    </div>
+                    <ButtonCreateBudgets
+                      label="Anggaran"
+                      value="Tambah Anggaran"
+                      icon={<span className="material-icons-round" style={{ fontSize: '20px' }}>add_circle</span>}
+                      onClick={() => setIsCreateOpen(true)}
                     />
-                  </div>
+                  </>
                 )}
               </div>
             </div>
 
-            {isMobile ? (
+            {type === 'budgets' ? (
+              <DataTableBudgets
+                listData={listData}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                companyFilter={companyFilter}
+                search={search}
+                companyNames={companyNames}
+                isMobile={isMobile}
+              />
+            ) : isMobile ? (
               <MobileList type={type} listData={listData} onEdit={handleEdit} onDelete={handleDelete} companyFilter={companyFilter} search={search} companyNames={companyNames} styles={styles} />
             ) : (
               <div style={styles.tableContain}>
@@ -603,7 +647,7 @@ export default function AdminPage() {
             </div>
             <div className="dashboard-popup__body" style={{ overflowY: 'auto', flex: 1, padding: '1.25rem' }}>
               <form onSubmit={handleEditSave}>
-                <FormFields type={type} form={editItem} onChange={updateEditForm} companyNames={companyNames} styles={styles} />
+                <FormFields type={type} form={editItem} onChange={updateEditForm} companyNames={companyNames} departments={data?.departments || []} styles={styles} />
                 <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: '100%', marginTop: '0.75rem', opacity: saving ? 0.7 : 1 }}>
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
                   {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
@@ -613,6 +657,23 @@ export default function AdminPage() {
           </div>
         </div>,
         document.body
+      )}
+
+      {type === 'budgets' && (
+        <DialogCreateBudgets
+          isOpen={isCreateOpen}
+          eyebrow="Master Anggaran"
+          title="Tambah Anggaran Baru"
+          onClose={() => setIsCreateOpen(false)}
+        >
+          <form onSubmit={handleAdd}>
+            <FormFields type={type} form={addForm} onChange={updateAddForm} companyNames={companyNames} departments={data?.departments || []} styles={styles} />
+            <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: '100%', marginTop: '0.75rem', opacity: saving ? 0.7 : 1 }}>
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
+              {saving ? 'Menyimpan...' : 'Simpan Data'}
+            </CreateButton>
+          </form>
+        </DialogCreateBudgets>
       )}
     </>
   )
