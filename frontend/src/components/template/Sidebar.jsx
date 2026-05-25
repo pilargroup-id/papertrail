@@ -10,6 +10,7 @@ function getItemKey(item) {
 }
 
 function isItemActive(item, pathname) {
+  if (item.href === '/frp' && pathname === '/') return true
   if (item.href === '/') return pathname === '/'
   if (item.href) return pathname === item.href
   return item.children?.some(c => isItemActive(c, pathname)) ?? false

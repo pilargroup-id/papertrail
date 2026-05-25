@@ -3,9 +3,6 @@ import { createPortal } from 'react-dom'
 import BackgroundDialog from '../template/BackgroundDialog'
 import { XClose } from '../template/TemplateIcons.jsx'
 
-/* ──────────────────────────────────────────────────────────────
-   Helpers — sama persis dengan FrpDetailPage & DialogFrpDetail
-   ────────────────────────────────────────────────────────────── */
 const DOCS = [
   'Form Request Payment', 'Tanda Terima Asli', 'Invoice / Kontrak',
   'Surat Jalan Asli / Berita Acara', 'Faktur Pajak', 'Purchase Order',
@@ -395,6 +392,27 @@ function DialogStatusFrp({ isOpen = false, frpId = null, onClose }) {
             >
               Tutup
             </button>
+
+            {/* Edit */}
+            {data && (
+              <button
+                type="button"
+                onClick={() => { window.location.href = `/?revisi=${data.id}` }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '5px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  color: '#fff', border: 'none', borderRadius: '6px',
+                  padding: '6px 14px', fontWeight: 600, fontSize: '0.75rem',
+                  cursor: 'pointer', boxShadow: '0 4px 10px rgba(37,99,235,0.25)',
+                  transition: 'all 0.2s',
+                }}
+                onMouseOver={e => { e.currentTarget.style.boxShadow = '0 6px 16px rgba(37,99,235,0.38)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseOut={e  => { e.currentTarget.style.boxShadow = '0 4px 10px rgba(37,99,235,0.25)'; e.currentTarget.style.transform = 'none' }}
+              >
+                <span className="material-icons-round" style={{ fontSize: '14px' }}>edit</span>
+                Edit
+              </button>
+            )}
 
             {/* Duplicate */}
             {data && (

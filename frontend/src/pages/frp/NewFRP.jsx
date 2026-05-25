@@ -402,6 +402,7 @@ export default function NewFRP() {
     try {
       const payload = {
         ...values,
+        frpId: values.id || undefined,
         items: values.items.map(item => ({
           ...item,
           amount: calculateRowAmount(item),
