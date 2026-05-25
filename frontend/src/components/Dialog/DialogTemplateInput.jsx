@@ -3,34 +3,28 @@ import { createPortal } from 'react-dom'
 import BackgroundDialog from '../template/BackgroundDialog'
 import { XClose } from '../template/TemplateIcons.jsx'
 
-function DialogDetailRP({
+function DialogTemplateInput({
   isOpen = false,
-  title = 'Detail Request Purchase',
-  eyebrow = 'Request Detail',
+  title = 'Dialog Title',
+  eyebrow = 'Form Input',
+  labelSimpan = 'Simpan',
+  labelBatal = 'Batal',
   onClose,
   onSave,
+  children,
 }) {
   useEffect(() => {
-    if (!isOpen) {
-      return undefined
-    }
+    if (!isOpen) return undefined
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose?.()
-      }
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.()
     }
 
     window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  if (!isOpen || typeof document === 'undefined') {
-    return null
-  }
+  if (!isOpen || typeof document === 'undefined') return null
 
   const dialogNode = (
     <div
@@ -39,15 +33,14 @@ function DialogDetailRP({
       onClick={onClose}
     >
       <div
-        className="dashboard-popup dashboard-popup--frp-detail"
+        className="dashboard-popup"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="dialog-rp-detail-title"
+        aria-labelledby="dialog-template-input-title"
         onClick={(e) => e.stopPropagation()}
         style={{
-          height: 'auto',
-          maxHeight: '80vh',
-          width: 'min(1180px, calc(100vw - 48px))',
+          width: 'min(640px, calc(100vw - 48px))',
+          maxHeight: '85vh',
           margin: 'auto',
           background: '#ffffff',
           borderRadius: '24px',
@@ -63,74 +56,69 @@ function DialogDetailRP({
         <div
           className="dashboard-popup__header"
           style={{
-            padding: '8px 16px',
+            padding: '10px 16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '16px',
+            gap: '12px',
             flexShrink: 0,
             position: 'relative',
             zIndex: 1,
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span
-              className="dashboard-popup__eyebrow"
               style={{
-                margin: '0 0 4px 0',
-                fontSize: '0.65rem',
-                lineHeight: 1,
-                color: '#94a3b8',
+                fontSize: '0.6rem',
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                fontWeight: 600,
+                letterSpacing: '0.6px',
+                color: '#94a3b8',
+                marginBottom: '3px',
               }}
             >
               {eyebrow}
             </span>
             <h2
-              className="dashboard-popup__title"
-              id="dialog-rp-detail-title"
+              id="dialog-template-input-title"
               style={{
-                fontSize: '1.1rem',
                 margin: 0,
-                lineHeight: 1.2,
+                fontSize: '1.05rem',
+                fontWeight: 700,
                 color: '#f8fafc',
-                fontWeight: 600,
+                lineHeight: 1.2,
               }}
             >
               {title}
             </h2>
           </div>
 
-          <div style={{ flexShrink: 0, marginLeft: 'auto' }}>
-            <button
-              type="button"
-              className="dashboard-popup__close"
-              aria-label="Tutup dialog"
-              onClick={onClose}
-              style={{
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                color: '#94a3b8',
-                cursor: 'pointer',
-                transition: 'color 0.2s',
-                borderRadius: '8px',
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.color = '#f8fafc' }}
-              onMouseOut={(e) => { e.currentTarget.style.color = '#94a3b8' }}
-            >
-              <XClose size={20} />
-            </button>
-          </div>
+          <button
+            type="button"
+            aria-label="Tutup dialog"
+            onClick={onClose}
+            style={{
+              flexShrink: 0,
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              borderRadius: '8px',
+              transition: 'color 0.2s',
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.color = '#f8fafc' }}
+            onMouseOut={(e) => { e.currentTarget.style.color = '#94a3b8' }}
+          >
+            <XClose size={20} />
+          </button>
         </div>
 
-        {/* ── Body (kosong) ── */}
+        {/* ── Body ── */}
         <div
           className="dashboard-popup__body"
           style={{
@@ -141,13 +129,15 @@ function DialogDetailRP({
             zIndex: 1,
           }}
         >
-          {/* Konten dialog di sini */}
+          {/* Taruh konten / form di sini */}
+          {children}
         </div>
 
         {/* ── Footer ── */}
         <div
           className="dashboard-popup__actions"
           style={{
+            flexShrink: 0,
             position: 'relative',
             zIndex: 1,
             padding: '10px 16px',
@@ -158,7 +148,6 @@ function DialogDetailRP({
             alignItems: 'center',
             justifyContent: 'flex-end',
             gap: '8px',
-            flexShrink: 0,
           }}
         >
           {/* Tombol Batal */}
@@ -168,7 +157,7 @@ function DialogDetailRP({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               minWidth: '80px',
               justifyContent: 'center',
               background: 'transparent',
@@ -190,7 +179,7 @@ function DialogDetailRP({
               e.currentTarget.style.borderColor = '#cbd5e1'
             }}
           >
-            Batal
+            {labelBatal}
           </button>
 
           {/* Tombol Simpan */}
@@ -200,7 +189,7 @@ function DialogDetailRP({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: '5px',
               minWidth: '80px',
               justifyContent: 'center',
               background: 'linear-gradient(135deg, #1e40af 0%, #1e293b 100%)',
@@ -224,7 +213,7 @@ function DialogDetailRP({
             }}
           >
             <span className="material-icons-round" style={{ fontSize: '14px' }}>save</span>
-            Simpan
+            {labelSimpan}
           </button>
         </div>
       </div>
@@ -234,4 +223,4 @@ function DialogDetailRP({
   return createPortal(dialogNode, document.body)
 }
 
-export default DialogDetailRP
+export default DialogTemplateInput
