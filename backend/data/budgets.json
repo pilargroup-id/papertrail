@@ -3873,7 +3873,7 @@
     "id": "SIT2603",
     "description": "6100.03.02 - Biaya Pemeliharaan Peralatan Kantor",
     "type": "Cost",
-    "totalAmount": 12900000,
+    "totalAmount": 11800000,
     "companyId": "comp-pnm-0001",
     "departmentId": 8,
     "classId": 8

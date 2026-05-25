@@ -75,7 +75,7 @@ function SidebarNavItem({ item, pathname, collapsed, expandedGroups, onToggleGro
 
 function getInitialExpanded(pathname) {
   const map = {
-    'FRP': ['/', '/frp', '/approval', '/approved'],
+    'FRP': ['/', '/frp', '/approval', '/approved', '/status_frp'],
     'Request Purchase': ['/rp', '/rp-approval'],
     'Master Data': null,
   }
@@ -103,6 +103,9 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
     { label: 'FRP', icon: 'receipt_long', children: [
       { label: 'New FRP', href: '/frp', icon: 'note_add' },
       { label: 'Status FRP', href: '/status_frp', icon: 'rule' },
+      ...(userIsAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(userJobLevel) ? [
+        { label: 'Approval FRP', href: '/approval', icon: 'fact_check' }
+      ] : []),
       { label: 'FRP Approved', href: '/approved', icon: 'task_alt' },
     ]},
     { label: 'RP', icon: 'shopping_bag', children: [
