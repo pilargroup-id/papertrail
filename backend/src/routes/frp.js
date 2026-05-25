@@ -503,12 +503,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                         const b = budgetsData.find(x => x.id === item.budgetId);
                         if (b) {
                             const amt = parseFloat(item.amount) || 0;
-                            // Revert total_amount/totalAmount
-                            const cur = b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0);
-                            b.total_amount = cur + amt;
-                            b.totalAmount = b.total_amount;
-
-                            // Revert sisa_budget/sisaBudget
+                            // Revert sisa_budget/sisaBudget only (total_amount remains unchanged)
                             const curSisa = b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : 0);
                             b.sisa_budget = curSisa + amt;
                             b.sisaBudget = b.sisa_budget;
@@ -524,12 +519,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                         const b = budgetsData.find(x => x.id === item.budgetId);
                         if (b) {
                             const amt = parseFloat(item.amount) || 0;
-                            // Deduct total_amount/totalAmount
-                            const cur = b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0);
-                            b.total_amount = cur - amt;
-                            b.totalAmount = b.total_amount;
-
-                            // Deduct sisa_budget/sisaBudget
+                            // Deduct sisa_budget/sisaBudget only (total_amount remains unchanged)
                             const curSisa = b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : 0);
                             b.sisa_budget = curSisa - amt;
                             b.sisaBudget = b.sisa_budget;
@@ -601,12 +591,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                     const b = budgetsData.find(x => x.id === item.budgetId);
                     if (b) {
                         const amt = parseFloat(item.amount) || 0;
-                        // Deduct total_amount/totalAmount
-                        const cur = b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0);
-                        b.total_amount = cur - amt;
-                        b.totalAmount = b.total_amount;
-
-                        // Deduct sisa_budget/sisaBudget
+                        // Deduct sisa_budget/sisaBudget only (total_amount remains unchanged)
                         const curSisa = b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : 0);
                         b.sisa_budget = curSisa - amt;
                         b.sisaBudget = b.sisa_budget;

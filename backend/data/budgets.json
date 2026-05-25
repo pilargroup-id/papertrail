@@ -3,8 +3,9 @@
     "id": "PRO2601",
     "description": "1620.00.00 - Transit Aktiva Tetap",
     "type": "Aktiva",
-    "total_amount": 26500000,
+    "total_amount": 28500000,
     "sisa_budget": 25000000,
+    "sisaBudget": 25000000,
     "items": [
       {
         "budget_id": "PRO2601",
@@ -24,19 +25,19 @@
     "company_id": "comp-pnm-0001",
     "department_id": 13,
     "class_id": 13,
-    "totalAmount": 26500000
+    "totalAmount": 28500000
   },
   {
     "id": "FIN2601",
     "description": "1660.00.00 - Peralatan Kantor Finance",
     "type": "Aktiva",
-    "total_amount": 23000000,
-    "sisa_budget": 19000000,
+    "total_amount": 30000000,
+    "sisa_budget": 25000000,
     "items": [],
     "company_id": "comp-pnm-0001",
     "department_id": 7,
     "class_id": 7,
-    "totalAmount": 23000000,
-    "sisaBudget": 19000000
+    "totalAmount": 30000000,
+    "sisaBudget": 25000000
   }
 ]
