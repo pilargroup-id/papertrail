@@ -27,80 +27,16 @@
     "totalAmount": 26500000
   },
   {
-    "id": "PRO2602",
-    "description": "1630.00.00 - Peralatan Kantor",
-    "type": "Aktiva",
-    "total_amount": 40000000,
-    "sisa_budget": 31000000,
-    "items": [
-      {
-        "budget_id": "PRO2602",
-        "memo": "Pembelian meja kerja",
-        "link_pembelian": "https://google.com",
-        "qty": "5",
-        "estimated_value": "5000000"
-      },
-      {
-        "budget_id": "PRO2602",
-        "memo": "Pembelian kursi kerja",
-        "link_pembelian": "https://google.com",
-        "qty": "8",
-        "estimated_value": "4000000"
-      }
-    ],
-    "company_id": "comp-pnm-0001",
-    "department_id": 13,
-    "class_id": 13
-  },
-  {
-    "id": "PRO2603",
-    "description": "1640.00.00 - Kendaraan Operasional",
-    "type": "Aktiva",
-    "total_amount": 148000000,
-    "sisa_budget": 120000000,
-    "items": [
-      {
-        "budget_id": "PRO2603",
-        "memo": "DP kendaraan operasional",
-        "link_pembelian": "https://google.com",
-        "qty": "1",
-        "estimated_value": "25000000"
-      },
-      {
-        "budget_id": "PRO2603",
-        "memo": "Biaya administrasi kendaraan",
-        "link_pembelian": "https://google.com",
-        "qty": "1",
-        "estimated_value": "5000000"
-      }
-    ],
-    "company_id": "comp-pnm-0001",
-    "department_id": 13,
-    "class_id": 13,
-    "totalAmount": 148000000
-  },
-  {
-    "id": "SIT2601",
-    "description": "1650.00.00 - Transit Aktiva Tetap IT",
-    "type": "Aktiva",
-    "total_amount": 55000000,
-    "sisa_budget": 50000000,
-    "items": [
-      {}
-    ],
-    "company_id": "comp-pnm-0001",
-    "department_id": 8,
-    "class_id": 8
-  },
-  {
     "id": "FIN2601",
     "description": "1660.00.00 - Peralatan Kantor Finance",
     "type": "Aktiva",
-    "total_amount": 35000000,
-    "sisa_budget": 30000000,
+    "total_amount": 23000000,
+    "sisa_budget": 19000000,
     "items": [],
     "company_id": "comp-pnm-0001",
     "department_id": 7,
-    "class_id": 7
+    "class_id": 7,
+    "totalAmount": 23000000,
+    "sisaBudget": 19000000
   }
 ]

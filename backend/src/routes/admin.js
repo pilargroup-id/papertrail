@@ -106,8 +106,13 @@ router.post('/api/admin/:type/add', checkAuth, checkIT, async (req, res) => {
         // JSON-backed types (vendors, budgets, roles)
         const data = readJson(`${type}.json`);
         let newItem = req.body;
-        if (type === 'budgets' && newItem.totalAmount) {
-            newItem.totalAmount = parseInt(String(newItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
+        if (type === 'budgets') {
+            if (newItem.totalAmount) {
+                newItem.totalAmount = parseInt(String(newItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
+            }
+            newItem.total_amount = newItem.totalAmount || 0;
+            newItem.sisa_budget = newItem.totalAmount || 0;
+            newItem.sisaBudget = newItem.totalAmount || 0;
         }
         data.push(newItem);
         writeJson(`${type}.json`, data);
@@ -183,8 +188,17 @@ router.post('/api/admin/:type/edit/:index', checkAuth, checkIT, async (req, res)
         // JSON-backed types
         const data = readJson(`${type}.json`);
         let updatedItem = req.body;
-        if (type === 'budgets' && updatedItem.totalAmount) {
-            updatedItem.totalAmount = parseInt(String(updatedItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
+        if (type === 'budgets') {
+            if (updatedItem.totalAmount !== undefined) {
+                updatedItem.totalAmount = parseInt(String(updatedItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
+                updatedItem.total_amount = updatedItem.totalAmount;
+                const oldItem = data[parseInt(index, 10)];
+                const diff = updatedItem.totalAmount - (oldItem?.totalAmount || oldItem?.total_amount || 0);
+
+                const oldSisa = oldItem?.sisa_budget !== undefined ? oldItem.sisa_budget : (oldItem?.sisaBudget !== undefined ? oldItem.sisaBudget : (oldItem?.totalAmount || 0));
+                updatedItem.sisa_budget = oldSisa + diff;
+                updatedItem.sisaBudget = updatedItem.sisa_budget;
+            }
         }
         data[parseInt(index, 10)] = updatedItem;
         writeJson(`${type}.json`, data);
