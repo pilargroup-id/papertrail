@@ -11,31 +11,20 @@ const TABLET_BREAKPOINT = 1100
 
 const COMPANIES = ['PT PILAR NIAGA MAKMUR', 'PT PILAR KARANG SAMUDERA', 'PT PILAR KARGO PERKASA']
 const JOB_LEVELS = ['Staff', 'Manager', 'Direktur', 'Komisaris']
-const VALID_TYPES = ['employees', 'vendors', 'departments', 'budgets', 'roles']
+const VALID_TYPES = ['vendors', 'budgets']
 const PAGE_META = {
-  employees: { title: 'Master Karyawan', noun: 'Karyawan', icon: 'people', accent: '#2563eb', description: 'Kelola data karyawan, assignment perusahaan, dan jabatan dalam satu tempat.' },
   vendors: { title: 'Master Vendor', noun: 'Vendor', icon: 'store', accent: '#0f766e', description: 'Rapikan data vendor dan informasi rekening tujuan pembayaran.' },
-  departments: { title: 'Master Departemen', noun: 'Departemen', icon: 'account_tree', accent: '#7c3aed', description: 'Atur departemen, class, kode FRP, dan penanggung jawab divisi.' },
   budgets: { title: 'Master Anggaran', noun: 'Anggaran', icon: 'savings', accent: '#b45309', description: 'Kelola budget ID, company, departemen, dan limit anggaran tahunan.' },
-  roles: { title: 'Master Role', noun: 'Role', icon: 'manage_accounts', accent: '#be123c', description: 'Susun peran dan deskripsi akses untuk pengguna sistem.' },
 }
 
 const COLUMN_WIDTHS = {
-  employees: ['4%', '17%', '14%', '21%', '13%', '10%', '10%', '11%'],
   vendors: ['5%', '33%', '30%', '22%', '10%'],
-  departments: ['4%', '22%', '19%', '12%', '10%', '23%', '10%'],
   budgets: ['4%', '10%', '13%', '10%', '7%', '7%', '22%', '18%', '9%'],
-  roles: ['5%', '25%', '60%', '10%'],
 }
 
-const blankAssignment = () => ({ name: COMPANIES[0], deptName: '', classes: [], jobLevel: 'Staff' })
-
 function getBlankForm(type) {
-  if (type === 'employees') return { fullName: '', email: '', companies: [blankAssignment()] }
   if (type === 'vendors') return { name: '', bank: '', no_rekening: '' }
-  if (type === 'departments') return { name: '', class: '', kodeFrp: '', company: COMPANIES[0], manager: '' }
   if (type === 'budgets') return { id: '', department: '', company: COMPANIES[0], class: '', type: '', description: '', totalAmount: '' }
-  if (type === 'roles') return { role: '', description: '' }
   return {}
 }
 
@@ -226,190 +215,7 @@ function SectionHeading({ icon, title, subtitle, accent }) {
   )
 }
 
-function AssignmentRow({ idx, assignment, companyNames, onUpdate, onRemove, canRemove, styles }) {
-  const [deptOptions, setDeptOptions] = useState([])
-  const [jobLevels, setJobLevels] = useState(JOB_LEVELS.map(j => ({ name: j })))
-  const [loadingDepts, setLoadingDepts] = useState(false)
 
-  // Load departments when company changes
-  useEffect(() => {
-    if (!assignment.name) return
-    setLoadingDepts(true)
-    fetch(`/api/departments?company=${encodeURIComponent(assignment.name)}&full=1`)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => { setDeptOptions(Array.isArray(data) ? data : []) })
-      .catch(() => setDeptOptions([]))
-      .finally(() => setLoadingDepts(false))
-  }, [assignment.name])
-
-  // Load job levels from DB once
-  useEffect(() => {
-    fetch('/api/job-levels')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (Array.isArray(data) && data.length) setJobLevels(data) })
-      .catch(() => { })
-  }, [])
-
-  // Unique dept names from options
-  const deptNames = [...new Set(deptOptions.map(d => d.name).filter(Boolean))]
-
-  // Classes available under selected dept name
-  const availableClasses = deptOptions.filter(d => d.name === assignment.deptName).map(d => d.class).filter(Boolean)
-  const hasMultiClass = availableClasses.length > 1
-  const currentClasses = Array.isArray(assignment.classes) ? assignment.classes : (assignment.class ? [assignment.class] : [])
-
-  const handleCompanyChange = val => {
-    onUpdate(idx, { name: val, deptName: '', classes: [] })
-  }
-
-  const handleDeptNameChange = val => {
-    const cls = deptOptions.filter(d => d.name === val).map(d => d.class).filter(Boolean)
-    // Auto-select if only one class
-    onUpdate(idx, { deptName: val, classes: cls.length === 1 ? cls : [] })
-  }
-
-  const toggleClass = (cls, checked) => {
-    const next = checked ? [...currentClasses, cls] : currentClasses.filter(c => c !== cls)
-    onUpdate(idx, 'classes', next)
-  }
-
-  return (
-    <div style={{ ...styles.assignCard, position: 'relative', paddingTop: '1.5rem', marginTop: '1.25rem' }}>
-      <div style={{ position: 'absolute', top: '-11px', left: '14px', background: '#2563eb', color: 'white', borderRadius: '999px', padding: '2px 10px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em' }}>
-        Assignment {idx + 1}
-      </div>
-
-      {/* Company */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Perusahaan</label>
-        <SearchableSelect
-          style={styles.select}
-          value={assignment.name}
-          onChange={val => handleCompanyChange(val)}
-          options={companyNames}
-          placeholder="Pilih Perusahaan"
-          menuPosition="fixed"
-        />
-      </div>
-
-      {/* Dept Name + Job Level */}
-      <div style={styles.grid2}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Departemen</label>
-          <SearchableSelect
-            style={styles.select}
-            value={assignment.deptName || ''}
-            onChange={val => handleDeptNameChange(val)}
-            options={[
-              ...deptNames,
-              ...(assignment.deptName && !deptNames.includes(assignment.deptName) ? [{ value: assignment.deptName, label: `${assignment.deptName} ⚠` }] : []),
-            ]}
-            placeholder="— Pilih Departemen —"
-            disabled={loadingDepts}
-            menuPosition="fixed"
-          />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Jabatan / Job Level</label>
-          <SearchableSelect
-            style={styles.select}
-            value={assignment.jobLevel}
-            onChange={val => onUpdate(idx, 'jobLevel', val)}
-            options={jobLevels.map(level => ({ value: level.name || level, label: level.name || level }))}
-            placeholder="Pilih Jabatan"
-            menuPosition="fixed"
-          />
-        </div>
-      </div>
-
-      {/* Class dropdown (shown when dept name selected and has classes) */}
-      {assignment.deptName && availableClasses.length > 0 && (
-        <div style={{ marginBottom: '0.85rem' }}>
-          <label style={{ ...styles.label, display: 'block', marginBottom: '8px' }}>
-            {hasMultiClass ? 'Class / Lokasi' : 'Class'}
-          </label>
-          {currentClasses.length > 0 && (
-            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
-              {currentClasses.map(cls => (
-                <span key={cls} style={{ ...styles.badge, ...styles.badgeClass, gap: '4px', paddingRight: '6px' }}>
-                  {cls}
-                  <button type="button" onClick={() => toggleClass(cls, false)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
-                    <span className="material-icons-round" style={{ fontSize: '13px' }}>close</span>
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-          {currentClasses.length < availableClasses.length && (
-            <SearchableSelect
-              style={styles.select}
-              value=""
-              onChange={val => { if (val) toggleClass(val, true) }}
-              options={availableClasses.filter(cls => !currentClasses.includes(cls))}
-              placeholder={currentClasses.length === 0 ? 'Pilih Class...' : 'Tambah Class lain...'}
-              menuPosition="fixed"
-            />
-          )}
-          {currentClasses.length === 0 && (
-            <span style={{ fontSize: '11px', color: '#f59e0b', display: 'block', marginTop: '4px' }}>⚠ Pilih minimal satu class</span>
-          )}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
-        <CreateButton variant="accordion" tone="danger" type="button" onClick={() => onRemove(idx)} disabled={!canRemove} style={{ opacity: canRemove ? 1 : 0.4 }}>
-          <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
-          {canRemove ? 'Hapus' : 'Utama'}
-        </CreateButton>
-      </div>
-    </div>
-  )
-}
-
-function EmployeeFormFields({ form, onChange, onAssignmentsChange, companyNames, styles }) {
-  const addAssignment = () => onAssignmentsChange([...form.companies, { name: companyNames[0] || COMPANIES[0], class: '', jobLevel: 'Staff' }])
-  const removeAssignment = idx => onAssignmentsChange(form.companies.filter((_, i) => i !== idx))
-  const updateAssignment = (idx, fieldOrPatch, val) => onAssignmentsChange(
-    form.companies.map((a, i) => i === idx
-      ? { ...a, ...(typeof fieldOrPatch === 'object' ? fieldOrPatch : { [fieldOrPatch]: val }) }
-      : a
-    )
-  )
-
-  return (
-    <>
-      <div style={styles.grid2}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Nama Lengkap</label>
-          <input style={styles.input} required value={form.fullName} onChange={e => onChange('fullName', e.target.value)} placeholder="Budi Santoso" />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Email</label>
-          <input type="email" style={styles.input} value={form.email} onChange={e => onChange('email', e.target.value)} placeholder="budi@piagam.id" />
-        </div>
-      </div>
-      <div style={{ border: '1px solid #dbe5f0', borderRadius: '16px', background: '#f8fbff', padding: '1rem', marginBottom: '1rem' }}>
-        <SectionHeading icon="apartment" title="Penugasan Perusahaan & Divisi" subtitle="Satu karyawan bisa punya lebih dari satu assignment." accent="#2563eb" />
-        {form.companies.map((assignment, idx) => (
-          <AssignmentRow
-            key={idx}
-            idx={idx}
-            assignment={assignment}
-            companyNames={companyNames}
-            onUpdate={updateAssignment}
-            onRemove={removeAssignment}
-            canRemove={form.companies.length > 1}
-            styles={styles}
-          />
-        ))}
-        <CreateButton type="button" variant="accordion" onClick={addAssignment}>
-          <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-          Tambah Assignment
-        </CreateButton>
-      </div>
-    </>
-  )
-}
 
 function VendorFormFields({ form, onChange, styles }) {
   return (
@@ -430,56 +236,7 @@ function VendorFormFields({ form, onChange, styles }) {
   )
 }
 
-function DepartmentFormFields({ form, onChange, employeeList, companyNames, styles }) {
-  return (
-    <>
-      <div style={styles.grid3}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Nama Department</label>
-          <input style={styles.input} required value={form.name} onChange={e => onChange('name', e.target.value)} placeholder="FINANCE & ACCOUNTING" />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Class</label>
-          <input style={styles.input} required value={form.class} onChange={e => onChange('class', e.target.value)} placeholder="FINANCE" />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Company</label>
-          <SearchableSelect
-            style={styles.select}
-            value={form.company || companyNames[0] || COMPANIES[0]}
-            onChange={val => onChange('company', val)}
-            options={companyNames}
-            placeholder="Pilih Company"
-            menuPosition="fixed"
-          />
-        </div>
-      </div>
-      <div style={styles.grid2}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Kode FRP (3 Huruf)</label>
-          <input style={styles.input} required value={form.kodeFrp} onChange={e => onChange('kodeFrp', e.target.value)} placeholder="FIN" maxLength="3" />
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Manager / Head</label>
-          <SearchableSelect
-            style={styles.select}
-            value={form.manager}
-            onChange={val => onChange('manager', val)}
-            options={(employeeList || [])
-              .filter(e => e?.fullName)
-              .sort((a, b) => a.fullName.localeCompare(b.fullName))
-              .map(emp => {
-                const classes = Array.isArray(emp.companies) ? [...new Set(emp.companies.map(c => c.class).filter(Boolean))].join(', ') : (emp.class || '-')
-                return { value: emp.fullName, label: `${emp.fullName} - ${classes}` }
-              })}
-            placeholder="Pilih Manager"
-            menuPosition="fixed"
-          />
-        </div>
-      </div>
-    </>
-  )
-}
+
 
 function BudgetFormFields({ form, onChange, companyNames, styles }) {
   return (
@@ -529,58 +286,21 @@ function BudgetFormFields({ form, onChange, companyNames, styles }) {
   )
 }
 
-function RoleFormFields({ form, onChange, styles }) {
-  return (
-    <div style={styles.grid2}>
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Role Name</label>
-        <input style={styles.input} required value={form.role} onChange={e => onChange('role', e.target.value)} placeholder="administrator" />
-      </div>
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Description</label>
-        <input style={styles.input} required value={form.description} onChange={e => onChange('description', e.target.value)} placeholder="Akses penuh" />
-      </div>
-    </div>
-  )
-}
 
-function FormFields({ type, form, onChange, onAssignmentsChange, employeeList, companyNames = COMPANIES, styles }) {
-  if (type === 'employees') return <EmployeeFormFields form={form} onChange={onChange} onAssignmentsChange={onAssignmentsChange} companyNames={companyNames} styles={styles} />
+
+function FormFields({ type, form, onChange, companyNames = COMPANIES, styles }) {
   if (type === 'vendors') return <VendorFormFields form={form} onChange={onChange} styles={styles} />
-  if (type === 'departments') return <DepartmentFormFields form={form} onChange={onChange} employeeList={employeeList} companyNames={companyNames} styles={styles} />
   if (type === 'budgets') return <BudgetFormFields form={form} onChange={onChange} companyNames={companyNames} styles={styles} />
-  if (type === 'roles') return <RoleFormFields form={form} onChange={onChange} styles={styles} />
   return null
 }
 
-function renderCompanies(item, styles) {
-  if (!Array.isArray(item.companies)) return item.company || 'N/A'
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      {item.companies.map((company, index) => {
-        const cls = company.classes && company.classes.length > 0 ? company.classes : (company.class ? [company.class] : [])
-        return (
-          <div key={index} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '6px 9px', borderRadius: '10px' }}>
-            <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.82rem' }}>{company.name}</div>
-            {company.deptName && <div style={{ fontSize: '11px', color: '#0369a1', marginTop: '1px' }}>{company.deptName}</div>}
-            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-              {cls.length > 0 ? cls.join(', ') : '-'} — {company.jobLevel}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+
 
 function matchesSearch(type, item, search) {
   if (!search) return true
   const q = search.toLowerCase()
-  if (type === 'employees') return (item.fullName || '').toLowerCase().includes(q) || (item.email || '').toLowerCase().includes(q)
   if (type === 'vendors') return (item.name || '').toLowerCase().includes(q) || (item.bank || '').toLowerCase().includes(q) || String(item.no_rekening || '').toLowerCase().includes(q)
-  if (type === 'departments') return (item.name || '').toLowerCase().includes(q) || (item.manager || '').toLowerCase().includes(q)
   if (type === 'budgets') return (item.id || '').toLowerCase().includes(q) || (item.department || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q)
-  if (type === 'roles') return (item.role || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q)
   return true
 }
 
@@ -588,8 +308,6 @@ function TableRows({ type, listData, onEdit, onDelete, companyFilter, search, co
   const defaultCompany = companyNames[0] || COMPANIES[0]
   const filtered = listData.filter(item => {
     if (companyFilter) {
-      if (type === 'employees' && !item.companies?.some(c => c.name === companyFilter) && item.company !== companyFilter) return false
-      if (type === 'departments' && (item.company || defaultCompany) !== companyFilter) return false
       if (type === 'budgets' && (item.company || defaultCompany) !== companyFilter) return false
     }
     return matchesSearch(type, item, search)
@@ -602,35 +320,10 @@ function TableRows({ type, listData, onEdit, onDelete, companyFilter, search, co
     return (
       <tr key={item.originalIndex ?? idx} style={{ background: rowBg }} onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff' }} onMouseLeave={e => { e.currentTarget.style.background = rowBg }}>
         <td style={styles.td}>{idx + 1}</td>
-        {type === 'employees' && <>
-          <td style={styles.td}>
-            <div style={{ fontWeight: 700, color: '#1e293b' }}>{item.fullName}</div>
-          </td>
-          <td style={styles.td}>{item.email || '-'}</td>
-          <td style={styles.td}>{renderCompanies(item, styles)}</td>
-          <td style={styles.td}>
-            {Array.isArray(item.companies)
-              ? [...new Set(item.companies.map(c => c.class).filter(Boolean))].map(cls => <span key={cls} style={{ ...styles.badge, ...styles.badgeSoft, marginRight: '6px', marginBottom: '6px' }}>{cls}</span>)
-              : <span style={{ ...styles.badge, ...styles.badgeSoft }}>{item.class}</span>}
-          </td>
-          <td style={styles.td}>{Array.isArray(item.companies) ? item.companies.map(c => c.jobLevel).join(', ') : item.jobLevel}</td>
-          <td style={styles.td}>
-            <span style={{ ...styles.badge, background: item.role === 'administrator' ? '#dcfce7' : '#fef3c7', color: item.role === 'administrator' ? '#166534' : '#92400e' }}>
-              {item.role || 'user'}
-            </span>
-          </td>
-        </>}
         {type === 'vendors' && <>
           <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
           <td style={styles.td}>{item.bank}</td>
           <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</td>
-        </>}
-        {type === 'departments' && <>
-          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
-          <td style={{ ...styles.td, fontSize: '0.82rem', fontWeight: 700 }}>{item.company || defaultCompany}</td>
-          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeClass }}>{item.class}</span></td>
-          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeCode }}>{item.kodeFrp}</span></td>
-          <td style={styles.td}>{item.manager}</td>
         </>}
         {type === 'budgets' && <>
           <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.id}</strong></td>
@@ -640,10 +333,6 @@ function TableRows({ type, listData, onEdit, onDelete, companyFilter, search, co
           <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeCode }}>{item.type}</span></td>
           <td style={{ ...styles.td, fontSize: '0.85rem', color: '#64748b' }}>{item.description}</td>
           <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>{formatCurrency(item.totalAmount || 0)}</td>
-        </>}
-        {type === 'roles' && <>
-          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.role}</strong></td>
-          <td style={styles.td}>{item.description}</td>
         </>}
         <td style={styles.td}>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -660,8 +349,6 @@ function MobileList({ type, listData, onEdit, onDelete, companyFilter, search, c
   const defaultCompany = companyNames[0] || COMPANIES[0]
   const filtered = listData.filter(item => {
     if (companyFilter) {
-      if (type === 'employees' && !item.companies?.some(c => c.name === companyFilter) && item.company !== companyFilter) return false
-      if (type === 'departments' && (item.company || defaultCompany) !== companyFilter) return false
       if (type === 'budgets' && (item.company || defaultCompany) !== companyFilter) return false
     }
     return matchesSearch(type, item, search)
@@ -675,29 +362,13 @@ function MobileList({ type, listData, onEdit, onDelete, companyFilter, search, c
     <div key={item.originalIndex ?? idx} style={styles.mobileItemCard}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
         <div style={{ minWidth: 0 }}>
-          {type === 'employees' && <>
-            <div style={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>{item.fullName}</div>
-            <div style={{ marginTop: '4px', color: '#64748b', fontSize: '0.84rem', wordBreak: 'break-word' }}>{item.email || '-'}</div>
-          </>}
           {type === 'vendors' && <>
             <div style={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>{item.name}</div>
             <div style={{ marginTop: '4px', color: '#64748b', fontSize: '0.84rem' }}>{item.bank}</div>
           </>}
-          {type === 'departments' && <>
-            <div style={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>{item.name}</div>
-            <div style={{ marginTop: '4px', color: '#64748b', fontSize: '0.84rem' }}>{item.company || defaultCompany}</div>
-            <div style={{ marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ ...styles.badge, ...styles.badgeClass }}>{item.class}</span>
-              <span style={{ ...styles.badge, ...styles.badgeCode }}>{item.kodeFrp}</span>
-            </div>
-          </>}
           {type === 'budgets' && <>
             <div style={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>{item.id}</div>
             <div style={{ marginTop: '4px', color: '#64748b', fontSize: '0.84rem' }}>{item.company || defaultCompany}</div>
-          </>}
-          {type === 'roles' && <>
-            <div style={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>{item.role}</div>
-            <div style={{ marginTop: '4px', color: '#64748b', fontSize: '0.84rem', wordBreak: 'break-word' }}>{item.description}</div>
           </>}
         </div>
         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
@@ -707,30 +378,10 @@ function MobileList({ type, listData, onEdit, onDelete, companyFilter, search, c
       </div>
 
       <div style={styles.mobileMetaGrid}>
-        {type === 'employees' && <>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Assignment</div>
-            {renderCompanies(item, styles)}
-          </div>
-          <div>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Divisi</div>
-            <div>{Array.isArray(item.companies) ? [...new Set(item.companies.map(c => c.class).filter(Boolean))].join(', ') : (item.class || '-')}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Role</div>
-            <span style={{ ...styles.badge, background: item.role === 'administrator' ? '#dcfce7' : '#fef3c7', color: item.role === 'administrator' ? '#166534' : '#92400e' }}>{item.role || 'user'}</span>
-          </div>
-        </>}
         {type === 'vendors' && <>
           <div>
             <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Rekening</div>
             <div style={{ fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</div>
-          </div>
-        </>}
-        {type === 'departments' && <>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Manager</div>
-            <div>{item.manager}</div>
           </div>
         </>}
         {type === 'budgets' && <>
@@ -754,11 +405,8 @@ function MobileList({ type, listData, onEdit, onDelete, companyFilter, search, c
 
 function TableHeadRow({ type, styles }) {
   const cols = {
-    employees: ['No', 'Nama Lengkap', 'Email', 'Company', 'Divisi', 'Jabatan', 'Role', 'Aksi'],
     vendors: ['No', 'Nama Vendor', 'Bank', 'No Rekening', 'Aksi'],
-    departments: ['No', 'Nama Dept', 'Company', 'Class', 'Kode FRP', 'Manager', 'Aksi'],
     budgets: ['No', 'Budget ID', 'Company', 'Dept', 'Class', 'Type', 'Deskripsi', 'Total Amount', 'Aksi'],
-    roles: ['No', 'Role', 'Deskripsi', 'Aksi'],
   }
   return <thead><tr>{(cols[type] || []).map(col => <th key={col} style={styles.th}>{col}</th>)}</tr></thead>
 }
@@ -818,9 +466,7 @@ export default function AdminPage() {
   }, [editItem])
 
   const updateAddForm = (field, val) => setAddForm(f => ({ ...f, [field]: val }))
-  const updateAddAssignments = companies => setAddForm(f => ({ ...f, companies }))
   const updateEditForm = (field, val) => setEditItem(f => ({ ...f, [field]: val }))
-  const updateEditAssignments = companies => setEditItem(f => ({ ...f, companies }))
 
   const handleAdd = async e => {
     e.preventDefault()
@@ -846,14 +492,6 @@ export default function AdminPage() {
 
   const handleEdit = item => {
     const copy = JSON.parse(JSON.stringify(item))
-    if (type === 'employees' && !Array.isArray(copy.companies)) copy.companies = [blankAssignment()]
-    if (type === 'employees') {
-      copy.companies = copy.companies.map(c => ({
-        ...c,
-        deptName: c.deptName || c.class || '',
-        classes: Array.isArray(c.classes) && c.classes.length > 0 ? c.classes : (c.class ? [c.class] : [])
-      }))
-    }
     setEditItem(copy)
   }
 
@@ -872,7 +510,7 @@ export default function AdminPage() {
     }
   }
 
-  const showFilter = type === 'budgets' || type === 'employees' || type === 'departments'
+  const showFilter = type === 'budgets'
   const listData = data?.listData || []
   const companyNames = useMemo(() => {
     const names = (data?.companies || []).map(company => company.name || company).filter(Boolean)
@@ -888,7 +526,7 @@ export default function AdminPage() {
           <section style={styles.card}>
             <SectionHeading icon="add_circle" title={`Tambah ${meta.noun} Baru`} subtitle={`Isi form berikut untuk menambahkan data ${meta.noun.toLowerCase()} baru ke sistem.`} accent={meta.accent} />
             <form onSubmit={handleAdd}>
-              <FormFields type={type} form={addForm} onChange={updateAddForm} onAssignmentsChange={updateAddAssignments} employeeList={data?.employeeList} companyNames={companyNames} styles={styles} />
+              <FormFields type={type} form={addForm} onChange={updateAddForm} companyNames={companyNames} styles={styles} />
               <div style={{ display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
                 <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: isMobile ? '100%' : 'auto', opacity: saving ? 0.7 : 1 }}>
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
@@ -965,7 +603,7 @@ export default function AdminPage() {
             </div>
             <div className="dashboard-popup__body" style={{ overflowY: 'auto', flex: 1, padding: '1.25rem' }}>
               <form onSubmit={handleEditSave}>
-                <FormFields type={type} form={editItem} onChange={updateEditForm} onAssignmentsChange={updateEditAssignments} employeeList={data?.employeeList} companyNames={companyNames} styles={styles} />
+                <FormFields type={type} form={editItem} onChange={updateEditForm} companyNames={companyNames} styles={styles} />
                 <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: '100%', marginTop: '0.75rem', opacity: saving ? 0.7 : 1 }}>
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
                   {saving ? 'Menyimpan...' : 'Simpan Perubahan'}

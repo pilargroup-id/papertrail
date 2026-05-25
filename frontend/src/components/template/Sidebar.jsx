@@ -116,11 +116,8 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
     ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{ label: 'Report', href: '/laporan', icon: 'analytics' }] : []),
     ...(userIsAdmin ? [{
       label: 'Master Data', icon: 'dns', children: [
-        { label: 'Karyawan', href: '/admin/employees', icon: 'groups' },
         { label: 'Vendor', href: '/admin/vendors', icon: 'storefront' },
-        { label: 'Departemen', href: '/admin/departments', icon: 'corporate_fare' },
         { label: 'Anggaran', href: '/admin/budgets', icon: 'account_balance' },
-        { label: 'Roles', href: '/admin/roles', icon: 'verified_user' },
       ]
     }] : []),
   ]
