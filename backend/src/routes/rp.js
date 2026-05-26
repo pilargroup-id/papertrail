@@ -208,24 +208,24 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
         ]);
         const processDivisions = [...new Set(departmentsData.map(d => d.name).filter(Boolean))].sort();
 
-        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
         const budgetsData = budgetsRows.map(row => ({
             id: row.id,
-            company_id: row.company_id,
-            companyId: row.company_id,
-            department_id: row.departement_id,
-            departmentId: row.departement_id,
-            class_id: row.class,
-            classId: row.class,
-            class: row.class,
-            description: row.description,
-            type: row.type,
-            total_amount: row.total_amount,
-            totalAmount: row.total_amount,
-            budget_remaining: row.budget_remaining,
-            sisa_budget: row.budget_remaining,
-            sisaBudget: row.budget_remaining,
-            remainingAmount: row.budget_remaining
+            company_id: null,
+            companyId: null,
+            department_id: row.department_id,
+            departmentId: row.department_id,
+            class_id: row.department_class,
+            classId: row.department_class,
+            class: row.department_class,
+            description: row.project_name,
+            type: row.budget_type,
+            total_amount: Number(row.budget_amount || 0),
+            totalAmount: Number(row.budget_amount || 0),
+            budget_remaining: Number(row.budget_remaining || 0),
+            sisa_budget: Number(row.budget_remaining || 0),
+            sisaBudget: Number(row.budget_remaining || 0),
+            remainingAmount: Number(row.budget_remaining || 0)
         }));
         const vendorsData = readJson('vendors.json');
         const rpRequests = await fetchAllRpRequests();
@@ -253,14 +253,16 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
         });
 
         const budgetsWithRemaining = budgetsData.map(b => {
-            const bCompanyId = b.company_id !== undefined ? b.company_id : b.companyId;
             const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-            const bClassId = b.class_id !== undefined ? b.class_id : b.classId;
-            const bCompany = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
             const bDept = departmentsData.find(d => String(d.id) === String(bDepartmentId));
-            const bClass = departmentsData.find(d => String(d.id) === String(bClassId));
+            const bCompanyId = b.company_id || b.companyId || (bDept ? bDept.companyId : null);
+            const bCompany = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+            const bClassId = b.class_id !== undefined ? b.class_id : b.classId;
+            const bClass = departmentsData.find(d => String(d.id) === String(bClassId) || d.class === bClassId);
             return {
                 ...b,
+                company_id: bCompanyId,
+                companyId: bCompanyId,
                 company: bCompany ? (bCompany.name || bCompany.code) : (b.company || 'PT PILAR NIAGA MAKMUR'),
                 department: bDept ? bDept.name : (b.department || ''),
                 class: bClass ? bClass.class : (b.class || ''),
@@ -670,38 +672,40 @@ router.get('/api/rp/:id', checkAuth, async (req, res) => {
         const canApprove = isAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
         const isProcessDivision = isAdmin || user.selectedDivision === data.diprosesOleh;
         const employees = await getAllEmployees();
-        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
         const budgetsData = budgetsRows.map(row => ({
             id: row.id,
-            company_id: row.company_id,
-            companyId: row.company_id,
-            department_id: row.departement_id,
-            departmentId: row.departement_id,
-            class_id: row.class,
-            classId: row.class,
-            class: row.class,
-            description: row.description,
-            type: row.type,
-            total_amount: row.total_amount,
-            totalAmount: row.total_amount,
-            budget_remaining: row.budget_remaining,
-            sisa_budget: row.budget_remaining,
-            sisaBudget: row.budget_remaining,
-            remainingAmount: row.budget_remaining
+            company_id: null,
+            companyId: null,
+            department_id: row.department_id,
+            departmentId: row.department_id,
+            class_id: row.department_class,
+            classId: row.department_class,
+            class: row.department_class,
+            description: row.project_name,
+            type: row.budget_type,
+            total_amount: Number(row.budget_amount || 0),
+            totalAmount: Number(row.budget_amount || 0),
+            budget_remaining: Number(row.budget_remaining || 0),
+            sisa_budget: Number(row.budget_remaining || 0),
+            sisaBudget: Number(row.budget_remaining || 0),
+            remainingAmount: Number(row.budget_remaining || 0)
         }));
         const [companiesData, departmentsData] = await Promise.all([
             getCompanies(),
             getDepartmentRows(),
         ]);
         const mappedBudgets = budgetsData.map(b => {
-            const bCompanyId = b.company_id !== undefined ? b.company_id : b.companyId;
             const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-            const bClassId = b.class_id !== undefined ? b.class_id : b.classId;
-            const bCompany = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
             const bDept = departmentsData.find(d => String(d.id) === String(bDepartmentId));
-            const bClass = departmentsData.find(d => String(d.id) === String(bClassId));
+            const bCompanyId = b.company_id || b.companyId || (bDept ? bDept.companyId : null);
+            const bCompany = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+            const bClassId = b.class_id !== undefined ? b.class_id : b.classId;
+            const bClass = departmentsData.find(d => String(d.id) === String(bClassId) || d.class === bClassId);
             return {
                 ...b,
+                company_id: bCompanyId,
+                companyId: bCompanyId,
                 company: bCompany ? (bCompany.name || bCompany.code) : (b.company || 'PT PILAR NIAGA MAKMUR'),
                 department: bDept ? bDept.name : (b.department || ''),
                 class: bClass ? bClass.class : (b.class || ''),

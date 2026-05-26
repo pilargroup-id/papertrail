@@ -38,21 +38,21 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
         const [employees, departmentEmployees, budgetsData, companiesData, vendorsData, departments] = await Promise.all([
             getAllEmployees(),
             getDepartmentEmployeesByUserId(u.id),
-            db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets').then(([r]) => r.map(row => ({
+            db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets').then(([r]) => r.map(row => ({
                 id: row.id,
-                company_id: row.company_id,
-                companyId: row.company_id,
-                department_id: row.departement_id,
-                departmentId: row.departement_id,
-                class: row.class,
-                description: row.description,
-                type: row.type,
-                total_amount: row.total_amount,
-                totalAmount: row.total_amount,
-                budget_remaining: row.budget_remaining,
-                sisa_budget: row.budget_remaining,
-                sisaBudget: row.budget_remaining,
-                remainingAmount: row.budget_remaining
+                company_id: null,
+                companyId: null,
+                department_id: row.department_id,
+                departmentId: row.department_id,
+                class: row.department_class,
+                description: row.project_name,
+                type: row.budget_type,
+                total_amount: Number(row.budget_amount || 0),
+                totalAmount: Number(row.budget_amount || 0),
+                budget_remaining: Number(row.budget_remaining || 0),
+                sisa_budget: Number(row.budget_remaining || 0),
+                sisaBudget: Number(row.budget_remaining || 0),
+                remainingAmount: Number(row.budget_remaining || 0)
             }))),
             getCompanies(),
             Promise.resolve(readJson('vendors.json')),
@@ -73,14 +73,16 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
         });
 
         const budgetsWithRemaining = budgetsData.map(b => {
-            const bCompanyId = b.company_id !== undefined ? b.company_id : b.companyId;
             const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-            const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
             const dept = departments.find(d => String(d.id) === String(bDepartmentId));
-            const classDept = departments.find(d => String(d.id) === String(b.class));
+            const bCompanyId = b.company_id || b.companyId || (dept ? dept.companyId : null);
+            const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+            const classDept = departments.find(d => String(d.id) === String(b.class) || d.class === b.class);
             const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
             return {
                 ...b,
+                company_id: bCompanyId,
+                companyId: bCompanyId,
                 company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
                 department: dept ? dept.name : (b.department || ''),
                 class: classDept ? classDept.class : b.class,
@@ -155,22 +157,22 @@ router.get('/api/vendors', checkAuth, async (req, res) => {
 
 router.get('/api/budgets/all', checkAuth, async (req, res) => {
     try {
-        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
         const budgetsData = budgetsRows.map(row => ({
             id: row.id,
-            company_id: row.company_id,
-            companyId: row.company_id,
-            department_id: row.departement_id,
-            departmentId: row.departement_id,
-            class: row.class,
-            description: row.description,
-            type: row.type,
-            total_amount: row.total_amount,
-            totalAmount: row.total_amount,
-            budget_remaining: row.budget_remaining,
-            sisa_budget: row.budget_remaining,
-            sisaBudget: row.budget_remaining,
-            remainingAmount: row.budget_remaining
+            company_id: null,
+            companyId: null,
+            department_id: row.department_id,
+            departmentId: row.department_id,
+            class: row.department_class,
+            description: row.project_name,
+            type: row.budget_type,
+            total_amount: Number(row.budget_amount || 0),
+            totalAmount: Number(row.budget_amount || 0),
+            budget_remaining: Number(row.budget_remaining || 0),
+            sisa_budget: Number(row.budget_remaining || 0),
+            sisaBudget: Number(row.budget_remaining || 0),
+            remainingAmount: Number(row.budget_remaining || 0)
         }));
         const requests = await fetchAllFrpRequests();
         const [companiesData, departments] = await Promise.all([
@@ -188,14 +190,16 @@ router.get('/api/budgets/all', checkAuth, async (req, res) => {
             }
         });
         const budgetsWithRemaining = budgetsData.map(b => {
-            const bCompanyId = b.company_id !== undefined ? b.company_id : b.companyId;
             const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-            const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
             const dept = departments.find(d => String(d.id) === String(bDepartmentId));
-            const classDept = departments.find(d => String(d.id) === String(b.class));
+            const bCompanyId = b.company_id || b.companyId || (dept ? dept.companyId : null);
+            const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+            const classDept = departments.find(d => String(d.id) === String(b.class) || d.class === b.class);
             const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
             return {
                 ...b,
+                company_id: bCompanyId,
+                companyId: bCompanyId,
                 company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
                 department: dept ? dept.name : (b.department || ''),
                 class: classDept ? classDept.class : b.class,
@@ -258,22 +262,22 @@ router.get('/api/employees/:department', checkAuth, async (req, res) => {
 
 router.get('/api/budgets/:department', checkAuth, async (req, res) => {
     try {
-        const [budgetsRows] = await db.query('SELECT id, company_id, departement_id, class, description, type, total_amount, budget_remaining FROM master_budgets');
+        const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
         const budgetsData = budgetsRows.map(row => ({
             id: row.id,
-            company_id: row.company_id,
-            companyId: row.company_id,
-            department_id: row.departement_id,
-            departmentId: row.departement_id,
-            class: row.class,
-            description: row.description,
-            type: row.type,
-            total_amount: row.total_amount,
-            totalAmount: row.total_amount,
-            budget_remaining: row.budget_remaining,
-            sisa_budget: row.budget_remaining,
-            sisaBudget: row.budget_remaining,
-            remainingAmount: row.budget_remaining
+            company_id: null,
+            companyId: null,
+            department_id: row.department_id,
+            departmentId: row.department_id,
+            class: row.department_class,
+            description: row.project_name,
+            type: row.budget_type,
+            total_amount: Number(row.budget_amount || 0),
+            totalAmount: Number(row.budget_amount || 0),
+            budget_remaining: Number(row.budget_remaining || 0),
+            sisa_budget: Number(row.budget_remaining || 0),
+            sisaBudget: Number(row.budget_remaining || 0),
+            remainingAmount: Number(row.budget_remaining || 0)
         }));
         const requests = await fetchAllFrpRequests();
         const [companiesData, departments] = await Promise.all([
@@ -292,13 +296,15 @@ router.get('/api/budgets/:department', checkAuth, async (req, res) => {
         });
         const filtered = budgetsData
             .map(b => {
-                const bCompanyId = b.company_id !== undefined ? b.company_id : b.companyId;
                 const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-                const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
                 const dept = departments.find(d => String(d.id) === String(bDepartmentId));
-                const classDept = departments.find(d => String(d.id) === String(b.class));
+                const bCompanyId = b.company_id || b.companyId || (dept ? dept.companyId : null);
+                const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+                const classDept = departments.find(d => String(d.id) === String(b.class) || d.class === b.class);
                 return {
                     ...b,
+                    company_id: bCompanyId,
+                    companyId: bCompanyId,
                     company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
                     department: dept ? dept.name : (b.department || ''),
                     class: classDept ? classDept.class : b.class,
@@ -761,7 +767,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                 }
 
                 // Query current budget_remaining from database
-                const [bRows] = await db.query('SELECT budget_remaining, description FROM master_budgets WHERE id = ?', [item.budgetId]);
+                const [bRows] = await db.query('SELECT budget_remaining FROM master_budgets WHERE id = ?', [item.budgetId]);
                 if (bRows.length) {
                     const currentRemaining = parseFloat(bRows[0].budget_remaining) || 0;
                     const availableBudget = currentRemaining + revertedAmount;
