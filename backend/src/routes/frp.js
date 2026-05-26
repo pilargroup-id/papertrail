@@ -1,5 +1,7 @@
 const express = require('express');
 const db = require('../../db');
+const { centralDb } = require('../../db');
+const crypto = require('crypto');
 const { checkAuth } = require('../middleware/auth');
 const { USER_SQL } = require('../config/constants');
 const { readJson, writeJson } = require('../utils/json');
@@ -514,143 +516,485 @@ router.get('/api/frp/:id', checkAuth, async (req, res) => {
     }
 });
 
+function getFrpSnapshotFromUser(user) {
+    return {
+        companyId: user.companyId || null,
+        companyCode: user.companyCode || '',
+        companyName: user.companyName || user.selectedCompany || '',
+
+        departmentId: user.departmentId || null,
+        departmentName: user.departmentName || '',
+        departmentClass: user.departmentClass || user.selectedDivision || '',
+        departmentCode: user.departmentCode || '',
+
+        jobLevelId: user.jobLevelId || null,
+        jobLevelName: user.jobLevelName || user.selectedJobLevel || '',
+        jobLevelRank: user.jobLevelRank || null,
+
+        createdByUserId: user.id || null,
+        createdByUserName: user.fullName || user.name || user.username || '',
+    };
+}
+
+function normalizeFrpItems(items = []) {
+    return Array.isArray(items)
+        ? items.map(item => ({
+            id: item.id || crypto.randomUUID(),
+            budgetId: item.budgetId || item.budget_id || null,
+            memo: item.memo || '',
+            qty: Number(item.qty || 0),
+            price: Number(item.price || 0),
+            amount: Number(item.amount || 0),
+        }))
+        : [];
+}
+
+async function replaceFrpItems(client, frpRequestId, items) {
+    await client.query(
+        'DELETE FROM items_frp WHERE frp_request_id = ?',
+        [frpRequestId]
+    );
+
+    for (const item of items) {
+        await client.query(`
+            INSERT INTO items_frp (
+                id,
+                frp_request_id,
+                budget_id,
+                memo,
+                qty,
+                price,
+                amount
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            item.id,
+            frpRequestId,
+            item.budgetId,
+            item.memo,
+            item.qty,
+            item.price,
+            item.amount,
+        ]);
+    }
+}
+
+async function adjustBudgetUsage(client, items, direction = 'deduct') {
+    const multiplier = direction === 'revert' ? -1 : 1;
+
+    for (const item of items) {
+        if (!item.budgetId) continue;
+
+        const amount = Number(item.amount || 0) * multiplier;
+
+        await client.query(`
+            UPDATE master_budgets
+            SET 
+                budget_used = budget_used + ?,
+                budget_remaining = budget_amount - (budget_used + ?)
+            WHERE id = ?
+        `, [
+            amount,
+            amount,
+            item.budgetId,
+        ]);
+    }
+}
+
+async function getBudgetAccessPolicy(client, moduleName, user) {
+    const departmentClass = String(
+        user.departmentClass ||
+        user.selectedDivision ||
+        user.departmentName ||
+        ''
+    ).trim();
+
+    const [rows] = await client.query(`
+        SELECT
+            module,
+            flow,
+            department_id,
+            department_name,
+            department_class,
+            department_code,
+            can_cross_department_budget,
+            requires_budget_check
+        FROM budget_access_policies
+        WHERE module = ?
+          AND flow = 'CREATE'
+          AND department_class = ?
+          AND is_active = 1
+        LIMIT 1
+    `, [moduleName, departmentClass]);
+
+    if (!rows.length) {
+        return {
+            canCrossDepartmentBudget: false,
+            requiresBudgetCheck: true,
+        };
+    }
+
+    return {
+        canCrossDepartmentBudget: Number(rows[0].can_cross_department_budget) === 1,
+        requiresBudgetCheck: Number(rows[0].requires_budget_check) === 1,
+    };
+}
+
+async function validateFrpBudgetAccess(client, user, items) {
+    const policy = await getBudgetAccessPolicy(client, 'FRP', user);
+
+    if (!policy.requiresBudgetCheck) {
+        return;
+    }
+
+    const budgetIds = [...new Set(
+        items
+            .map(item => item.budgetId)
+            .filter(Boolean)
+    )];
+
+    if (!budgetIds.length) {
+        return;
+    }
+
+    const [budgets] = await client.query(`
+        SELECT
+            id,
+            department_id,
+            department_name,
+            department_class,
+            department_code,
+            budget_remaining,
+            is_active
+        FROM master_budgets
+        WHERE id IN (?)
+    `, [budgetIds]);
+
+    const foundBudgetIds = new Set(budgets.map(b => b.id));
+    const missingBudgetIds = budgetIds.filter(id => !foundBudgetIds.has(id));
+
+    if (missingBudgetIds.length) {
+        const error = new Error(`Budget not found: ${missingBudgetIds.join(', ')}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const inactiveBudgets = budgets.filter(b => Number(b.is_active) !== 1);
+    if (inactiveBudgets.length) {
+        const error = new Error(`Inactive budget: ${inactiveBudgets.map(b => b.id).join(', ')}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!policy.canCrossDepartmentBudget) {
+        const userDepartmentClass = String(
+            user.departmentClass ||
+            user.selectedDivision ||
+            user.departmentName ||
+            ''
+        ).trim().toUpperCase();
+
+        const invalidBudgets = budgets.filter(b =>
+            String(b.department_class || '').trim().toUpperCase() !== userDepartmentClass
+        );
+
+        if (invalidBudgets.length) {
+            const error = new Error(
+                `You are not allowed to use budget from another department: ${invalidBudgets.map(b => b.id).join(', ')}`
+            );
+            error.statusCode = 403;
+            throw error;
+        }
+    }
+
+    const amountByBudgetId = items.reduce((acc, item) => {
+        if (!item.budgetId) return acc;
+        acc[item.budgetId] = (acc[item.budgetId] || 0) + Number(item.amount || 0);
+        return acc;
+    }, {});
+
+    const overBudgetItems = budgets.filter(b => {
+        const requestedAmount = Number(amountByBudgetId[b.id] || 0);
+        const remaining = Number(b.budget_remaining || 0);
+        return requestedAmount > remaining;
+    });
+
+    if (overBudgetItems.length) {
+        const error = new Error(
+            `Budget remaining is not enough: ${overBudgetItems.map(b => b.id).join(', ')}`
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+}
+
 router.post('/api/frp/save', checkAuth, async (req, res) => {
+    const client = await db.getConnection();
+
     try {
+        await client.beginTransaction();
+
         const u = req.session.user;
-        const companyName = req.body.companyName || u.selectedCompany;
-        const divisi = req.body.divisi || 'GENERAL';
+        const snapshot = getFrpSnapshotFromUser(u);
+        const items = normalizeFrpItems(req.body.items || []);
 
-        const companyId = await getCompanyId(companyName);
-        const deptId = await getDeptId(divisi, companyName);
+        await validateFrpBudgetAccess(client, u, items);
 
-        // Fetch old items if updating to reverse previous deduction
-        let oldItems = [];
-        if (req.body.frpId) {
-            const [rows] = await db.query('SELECT items FROM frp_request WHERE id = ?', [req.body.frpId]);
-            if (rows.length && rows[0].items) {
-                try {
-                    oldItems = typeof rows[0].items === 'string' ? JSON.parse(rows[0].items) : rows[0].items;
-                } catch (e) {
-                    console.error('Error parsing old items', e);
-                }
-            }
+        if (!snapshot.companyId || !snapshot.departmentId) {
+            await client.rollback();
+            return res.status(400).json({
+                success: false,
+                error: 'User company or department snapshot is missing from auth session',
+            });
         }
 
-        // Handle revision (update existing)
+        // Handle update / revision
         if (req.body.frpId) {
-            await db.query(`
+            const frpId = req.body.frpId;
+
+            const [oldItemRows] = await client.query(`
+                SELECT id, budget_id, memo, qty, price, amount
+                FROM items_frp
+                WHERE frp_request_id = ?
+            `, [frpId]);
+
+            const oldItems = oldItemRows.map(item => ({
+                id: item.id,
+                budgetId: item.budget_id,
+                memo: item.memo || '',
+                qty: Number(item.qty || 0),
+                price: Number(item.price || 0),
+                amount: Number(item.amount || 0),
+            }));
+
+            await client.query(`
                 UPDATE frp_request SET
-                    company_id = ?, tanggal_frp = ?, department_id = ?, diminta_oleh = ?,
-                    currency = ?, kurs = ?, keterangan_frp = ?, vendor = ?, internal_po_number = ?,
-                    ext_doc_type = ?, ext_doc_number = ?, payment_method = ?, payment_date = ?,
-                    bank_tujuan = ?, rek_bank_tujuan = ?, check_docs = ?, items = ?,
+                    company_id = ?,
+                    company_code = ?,
+                    company_name = ?,
+
+                    frp_date = ?,
+
+                    department_id = ?,
+                    department_name = ?,
+                    department_class = ?,
+                    department_code = ?,
+
+                    job_level_id = ?,
+                    job_level_name = ?,
+                    job_level_rank = ?,
+
+                    requested_by = ?,
+
+                    currency = ?,
+                    kurs = ?,
+                    frp_description = ?,
+                    vendor = ?,
+                    internal_po_number = ?,
+                    ext_doc_type = ?,
+                    ext_doc_number = ?,
+                    payment_method = ?,
+                    payment_date = ?,
+                    destination_bank = ?,
+                    destination_bank_account = ?,
+                    check_docs = ?,
+
+                    created_by_user_id = ?,
+                    created_by_user_name = ?,
+
                     status = 'PENDING'
                 WHERE id = ?
             `, [
-                companyId, req.body.tanggalFrp || null, deptId, req.body.dimintaOleh || '',
-                req.body.currency || 'IDR', req.body.kurs || '1', req.body.keteranganFrp || '',
-                req.body.vendor || '', req.body.internalPoNumber || '', req.body.extDocType || '',
-                req.body.extDocNumber || '', req.body.paymentMethod || 'Transfer', req.body.paymentDate || null,
-                req.body.bankTujuan || '', req.body.rekBankTujuan || '', JSON.stringify(req.body.checkDocs || []),
-                JSON.stringify(req.body.items || []), req.body.frpId
+                snapshot.companyId,
+                snapshot.companyCode,
+                snapshot.companyName,
+
+                req.body.frpDate || null,
+
+                snapshot.departmentId,
+                snapshot.departmentName,
+                snapshot.departmentClass,
+                snapshot.departmentCode,
+
+                snapshot.jobLevelId,
+                snapshot.jobLevelName,
+                snapshot.jobLevelRank,
+
+                snapshot.createdByUserName,
+
+                req.body.currency || 'IDR',
+                req.body.exchangeRate || req.body.kurs || '1',
+                req.body.frpDescription || '',
+                req.body.vendor || '',
+                req.body.internalPoNumber || '',
+                req.body.externalDocumentType || '',
+                req.body.externalDocumentNumber || '',
+                req.body.paymentMethod || 'Transfer',
+                req.body.paymentDate || null,
+                req.body.destinationBank || '',
+                req.body.destinationBankAccount || '',
+                JSON.stringify(req.body.checkDocs || []),
+
+                snapshot.createdByUserId,
+                snapshot.createdByUserName,
+
+                frpId,
             ]);
-            
-            const [rows] = await db.query('SELECT frp_no FROM frp_request WHERE id = ?', [req.body.frpId]);
-            const frpNo = rows.length ? rows[0].frp_no : '';
 
-            // Update master_budgets database table
-            try {
-                // Revert old items
-                for (const item of oldItems) {
-                    if (item.budgetId) {
-                        const amt = parseFloat(item.amount) || 0;
-                        await db.query(`
-                            UPDATE master_budgets
-                            SET budget_remaining = budget_remaining + ?
-                            WHERE id = ?
-                        `, [amt, item.budgetId]);
-                    }
-                }
+            await adjustBudgetUsage(client, oldItems, 'revert');
+            await replaceFrpItems(client, frpId, items);
+            await adjustBudgetUsage(client, items, 'deduct');
 
-                // Deduct new items
-                for (const item of (req.body.items || [])) {
-                    if (item.budgetId) {
-                        const amt = parseFloat(item.amount) || 0;
-                        await db.query(`
-                            UPDATE master_budgets
-                            SET budget_remaining = budget_remaining - ?
-                            WHERE id = ?
-                        `, [amt, item.budgetId]);
-                    }
-                }
-            } catch (err) {
-                console.error('Failed to update master_budgets:', err);
-            }
+            const [rows] = await client.query(
+                'SELECT frp_no FROM frp_request WHERE id = ?',
+                [frpId]
+            );
 
-            return res.json({ success: true, id: req.body.frpId, frpNo });
+            await client.commit();
+
+            return res.json({
+                success: true,
+                id: frpId,
+                frpNo: rows.length ? rows[0].frp_no : '',
+            });
         }
 
-        // Handle new FRP
-        const dept = divisi.trim().toUpperCase();
-        const deptCode = await getDeptCode(dept, companyName);
+        // Handle create
+        const deptCode = snapshot.departmentCode || await getDeptCode(snapshot.departmentClass, snapshot.companyName);
         const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
-        
-        const [seqRows] = await db.query(`SELECT frp_no FROM frp_request WHERE frp_no LIKE ?`, [`${prefix}%`]);
-        const sequences = seqRows.map(r => parseInt(r.frp_no.split('-').pop(), 10) || 0);
+
+        const [seqRows] = await client.query(
+            'SELECT frp_no FROM frp_request WHERE frp_no LIKE ?',
+            [`${prefix}%`]
+        );
+
+        const sequences = seqRows.map(r => parseInt(String(r.frp_no || '').split('-').pop(), 10) || 0);
         const nextSeq = Math.max(0, ...sequences) + 1;
         const frpNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
-        
-        const id = 'frp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        
-        await db.query(`
-            INSERT INTO \`frp_request\` (
-              \`id\`, \`frp_no\`, \`status\`, \`company_id\`, \`tanggal_frp\`,
-              \`department_id\`, \`diminta_oleh\`, \`currency\`, \`kurs\`, \`keterangan_frp\`,
-              \`vendor\`, \`internal_po_number\`, \`ext_doc_type\`, \`ext_doc_number\`,
-              \`payment_method\`, \`payment_date\`, \`bank_tujuan\`, \`rek_bank_tujuan\`,
-              \`check_docs\`, \`items\`, \`created_by\`, \`created_at\`,
-              \`approved_by_actual\`, \`approved_by\`, \`approved_at\`
+
+        const id = crypto.randomUUID();
+
+        await client.query(`
+            INSERT INTO frp_request (
+                id,
+                frp_no,
+                status,
+
+                company_id,
+                company_code,
+                company_name,
+
+                frp_date,
+
+                department_id,
+                department_name,
+                department_class,
+                department_code,
+
+                job_level_id,
+                job_level_name,
+                job_level_rank,
+
+                requested_by,
+
+                currency,
+                kurs,
+                frp_description,
+                vendor,
+                internal_po_number,
+                ext_doc_type,
+                ext_doc_number,
+                payment_method,
+                payment_date,
+                destination_bank,
+                destination_bank_account,
+                check_docs,
+
+                created_by,
+                created_by_user_id,
+                created_by_user_name,
+                created_at,
+
+                approved_by_actual,
+                approved_by,
+                approved_at
             ) VALUES (
-              ?, ?, ?, ?, ?,
-              ?, ?, ?, ?, ?,
-              ?, ?, ?, ?,
-              ?, ?, ?, ?,
-              ?, ?, ?, NOW(),
-              NULL, NULL, NULL
+                ?, ?, ?,
+
+                ?, ?, ?,
+
+                ?,
+
+                ?, ?, ?, ?,
+
+                ?, ?, ?,
+
+                ?,
+
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+
+                ?, ?, ?, NOW(),
+
+                NULL, NULL, NULL
             )
         `, [
-            id, frpNo, 'PENDING', companyId, req.body.tanggalFrp || null,
-            deptId, req.body.dimintaOleh || '', req.body.currency || 'IDR', req.body.kurs || '1', req.body.keteranganFrp || '',
-            req.body.vendor || '', req.body.internalPoNumber || '', req.body.extDocType || '', req.body.extDocNumber || '',
-            req.body.paymentMethod || 'Transfer', req.body.paymentDate || null, req.body.bankTujuan || '', req.body.rekBankTujuan || '',
-            JSON.stringify(req.body.checkDocs || []), JSON.stringify(req.body.items || []), u.fullName
+            id,
+            frpNo,
+            'PENDING',
+
+            snapshot.companyId,
+            snapshot.companyCode,
+            snapshot.companyName,
+
+            req.body.frpDate || null,
+
+            snapshot.departmentId,
+            snapshot.departmentName,
+            snapshot.departmentClass,
+            snapshot.departmentCode,
+
+            snapshot.jobLevelId,
+            snapshot.jobLevelName,
+            snapshot.jobLevelRank,
+
+            snapshot.createdByUserName,
+
+            req.body.currency || 'IDR',
+            req.body.exchangeRate || req.body.kurs || '1',
+            req.body.frpDescription || '',
+            req.body.vendor || '',
+            req.body.internalPoNumber || '',
+            req.body.externalDocumentType || '',
+            req.body.externalDocumentNumber || '',
+            req.body.paymentMethod || 'Transfer',
+            req.body.paymentDate || null,
+            req.body.destinationBank || '',
+            req.body.destinationBankAccount || '',
+            JSON.stringify(req.body.checkDocs || []),
+
+            snapshot.createdByUserName,
+            snapshot.createdByUserId,
+            snapshot.createdByUserName,
         ]);
 
-        // Mark linked RP as FRP created
+        await replaceFrpItems(client, id, items);
+        await adjustBudgetUsage(client, items, 'deduct');
+
         if (req.body.fromRpId) {
-            await db.query('UPDATE rp_request SET status = ? WHERE id = ?', ['CREATED_FRP', req.body.fromRpId]);
+            await client.query(
+                'UPDATE rp_request SET status = ? WHERE id = ?',
+                ['CREATED_FRP', req.body.fromRpId]
+            );
         }
 
-        // Update master_budgets database table for new FRP
-        try {
-            for (const item of (req.body.items || [])) {
-                if (item.budgetId) {
-                    const amt = parseFloat(item.amount) || 0;
-                    await db.query(`
-                        UPDATE master_budgets
-                        SET budget_remaining = budget_remaining - ?
-                        WHERE id = ?
-                    `, [amt, item.budgetId]);
-                }
-            }
-        } catch (err) {
-            console.error('Failed to update master_budgets:', err);
-        }
+        await client.commit();
 
         res.json({ success: true, id, frpNo });
     } catch (e) {
+        await client.rollback();
         console.error('Error saving FRP:', e);
-        res.json({ success: false, error: e.message });
+        res.status(500).json({ success: false, error: e.message });
+    } finally {
+        client.release();
     }
 });
 
@@ -662,34 +1006,53 @@ router.post('/api/frp/:id/:action', checkAuth, async (req, res) => {
 
         if (action === 'approve') {
             const [rows] = await db.query(`
-                SELECT f.company_id, f.department_id, md.name as divisi, mc.code as companyCode 
-                FROM frp_request f
-                LEFT JOIN master_companies mc ON f.company_id = mc.id
-                LEFT JOIN master_departments md ON f.department_id = md.id
-                WHERE f.id = ?
+                SELECT
+                    company_id,
+                    company_code,
+                    company_name,
+                    department_id,
+                    department_name,
+                    department_class,
+                    department_code
+                FROM frp_request
+                WHERE id = ?
             `, [frpId]);
-            
+
             let approvedBy = u.fullName;
+
             if (rows.length) {
-                const divisi = rows[0].divisi || '';
-                const companyCode = rows[0].companyCode;
-                const params = [divisi];
-                let sql = USER_SQL + ' AND md.name = ? AND mjl.level >= 4';
-                if (companyCode) {
+                const request = rows[0];
+
+                const params = [
+                    request.department_name || '',
+                    request.department_class || '',
+                ];
+
+                let sql = USER_SQL + `
+                    AND (md.name = ? OR md.class = ?)
+                    AND mjl.level >= 4
+                `;
+
+                if (request.company_code) {
                     sql += ' AND mc.code = ?';
-                    params.push(normalizeCompanyCode(companyCode));
+                    params.push(normalizeCompanyCode(request.company_code));
                 }
+
                 sql += ' ORDER BY mjl.level DESC LIMIT 1';
-                const [mgrRows] = await db.query(sql, params);
+
+                const [mgrRows] = await centralDb.query(sql, params);
+
                 if (mgrRows.length) approvedBy = mgrRows[0].name;
             }
 
             await db.query(`
                 UPDATE frp_request 
-                SET status = 'APPROVED', approved_by_actual = ?, approved_at = NOW(), approved_by = ?
+                SET status = 'APPROVED',
+                    approved_by_actual = ?,
+                    approved_at = NOW(),
+                    approved_by = ?
                 WHERE id = ?
             `, [u.fullName, approvedBy, frpId]);
-
         } else if (action === 'reject') {
             await db.query(`UPDATE frp_request SET status = 'REJECTED' WHERE id = ?`, [frpId]);
         } else if (action === 'delete') {

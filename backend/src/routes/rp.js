@@ -5,36 +5,185 @@ const { getAllEmployees, getCompanies, getDepartmentRows, getDeptCode, getCompan
 const { sameCompanyName } = require('../utils/company');
 const { isRpInUserScope } = require('../middleware/scope');
 const db = require('../../db');
+const crypto = require('crypto');
 
 const router = express.Router();
 
-async function updateRpRequest(rp) {
-    const companyId = await getCompanyId(rp.companyName);
-    const deptId = await getDeptId(rp.divisi, rp.companyName);
-    const classId = await getDeptId(rp.class, rp.companyName);
+function getRpSnapshotFromUser(user) {
+    return {
+        companyId: user.companyId || null,
+        companyCode: user.companyCode || '',
+        companyName: user.companyName || user.selectedCompany || '',
 
-    await db.query(`
-        UPDATE rp_request SET 
-            rp_no = ?, status = ?, company_id = ?, department_id = ?, class_id = ?, 
-            dibuat_oleh = ?, kategori_pembelian = ?, deskripsi = ?, diproses_oleh = ?, 
-            tanggal_dibutuhkan = ?, vendor_suggestion = ?, pic_penerima = ?, items = ?, 
-            manager_approved_by = ?, manager_approved_at = ?, process_changes = ?, 
-            process_updated_by = ?, process_updated_at = ?, process_manager_approved_by = ?, 
-            process_manager_approved_at = ?, rejected_by = ?, rejected_at = ?, 
-            rejected_reason = ?, rejected_stage = ?
-        WHERE id = ?
-    `, [
-        rp.rpNo, rp.status, companyId, deptId, classId,
-        rp.dibuatOleh, rp.kategoriPembelian, rp.deskripsi, rp.diprosesOleh,
-        rp.tanggalDibutuhkan || null, rp.vendorSuggestion, rp.picPenerima, JSON.stringify(rp.items),
-        rp.managerApprovedBy || null, rp.managerApprovedAt ? new Date(rp.managerApprovedAt) : null, JSON.stringify(rp.processChanges || []),
-        rp.processUpdatedBy || null, rp.processUpdatedAt ? new Date(rp.processUpdatedAt) : null, rp.processManagerApprovedBy || null,
-        rp.processManagerApprovedAt ? new Date(rp.processManagerApprovedAt) : null, rp.rejectedBy || null, rp.rejectedAt ? new Date(rp.rejectedAt) : null,
-        rp.rejectedReason || null, rp.rejectedStage || null,
-        rp.id
-    ]);
+        departmentId: user.departmentId || null,
+        departmentName: user.departmentName || '',
+        departmentClass: user.departmentClass || user.selectedDivision || '',
+        departmentCode: user.departmentCode || '',
+
+        jobLevelId: user.jobLevelId || null,
+        jobLevelName: user.jobLevelName || user.selectedJobLevel || '',
+        jobLevelRank: user.jobLevelRank || null,
+
+        createdByUserId: user.id || null,
+        createdByUserName: user.fullName || user.name || user.username || '',
+    };
 }
 
+function normalizeRpItems(items = []) {
+    return Array.isArray(items)
+        ? items.map(item => ({
+            id: item.id || crypto.randomUUID(),
+            budgetId: item.budgetId || item.budget_id || null,
+            memo: item.memo || '',
+            qty: Number(item.qty || 0),
+            price: Number(item.price || item.estimatedValue || 0),
+            amount: Number(item.amount || (Number(item.qty || 0) * Number(item.price || item.estimatedValue || 0)) || 0),
+        }))
+        : [];
+}
+
+async function replaceRpItems(client, rpRequestId, items) {
+    await client.query(
+        'DELETE FROM items_rp WHERE rp_request_id = ?',
+        [rpRequestId]
+    );
+
+    for (const item of items) {
+        await client.query(`
+            INSERT INTO items_rp (
+                id,
+                rp_request_id,
+                budget_id,
+                memo,
+                qty,
+                price,
+                amount
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            item.id,
+            rpRequestId,
+            item.budgetId,
+            item.memo,
+            item.qty,
+            item.price,
+            item.amount,
+        ]);
+    }
+}
+
+async function getBudgetAccessPolicy(client, moduleName, user) {
+    const departmentClass = String(
+        user.departmentClass ||
+        user.selectedDivision ||
+        user.departmentName ||
+        ''
+    ).trim();
+
+    const [rows] = await client.query(`
+        SELECT
+            can_cross_department_budget,
+            requires_budget_check
+        FROM budget_access_policies
+        WHERE module = ?
+          AND flow = 'CREATE'
+          AND department_class = ?
+          AND is_active = 1
+        LIMIT 1
+    `, [moduleName, departmentClass]);
+
+    if (!rows.length) {
+        return {
+            canCrossDepartmentBudget: false,
+            requiresBudgetCheck: true,
+        };
+    }
+
+    return {
+        canCrossDepartmentBudget: Number(rows[0].can_cross_department_budget) === 1,
+        requiresBudgetCheck: Number(rows[0].requires_budget_check) === 1,
+    };
+}
+
+async function validateRpBudgetAccess(client, user, items) {
+    const policy = await getBudgetAccessPolicy(client, 'RP', user);
+
+    if (!policy.requiresBudgetCheck) return;
+
+    const budgetIds = [...new Set(items.map(item => item.budgetId).filter(Boolean))];
+
+    if (!budgetIds.length) return;
+
+    const [budgets] = await client.query(`
+        SELECT
+            id,
+            department_id,
+            department_name,
+            department_class,
+            department_code,
+            budget_remaining,
+            is_active
+        FROM master_budgets
+        WHERE id IN (?)
+    `, [budgetIds]);
+
+    const foundBudgetIds = new Set(budgets.map(b => b.id));
+    const missingBudgetIds = budgetIds.filter(id => !foundBudgetIds.has(id));
+
+    if (missingBudgetIds.length) {
+        const error = new Error(`Budget not found: ${missingBudgetIds.join(', ')}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const inactiveBudgets = budgets.filter(b => Number(b.is_active) !== 1);
+
+    if (inactiveBudgets.length) {
+        const error = new Error(`Inactive budget: ${inactiveBudgets.map(b => b.id).join(', ')}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!policy.canCrossDepartmentBudget) {
+        const userDepartmentClass = String(
+            user.departmentClass ||
+            user.selectedDivision ||
+            user.departmentName ||
+            ''
+        ).trim().toUpperCase();
+
+        const invalidBudgets = budgets.filter(b =>
+            String(b.department_class || '').trim().toUpperCase() !== userDepartmentClass
+        );
+
+        if (invalidBudgets.length) {
+            const error = new Error(
+                `You are not allowed to use budget from another department: ${invalidBudgets.map(b => b.id).join(', ')}`
+            );
+            error.statusCode = 403;
+            throw error;
+        }
+    }
+
+    const amountByBudgetId = items.reduce((acc, item) => {
+        if (!item.budgetId) return acc;
+        acc[item.budgetId] = (acc[item.budgetId] || 0) + Number(item.amount || 0);
+        return acc;
+    }, {});
+
+    const overBudgetItems = budgets.filter(b => {
+        const requestedAmount = Number(amountByBudgetId[b.id] || 0);
+        const remaining = Number(b.budget_remaining || 0);
+        return requestedAmount > remaining;
+    });
+
+    if (overBudgetItems.length) {
+        const error = new Error(
+            `Budget remaining is not enough: ${overBudgetItems.map(b => b.id).join(', ')}`
+        );
+        error.statusCode = 400;
+        throw error;
+    }
+}
 
 // ============================================================
 // RP PAGES
@@ -173,109 +322,277 @@ router.get('/api/rp/next-number/:department', checkAuth, async (req, res) => {
 // ============================================================
 
 router.post('/api/rp/save', checkAuth, async (req, res) => {
-    try {
-        let rpRequests = await fetchAllRpRequests();
-        const u = req.session.user;
+    const client = await db.getConnection();
 
-        // Handle revision (update existing)
-        if (req.body.rpId) {
-            const idx = rpRequests.findIndex(r => r.id === req.body.rpId);
-            if (idx === -1) return res.json({ success: false, error: 'RP not found for revision' });
-            const updatedReq = {
-                ...rpRequests[idx],
-                ...req.body,
-                id: rpRequests[idx].id,
-                rpNo: rpRequests[idx].rpNo,
-                status: 'waiting_manager',
-            };
-            delete updatedReq.rpId;
-            rpRequests[idx] = updatedReq;
-            await updateRpRequest(updatedReq);
-            return res.json({ success: true, rpNo: rpRequests[idx].rpNo, id: rpRequests[idx].id });
+    try {
+        await client.beginTransaction();
+
+        const u = req.session.user;
+        const snapshot = getRpSnapshotFromUser(u);
+        const items = normalizeRpItems(req.body.items || []);
+
+        await validateRpBudgetAccess(client, u, items);
+
+        const creatorCanProcessRp = await hasRpBudgetPolicy(client, u);
+        const initialStatus = creatorCanProcessRp ? 'final_review' : 'waiting_manager';
+
+        const requestedBy = req.body.requestedBy || snapshot.createdByUserName;
+        const purchaseCategory = req.body.purchaseCategory || '';
+        const description = req.body.description || '';
+        const processedByDepartment = req.body.processedByDepartment || '';
+        const requiredDate = req.body.requiredDate || null;
+        const vendorSuggestion = req.body.vendorSuggestion || '';
+        const receiverPic = req.body.receiverPic || '';
+
+        if (!creatorCanProcessRp && !processedByDepartment) {
+            await client.rollback();
+            return res.status(400).json({
+                success: false,
+                error: 'processedByDepartment is required for non IT/HCGA requester',
+            });
         }
 
-        // Handle new RP
-        const id = 'rp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        const companyName = req.body.companyName || u.selectedCompany || '';
-        const divisi = req.body.divisi || u.selectedDivision || '';
-        const reqClass = req.body.class || '';
+        if (
+            !creatorCanProcessRp &&
+            !(await isAllowedRpProcessorDepartment(client, processedByDepartment))
+        ) {
+            await client.rollback();
+            return res.status(400).json({
+                success: false,
+                error: `processedByDepartment is not allowed: ${processedByDepartment}`,
+            });
+        }
 
-        const newRp = {
-            id,
-            rpNo: req.body.rpNo || '',
-            status: 'waiting_manager',
-            companyName,
-            divisi,
-            class: reqClass,
-            dibuatOleh: req.body.dibuatOleh || u.fullName,
-            kategoriPembelian: req.body.kategoriPembelian || '',
-            deskripsi: req.body.deskripsi || '',
-            diprosesOleh: req.body.diprosesOleh || '',
-            tanggalDibutuhkan: req.body.tanggalDibutuhkan || '',
-            vendorSuggestion: req.body.vendorSuggestion || '',
-            picPenerima: req.body.picPenerima || '',
-            items: req.body.items || [],
-            createdAt: new Date().toISOString(),
-            createdBy: u.fullName,
-        };
-        rpRequests.push(newRp);
-        
+        const classId = req.body.classId || snapshot.departmentId;
+        const className = req.body.className || snapshot.departmentName;
+        const classClass = req.body.classClass || snapshot.departmentClass;
+        const classCode = req.body.classCode || snapshot.departmentCode;
 
-        // Insert into database
-        const companyId = await getCompanyId(companyName);
-        const deptId = await getDeptId(divisi, companyName);
-        const classId = await getDeptId(reqClass, companyName);
+        if (req.body.rpId) {
+            const rpId = req.body.rpId;
 
-        await db.query(`
-            INSERT INTO \`frp_db\`.\`rp_request\` (
-              \`id\`,
-              \`rp_no\`,
-              \`status\`,
-              \`company_id\`,
-              \`department_id\`,
-              \`class_id\`,
-              \`dibuat_oleh\`,
-              \`kategori_pembelian\`,
-              \`deskripsi\`,
-              \`diproses_oleh\`,
-              \`tanggal_dibutuhkan\`,
-              \`vendor_suggestion\`,
-              \`pic_penerima\`,
-              \`items\`,
-              \`created_at\`,
-              \`created_by\`,
-              \`manager_approved_by\`,
-              \`manager_approved_at\`,
-              \`process_changes\`,
-              \`process_updated_by\`,
-              \`process_updated_at\`,
-              \`process_manager_approved_by\`,
-              \`process_manager_approved_at\`
+            const [existingRows] = await client.query(
+                'SELECT id, rp_no FROM rp_request WHERE id = ? LIMIT 1',
+                [rpId]
+            );
+
+            if (!existingRows.length) {
+                await client.rollback();
+                return res.status(404).json({
+                    success: false,
+                    error: 'RP not found for revision',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request SET
+                    status = ?,
+
+                    company_id = ?,
+                    company_code = ?,
+                    company_name = ?,
+
+                    department_id = ?,
+                    department_name = ?,
+                    department_class = ?,
+                    department_code = ?,
+
+                    class_id = ?,
+                    class_name = ?,
+                    class_class = ?,
+                    class_code = ?,
+
+                    job_level_id = ?,
+                    job_level_name = ?,
+                    job_level_rank = ?,
+
+                    requested_by = ?,
+                    purchase_category = ?,
+                    description = ?,
+                    processed_by_department = ?,
+                    required_date = ?,
+                    vendor_suggestion = ?,
+                    receiver_pic = ?,
+
+                    created_by_user_id = ?,
+                    created_by_user_name = ?
+                WHERE id = ?
+            `, [
+                initialStatus,
+
+                snapshot.companyId,
+                snapshot.companyCode,
+                snapshot.companyName,
+
+                snapshot.departmentId,
+                snapshot.departmentName,
+                snapshot.departmentClass,
+                snapshot.departmentCode,
+
+                classId,
+                className,
+                classClass,
+                classCode,
+
+                snapshot.jobLevelId,
+                snapshot.jobLevelName,
+                snapshot.jobLevelRank,
+
+                requestedBy,
+                purchaseCategory,
+                description,
+                processedByDepartment,
+                requiredDate,
+                vendorSuggestion,
+                receiverPic,
+
+                snapshot.createdByUserId,
+                snapshot.createdByUserName,
+
+                rpId,
+            ]);
+
+            await replaceRpItems(client, rpId, items);
+
+            await client.commit();
+
+            return res.json({
+                success: true,
+                rpNo: existingRows[0].rp_no,
+                id: rpId,
+            });
+        }
+
+        const id = crypto.randomUUID();
+
+        const deptCode = snapshot.departmentCode || 'RP';
+        const prefix = `RP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
+
+        const [seqRows] = await client.query(
+            'SELECT rp_no FROM rp_request WHERE rp_no LIKE ?',
+            [`${prefix}%`]
+        );
+
+        const sequences = seqRows.map(r => parseInt(String(r.rp_no || '').split('-').pop(), 10) || 0);
+        const nextSeq = Math.max(0, ...sequences) + 1;
+        const rpNo = req.body.rpNo || `${prefix}${nextSeq.toString().padStart(5, '0')}`;
+
+        await client.query(`
+            INSERT INTO rp_request (
+                id,
+                rp_no,
+                status,
+
+                company_id,
+                company_code,
+                company_name,
+
+                department_id,
+                department_name,
+                department_class,
+                department_code,
+
+                class_id,
+                class_name,
+                class_class,
+                class_code,
+
+                job_level_id,
+                job_level_name,
+                job_level_rank,
+
+                requested_by,
+                purchase_category,
+                description,
+                processed_by_department,
+                required_date,
+                vendor_suggestion,
+                receiver_pic,
+
+                created_at,
+                created_by,
+                created_by_user_id,
+                created_by_user_name,
+
+                manager_approved_by,
+                manager_approved_at,
+                process_changes,
+                process_updated_by,
+                process_updated_at,
+                process_manager_approved_by,
+                process_manager_approved_at,
+                rejected_by,
+                rejected_at,
+                rejected_reason,
+                rejected_stage
             ) VALUES (
-              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+                ?, ?, ?,
+
+                ?, ?, ?,
+
+                ?, ?, ?, ?,
+
+                ?, ?, ?, ?,
+
+                ?, ?, ?,
+
+                ?, ?, ?, ?, ?, ?, ?,
+
+                NOW(), ?, ?, ?,
+
+                NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
             )
         `, [
             id,
-            newRp.rpNo,
-            newRp.status,
-            companyId,
-            deptId,
+            rpNo,
+            initialStatus,
+
+            snapshot.companyId,
+            snapshot.companyCode,
+            snapshot.companyName,
+
+            snapshot.departmentId,
+            snapshot.departmentName,
+            snapshot.departmentClass,
+            snapshot.departmentCode,
+
             classId,
-            newRp.dibuatOleh,
-            newRp.kategoriPembelian,
-            newRp.deskripsi,
-            newRp.diprosesOleh,
-            newRp.tanggalDibutuhkan || null,
-            newRp.vendorSuggestion,
-            newRp.picPenerima,
-            JSON.stringify(newRp.items),
-            newRp.createdBy
+            className,
+            classClass,
+            classCode,
+
+            snapshot.jobLevelId,
+            snapshot.jobLevelName,
+            snapshot.jobLevelRank,
+
+            requestedBy,
+            purchaseCategory,
+            description,
+            processedByDepartment,
+            requiredDate,
+            vendorSuggestion,
+            receiverPic,
+
+            snapshot.createdByUserName,
+            snapshot.createdByUserId,
+            snapshot.createdByUserName,
         ]);
 
-        res.json({ success: true, rpNo: newRp.rpNo, id: newRp.id });
+        await replaceRpItems(client, id, items);
+
+        await client.commit();
+
+        res.json({ success: true, rpNo, id });
     } catch (e) {
+        await client.rollback();
         console.error('Error saving RP:', e);
-        res.json({ success: false, error: e.message });
+
+        res.status(e.statusCode || 500).json({
+            success: false,
+            error: e.message,
+        });
+    } finally {
+        client.release();
     }
 });
 
@@ -406,142 +723,469 @@ router.get('/api/rp/:id', checkAuth, async (req, res) => {
     }
 });
 
+function getUserDepartmentClass(user) {
+    return String(
+        user.departmentClass ||
+        user.selectedDivision ||
+        user.departmentName ||
+        ''
+    ).trim();
+}
+
+function isManagerLevel(user) {
+    return Number(user.jobLevelRank || 0) >= 4;
+}
+
+function sameText(a, b) {
+    return String(a || '').trim().toUpperCase() === String(b || '').trim().toUpperCase();
+}
+
+async function hasRpBudgetPolicy(client, user) {
+    const departmentClass = getUserDepartmentClass(user);
+
+    const [rows] = await client.query(`
+        SELECT id
+        FROM budget_access_policies
+        WHERE module = 'RP'
+          AND flow = 'CREATE'
+          AND department_class = ?
+          AND can_cross_department_budget = 1
+          AND is_active = 1
+        LIMIT 1
+    `, [departmentClass]);
+
+    return rows.length > 0;
+}
+
+async function getAllowedRpProcessorDepartments(client) {
+    const [rows] = await client.query(`
+        SELECT department_class
+        FROM budget_access_policies
+        WHERE module = 'RP'
+          AND flow = 'PROCESS'
+          AND is_active = 1
+    `);
+
+    return rows.map(row => String(row.department_class || '').trim().toUpperCase());
+}
+
+async function isAllowedRpProcessorDepartment(client, departmentClass) {
+    const allowedDepartments = await getAllowedRpProcessorDepartments(client);
+    return allowedDepartments.includes(String(departmentClass || '').trim().toUpperCase());
+}
+
 router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
-    let rpRequests = await fetchAllRpRequests();
-    const idx = rpRequests.findIndex(r => r.id === req.params.id);
-    if (idx === -1) return res.json({ success: false, error: 'RP not found' });
+    const client = await db.getConnection();
 
-    const action = req.params.action;
-    const rp = rpRequests[idx];
-    const u = req.session.user;
-    const isAdmin = u.role === 'administrator';
+    try {
+        await client.beginTransaction();
 
-    // --- Authorization Checks ---
-    if (!isAdmin && !sameCompanyName(rp.companyName, u.selectedCompany)) {
-        return res.json({ success: false, error: 'Anda hanya dapat memproses data dari perusahaan yang sedang dipilih' });
-    }
+        const rpRequests = await fetchAllRpRequests();
+        const rp = rpRequests.find(r => r.id === req.params.id);
 
-    if (['manager-approve', 'manager-reject'].includes(action) && !isAdmin) {
-        if (!['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel)) {
-            return res.json({ success: false, error: 'Hanya Manager yang dapat melakukan persetujuan ini' });
+        if (!rp) {
+            await client.rollback();
+            return res.status(404).json({
+                success: false,
+                error: 'RP not found',
+            });
         }
-        if (u.selectedDivision !== rp.divisi) {
-            return res.json({ success: false, error: 'Anda hanya dapat menyetujui dokumen dari divisi Anda sendiri' });
-        }
-    }
 
-    if (['process-update', 'process-direct', 'process-reject'].includes(action) && !isAdmin) {
-        const allowedDivisions = ['IT', 'HCGA', 'Product'];
-        if (!allowedDivisions.includes(u.selectedDivision)) {
-            return res.json({ success: false, error: 'Hanya divisi IT, HCGA, dan Product yang dapat memproses data ini' });
-        }
-        if (u.selectedDivision !== rp.diprosesOleh) {
-            return res.json({ success: false, error: `Anda hanya dapat memproses data untuk divisi ${rp.diprosesOleh}` });
-        }
-    }
+        const action = req.params.action;
+        const u = req.session.user;
 
-    if (['process-manager-approve', 'process-manager-reject'].includes(action) && !isAdmin) {
-        const allowedDivisions = ['IT', 'HCGA', 'Product'];
-        if (!['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel)) {
-            return res.json({ success: false, error: 'Hanya Manager dari divisi pemroses yang dapat melakukan persetujuan final ini' });
-        }
-        if (!allowedDivisions.includes(u.selectedDivision)) {
-            return res.json({ success: false, error: 'Hanya divisi IT, HCGA, dan Product yang dapat menyetujui data ini' });
-        }
-        if (u.selectedDivision !== rp.diprosesOleh) {
-            return res.json({ success: false, error: `Anda hanya dapat menyetujui data untuk divisi ${rp.diprosesOleh}` });
-        }
-    }
+        const isAdmin = u.role === 'administrator';
+        const userDepartmentClass = getUserDepartmentClass(u);
+        const userCanProcessRp = await hasRpBudgetPolicy(client, u);
 
-    // --- Action Handlers ---
-    if (action === 'manager-approve') {
-        if (rp.status !== 'waiting_manager') return res.json({ success: false, error: 'Invalid status for this action' });
-        rp.status = 'division_review';
-        rp.managerApprovedBy = u.fullName;
-        rp.managerApprovedAt = new Date().toISOString();
+        // ============================================================
+        // AUTHORIZATION CHECKS
+        // ============================================================
 
-    } else if (action === 'manager-reject') {
-        if (rp.status !== 'waiting_manager') return res.json({ success: false, error: 'Invalid status' });
-        rp.status = 'REJECTED';
-        rp.rejectedBy = u.fullName;
-        rp.rejectedAt = new Date().toISOString();
-        rp.rejectedReason = req.body.reason || '';
-        rp.rejectedStage = 'manager';
+        if (!isAdmin && !sameCompanyName(rp.companyName, u.selectedCompany || u.companyName)) {
+            await client.rollback();
+            return res.status(403).json({
+                success: false,
+                error: 'Anda hanya dapat memproses data dari perusahaan Anda',
+            });
+        }
 
-    } else if (action === 'process-update') {
-        if (rp.status !== 'division_review') return res.json({ success: false, error: 'Invalid status' });
-        const headerFields = ['vendorSuggestion', 'tanggalDibutuhkan', 'picPenerima', 'deskripsi'];
-        const changes = [];
-        headerFields.forEach(field => {
-            if (req.body[field] !== undefined && req.body[field] !== rp[field]) {
-                changes.push({ field, oldValue: rp[field], newValue: req.body[field] });
+        // Step 2: manager department requester approval
+        if (['manager-approve', 'manager-reject'].includes(action) && !isAdmin) {
+            if (!isManagerLevel(u)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: 'Hanya user level Manager ke atas yang dapat melakukan persetujuan ini',
+                });
             }
-        });
-        const newItems = req.body.items || rp.items;
-        const oldItems = rp.items || [];
-        newItems.forEach((newItem, i) => {
-            const oldItem = oldItems[i] || {};
-            ['memo', 'linkPembelian', 'qty', 'estimatedValue', 'budgetId'].forEach(field => {
-                if (newItem[field] !== undefined && String(newItem[field]) !== String(oldItem[field] || '')) {
-                    changes.push({ field: `items[${i}].${field}`, oldValue: oldItem[field] || '', newValue: newItem[field], itemIndex: i });
+
+            if (!sameText(userDepartmentClass, rp.departmentClass)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: 'Anda hanya dapat menyetujui dokumen dari department Anda sendiri',
+                });
+            }
+        }
+
+        // Step 3: processor department check/edit/revert/reject
+        if (['process-update', 'process-direct', 'process-revert', 'process-reject'].includes(action) && !isAdmin) {
+            if (!userCanProcessRp) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: 'Department Anda tidak memiliki akses untuk memproses RP',
+                });
+            }
+
+            if (!sameText(userDepartmentClass, rp.processedByDepartment)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: `Anda hanya dapat memproses RP untuk department ${rp.processedByDepartment}`,
+                });
+            }
+        }
+
+        // Step 4: processor manager final approval/revert/reject
+        if (['process-manager-approve', 'process-manager-revert', 'process-manager-reject'].includes(action) && !isAdmin) {
+            if (!isManagerLevel(u)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: 'Hanya user level Manager ke atas dari department pemroses yang dapat melakukan persetujuan final ini',
+                });
+            }
+
+            if (!userCanProcessRp) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: 'Department Anda tidak memiliki akses approval final RP',
+                });
+            }
+
+            if (!sameText(userDepartmentClass, rp.processedByDepartment)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: `Anda hanya dapat menyetujui RP untuk department ${rp.processedByDepartment}`,
+                });
+            }
+        }
+
+        // ============================================================
+        // ACTION HANDLERS
+        // ============================================================
+
+        if (action === 'manager-approve') {
+            if (rp.status !== 'waiting_manager') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'division_review',
+                    manager_approved_by = ?,
+                    manager_approved_at = NOW()
+                WHERE id = ?
+            `, [u.fullName, rp.id]);
+
+        } else if (action === 'manager-reject') {
+            if (rp.status !== 'waiting_manager') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'REJECTED',
+                    rejected_by = ?,
+                    rejected_at = NOW(),
+                    rejected_reason = ?,
+                    rejected_stage = 'manager'
+                WHERE id = ?
+            `, [
+                u.fullName,
+                req.body.reason || '',
+                rp.id,
+            ]);
+
+        } else if (action === 'process-update') {
+            if (rp.status !== 'division_review') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            const changes = [];
+
+            const headerFields = [
+                'vendorSuggestion',
+                'requiredDate',
+                'receiverPic',
+                'description',
+            ];
+
+            headerFields.forEach(field => {
+                if (
+                    req.body[field] !== undefined &&
+                    String(req.body[field]) !== String(rp[field] || '')
+                ) {
+                    changes.push({
+                        field,
+                        oldValue: rp[field] || '',
+                        newValue: req.body[field],
+                    });
                 }
             });
-        });
-        headerFields.forEach(field => { if (req.body[field] !== undefined) rp[field] = req.body[field]; });
-        if (req.body.items) rp.items = req.body.items;
-        rp.processChanges = changes;
-        rp.processUpdatedBy = u.fullName;
-        rp.processUpdatedAt = new Date().toISOString();
-        rp.status = 'final_approved';
 
-    } else if (action === 'process-direct') {
-        if (rp.status !== 'division_review') return res.json({ success: false, error: 'Invalid status' });
-        rp.processUpdatedBy = u.fullName;
-        rp.processUpdatedAt = new Date().toISOString();
-        rp.processChanges = [];
-        rp.status = 'final_approved';
+            const newItems = normalizeRpItems(req.body.items || rp.items || []);
+            const oldItems = rp.items || [];
 
-    } else if (action === 'process-reject') {
-        if (rp.status !== 'division_review') return res.json({ success: false, error: 'Invalid status' });
-        rp.status = 'REJECTED';
-        rp.rejectedBy = u.fullName;
-        rp.rejectedAt = new Date().toISOString();
-        rp.rejectedReason = req.body.reason || '';
-        rp.rejectedStage = 'process';
+            newItems.forEach((newItem, i) => {
+                const oldItem = oldItems[i] || {};
 
-    } else if (action === 'process-manager-approve') {
-        if (rp.status !== 'final_approved') return res.json({ success: false, error: 'Invalid status' });
-        rp.status = 'approved';
-        rp.processManagerApprovedBy = u.fullName;
-        rp.processManagerApprovedAt = new Date().toISOString();
+                ['memo', 'qty', 'price', 'amount', 'budgetId'].forEach(field => {
+                    if (
+                        newItem[field] !== undefined &&
+                        String(newItem[field]) !== String(oldItem[field] || '')
+                    ) {
+                        changes.push({
+                            field: `items[${i}].${field}`,
+                            oldValue: oldItem[field] || '',
+                            newValue: newItem[field],
+                            itemIndex: i,
+                        });
+                    }
+                });
+            });
 
-    } else if (action === 'process-manager-reject') {
-        if (rp.status !== 'final_approved') return res.json({ success: false, error: 'Invalid status' });
-        rp.status = 'REJECTED';
-        rp.rejectedBy = u.fullName;
-        rp.rejectedAt = new Date().toISOString();
-        rp.rejectedReason = req.body.reason || '';
-        rp.rejectedStage = 'process-manager';
+            if (req.body.items) {
+                await validateRpBudgetAccess(client, u, newItems);
+                await replaceRpItems(client, rp.id, newItems);
+            }
 
-    } else if (action === 'delete') {
-        await db.query('DELETE FROM rp_request WHERE id = ?', [rp.id]);
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    vendor_suggestion = ?,
+                    required_date = ?,
+                    receiver_pic = ?,
+                    description = ?,
+                    process_changes = ?,
+                    process_updated_by = ?,
+                    process_updated_at = NOW(),
+                    status = 'final_review'
+                WHERE id = ?
+            `, [
+                req.body.vendorSuggestion !== undefined ? req.body.vendorSuggestion : rp.vendorSuggestion,
+                req.body.requiredDate !== undefined ? req.body.requiredDate : rp.requiredDate,
+                req.body.receiverPic !== undefined ? req.body.receiverPic : rp.receiverPic,
+                req.body.description !== undefined ? req.body.description : rp.description,
+                JSON.stringify({
+                    note: req.body.note || '',
+                    changes,
+                }),
+                u.fullName,
+                rp.id,
+            ]);
 
-    } else if (action === 'revert') {
-        if (u.role !== 'administrator') {
-            return res.status(403).json({ success: false, error: 'Hanya administrator' });
+        } else if (action === 'process-direct') {
+            if (rp.status !== 'division_review') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    process_updated_by = ?,
+                    process_updated_at = NOW(),
+                    process_changes = ?,
+                    status = 'final_review'
+                WHERE id = ?
+            `, [
+                u.fullName,
+                JSON.stringify({
+                    note: req.body.note || 'RP checked without changes',
+                    changes: [],
+                }),
+                rp.id,
+            ]);
+
+        } else if (action === 'process-revert') {
+            if (rp.status !== 'division_review') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'waiting_manager',
+                    manager_approved_by = NULL,
+                    manager_approved_at = NULL,
+                    process_changes = ?,
+                    process_updated_by = ?,
+                    process_updated_at = NOW()
+                WHERE id = ?
+            `, [
+                JSON.stringify({
+                    note: req.body.reason || 'Returned to requester department manager review',
+                    revertedBy: u.fullName,
+                    revertedFrom: 'division_review',
+                }),
+                u.fullName,
+                rp.id,
+            ]);
+
+        } else if (action === 'process-reject') {
+            if (rp.status !== 'division_review') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'REJECTED',
+                    rejected_by = ?,
+                    rejected_at = NOW(),
+                    rejected_reason = ?,
+                    rejected_stage = 'process'
+                WHERE id = ?
+            `, [
+                u.fullName,
+                req.body.reason || '',
+                rp.id,
+            ]);
+
+        } else if (action === 'process-manager-approve') {
+            if (rp.status !== 'final_review') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'approved',
+                    process_manager_approved_by = ?,
+                    process_manager_approved_at = NOW()
+                WHERE id = ?
+            `, [u.fullName, rp.id]);
+
+        } else if (action === 'process-manager-revert') {
+            if (rp.status !== 'final_review') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'division_review',
+                    process_manager_approved_by = NULL,
+                    process_manager_approved_at = NULL,
+                    process_changes = ?,
+                    process_updated_by = ?,
+                    process_updated_at = NOW()
+                WHERE id = ?
+            `, [
+                JSON.stringify({
+                    note: req.body.reason || 'Returned to processor review',
+                    revertedBy: u.fullName,
+                    revertedFrom: 'final_review',
+                }),
+                u.fullName,
+                rp.id,
+            ]);
+
+        } else if (action === 'process-manager-reject') {
+            if (rp.status !== 'final_review') {
+                await client.rollback();
+                return res.status(400).json({
+                    success: false,
+                    error: 'Invalid status for this action',
+                });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'REJECTED',
+                    rejected_by = ?,
+                    rejected_at = NOW(),
+                    rejected_reason = ?,
+                    rejected_stage = 'process-manager'
+                WHERE id = ?
+            `, [
+                u.fullName,
+                req.body.reason || '',
+                rp.id,
+            ]);
+
+        } else if (action === 'delete') {
+            if (!isAdmin) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: 'Hanya administrator yang dapat menghapus RP',
+                });
+            }
+
+            await client.query('DELETE FROM rp_request WHERE id = ?', [rp.id]);
+
+        } else {
+            await client.rollback();
+            return res.status(400).json({
+                success: false,
+                error: 'Unknown action',
+            });
         }
-        rp.status = 'waiting_manager';
-        ['managerApprovedBy', 'managerApprovedAt', 'processUpdatedBy', 'processUpdatedAt',
-         'processChanges', 'processManagerApprovedBy', 'processManagerApprovedAt',
-         'rejectedBy', 'rejectedAt', 'rejectedReason', 'rejectedStage'].forEach(k => delete rp[k]);
 
-    } else {
-        return res.json({ success: false, error: 'Unknown action' });
+        await client.commit();
+
+        res.json({ success: true });
+    } catch (e) {
+        await client.rollback();
+        console.error('Error processing RP action:', e);
+
+        res.status(e.statusCode || 500).json({
+            success: false,
+            error: e.message,
+        });
+    } finally {
+        client.release();
     }
-
-    rpRequests[idx] = rp;
-    if (action !== 'delete') await updateRpRequest(rp);
-    res.json({ success: true });
 });
 
 module.exports = router;

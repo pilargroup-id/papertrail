@@ -9,6 +9,10 @@
 //   src/routes/       — Route handlers per fitur
 // ============================================================
 
+require('dotenv').config({
+    path: process.env.NODE_ENV === 'production' ? '.env' : '.env.local'
+});
+const { devAuth } = require('./src/middleware/devAuth');
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
@@ -21,6 +25,7 @@ const adminRoutes     = require('./src/routes/admin');
 const laporanRoutes   = require('./src/routes/laporan');
 const dashboardRoutes = require('./src/routes/dashboard');
 const pdfRoutes       = require('./src/routes/pdf');
+const budgetRoutes    = require('./src/routes/budget');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +58,15 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
 }));
 
+app.use(devAuth);
+
+app.get('/api/dev/auth-user', (req, res) => {
+    res.json({
+        devAuthEnabled: process.env.DEV_AUTH_ENABLED === 'true',
+        user: req.session.user || null,
+    });
+});
+
 // ============================================================
 // SPA HELPER — injects res.sendSPA() for all routes to use
 // ============================================================
@@ -71,7 +85,7 @@ app.use(adminRoutes);
 app.use(laporanRoutes);
 app.use(dashboardRoutes);
 app.use(pdfRoutes);
-
+app.use(budgetRoutes);
 // ============================================================
 // DEV MODE — Proxy ke Vite untuk HMR (Hot Module Replacement)
 // ============================================================
