@@ -1,10 +1,50 @@
 const express = require('express');
 const { checkAuth, checkIT } = require('../middleware/auth');
 const { readJson, writeJson } = require('../utils/json');
-const { getCompanies, getCompanyId, getDeptId, getDepartmentRows } = require('../services/dbService');
+const { getCompanies, getDepartmentRows } = require('../services/dbService');
 const db = require('../../db');
 
 const router = express.Router();
+
+// ============================================================
+// HELPERS
+// ============================================================
+
+function parseAmount(value) {
+    if (value === null || value === undefined || value === '') return 0;
+    if (typeof value === 'number') return value;
+
+    return Number(
+        String(value)
+            .replace(/\./g, '')
+            .replace(/,/g, '')
+            .replace(/[^\d.-]/g, '')
+    ) || 0;
+}
+
+function mapBudgetRow(row, index = 0) {
+    return {
+        id: row.id,
+
+        departmentId: row.department_id,
+        departmentName: row.department_name || '',
+        departmentClass: row.department_class || '',
+        departmentCode: row.department_code || '',
+
+        projectName: row.project_name || '',
+        budgetType: row.budget_type || '',
+
+        budgetAmount: Number(row.budget_amount || 0),
+        budgetUsed: Number(row.budget_used || 0),
+        budgetRemaining: Number(row.budget_remaining || 0),
+
+        isActive: Number(row.is_active) === 1,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+
+        originalIndex: index,
+    };
+}
 
 // ============================================================
 // ADMIN PAGE
@@ -19,55 +59,68 @@ router.get('/admin/:type', checkAuth, checkIT, (req, res) => res.sendSPA());
 router.get('/api/data/admin', checkAuth, checkIT, async (req, res) => {
     const type = req.query.type;
     const VALID_TYPES = ['vendors', 'budgets'];
+
     if (!VALID_TYPES.includes(type)) {
         return res.status(400).json({ error: 'Invalid type' });
     }
+
     const u = req.session.user;
+
     try {
         let listData = [];
+
         if (type === 'budgets') {
             const [rows] = await db.query(`
-                SELECT b.id, b.company_id, b.departement_id, b.class, b.description, b.type, b.total_amount, b.budget_remaining,
-                       c.name AS company_name, d.name AS department_name, dc.class AS class_name
-                FROM master_budgets b
-                LEFT JOIN master_companies c ON b.company_id = c.id
-                LEFT JOIN master_departments d ON b.departement_id = d.id
-                LEFT JOIN master_departments dc ON b.class = dc.id
+                SELECT
+                    id,
+                    department_id,
+                    department_name,
+                    department_class,
+                    department_code,
+                    project_name,
+                    budget_type,
+                    budget_amount,
+                    budget_used,
+                    budget_remaining,
+                    is_active,
+                    created_at,
+                    updated_at
+                FROM master_budgets
+                ORDER BY department_name ASC, id ASC
             `);
-            listData = rows.map((row, index) => ({
-                id: row.id,
-                company_id: row.company_id,
-                companyId: row.company_id,
-                department_id: row.departement_id,
-                departmentId: row.departement_id,
-                class_id: row.class,
-                class: row.class_name || row.class,
-                description: row.description,
-                type: row.type,
-                total_amount: row.total_amount,
-                totalAmount: row.total_amount,
-                sisa_budget: row.budget_remaining,
-                sisaBudget: row.budget_remaining,
-                company: row.company_name,
-                department: row.department_name,
-                originalIndex: index
-            }));
+
+            listData = rows.map(mapBudgetRow);
         } else {
-            listData = readJson(`${type}.json`).map((item, index) => ({ ...item, originalIndex: index }));
+            listData = readJson(`${type}.json`).map((item, index) => ({
+                ...item,
+                originalIndex: index,
+            }));
         }
+
         const [companies, departments] = await Promise.all([
             getCompanies(),
-            getDepartmentRows()
+            getDepartmentRows(),
         ]);
+
         res.json({
             activeType: type,
             listData,
             companies,
             departments,
             user: {
+                id: u.id,
+                username: u.username,
                 fullName: u.fullName,
                 role: u.role,
-                selectedJobLevel: u.selectedJobLevel,
+                companyId: u.companyId,
+                companyCode: u.companyCode,
+                companyName: u.companyName,
+                departmentId: u.departmentId,
+                departmentName: u.departmentName,
+                departmentClass: u.departmentClass,
+                departmentCode: u.departmentCode,
+                jobLevelName: u.jobLevelName,
+                jobLevelRank: u.jobLevelRank,
                 allAssignments: u.allAssignments || [],
             },
         });
@@ -83,44 +136,74 @@ router.get('/api/data/admin', checkAuth, checkIT, async (req, res) => {
 router.post('/api/admin/:type/add', checkAuth, checkIT, async (req, res) => {
     const type = req.params.type;
     const VALID_TYPES = ['vendors', 'budgets'];
+
     if (!VALID_TYPES.includes(type)) {
         return res.status(400).json({ error: 'Invalid type' });
     }
+
     try {
         if (type === 'budgets') {
-            let newItem = req.body;
-            let totalAmount = 0;
-            if (newItem.totalAmount) {
-                totalAmount = parseInt(String(newItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
+            const newItem = req.body;
+
+            const budgetAmount = parseAmount(
+                newItem.budgetAmount ?? newItem.totalAmount
+            );
+
+            const budgetId = newItem.id;
+
+            if (!budgetId) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Budget ID is required',
+                });
             }
-            
-            const companyId = await getCompanyId(newItem.company);
-            const deptId = await getDeptId(newItem.department, newItem.company);
-            const classId = await getDeptId(newItem.class, newItem.company);
-            
+
+            if (!newItem.projectName) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Project name is required',
+                });
+            }
+
             await db.query(`
-                INSERT INTO master_budgets (id, company_id, departement_id, class, description, type, total_amount, budget_remaining)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO master_budgets (
+                    id,
+                    department_id,
+                    department_name,
+                    department_class,
+                    department_code,
+                    project_name,
+                    budget_type,
+                    budget_amount,
+                    budget_used,
+                    budget_remaining,
+                    is_active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
             `, [
-                newItem.id,
-                companyId,
-                deptId,
-                classId ? String(classId) : newItem.class,
-                newItem.description,
-                newItem.type,
-                totalAmount,
-                totalAmount
+                budgetId,
+                newItem.departmentId || null,
+                newItem.departmentName || '',
+                newItem.departmentClass || '',
+                newItem.departmentCode || '',
+                newItem.projectName || '',
+                newItem.budgetType || '',
+                budgetAmount,
+                budgetAmount,
+                newItem.isActive === false ? 0 : 1,
             ]);
-            res.json({ success: true });
-        } else {
-            const data = readJson(`${type}.json`);
-            let newItem = req.body;
-            data.push(newItem);
-            writeJson(`${type}.json`, data);
-            res.json({ success: true });
+
+            return res.json({ success: true, id: budgetId });
         }
+
+        const data = readJson(`${type}.json`);
+        const newItem = req.body;
+
+        data.push(newItem);
+        writeJson(`${type}.json`, data);
+
+        res.json({ success: true });
     } catch (e) {
-        res.json({ success: false, error: e.message });
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
@@ -131,30 +214,41 @@ router.post('/api/admin/:type/add', checkAuth, checkIT, async (req, res) => {
 router.post('/api/admin/:type/delete/:index', checkAuth, checkIT, async (req, res) => {
     const { type, index } = req.params;
     const VALID_TYPES = ['vendors', 'budgets'];
+
     if (!VALID_TYPES.includes(type)) {
         return res.status(400).json({ error: 'Invalid type' });
     }
+
     try {
         if (type === 'budgets') {
             const [rows] = await db.query(`
-                SELECT id FROM master_budgets
+                SELECT id
+                FROM master_budgets
+                ORDER BY department_name ASC, id ASC
             `);
+
             const targetId = rows[parseInt(index, 10)]?.id;
+
             if (!targetId) {
-                return res.status(400).json({ error: 'Item not found' });
+                return res.status(400).json({ success: false, error: 'Item not found' });
             }
+
             await db.query(`
-                DELETE FROM master_budgets WHERE id = ?
+                UPDATE master_budgets
+                SET is_active = 0
+                WHERE id = ?
             `, [targetId]);
-            res.json({ success: true });
-        } else {
-            const data = readJson(`${type}.json`);
-            data.splice(parseInt(index, 10), 1);
-            writeJson(`${type}.json`, data);
-            res.json({ success: true });
+
+            return res.json({ success: true, id: targetId });
         }
+
+        const data = readJson(`${type}.json`);
+        data.splice(parseInt(index, 10), 1);
+        writeJson(`${type}.json`, data);
+
+        res.json({ success: true });
     } catch (e) {
-        res.json({ success: false, error: e.message });
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
@@ -165,66 +259,77 @@ router.post('/api/admin/:type/delete/:index', checkAuth, checkIT, async (req, re
 router.post('/api/admin/:type/edit/:index', checkAuth, checkIT, async (req, res) => {
     const { type, index } = req.params;
     const VALID_TYPES = ['vendors', 'budgets'];
+
     if (!VALID_TYPES.includes(type)) {
         return res.status(400).json({ error: 'Invalid type' });
     }
+
     try {
         if (type === 'budgets') {
             const [rows] = await db.query(`
-                SELECT id, total_amount, budget_remaining FROM master_budgets
+                SELECT
+                    id,
+                    budget_amount,
+                    budget_used,
+                    budget_remaining
+                FROM master_budgets
+                ORDER BY department_name ASC, id ASC
             `);
+
             const oldItem = rows[parseInt(index, 10)];
+
             if (!oldItem) {
-                return res.status(400).json({ error: 'Item not found' });
+                return res.status(400).json({ success: false, error: 'Item not found' });
             }
-            
-            let updatedItem = req.body;
-            let totalAmount = 0;
-            if (updatedItem.totalAmount !== undefined) {
-                totalAmount = parseInt(String(updatedItem.totalAmount).replace(/[^0-9]/g, ''), 10) || 0;
-            } else {
-                totalAmount = oldItem.total_amount;
-            }
-            
-            const diff = totalAmount - oldItem.total_amount;
-            const updatedRemaining = oldItem.budget_remaining + diff;
-            
-            const companyId = await getCompanyId(updatedItem.company);
-            const deptId = await getDeptId(updatedItem.department, updatedItem.company);
-            const classId = await getDeptId(updatedItem.class, updatedItem.company);
-            
+
+            const updatedItem = req.body;
+            const budgetAmount = parseAmount(
+                updatedItem.budgetAmount ?? updatedItem.totalAmount ?? oldItem.budget_amount
+            );
+
             await db.query(`
-                UPDATE master_budgets SET
+                UPDATE master_budgets
+                SET
                     id = ?,
-                    company_id = ?,
-                    departement_id = ?,
-                    class = ?,
-                    description = ?,
-                    type = ?,
-                    total_amount = ?,
-                    budget_remaining = ?
+                    department_id = ?,
+                    department_name = ?,
+                    department_class = ?,
+                    department_code = ?,
+                    project_name = ?,
+                    budget_type = ?,
+                    budget_amount = ?,
+                    budget_remaining = ? - budget_used,
+                    is_active = ?
                 WHERE id = ?
             `, [
-                updatedItem.id,
-                companyId,
-                deptId,
-                classId ? String(classId) : updatedItem.class,
-                updatedItem.description,
-                updatedItem.type,
-                totalAmount,
-                updatedRemaining,
-                oldItem.id
+                updatedItem.id || oldItem.id,
+                updatedItem.departmentId || null,
+                updatedItem.departmentName || '',
+                updatedItem.departmentClass || '',
+                updatedItem.departmentCode || '',
+                updatedItem.projectName || '',
+                updatedItem.budgetType || '',
+                budgetAmount,
+                budgetAmount,
+                updatedItem.isActive === false ? 0 : 1,
+                oldItem.id,
             ]);
-            res.json({ success: true });
-        } else {
-            const data = readJson(`${type}.json`);
-            let updatedItem = req.body;
-            data[parseInt(index, 10)] = updatedItem;
-            writeJson(`${type}.json`, data);
-            res.json({ success: true });
+
+            return res.json({
+                success: true,
+                id: updatedItem.id || oldItem.id,
+            });
         }
+
+        const data = readJson(`${type}.json`);
+        const updatedItem = req.body;
+
+        data[parseInt(index, 10)] = updatedItem;
+        writeJson(`${type}.json`, data);
+
+        res.json({ success: true });
     } catch (e) {
-        res.json({ success: false, error: e.message });
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
