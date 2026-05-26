@@ -297,7 +297,7 @@ export default function NewFRP() {
   const getBudgetAmount = budgetId => {
     const b = (frpData?.budgets || []).find(x => x.id === budgetId)
     if (!b) return 0
-    return b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : (b.remainingAmount !== undefined ? b.remainingAmount : 0))
+    return b.budget_remaining !== undefined ? b.budget_remaining : (b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : (b.remainingAmount !== undefined ? b.remainingAmount : 0)))
   }
 
   const totalAmount = useMemo(
@@ -385,21 +385,61 @@ export default function NewFRP() {
     e.preventDefault()
     setSubmitError(null)
 
-    // Validation: prevent submit if requested amount exceeds budget
-    for (const item of values.items) {
-      if (item.budgetId) {
-        const budgetAmount = getBudgetAmount(item.budgetId)
-        const reqAmount = calculateRowAmount(item)
-        if (reqAmount > budgetAmount) {
-          setSubmitError(`Amount pada budget ${item.budgetId} (Rp ${formatCurrency(reqAmount)}) melebihi batas budget yang tersedia (Rp ${formatCurrency(budgetAmount)}). Tidak bisa submit.`)
-          return
-        }
-      }
-    }
-
     setSubmitting(true)
 
     try {
+      // Cek ke database terlebih dahulu untuk mendapatkan sisa budget ter-update
+      const resBudgets = await fetch('/api/budgets/all')
+      if (!resBudgets.ok) {
+        throw new Error('Gagal memeriksa budget terbaru dari database. Silakan coba lagi.')
+      }
+      const latestBudgets = await resBudgets.json()
+
+      // Ambil data FRP lama jika sedang revisi
+      const isRevision = !!values.id
+      let oldItems = []
+      if (isRevision && frpData?.editData?.items) {
+        oldItems = frpData.editData.items
+      }
+
+      // Validasi limit budget
+      for (const item of values.items) {
+        if (item.budgetId) {
+          const dbBudget = latestBudgets.find(b => b.id === item.budgetId)
+          if (!dbBudget) {
+            setSubmitError(`Budget ID ${item.budgetId} tidak ditemukan di database.`)
+            setSubmitting(false)
+            return
+          }
+
+          const dbRemaining = dbBudget.budget_remaining !== undefined ? dbBudget.budget_remaining : (dbBudget.remainingAmount || 0)
+          
+          let revertedAmount = 0
+          if (isRevision) {
+            const matchedOld = oldItems.filter(oi => oi.budgetId === item.budgetId)
+            revertedAmount = matchedOld.reduce((sum, oi) => sum + (parseFloat(oi.amount) || 0), 0)
+          }
+
+          const availableBudget = dbRemaining + revertedAmount
+
+          // Cek Harga Satuan (dalam IDR)
+          const unitPriceIdr = normalizeNumber(item.hargaSatuan) * (normalizeNumber(values.kurs) || 1)
+          if (unitPriceIdr > availableBudget) {
+            setSubmitError(`Harga Satuan untuk budget ${item.budgetId} (Rp ${formatCurrency(unitPriceIdr)}) melebihi batas sisa budget di database (Rp ${formatCurrency(availableBudget)}).`)
+            setSubmitting(false)
+            return
+          }
+
+          // Cek Total Amount (dalam IDR)
+          const reqAmount = calculateRowAmount(item)
+          if (reqAmount > availableBudget) {
+            setSubmitError(`Total Amount pada budget ${item.budgetId} (Rp ${formatCurrency(reqAmount)}) melebihi batas sisa budget di database (Rp ${formatCurrency(availableBudget)}).`)
+            setSubmitting(false)
+            return
+          }
+        }
+      }
+
       const payload = {
         ...values,
         frpId: values.id || undefined,
@@ -677,6 +717,7 @@ export default function NewFRP() {
               totalAmount={totalAmount}
               calculateRowAmount={calculateRowAmount}
               budgets={frpData?.budgets || []}
+              kurs={values.kurs}
             />
 
             <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>

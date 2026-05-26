@@ -25,7 +25,8 @@ export default function DataTableItemsFrp({
   getBudgetAmount,
   totalAmount,
   calculateRowAmount,
-  budgets
+  budgets,
+  kurs
 }) {
   const getBudgetObj = budgetId => {
     return (budgets || []).find(b => b.id === budgetId)
@@ -34,7 +35,21 @@ export default function DataTableItemsFrp({
   const getSisaBudget = budgetId => {
     const b = getBudgetObj(budgetId)
     if (!b) return 0
-    return b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : (b.remainingAmount !== undefined ? b.remainingAmount : 0))
+    return b.budget_remaining !== undefined ? b.budget_remaining : (b.sisa_budget !== undefined ? b.sisa_budget : (b.sisaBudget !== undefined ? b.sisaBudget : (b.remainingAmount !== undefined ? b.remainingAmount : 0)))
+  }
+
+  const isHargaSatuanExceeded = (item) => {
+    if (!item.budgetId || !item.hargaSatuan) return false
+    const budgetRemaining = getSisaBudget(item.budgetId)
+    const unitPriceIdr = normalizeNumber(item.hargaSatuan) * (normalizeNumber(kurs) || 1)
+    return unitPriceIdr > budgetRemaining
+  }
+
+  const isTotalAmountExceeded = (item) => {
+    if (!item.budgetId || !item.hargaSatuan) return false
+    const budgetRemaining = getSisaBudget(item.budgetId)
+    const totalAmountIdr = calculateRowAmount ? calculateRowAmount(item) : (normalizeNumber(item.qty) * normalizeNumber(item.hargaSatuan) * (normalizeNumber(kurs) || 1))
+    return totalAmountIdr > budgetRemaining
   }
 
   return (
@@ -75,7 +90,24 @@ export default function DataTableItemsFrp({
                 </div>
                 <div className="frp-form-group">
                   <label className="frp-label">Harga Satuan</label>
-                  <input type="text" name={`items[${idx}][hargaSatuan]`} className="frp-input" value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
+                  <input
+                    type="text"
+                    name={`items[${idx}][hargaSatuan]`}
+                    className={`frp-input ${isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? 'frp-input-error' : ''}`}
+                    style={isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? { borderColor: '#ef4444', backgroundColor: '#fef2f2' } : {}}
+                    value={formatNumberInput(item.hargaSatuan)}
+                    onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))}
+                  />
+                  {isHargaSatuanExceeded(item) && (
+                    <span style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px', fontWeight: 500 }}>
+                      Harga Satuan melebihi sisa budget
+                    </span>
+                  )}
+                  {!isHargaSatuanExceeded(item) && isTotalAmountExceeded(item) && (
+                    <span style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px', fontWeight: 500 }}>
+                      Total amount melebihi sisa budget
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="frp-item-card-amount" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
@@ -137,7 +169,24 @@ export default function DataTableItemsFrp({
                     <input type="number" name={`items[${idx}][qty]`} className="frp-td-input" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
                   </td>
                   <td className="frp-td">
-                    <input type="text" name={`items[${idx}][hargaSatuan]`} className="frp-td-input" value={formatNumberInput(item.hargaSatuan)} onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))} />
+                    <input
+                      type="text"
+                      name={`items[${idx}][hargaSatuan]`}
+                      className="frp-td-input"
+                      style={isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? { borderColor: '#ef4444', backgroundColor: '#fef2f2', outline: 'none' } : {}}
+                      value={formatNumberInput(item.hargaSatuan)}
+                      onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))}
+                    />
+                    {isHargaSatuanExceeded(item) && (
+                      <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px', fontWeight: 500, lineHeight: '1.2' }}>
+                        Harga Satuan melebihi sisa budget
+                      </div>
+                    )}
+                    {!isHargaSatuanExceeded(item) && isTotalAmountExceeded(item) && (
+                      <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px', fontWeight: 500, lineHeight: '1.2' }}>
+                        Total amount melebihi sisa budget
+                      </div>
+                    )}
                   </td>
                   <td className="frp-td">
                     <input

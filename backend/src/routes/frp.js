@@ -535,6 +535,42 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                 }
             }
         }
+        // Validate budgets before deducting/saving
+        const kurs = parseFloat(req.body.kurs) || 1;
+        for (const item of (req.body.items || [])) {
+            if (item.budgetId) {
+                const reqAmount = parseFloat(item.amount) || 0;
+                const unitPriceIdr = (parseFloat(item.hargaSatuan) || 0) * kurs;
+
+                // Find if this budgetId was used in old items of the same FRP
+                let revertedAmount = 0;
+                if (req.body.frpId) {
+                    const matchedOld = oldItems.filter(oi => oi.budgetId === item.budgetId);
+                    revertedAmount = matchedOld.reduce((sum, oi) => sum + (parseFloat(oi.amount) || 0), 0);
+                }
+
+                // Query current budget_remaining from database
+                const [bRows] = await db.query('SELECT budget_remaining, description FROM master_budgets WHERE id = ?', [item.budgetId]);
+                if (bRows.length) {
+                    const currentRemaining = parseFloat(bRows[0].budget_remaining) || 0;
+                    const availableBudget = currentRemaining + revertedAmount;
+
+                    if (unitPriceIdr > availableBudget) {
+                        return res.json({
+                            success: false,
+                            error: `Harga Satuan untuk budget ${item.budgetId} (Rp ${new Intl.NumberFormat('id-ID').format(unitPriceIdr)}) melebihi batas budget yang tersedia (Rp ${new Intl.NumberFormat('id-ID').format(availableBudget)}).`
+                        });
+                    }
+
+                    if (reqAmount > availableBudget) {
+                        return res.json({
+                            success: false,
+                            error: `Total Amount untuk budget ${item.budgetId} (Rp ${new Intl.NumberFormat('id-ID').format(reqAmount)}) melebihi sisa budget yang tersedia (Rp ${new Intl.NumberFormat('id-ID').format(availableBudget)}).`
+                        });
+                    }
+                }
+            }
+        }
 
         // Handle revision (update existing)
         if (req.body.frpId) {
