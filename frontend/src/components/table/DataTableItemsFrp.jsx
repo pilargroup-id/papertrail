@@ -1,5 +1,6 @@
 import React from 'react'
 import SearchableSelect from '../template/SearchableSelect.jsx'
+import ButtonAddItemsFrp from '../button/ButtonAddItemsFrp.jsx'
 
 const normalizeNumber = v => {
   const n = Number(String(v).replace(/[^0-9.-]/g, ''))
@@ -54,10 +55,15 @@ export default function DataTableItemsFrp({
 
   return (
     <div>
-      <h3 className="frp-section-title">
-        <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>table_rows</span>
-        Line Items
-      </h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <ButtonAddItemsFrp onClick={handleAddRow} value="Tambah Baris" />
+        </div>
+        <div style={{ textAlign: 'right', background: '#f8fafc', padding: '8px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+          <span className="frp-total-label" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Total Pembayaran</span>
+          <div className="frp-total-value" style={{ fontSize: '1.25rem', margin: 0 }}>Rp {formatCurrency(totalAmount)}</div>
+        </div>
+      </div>
       {isMobile ? (
         <div>
           {items.map((item, idx) => (
@@ -128,16 +134,16 @@ export default function DataTableItemsFrp({
           ))}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="no-scrollbar" style={{ overflowX: 'auto' }}>
           <table className="frp-table">
             <thead>
               <tr>
-                <th className="frp-th" style={{ width: "25%" }}>Memo</th>
+                <th className="frp-th" style={{ width: "20%" }}>Memo</th>
                 <th className="frp-th" style={{ width: "25%" }}>Budget</th>
-                <th className="frp-th" style={{ width: "15%" }}>Sisa Budget</th>
-                <th className="frp-th" style={{ width: "8%" }}>Qty</th>
-                <th className="frp-th" style={{ width: "13%" }}>Harga Satuan</th>
-                <th className="frp-th" style={{ width: "12%" }}>Amount (IDR)</th>
+                <th className="frp-th" style={{ width: "16%", textAlign: "right" }}>Sisa Budget</th>
+                <th className="frp-th" style={{ width: "7%", textAlign: "center" }}>Qty</th>
+                <th className="frp-th" style={{ width: "16%", textAlign: "right" }}>Harga Satuan</th>
+                <th className="frp-th" style={{ width: "14%", textAlign: "right" }}>Amount (IDR)</th>
                 <th className="frp-th" style={{ width: "2%" }} />
               </tr>
             </thead>
@@ -145,7 +151,14 @@ export default function DataTableItemsFrp({
               {items.map((item, idx) => (
                 <tr key={idx}>
                   <td className="frp-td">
-                    <input name={`items[${idx}][memo]`} className="frp-td-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
+                    <input
+                      name={`items[${idx}][memo]`}
+                      className="frp-td-input"
+                      value={item.memo}
+                      onChange={e => updateItem(idx, 'memo', e.target.value)}
+                      placeholder="Deskripsi..."
+                      style={{ fontSize: '0.85rem' }}
+                    />
                   </td>
                   <td className="frp-td">
                     <SearchableSelect
@@ -155,47 +168,81 @@ export default function DataTableItemsFrp({
                       options={budgetSelectOptions}
                       placeholder="Pilih Budget"
                       className="frp-td-select"
+                      style={{ minHeight: '34px', padding: '6px 10px', fontSize: '0.85rem' }}
                       menuPosition="fixed"
                     />
                   </td>
-                  <td className="frp-td">
-                    <input
-                      className="frp-td-input" style={{ background: "#f8fafc", color: "#475569", fontWeight: 600 }}
-                      value={item.budgetId ? formatCurrency(getSisaBudget(item.budgetId)) : '-'}
-                      readOnly
-                    />
+                  <td className="frp-td" style={{ textAlign: 'right' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      fontFamily: 'monospace',
+                      fontWeight: 600,
+                      color: item.budgetId ? '#16a34a' : '#94a3b8',
+                      fontSize: '0.85rem',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      background: item.budgetId ? '#f0fdf4' : 'transparent',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {item.budgetId ? `Rp ${formatCurrency(getSisaBudget(item.budgetId))}` : '-'}
+                    </span>
                   </td>
-                  <td className="frp-td">
-                    <input type="number" name={`items[${idx}][qty]`} className="frp-td-input" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
-                  </td>
-                  <td className="frp-td">
+                  <td className="frp-td" style={{ textAlign: 'center' }}>
                     <input
-                      type="text"
-                      name={`items[${idx}][hargaSatuan]`}
+                      type="number"
+                      name={`items[${idx}][qty]`}
                       className="frp-td-input"
-                      style={isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? { borderColor: '#ef4444', backgroundColor: '#fef2f2', outline: 'none' } : {}}
-                      value={formatNumberInput(item.hargaSatuan)}
-                      onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))}
+                      value={item.qty}
+                      onChange={e => updateItem(idx, 'qty', e.target.value)}
+                      style={{ textAlign: 'center', padding: '5px 8px', fontSize: '0.85rem' }}
                     />
+                  </td>
+                  <td className="frp-td">
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>Rp</span>
+                      <input
+                        type="text"
+                        name={`items[${idx}][hargaSatuan]`}
+                        className="frp-td-input"
+                        style={{
+                          paddingLeft: '24px',
+                          paddingRight: '8px',
+                          textAlign: 'right',
+                          fontSize: '0.85rem',
+                          ...(isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? { borderColor: '#ef4444', backgroundColor: '#fef2f2', outline: 'none' } : {})
+                        }}
+                        value={formatNumberInput(item.hargaSatuan)}
+                        onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))}
+                      />
+                    </div>
                     {isHargaSatuanExceeded(item) && (
-                      <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px', fontWeight: 500, lineHeight: '1.2' }}>
-                        Harga Satuan melebihi sisa budget
+                      <div style={{ color: '#ef4444', fontSize: '9px', marginTop: '4px', fontWeight: 500, lineHeight: '1.2', textAlign: 'right' }}>
+                        Exceeds budget
                       </div>
                     )}
                     {!isHargaSatuanExceeded(item) && isTotalAmountExceeded(item) && (
-                      <div style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px', fontWeight: 500, lineHeight: '1.2' }}>
-                        Total amount melebihi sisa budget
+                      <div style={{ color: '#ef4444', fontSize: '9px', marginTop: '4px', fontWeight: 500, lineHeight: '1.2', textAlign: 'right' }}>
+                        Exceeds budget
                       </div>
                     )}
                   </td>
-                  <td className="frp-td">
-                    <input
-                      className="frp-td-input" style={{ background: "#f8fafc", color: "#475569", fontWeight: 600 }}
-                      value={formatCurrency(calculateRowAmount ? calculateRowAmount(item) : 0)}
-                      readOnly
-                    />
+                  <td className="frp-td" style={{ textAlign: 'right' }}>
+                    <span style={{
+                      display: 'inline-block',
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      color: '#1e293b',
+                      fontSize: '0.85rem',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      background: '#f8fafc',
+                      border: '1px dashed #cbd5e1',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      Rp {formatCurrency(calculateRowAmount ? calculateRowAmount(item) : 0)}
+                    </span>
                   </td>
-                  <td className="frp-td">
+                  <td className="frp-td" style={{ textAlign: 'center' }}>
                     <button type="button" className="frp-btn-del" onClick={() => handleRemoveRow(idx)}>
                       <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
                     </button>
@@ -206,16 +253,7 @@ export default function DataTableItemsFrp({
           </table>
         </div>
       )}
-      <div className="frp-total-row">
-        <button type="button" className="frp-btn-add" onClick={handleAddRow}>
-          <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-          Tambah Baris
-        </button>
-        <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-          <span className="frp-total-label">Total Pembayaran</span>
-          <div className="frp-total-value">Rp {formatCurrency(totalAmount)}</div>
-        </div>
-      </div>
+
     </div>
   )
 }

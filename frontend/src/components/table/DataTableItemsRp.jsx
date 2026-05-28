@@ -11,11 +11,11 @@ const S = {
   label: { fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.5px' },
   input: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)', transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s' },
   select: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)' },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  th: { padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', background: '#f8fafc', fontWeight: 700, color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' },
-  td: { padding: '8px 12px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' },
-  tdInput: { width: '100%', minWidth: 0, padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.875rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc' },
-  tdSelect: { width: '100%', minWidth: 0, padding: '7px 10px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.875rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', cursor: 'pointer' },
+  table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0 },
+  th: { padding: '8px 10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', background: '#f8fafc', fontWeight: 700, color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' },
+  td: { padding: '6px 10px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' },
+  tdInput: { width: '100%', minWidth: 0, padding: '6px 10px', height: '34px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.85rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc' },
+  tdSelect: { width: '100%', minWidth: 0, padding: '6px 10px', height: '34px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.85rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', cursor: 'pointer' },
   btnAdd: { display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 },
   btnDel: { display: 'inline-flex', alignItems: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '6px 8px', cursor: 'pointer', fontFamily: 'inherit' },
   totalRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' },
@@ -97,32 +97,120 @@ export default function DataTableItemsRp({
           })}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="no-scrollbar" style={{ overflowX: 'auto' }}>
           <table style={S.table}>
-            <thead><tr>
-              <th style={{ ...S.th, width: '22%' }}>Item</th>
-              <th style={{ ...S.th, width: '16%' }}>Memo</th>
-              <th style={{ ...S.th, width: '18%' }}>Link Pembelian</th>
-              <th style={{ ...S.th, width: '6%' }}>Qty</th>
-              <th style={{ ...S.th, width: '14%' }}>Sisa Budget</th>
-              <th style={{ ...S.th, width: '14%' }}>Harga Satuan</th>
-              <th style={{ ...S.th, width: '14%' }}>Amount (IDR)</th>
-              <th style={{ ...S.th, width: '5%' }} />
-            </tr></thead>
+            <thead>
+              <tr>
+                <th style={{ ...S.th, width: '22%' }}>Item</th>
+                <th style={{ ...S.th, width: '18%' }}>Memo</th>
+                <th style={{ ...S.th, width: '22%' }}>Link Pembelian</th>
+                <th style={{ ...S.th, width: '6%', textAlign: 'center' }}>Qty</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Sisa Budget</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Harga Satuan</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Amount (IDR)</th>
+                <th style={{ ...S.th, width: '3%' }} />
+              </tr>
+            </thead>
             <tbody>
               {items.map((item, idx) => {
                 const remaining = getBudgetRemaining(item.budgetId)
                 const subtotal = normalizeNumber(item.qty) * normalizeNumber(item.estimatedValue)
                 return (
                   <tr key={idx}>
-                    <td style={S.td}><SearchableSelect name={`items[${idx}][budgetId]`} value={item.budgetId} onChange={v => updateItem(idx, 'budgetId', v)} options={budgetSelectOpts} placeholder="Pilih Budget" style={S.tdSelect} menuPosition="fixed" /></td>
-                    <td style={S.td}><input name={`items[${idx}][memo]`} style={S.tdInput} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi item..." /></td>
-                    <td style={S.td}><input name={`items[${idx}][linkPembelian]`} style={S.tdInput} value={item.linkPembelian} onChange={e => updateItem(idx, 'linkPembelian', e.target.value)} placeholder="https://..." /></td>
-                    <td style={S.td}><input type="number" name={`items[${idx}][qty]`} style={S.tdInput} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} /></td>
-                    <td style={S.td}><input style={{ ...S.tdInput, background: '#f8fafc', color: remaining !== null && remaining < 0 ? '#ef4444' : '#16a34a', fontWeight: 600 }} value={remaining !== null ? formatCurrency(remaining) : '-'} readOnly /></td>
-                    <td style={S.td}><input type="text" name={`items[${idx}][estimatedValue]`} style={S.tdInput} value={formatNumberInput(item.estimatedValue)} onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))} /></td>
-                    <td style={S.td}><input style={{ ...S.tdInput, background: '#f8fafc', color: '#1e293b', fontWeight: 600 }} value={formatCurrency(subtotal)} readOnly /></td>
-                    <td style={S.td}><button type="button" style={S.btnDel} onClick={() => removeRow(idx)}><span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span></button></td>
+                    <td style={S.td}>
+                      <SearchableSelect
+                        name={`items[${idx}][budgetId]`}
+                        value={item.budgetId}
+                        onChange={v => updateItem(idx, 'budgetId', v)}
+                        options={budgetSelectOpts}
+                        placeholder="Pilih Budget"
+                        className="frp-td-select"
+                        style={{ minHeight: '34px', padding: '6px 10px', fontSize: '0.85rem' }}
+                        menuPosition="fixed"
+                      />
+                    </td>
+                    <td style={S.td}>
+                      <input
+                        name={`items[${idx}][memo]`}
+                        style={{ ...S.tdInput, height: '34px', padding: '6px 10px', fontSize: '0.85rem' }}
+                        value={item.memo}
+                        onChange={e => updateItem(idx, 'memo', e.target.value)}
+                        placeholder="Deskripsi item..."
+                      />
+                    </td>
+                    <td style={S.td}>
+                      <input
+                        name={`items[${idx}][linkPembelian]`}
+                        style={{ ...S.tdInput, height: '34px', padding: '6px 10px', fontSize: '0.85rem' }}
+                        value={item.linkPembelian}
+                        onChange={e => updateItem(idx, 'linkPembelian', e.target.value)}
+                        placeholder="https://..."
+                      />
+                    </td>
+                    <td style={{ ...S.td, textAlign: 'center' }}>
+                      <input
+                        type="number"
+                        name={`items[${idx}][qty]`}
+                        style={{ ...S.tdInput, height: '34px', padding: '6px 8px', fontSize: '0.85rem', textAlign: 'center' }}
+                        value={item.qty}
+                        onChange={e => updateItem(idx, 'qty', e.target.value)}
+                      />
+                    </td>
+                    <td style={{ ...S.td, textAlign: 'right' }}>
+                      <span style={{
+                        display: 'inline-block',
+                        fontFamily: 'monospace',
+                        fontWeight: 600,
+                        color: remaining !== null && remaining < 0 ? '#ef4444' : (item.budgetId ? '#16a34a' : '#94a3b8'),
+                        fontSize: '0.85rem',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: item.budgetId ? (remaining !== null && remaining < 0 ? '#fef2f2' : '#f0fdf4') : 'transparent',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {remaining !== null ? `Rp ${formatCurrency(remaining)}` : '-'}
+                      </span>
+                    </td>
+                    <td style={S.td}>
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>Rp</span>
+                        <input
+                          type="text"
+                          name={`items[${idx}][estimatedValue]`}
+                          style={{
+                            ...S.tdInput,
+                            height: '34px',
+                            paddingLeft: '24px',
+                            paddingRight: '8px',
+                            textAlign: 'right',
+                            fontSize: '0.85rem'
+                          }}
+                          value={formatNumberInput(item.estimatedValue)}
+                          onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ ...S.td, textAlign: 'right' }}>
+                      <span style={{
+                        display: 'inline-block',
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        color: '#1e293b',
+                        fontSize: '0.85rem',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        background: '#f8fafc',
+                        border: '1px dashed #cbd5e1',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        Rp {formatCurrency(subtotal)}
+                      </span>
+                    </td>
+                    <td style={{ ...S.td, textAlign: 'center' }}>
+                      <button type="button" style={S.btnDel} onClick={() => removeRow(idx)}>
+                        <span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span>
+                      </button>
+                    </td>
                   </tr>
                 )
               })}

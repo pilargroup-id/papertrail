@@ -116,6 +116,18 @@ const getGridColumns = (desktopColumns, isMobile, isTablet) => {
   return `repeat(${desktopColumns}, minmax(0, 1fr))`
 }
 
+function FloatingGroup({ label, children, style, className }) {
+  return (
+    <div
+      className={`frp-float-group${className ? ' ' + className : ''}`}
+      style={style}
+    >
+      {children}
+      <span className="frp-float-label">{label}</span>
+    </div>
+  )
+}
+
 function DateField({ name, value, onChange }) {
   const inputRef = useRef(null)
 
@@ -130,18 +142,20 @@ function DateField({ name, value, onChange }) {
   }
 
   return (
-    <div style={{ position: 'relative' }} onClick={openPicker}>
+    <div style={{ position: 'relative', display: 'block', lineHeight: 0 }} onClick={openPicker}>
       <input
         ref={inputRef}
         type="date"
         name={name}
         className="frp-input"
+        placeholder=" "
         style={{
-          paddingRight: '3rem',
+          paddingRight: '2.8rem',
           cursor: 'pointer',
           WebkitAppearance: 'none',
           MozAppearance: 'textfield',
           appearance: 'none',
+          lineHeight: 'normal',
         }}
         value={value}
         onChange={onChange}
@@ -153,11 +167,11 @@ function DateField({ name, value, onChange }) {
         style={{
           position: 'absolute',
           top: '50%',
-          right: '8px',
+          right: '6px',
           transform: 'translateY(-50%)',
-          width: '34px',
-          height: '34px',
-          borderRadius: '10px',
+          width: '26px',
+          height: '26px',
+          borderRadius: '8px',
           border: 'none',
           background: '#e2e8f0',
           color: '#475569',
@@ -168,7 +182,7 @@ function DateField({ name, value, onChange }) {
           pointerEvents: 'none',
         }}
       >
-        <span className="material-icons-round" style={{ fontSize: '18px' }}>calendar_month</span>
+        <span className="material-icons-round" style={{ fontSize: '16px' }}>calendar_month</span>
       </button>
       <style>{`
         input[type="date"]::-webkit-calendar-picker-indicator {
@@ -584,92 +598,97 @@ export default function NewFRP() {
                   Informasi FRP
                 </h3>
                 <div className="frp-grid-2">
-                  <div className="frp-form-group">
-                    <label className="frp-label">Company Name</label>
+                  <FloatingGroup label="Company Name">
                     {visibleCompanyField ? (
                       <SearchableSelect
                         name="companyName"
                         value={values.companyName}
                         onChange={selectedValue => updateField('companyName', selectedValue)}
                         options={companySelectOptions}
-                        placeholder="Pilih Company"
+                        placeholder="Pilih company..."
                         className="frp-select"
+                        menuPosition="fixed"
                       />
                     ) : (
                       <input className="frp-input-readonly" value={values.companyName} readOnly />
                     )}
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Tanggal FRP</label>
-                    <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
+                  </FloatingGroup>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <FloatingGroup label="Currency" style={{ flex: 1, minWidth: 0 }}>
+                      <SearchableSelect
+                        name="currency"
+                        value={values.currency}
+                        onChange={async selectedValue => {
+                          updateField('currency', selectedValue)
+                          if (selectedValue === 'IDR') {
+                            updateField('kurs', '1')
+                          } else {
+                            updateField('kurs', 'Memuat...')
+                            try {
+                              const data = await frpService.getKurs(selectedValue)
+                              if (data.success && data.rate) {
+                                updateField('kurs', String(data.rate))
+                              } else {
+                                updateField('kurs', '1')
+                                console.error('API Error:', data.error)
+                              }
+                            } catch (e) {
+                              updateField('kurs', '1')
+                              console.error('Gagal mengambil kurs:', e)
+                            }
+                          }
+                        }}
+                        options={currencySelectOptions}
+                        placeholder="Pilih currency..."
+                        className="frp-select"
+                        menuPosition="fixed"
+                      />
+                    </FloatingGroup>
+                    <FloatingGroup label="Rate" style={{ width: '150px', flexShrink: 0 }}>
+                      <input
+                        name="kurs"
+                        className="frp-input"
+                        placeholder="0"
+                        style={{ width: '100%', background: values.currency === 'IDR' ? '#f8fafc' : undefined, color: values.currency === 'IDR' ? '#94a3b8' : undefined }}
+                        value={values.kurs}
+                        onChange={e => updateField('kurs', e.target.value)}
+                        readOnly={values.currency === 'IDR'}
+                      />
+                    </FloatingGroup>
                   </div>
                 </div>
                 <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Divisi</label>
+                  <FloatingGroup label="Divisi">
                     {FRP.user?.role === 'administrator' ? (
                       <SearchableSelect
                         name="divisi"
                         value={values.divisi}
                         onChange={selectedValue => updateField('divisi', selectedValue)}
                         options={divisionSelectOptions}
-                        placeholder="Pilih Divisi"
+                        placeholder="Pilih divisi..."
                         className="frp-select"
+                        menuPosition="fixed"
                       />
                     ) : (
                       <input className="frp-input-readonly" value={values.divisi} readOnly />
                     )}
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Diminta Oleh</label>
+                  </FloatingGroup>
+                  <FloatingGroup label="Diminta Oleh">
                     <SearchableSelect
                       name="dimintaOleh"
                       value={values.dimintaOleh}
                       onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
                       options={employeeSelectOptions}
-                      placeholder="Pilih Karyawan"
+                      placeholder="Pilih karyawan..."
                       className="frp-select"
+                      menuPosition="fixed"
                     />
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Currency</label>
-                    <SearchableSelect
-                      name="currency"
-                      value={values.currency}
-                      onChange={async selectedValue => {
-                        updateField('currency', selectedValue)
-                        if (selectedValue === 'IDR') {
-                          updateField('kurs', '1')
-                        } else {
-                          updateField('kurs', 'Memuat...')
-                          try {
-                            const data = await frpService.getKurs(selectedValue)
-                            if (data.success && data.rate) {
-                              updateField('kurs', String(data.rate))
-                            } else {
-                              updateField('kurs', '1') // fallback
-                              console.error('API Error:', data.error)
-                            }
-                          } catch (e) {
-                            updateField('kurs', '1')
-                            console.error('Gagal mengambil kurs:', e)
-                          }
-                        }
-                      }}
-                      options={currencySelectOptions}
-                      placeholder="Pilih Currency"
-                      className="frp-select"
-                    />
-                  </div>
+                  </FloatingGroup>
+                  <FloatingGroup label="Tanggal FRP">
+                    <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
+                  </FloatingGroup>
                 </div>
-                {values.currency !== 'IDR' && (
-                  <div className="frp-form-group" style={{ marginTop: "1rem", maxWidth: isMobile ? "100%" : "200px" }}>
-                    <label className="frp-label">Kurs</label>
-                    <input name="kurs" className="frp-input" value={values.kurs} onChange={e => updateField('kurs', e.target.value)} />
-                  </div>
-                )}
-                <div className="frp-form-group" style={{ marginTop: "1rem" }}>
-                  <label className="frp-label">Keterangan FRP</label>
+                <FloatingGroup label="Keterangan FRP" style={{ marginTop: '1rem' }}>
                   <textarea
                     name="keteranganFrp"
                     className="frp-textarea"
@@ -677,7 +696,7 @@ export default function NewFRP() {
                     onChange={e => updateField('keteranganFrp', e.target.value)}
                     placeholder="Tulis keterangan..."
                   />
-                </div>
+                </FloatingGroup>
               </div>
 
               {/* Vendor & Pembayaran */}
@@ -687,8 +706,7 @@ export default function NewFRP() {
                   Vendor &amp; Pembayaran
                 </h3>
                 <div className="frp-grid-2">
-                  <div className="frp-form-group">
-                    <label className="frp-label">Vendor</label>
+                  <FloatingGroup label="Vendor">
                     <SearchableSelect
                       name="vendor"
                       value={values.vendor}
@@ -700,61 +718,56 @@ export default function NewFRP() {
                         updateField('rekBankTujuan', selected?.no_rekening || '')
                       }}
                       options={vendorSelectOptions}
-                      placeholder="Pilih Vendor"
+                      placeholder="Pilih vendor..."
                       className="frp-select"
+                      menuPosition="fixed"
                     />
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Internal PO Number</label>
-                    <input name="internalPoNumber" className="frp-input" value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
-                  </div>
+                  </FloatingGroup>
+                  <FloatingGroup label="Internal PO Number">
+                    <input name="internalPoNumber" className="frp-input" placeholder="Nomor PO internal..." value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
+                  </FloatingGroup>
                 </div>
                 <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Ext Doc Type</label>
+                  <FloatingGroup label="Ext Doc Type">
                     <SearchableSelect
                       name="extDocType"
                       value={values.extDocType}
                       onChange={selectedValue => updateField('extDocType', selectedValue)}
                       options={extDocTypeOptions}
-                      placeholder="Pilih"
+                      placeholder="Pilih tipe..."
                       className="frp-select"
+                      menuPosition="fixed"
                     />
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Ext Doc Number</label>
-                    <input name="extDocNumber" className="frp-input" value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Payment Method</label>
+                  </FloatingGroup>
+                  <FloatingGroup label="Ext Doc Number">
+                    <input name="extDocNumber" className="frp-input" placeholder="Nomor dokumen..." value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
+                  </FloatingGroup>
+                  <FloatingGroup label="Payment Method">
                     <SearchableSelect
                       name="paymentMethod"
                       value={values.paymentMethod}
                       onChange={selectedValue => updateField('paymentMethod', selectedValue)}
                       options={paymentMethodOptions}
-                      placeholder="Pilih Metode"
+                      placeholder="Pilih metode..."
                       className="frp-select"
+                      menuPosition="fixed"
                     />
-                  </div>
+                  </FloatingGroup>
                 </div>
                 <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Payment Date</label>
+                  <FloatingGroup label="Payment Date">
                     <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Bank Tujuan</label>
-                    <input name="bankTujuan" className="frp-input" value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
-                  </div>
-                  <div className="frp-form-group">
-                    <label className="frp-label">Rekening Bank Tujuan</label>
-                    <input name="rekBankTujuan" className="frp-input" value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
-                  </div>
+                  </FloatingGroup>
+                  <FloatingGroup label="Bank Tujuan">
+                    <input name="bankTujuan" className="frp-input" placeholder="Nama bank..." value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
+                  </FloatingGroup>
+                  <FloatingGroup label="Rekening Bank Tujuan">
+                    <input name="rekBankTujuan" className="frp-input" placeholder="Nomor rekening..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
+                  </FloatingGroup>
                 </div>
-                <div className="frp-form-group" style={{ marginTop: "1rem" }}>
-                  <label className="frp-label">Attach Link</label>
-                  <input name="attachLink" className="frp-input" value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} placeholder="https://..." />
-                </div>
+                <FloatingGroup label="Attach Link" style={{ marginTop: '1rem' }}>
+                  <input name="attachLink" className="frp-input" placeholder="https://..." value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} />
+                </FloatingGroup>
               </div>
             </div>
 
