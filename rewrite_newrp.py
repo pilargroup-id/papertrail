@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import os
+
+content = """import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
@@ -11,7 +13,7 @@ const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
 const normalizeNumber = v => { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return Number.isNaN(n) ? 0 : n }
 const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
-const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
+const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
 const normalizeCompany = v => String(v || '').trim().toUpperCase()
 
 function FloatingGroup({ label, children, style, className }) {
@@ -101,47 +103,19 @@ const getDefaultRpItems = () => [{ budgetId: '', memo: '', linkPembelian: '', qt
 const blankRp = { companyName: '', divisi: '', class: '', dibuatOleh: '', kategoriPembelian: '', deskripsi: '', diprosesOleh: '', tanggalDibutuhkan: today, vendorSuggestion: '', picPenerima: '', items: getDefaultRpItems() }
 
 const buildInitialRp = data => {
-  let initialCompany = data?.selectedCompany || data?.user?.selectedCompany || data?.user?.companyName || data?.user?.company || '';
-  if (data?.companies && initialCompany) {
-    const searchCompany = normalizeCompany(initialCompany);
-    const comp = data.companies.find(c => String(c.id) === String(initialCompany) || normalizeCompany(c.code) === searchCompany || normalizeCompany(c.name) === searchCompany);
-    if (comp) initialCompany = comp.name;
-  }
-
   const base = {
     ...blankRp,
     items: getDefaultRpItems(),
-    companyName: initialCompany,
+    companyName: data?.selectedCompany || '',
+    divisi: data?.selectedDivision || '',
     dibuatOleh: data?.user?.fullName || '',
   }
 
-  let initialDivisi = '';
-  if (data?.departments && data.departments.length > 0) {
-    const userDiv = normalizeCompany(data.selectedDivision || '');
-    const matched = data.departments.find(d => normalizeCompany(d.class) === userDiv || normalizeCompany(d.name) === userDiv);
-    if (matched) initialDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
-  } else {
-    initialDivisi = data?.selectedDivision || '';
-  }
-  base.divisi = initialDivisi;
-
   if (!data?.editData) return base
-
-  let editDivisi = base.divisi;
-  if (data?.departments && data.departments.length > 0) {
-    const dName = normalizeCompany(data.editData.departmentName || data.editData.divisi || '');
-    const dClass = normalizeCompany(data.editData.departmentClass || data.editData.class || '');
-    const matched = data.departments.find(d => normalizeCompany(d.name) === dName && (!dClass || normalizeCompany(d.class) === dClass));
-    if (matched) editDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
-    else if (data.editData.departmentId) editDivisi = data.editData.departmentId;
-  } else {
-    editDivisi = data.editData.departmentName || data.editData.divisi || base.divisi;
-  }
 
   return {
     ...base,
     ...data.editData,
-    divisi: editDivisi,
     tanggalDibutuhkan: data.editData.tanggalDibutuhkan || today,
     items: Array.isArray(data.editData.items)
       ? data.editData.items.map(item => ({
@@ -198,67 +172,47 @@ export default function NewRP() {
 
   const departments = useMemo(() => {
     if (D.departments && D.departments.length > 0) {
-      return (D.departments || [])
+      return [...new Set(D.departments
         .filter(d => !values.companyName || normalizeCompany(d.company) === normalizeCompany(values.companyName))
-        .map((d, i) => ({
-          originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-          name: d.name || '',
-          class: d.class || '',
-          label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-          company: d.company || ''
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label))
+        .map(d => d.name)
+        .filter(Boolean))]
+        .sort()
     }
-    
-    let sourceDivs = []
-    if (D.processDivisions && D.processDivisions.length > 0) {
-      sourceDivs = D.processDivisions
-    } else {
-      const emps = D.employees || []
-      sourceDivs = [...new Set(emps.flatMap(e => (e.companies || []).filter(a => !values.companyName || normalizeCompany(a.name) === normalizeCompany(values.companyName)).map(a => a.class)).filter(Boolean))].sort()
-    }
-    return sourceDivs.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
+    if (D.processDivisions && D.processDivisions.length > 0) return D.processDivisions
+    const emps = D.employees || []
+    const divs = [...new Set(emps.flatMap(e => (e.companies || []).filter(a => !values.companyName || normalizeCompany(a.name) === normalizeCompany(values.companyName)).map(a => a.class)).filter(Boolean))]
+    return divs.sort()
   }, [D.departments, D.processDivisions, D.employees, values.companyName])
+
+  const classOptions = useMemo(() => {
+    const budgets = D.budgets || []
+    const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
+    const currentDivisi = (values.divisi || '').trim().toUpperCase()
+    const isFullAccess = fullAccessDivisions.includes(currentDivisi)
+
+    const classes = [...new Set(budgets.filter(b => {
+      if (isFullAccess) return true
+      return !values.divisi || (b.department || '').toLowerCase() === values.divisi.toLowerCase()
+    }).map(b => b.class).filter(Boolean))]
+    return classes.sort()
+  }, [D.budgets, values.divisi])
 
   const budgetOptions = useMemo(() => {
     const budgets = D.budgets || []
     return budgets.filter(b => {
-      const tc = (b.company || 'PT PILAR NIAGA MAKMUR').trim().toUpperCase()
-      const sc = (values.companyName || '').trim().toUpperCase()
-      const matchCompany = !sc || tc === sc
+      const matchCompany = !values.companyName || (b.company || '').toLowerCase().includes(values.companyName.toLowerCase())
       if (!matchCompany) return false
 
       const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
-      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      const currentDivisi = selectedDept ? selectedDept.name.trim().toUpperCase() : (values.divisi || '').trim().toUpperCase();
-      const currentClass = selectedDept ? selectedDept.class.trim().toUpperCase() : '';
-
-      if (fullAccessDivisions.includes(currentDivisi) || fullAccessDivisions.includes(currentClass)) {
+      const currentDivisi = (values.divisi || '').trim().toUpperCase()
+      if (fullAccessDivisions.includes(currentDivisi)) {
         return true
       }
 
-      if (currentDivisi || currentClass) {
-        const matchedDepts = (D.departments || []).filter(d => {
-          const matchName = (d.name || '').trim().toUpperCase() === currentDivisi || (d.class || '').trim().toUpperCase() === currentDivisi;
-          const matchClass = !currentClass || (d.class || '').trim().toUpperCase() === currentClass;
-          const matchDeptCompany = !sc || normalizeCompany(d.company) === sc;
-          return matchName && matchClass && matchDeptCompany;
-        });
-
-        if (matchedDepts.length > 0) {
-          const deptIds = matchedDepts.map(d => String(d.id));
-          const bDeptId = String(b.department_id !== undefined ? b.department_id : (b.departmentId || ''));
-          return deptIds.includes(bDeptId);
-        } else {
-          const bDeptName = (b.department || '').trim().toUpperCase();
-          const bClass = (b.class || '').trim().toUpperCase();
-          return bDeptName === currentDivisi || bClass === currentDivisi || (currentClass && (bDeptName === currentClass || bClass === currentClass));
-        }
-      }
-
-      return true
+      const matchDiv = !values.divisi || (b.department || '').toLowerCase() === values.divisi.toLowerCase()
+      return matchDiv
     })
-  }, [D.budgets, values.divisi, values.companyName, departments, D.departments])
+  }, [D.budgets, values.divisi, values.companyName])
 
   const processDivOptions = useMemo(() => {
     const source = D.departments?.length
@@ -278,7 +232,8 @@ export default function NewRP() {
     return [...new Set(names)].sort().map(name => ({ value: name, label: name }))
   }, [D.companies, D.user?.allAssignments, D.budgets])
   
-  const divisionOptions = useMemo(() => departments.map(d => ({ value: d.originalIndex, label: d.label })), [departments])
+  const divisionOptions = useMemo(() => departments.map(d => ({ value: d, label: d })), [departments])
+  const rpClassOptions = useMemo(() => classOptions.map(c => ({ value: c, label: c })), [classOptions])
   const vendorOptions = useMemo(() => (D.vendors || []).map(v => ({ value: v.name, label: v.name })), [D.vendors])
   const kategoriOptions = ['Pengadaan Barang Baru', 'Pergantian Barang', 'Penambahan Barang'].map(k => ({ value: k, label: k }))
   const budgetSelectOpts = useMemo(() => budgetOptions.map(b => ({ value: b.id, label: `${b.id} - ${b.description}`, keywords: `${b.id} ${b.description}` })), [budgetOptions])
@@ -292,11 +247,8 @@ export default function NewRP() {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-    const deptClass = selectedDept ? selectedDept.class : values.class;
-    
-    if (!deptClass) {
-      setSubmitError('Kolom Class wajib diisi. Silakan pilih Divisi & Class yang valid.')
+    if (!values.class) {
+      setSubmitError('Kolom Class wajib diisi.')
       return
     }
     setShowConfirm(true)
@@ -307,14 +259,8 @@ export default function NewRP() {
     setSubmitting(true); setSubmitError(null)
     try {
       const processId = searchParams.get('process')
-      
-      let payload = { ...values }
-      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      payload.divisi = selectedDept ? selectedDept.name : values.divisi;
-      payload.class = selectedDept ? selectedDept.class : '';
-
       if (processId) {
-        const res = await fetch(`/api/rp/${processId}/process-update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        const res = await fetch(`/api/rp/${processId}/process-update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) })
         const result = await res.json()
         if (result.success) {
           alert('Data berhasil diupdate oleh divisi pemroses!')
@@ -323,17 +269,18 @@ export default function NewRP() {
           setSubmitError(result.error || 'Gagal menyimpan')
         }
       } else {
+        let payload = { ...values }
         if (searchParams.get('revisi')) {
           payload.rpId = values.id
         } else {
-          const rpNoRes = await fetch(`/api/rp/next-number/${encodeURIComponent(payload.divisi)}`)
+          const rpNoRes = await fetch(`/api/rp/next-number/${encodeURIComponent(values.divisi)}`)
           const rpNoData = await rpNoRes.json()
           payload.rpNo = rpNoData.rpNo
         }
         const res = await fetch('/api/rp/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         const result = await res.json()
         if (result.success) {
-          alert(`RP berhasil disimpan!\nNomor: ${result.rpNo}`)
+          alert(`RP berhasil disimpan!\\nNomor: ${result.rpNo}`)
           navigate('/rp-approval')
         } else {
           setSubmitError(result.error || 'Gagal menyimpan')
@@ -383,37 +330,48 @@ export default function NewRP() {
                       <input className="frp-input-readonly" value={values.companyName} readOnly />
                     )}
                   </FloatingGroup>
-                  <FloatingGroup label="date required">
+                  <FloatingGroup label="Tanggal Dibutuhkan">
                     <DateField name="tanggalDibutuhkan" value={values.tanggalDibutuhkan} onChange={e => updateField('tanggalDibutuhkan', e.target.value)} />
                   </FloatingGroup>
                 </div>
-                <div className="frp-grid-2" style={{ marginTop: "20px" }}>
-                  <FloatingGroup label="Division & Class">
+                <div className="frp-grid-3" style={{ marginTop: "20px" }}>
+                  <FloatingGroup label="Divisi">
                     {isAdmin ? (
                       <SearchableSelect
                         name="divisi"
                         value={values.divisi}
-                        onChange={selectedValue => updateField('divisi', selectedValue)}
+                        onChange={selectedValue => setValues(prev => ({ ...prev, divisi: selectedValue, class: '' }))}
                         options={divisionOptions}
                         placeholder="Select divisi..."
                         className="frp-select"
                         menuPosition="fixed"
                       />
                     ) : (
-                      <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
+                      <input className="frp-input-readonly" value={values.divisi} readOnly />
                     )}
                   </FloatingGroup>
-                  <FloatingGroup label="Request By">
+                  <FloatingGroup label="Class">
+                    <SearchableSelect
+                      name="class"
+                      value={values.class}
+                      onChange={v => updateField('class', v)}
+                      options={rpClassOptions}
+                      placeholder="Select class..."
+                      className="frp-select"
+                      menuPosition="fixed"
+                    />
+                  </FloatingGroup>
+                  <FloatingGroup label="Dibuat Oleh">
                     <input className="frp-input-readonly" value={values.dibuatOleh} readOnly />
                   </FloatingGroup>
                 </div>
-                <FloatingGroup label="Description" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+                <FloatingGroup label="Deskripsi (Alasan Permintaan Barang & Nama Pengguna Barang)" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
                   <textarea
                     name="deskripsi"
                     className="frp-textarea"
                     value={values.deskripsi}
                     onChange={e => updateField('deskripsi', e.target.value)}
-                    placeholder="Notes..."
+                    placeholder="Write a description..."
                     style={{ height: '100%' }}
                   />
                 </FloatingGroup>
@@ -426,7 +384,7 @@ export default function NewRP() {
                   Vendor &amp; Proses
                 </h3>
                 <div className="frp-grid-3">
-                  <FloatingGroup label="category payment">
+                  <FloatingGroup label="Kategori Pembelian">
                     <SearchableSelect
                       name="kategoriPembelian"
                       value={values.kategoriPembelian}
@@ -437,7 +395,7 @@ export default function NewRP() {
                       menuPosition="fixed"
                     />
                   </FloatingGroup>
-                  <FloatingGroup label="division to process">
+                  <FloatingGroup label="Diproses Oleh">
                     <SearchableSelect
                       name="diprosesOleh"
                       value={values.diprosesOleh}
@@ -461,13 +419,13 @@ export default function NewRP() {
                   </FloatingGroup>
                 </div>
                 <div className="frp-grid-2" style={{ marginTop: '20px' }}>
-                  <FloatingGroup label="PIC">
+                  <FloatingGroup label="PIC Penerima">
                     <input
                       name="picPenerima"
                       className="frp-input"
                       value={values.picPenerima}
                       onChange={e => updateField('picPenerima', e.target.value)}
-                      placeholder="Recipient's name"
+                      placeholder="Nama penerima barang"
                     />
                   </FloatingGroup>
                 </div>
@@ -548,3 +506,7 @@ export default function NewRP() {
     </>
   )
 }
+"""
+
+with open("c:/Projects/frp/frontend/src/pages/rp/NewRP.jsx", "w", encoding="utf-8") as f:
+    f.write(content)

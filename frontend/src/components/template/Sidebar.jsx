@@ -103,7 +103,6 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
     { label: 'FRP', icon: 'receipt_long', children: [
       { label: 'New FRP', href: '/frp', icon: 'note_add' },
-      { label: 'Status FRP', href: '/status_frp', icon: 'rule' },
       ...(userIsAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(userJobLevel) ? [
         { label: 'Approval FRP', href: '/approval', icon: 'fact_check' }
       ] : []),

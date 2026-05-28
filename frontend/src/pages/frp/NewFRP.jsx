@@ -78,9 +78,16 @@ const blankForm = {
 }
 
 const buildInitialForm = (data, isDuplicate = false) => {
+  let initialCompany = data.selectedCompany || data.user?.selectedCompany || data.user?.companyName || data.user?.company || '';
+  if (data.companies && initialCompany) {
+    const searchCompany = normalizeCompany(initialCompany);
+    const comp = data.companies.find(c => String(c.id) === String(initialCompany) || normalizeCompany(c.code) === searchCompany || normalizeCompany(c.name) === searchCompany);
+    if (comp) initialCompany = comp.name;
+  }
+
   const base = {
     ...blankForm,
-    companyName: data.selectedCompany || '',
+    companyName: initialCompany,
     dimintaOleh: data.user?.fullName || '',
     id: isDuplicate ? '' : (data.editData?.id || ''),
   }
@@ -699,7 +706,7 @@ export default function NewFRP() {
                 </div>
               </div>
               <div className="frp-grid-3" style={{ marginTop: "20px", gridTemplateColumns: (!isMobile && !isTablet) ? 'minmax(0, 1.8fr) minmax(0, 1.2fr) 170px' : undefined }}>
-                <FloatingGroup label="Divisi & Class">
+                <FloatingGroup label="Division & Class">
                   {FRP.user?.role === 'administrator' ? (
                     <SearchableSelect
                       name="divisi"
@@ -725,7 +732,7 @@ export default function NewFRP() {
                     menuPosition="fixed"
                   />
                 </FloatingGroup>
-                <FloatingGroup label="Tanggal FRP">
+                <FloatingGroup label="FRP Date">
                   <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
                 </FloatingGroup>
               </div>
@@ -735,7 +742,7 @@ export default function NewFRP() {
                   className="frp-textarea"
                   value={values.keteranganFrp}
                   onChange={e => updateField('keteranganFrp', e.target.value)}
-                  placeholder="Tulis keterangan..."
+                  placeholder="Write a description..."
                   style={{ height: '100%' }}
                 />
               </FloatingGroup>

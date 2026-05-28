@@ -40,10 +40,6 @@ export default function DataTableItemsRp({
 }) {
   return (
     <div>
-      <h3 style={S.sectionTitle}>
-        <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>table_rows</span>
-        Detail Item
-      </h3>
       {isMobile ? (
         <div style={{ display: 'grid', gap: '12px' }}>
           {items.map((item, idx) => {
@@ -218,16 +214,6 @@ export default function DataTableItemsRp({
           </table>
         </div>
       )}
-      <div style={{ ...S.totalRow, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '0.85rem' : '1rem' }}>
-        <button type="button" style={{ ...S.btnAdd, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={addRow}>
-          <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-          Add Item
-        </button>
-        <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
-          <span style={S.totalLabel}>Total Estimated Value</span>
-          <div style={S.totalValue}>Rp {formatCurrency(totalAmount)}</div>
-        </div>
-      </div>
     </div>
   )
 }
