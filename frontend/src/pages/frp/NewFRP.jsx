@@ -42,11 +42,16 @@ const buildDepartments = (employees, companyName) =>
     .sort()
 
 const buildDepartmentsFromMaster = (departments, companyName) =>
-  [...new Set((departments || [])
+  (departments || [])
     .filter(d => !companyName || normalizeCompany(d.company) === normalizeCompany(companyName))
-    .map(d => d.name || '')
-    .filter(Boolean))]
-    .sort()
+    .map((d, i) => ({
+      originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
+      name: d.name || '',
+      class: d.class || '',
+      label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+      company: d.company || ''
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
 
 const getDefaultItems = () => [{ memo: '', budgetId: '', qty: '1', hargaSatuan: '0' }]
 
@@ -76,16 +81,37 @@ const buildInitialForm = (data, isDuplicate = false) => {
   const base = {
     ...blankForm,
     companyName: data.selectedCompany || '',
-    divisi: data.selectedDivision || '',
     dimintaOleh: data.user?.fullName || '',
     id: isDuplicate ? '' : (data.editData?.id || ''),
   }
 
+  let initialDivisi = '';
+  if (data.departments && data.departments.length > 0) {
+    const userDiv = normalizeCompany(data.selectedDivision || '');
+    const matched = data.departments.find(d => normalizeCompany(d.class) === userDiv || normalizeCompany(d.name) === userDiv);
+    if (matched) initialDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+  } else {
+    initialDivisi = data.selectedDivision || '';
+  }
+  base.divisi = initialDivisi;
+
   if (!data.editData) return base
+
+  let editDivisi = base.divisi;
+  if (data.departments && data.departments.length > 0) {
+    const dName = normalizeCompany(data.editData.departmentName || data.editData.department_name || '');
+    const dClass = normalizeCompany(data.editData.departmentClass || data.editData.department_class || '');
+    const matched = data.departments.find(d => normalizeCompany(d.name) === dName && (!dClass || normalizeCompany(d.class) === dClass));
+    if (matched) editDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+    else if (data.editData.department_id) editDivisi = data.editData.department_id;
+  } else {
+    editDivisi = data.editData.departmentName || data.editData.department_name || base.divisi;
+  }
 
   return {
     ...base,
     ...data.editData,
+    divisi: editDivisi,
     tanggalFrp: isDuplicate ? today : (data.editData.tanggalFrp || data.editData.frpDate || today),
     id: isDuplicate ? '' : (data.editData.id || ''),
     rpReference: isDuplicate ? '' : (data.editData.rpReference || ''),
@@ -242,10 +268,21 @@ export default function NewFRP() {
 
               const rpAttachLink = Array.isArray(rp.items) ? (rp.items.find(it => it.linkPembelian)?.linkPembelian || '') : ''
 
+              const dName = normalizeCompany(rp.departmentName || rp.divisi || '');
+              const dClass = normalizeCompany(rp.departmentClass || '');
+              let editDiv = initial.divisi;
+              if (data.departments && data.departments.length > 0) {
+                 const matched = data.departments.find(d => normalizeCompany(d.name) === dName && (!dClass || normalizeCompany(d.class) === dClass));
+                 if (matched) editDiv = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+                 else if (rp.departmentId) editDiv = rp.departmentId;
+              } else {
+                 editDiv = rp.departmentName || rp.divisi || initial.divisi;
+              }
+
               setValues({
                 ...initial,
                 companyName: rp.companyName || initial.companyName,
-                divisi: rp.divisi || initial.divisi,
+                divisi: editDiv,
                 dimintaOleh: rp.dibuatOleh || initial.dimintaOleh,
                 keteranganFrp: rp.deskripsi || '',
                 vendor: rp.vendorSuggestion || '',
@@ -286,8 +323,13 @@ export default function NewFRP() {
   const departments = useMemo(
     () => (FRP.departments?.length
       ? buildDepartmentsFromMaster(FRP.departments, values.companyName)
-      : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName))),
+      : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName)).map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))),
     [FRP.departments, FRP.divisionList, FRP.employees, values.companyName],
+  )
+
+  const divisionSelectOptions = useMemo(
+    () => departments.map(d => ({ value: d.originalIndex, label: d.label })),
+    [departments],
   )
 
   const filteredEmployees = useMemo(() => {
@@ -304,11 +346,13 @@ export default function NewFRP() {
       }];
     }
     const targetCompany = normalizeCompany(values.companyName);
-    const targetDivision = normalizeCompany(values.divisi);
+    const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
+    const targetDivision = normalizeCompany(selectedDept ? selectedDept.name : values.divisi);
+    const targetClass = normalizeCompany(selectedDept ? selectedDept.class : '');
 
     return sourceEmployees.filter(e => {
       const assignments = getEmployeeAssignments(e);
-      if (!targetCompany && !targetDivision) return true;
+      if (!targetCompany && !targetDivision && !targetClass) return true;
       return assignments.some(a => {
         const matchCompany = !targetCompany ||
           normalizeCompany(a.name) === targetCompany ||
@@ -319,34 +363,38 @@ export default function NewFRP() {
           normalizeCompany(a.class) === targetDivision ||
           normalizeCompany(a.deptName) === targetDivision;
 
-        return matchCompany && matchDivision;
+        const matchClass = !targetClass || normalizeCompany(a.class) === targetClass;
+
+        return matchCompany && matchDivision && matchClass;
       });
     });
-  }, [values.companyName, values.divisi, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
+  }, [values.companyName, values.divisi, departments, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
 
   const budgetOptions = useMemo(
-    () =>
-      (FRP.budgets || []).filter(b => {
+    () => {
+      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
+      const sd = selectedDept ? selectedDept.name.trim().toUpperCase() : (values.divisi || '').trim().toUpperCase();
+      const sk = selectedDept ? selectedDept.class.trim().toUpperCase() : '';
+      const sc = (values.companyName || '').trim().toUpperCase();
+
+      return (FRP.budgets || []).filter(b => {
         const tc = (b.company || 'PT PILAR NIAGA MAKMUR').trim().toUpperCase()
-        const sc = (values.companyName || '').trim().toUpperCase()
         const matchCompany = !sc || tc === sc
 
         if (!matchCompany) return false
 
         // Divisi tertentu (HCGA, IT, Marketing, Product) memiliki akses ke seluruh budget
         const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
-        const currentDivisi = (values.divisi || '').trim().toUpperCase()
-        if (fullAccessDivisions.includes(currentDivisi)) {
+        if (fullAccessDivisions.includes(sd) || fullAccessDivisions.includes(sk)) {
           return true
         }
 
-        if (values.divisi) {
-          const sd = values.divisi.trim().toUpperCase()
-          // Find matching departments in FRP.departments
+        if (sd || sk) {
           const matchedDepts = (FRP.departments || []).filter(d => {
             const matchName = (d.name || '').trim().toUpperCase() === sd || (d.class || '').trim().toUpperCase() === sd
+            const matchClass = !sk || (d.class || '').trim().toUpperCase() === sk
             const matchDeptCompany = !sc || (d.company || '').trim().toUpperCase() === sc
-            return matchName && matchDeptCompany
+            return matchName && matchClass && matchDeptCompany
           })
 
           if (matchedDepts.length > 0) {
@@ -354,16 +402,16 @@ export default function NewFRP() {
             const bDeptId = String(b.department_id !== undefined ? b.department_id : (b.departmentId || ''))
             return deptIds.includes(bDeptId)
           } else {
-            // Fallback if master departments list is empty/missing
             const bDeptName = (b.department || '').trim().toUpperCase()
             const bClass = (b.class || '').trim().toUpperCase()
-            return bDeptName === sd || bClass === sd
+            return bDeptName === sd || bClass === sd || (sk && (bDeptName === sk || bClass === sk))
           }
         }
 
         return true
-      }),
-    [values.companyName, values.divisi, FRP.budgets, FRP.departments],
+      })
+    },
+    [values.companyName, values.divisi, departments, FRP.budgets, FRP.departments],
   )
 
   const calculateRowAmount = item =>
@@ -411,10 +459,6 @@ export default function NewFRP() {
         const companySelectOptions = useMemo(
     () => (FRP.companies || []).map(company => ({ value: company.name, label: company.name })),
     [FRP.companies],
-  )
-  const divisionSelectOptions = useMemo(
-    () => departments.map(department => ({ value: department, label: department })),
-    [departments],
   )
   const employeeSelectOptions = useMemo(
     () => filteredEmployees.map(employee => ({ value: employee.fullName, label: employee.fullName })),
@@ -515,12 +559,15 @@ export default function NewFRP() {
         }
       }
 
+      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
+
       const payload = {
         frpId: values.id || undefined,
         fromRpId: values.fromRpId || undefined,
         
         companyName: values.companyName,
-        divisi: values.divisi,
+        divisi: selectedDept ? selectedDept.name : values.divisi,
+        kelas: selectedDept ? selectedDept.class : '',
         dimintaOleh: values.dimintaOleh,
         rpReference: values.rpReference,
         attachLink: values.attachLink,
@@ -651,8 +698,8 @@ export default function NewFRP() {
                   </FloatingGroup>
                 </div>
               </div>
-              <div className="frp-grid-3" style={{ marginTop: "20px" }}>
-                <FloatingGroup label="Divisi">
+              <div className="frp-grid-3" style={{ marginTop: "20px", gridTemplateColumns: (!isMobile && !isTablet) ? 'minmax(0, 1.8fr) minmax(0, 1.2fr) 170px' : undefined }}>
+                <FloatingGroup label="Divisi & Class">
                   {FRP.user?.role === 'administrator' ? (
                     <SearchableSelect
                       name="divisi"
@@ -664,7 +711,7 @@ export default function NewFRP() {
                       menuPosition="fixed"
                     />
                   ) : (
-                    <input className="frp-input-readonly" value={values.divisi} readOnly />
+                    <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
                   )}
                 </FloatingGroup>
                 <FloatingGroup label="Request by">
