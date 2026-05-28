@@ -35,6 +35,7 @@ function normalizeRpItems(items = []) {
             id: item.id || crypto.randomUUID(),
             budgetId: item.budgetId || item.budget_id || null,
             memo: item.memo || '',
+            link_item: item.link_item || item.linkPembelian || item.linkItem || '',
             qty: Number(item.qty || 0),
             price: Number(item.price || item.estimatedValue || 0),
             amount: Number(item.amount || (Number(item.qty || 0) * Number(item.price || item.estimatedValue || 0)) || 0),
@@ -55,15 +56,17 @@ async function replaceRpItems(client, rpRequestId, items) {
                 rp_request_id,
                 budget_id,
                 memo,
+                link_item,
                 qty,
                 price,
                 amount
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             item.id,
             rpRequestId,
             item.budgetId,
             item.memo,
+            item.link_item,
             item.qty,
             item.price,
             item.amount,
@@ -962,7 +965,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
             newItems.forEach((newItem, i) => {
                 const oldItem = oldItems[i] || {};
 
-                ['memo', 'qty', 'price', 'amount', 'budgetId'].forEach(field => {
+                ['memo', 'qty', 'price', 'amount', 'budgetId', 'link_item'].forEach(field => {
                     if (
                         newItem[field] !== undefined &&
                         String(newItem[field]) !== String(oldItem[field] || '')

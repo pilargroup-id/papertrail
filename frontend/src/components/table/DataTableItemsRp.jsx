@@ -100,27 +100,28 @@ export default function DataTableItemsRp({
         <div style={{ overflowX: 'auto' }}>
           <table style={S.table}>
             <thead><tr>
-              <th style={{ ...S.th, width: '4%' }}>No</th>
-              <th style={{ ...S.th, width: '22%' }}>Item Group (Budget)</th>
+              <th style={{ ...S.th, width: '22%' }}>Item</th>
               <th style={{ ...S.th, width: '16%' }}>Memo</th>
               <th style={{ ...S.th, width: '18%' }}>Link Pembelian</th>
               <th style={{ ...S.th, width: '6%' }}>Qty</th>
-              <th style={{ ...S.th, width: '14%' }}>Estimated Value</th>
-              <th style={{ ...S.th, width: '14%' }}>Budget Remaining</th>
+              <th style={{ ...S.th, width: '14%' }}>Sisa Budget</th>
+              <th style={{ ...S.th, width: '14%' }}>Harga Satuan</th>
+              <th style={{ ...S.th, width: '14%' }}>Amount (IDR)</th>
               <th style={{ ...S.th, width: '5%' }} />
             </tr></thead>
             <tbody>
               {items.map((item, idx) => {
                 const remaining = getBudgetRemaining(item.budgetId)
+                const subtotal = normalizeNumber(item.qty) * normalizeNumber(item.estimatedValue)
                 return (
                   <tr key={idx}>
-                    <td style={S.td}><span style={{ fontWeight: 600, color: '#64748b' }}>{idx + 1}</span></td>
                     <td style={S.td}><SearchableSelect name={`items[${idx}][budgetId]`} value={item.budgetId} onChange={v => updateItem(idx, 'budgetId', v)} options={budgetSelectOpts} placeholder="Pilih Budget" style={S.tdSelect} menuPosition="fixed" /></td>
                     <td style={S.td}><input name={`items[${idx}][memo]`} style={S.tdInput} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi item..." /></td>
                     <td style={S.td}><input name={`items[${idx}][linkPembelian]`} style={S.tdInput} value={item.linkPembelian} onChange={e => updateItem(idx, 'linkPembelian', e.target.value)} placeholder="https://..." /></td>
                     <td style={S.td}><input type="number" name={`items[${idx}][qty]`} style={S.tdInput} value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} /></td>
+                    <td style={S.td}><input style={{ ...S.tdInput, background: '#f8fafc', color: remaining !== null && remaining < 0 ? '#ef4444' : '#16a34a', fontWeight: 600 }} value={remaining !== null ? formatCurrency(remaining) : '-'} readOnly /></td>
                     <td style={S.td}><input type="text" name={`items[${idx}][estimatedValue]`} style={S.tdInput} value={formatNumberInput(item.estimatedValue)} onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))} /></td>
-                    <td style={S.td}><input style={{ ...S.tdInput, background: '#f0fdf4', color: remaining !== null && remaining < 0 ? '#ef4444' : '#16a34a', fontWeight: 600 }} value={remaining !== null ? formatCurrency(remaining) : '-'} readOnly /></td>
+                    <td style={S.td}><input style={{ ...S.tdInput, background: '#f8fafc', color: '#1e293b', fontWeight: 600 }} value={formatCurrency(subtotal)} readOnly /></td>
                     <td style={S.td}><button type="button" style={S.btnDel} onClick={() => removeRow(idx)}><span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span></button></td>
                   </tr>
                 )

@@ -596,7 +596,7 @@ async function adjustBudgetUsage(client, items, direction = 'deduct') {
             UPDATE master_budgets
             SET 
                 budget_used = budget_used + ?,
-                budget_remaining = budget_amount - (budget_used + ?)
+                budget_remaining = budget_remaining - ?
             WHERE id = ?
         `, [
             amount,

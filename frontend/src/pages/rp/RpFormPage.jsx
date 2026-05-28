@@ -298,16 +298,31 @@ export default function RpFormPage() {
 
   const classOptions = useMemo(() => {
     const budgets = D.budgets || []
-    const classes = [...new Set(budgets.filter(b => !values.divisi || (b.department || '').toLowerCase() === values.divisi.toLowerCase()).map(b => b.class).filter(Boolean))]
+    const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
+    const currentDivisi = (values.divisi || '').trim().toUpperCase()
+    const isFullAccess = fullAccessDivisions.includes(currentDivisi)
+
+    const classes = [...new Set(budgets.filter(b => {
+      if (isFullAccess) return true
+      return !values.divisi || (b.department || '').toLowerCase() === values.divisi.toLowerCase()
+    }).map(b => b.class).filter(Boolean))]
     return classes.sort()
   }, [D.budgets, values.divisi])
 
   const budgetOptions = useMemo(() => {
     const budgets = D.budgets || []
     return budgets.filter(b => {
-      const matchDiv = !values.divisi || (b.department || '').toLowerCase() === values.divisi.toLowerCase()
       const matchCompany = !values.companyName || (b.company || '').toLowerCase().includes(values.companyName.toLowerCase())
-      return matchDiv && matchCompany
+      if (!matchCompany) return false
+
+      const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
+      const currentDivisi = (values.divisi || '').trim().toUpperCase()
+      if (fullAccessDivisions.includes(currentDivisi)) {
+        return true
+      }
+
+      const matchDiv = !values.divisi || (b.department || '').toLowerCase() === values.divisi.toLowerCase()
+      return matchDiv
     })
   }, [D.budgets, values.divisi, values.companyName])
 
@@ -381,9 +396,14 @@ export default function RpFormPage() {
           setSubmitError(result.error || 'Gagal menyimpan')
         }
       } else {
-        const rpNoRes = await fetch(`/api/rp/next-number/${encodeURIComponent(values.divisi)}`)
-        const rpNoData = await rpNoRes.json()
-        const payload = { ...values, rpNo: rpNoData.rpNo }
+        let payload = { ...values }
+        if (searchParams.get('revisi')) {
+          payload.rpId = values.id
+        } else {
+          const rpNoRes = await fetch(`/api/rp/next-number/${encodeURIComponent(values.divisi)}`)
+          const rpNoData = await rpNoRes.json()
+          payload.rpNo = rpNoData.rpNo
+        }
         const res = await fetch('/api/rp/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         const result = await res.json()
         if (result.success) {

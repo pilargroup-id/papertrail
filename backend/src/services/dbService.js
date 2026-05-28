@@ -271,7 +271,10 @@ async function fetchAllRpRequests() {
                 memo: item.memo || '',
                 qty: Number(item.qty || 0),
                 price: Number(item.price || 0),
+                estimatedValue: Number(item.price || 0),
                 amount: Number(item.amount || 0),
+                link_item: item.link_item || '',
+                linkPembelian: item.link_item || '',
             });
 
             return acc;
