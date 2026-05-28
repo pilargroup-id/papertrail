@@ -587,7 +587,7 @@ export default function NewFRP() {
           <div className="frp-top-panel">
             {/* Informasi FRP */}
             <div className="frp-card">
-              <h3 className="frp-section-title" style={{ marginBottom: '12px' }}>
+              <h3 className="frp-section-title" style={{ marginBottom: '16px' }}>
                 <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>info</span>
                 Informasi FRP
               </h3>
@@ -651,7 +651,7 @@ export default function NewFRP() {
                   </FloatingGroup>
                 </div>
               </div>
-              <div className="frp-grid-3" style={{ marginTop: "8px" }}>
+              <div className="frp-grid-3" style={{ marginTop: "16px" }}>
                 <FloatingGroup label="Divisi">
                   {FRP.user?.role === 'administrator' ? (
                     <SearchableSelect
@@ -682,7 +682,7 @@ export default function NewFRP() {
                   <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <FloatingGroup label="Keterangan FRP" style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <FloatingGroup label="Keterangan FRP" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
                 <textarea
                   name="keteranganFrp"
                   className="frp-textarea"
@@ -696,7 +696,7 @@ export default function NewFRP() {
 
             {/* Vendor & Pembayaran */}
             <div className="frp-card">
-              <h3 className="frp-section-title" style={{ marginBottom: '12px' }}>
+              <h3 className="frp-section-title" style={{ marginBottom: '16px' }}>
                 <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>store</span>
                 Vendor &amp; Pembayaran
               </h3>
@@ -722,7 +722,7 @@ export default function NewFRP() {
                   <input name="internalPoNumber" className="frp-input" placeholder="Nomor PO internal..." value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <div className="frp-grid-3" style={{ marginTop: "8px" }}>
+              <div className="frp-grid-3" style={{ marginTop: "16px" }}>
                 <FloatingGroup label="Ext Doc Type">
                   <SearchableSelect
                     name="extDocType"
@@ -749,7 +749,7 @@ export default function NewFRP() {
                   />
                 </FloatingGroup>
               </div>
-              <div className="frp-grid-3" style={{ marginTop: "8px" }}>
+              <div className="frp-grid-3" style={{ marginTop: "16px" }}>
                 <FloatingGroup label="Payment Date">
                   <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
                 </FloatingGroup>
@@ -760,7 +760,7 @@ export default function NewFRP() {
                   <input name="rekBankTujuan" className="frp-input" placeholder="Nomor rekening..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <FloatingGroup label="Attach Link" style={{ marginTop: '8px' }}>
+              <FloatingGroup label="Attach Link" style={{ marginTop: '16px' }}>
                 <input name="attachLink" className="frp-input" placeholder="https://..." value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} />
               </FloatingGroup>
             </div>
@@ -795,10 +795,6 @@ export default function NewFRP() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <ButtonAddItemsFrp onClick={handleAddRow} value="Tambah Baris" />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                    <span className="frp-total-label" style={{ fontSize: '0.75rem', margin: 0 }}>Total:</span>
-                    <div className="frp-total-value" style={{ fontSize: '1rem', margin: 0 }}>Rp {formatCurrency(totalAmount)}</div>
-                  </div>
                 </div>
               </div>
               
@@ -824,15 +820,21 @@ export default function NewFRP() {
                 </div>
               )}
 
-              <div className="frp-footer">
-                <button type="button" className="frp-btn-secondary" onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting}>
-                  <span className="material-icons-round" style={{ fontSize: '16px' }}>refresh</span>
-                  Reset
-                </button>
-                <button type="submit" className="frp-btn-primary" disabled={submitting}>
-                  <span className="material-icons-round" style={{ fontSize: '16px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
-                  {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
-                </button>
+              <div className="frp-footer" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-start', gap: '10px', background: '#f8fafc', padding: '8px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: isMobile ? '10px' : 0 }}>
+                  <span className="frp-total-label" style={{ fontSize: '0.85rem', margin: 0 }}>Total Pembayaran:</span>
+                  <div className="frp-total-value" style={{ fontSize: '1.2rem', margin: 0 }}>Rp {formatCurrency(totalAmount)}</div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+                  <button type="button" className="frp-btn-secondary" onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting} style={isMobile ? { width: '100%' } : {}}>
+                    <span className="material-icons-round" style={{ fontSize: '16px' }}>refresh</span>
+                    Reset
+                  </button>
+                  <button type="submit" className="frp-btn-primary" disabled={submitting} style={isMobile ? { width: '100%' } : {}}>
+                    <span className="material-icons-round" style={{ fontSize: '16px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
+                    {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

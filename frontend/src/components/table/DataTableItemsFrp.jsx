@@ -130,11 +130,11 @@ export default function DataTableItemsFrp({
               <tr>
                 <th className="frp-th" style={{ width: "20%" }}>Memo</th>
                 <th className="frp-th" style={{ width: "25%" }}>Budget</th>
-                <th className="frp-th" style={{ width: "16%", textAlign: "right" }}>Sisa Budget</th>
+                <th className="frp-th" style={{ width: "14%", textAlign: "right" }}>Sisa Budget</th>
                 <th className="frp-th" style={{ width: "7%", textAlign: "center" }}>Qty</th>
                 <th className="frp-th" style={{ width: "16%", textAlign: "right" }}>Harga Satuan</th>
                 <th className="frp-th" style={{ width: "14%", textAlign: "right" }}>Amount (IDR)</th>
-                <th className="frp-th" style={{ width: "2%" }} />
+                <th className="frp-th" style={{ width: "4%" }} />
               </tr>
             </thead>
             <tbody>
