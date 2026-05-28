@@ -494,14 +494,36 @@ export default function FormPage() {
   const filteredEmployees = useMemo(() => {
     let sourceEmployees = FRP.user?.role === 'administrator' ? FRP.employees : FRP.departmentEmployees;
     if (!sourceEmployees || sourceEmployees.length === 0) {
-      sourceEmployees = [{ fullName: FRP.user?.fullName || '' }];
+      sourceEmployees = [{
+        fullName: FRP.user?.fullName || '',
+        companies: [{
+          name: FRP.user?.selectedCompany || '',
+          code: FRP.user?.selectedCompany || '',
+          class: FRP.user?.selectedDivision || '',
+          deptName: FRP.user?.selectedDivision || '',
+        }]
+      }];
     }
+    const targetCompany = normalizeCompany(values.companyName);
+    const targetDivision = normalizeCompany(values.divisi);
+
     return sourceEmployees.filter(e => {
-      const assignments = getEmployeeAssignments(e)
-      if (!values.companyName && !values.divisi) return true
-      return assignments.some(a => (!values.companyName || a.name === values.companyName) && (!values.divisi || a.class === values.divisi))
-    })
-  }, [values.companyName, values.divisi, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role])
+      const assignments = getEmployeeAssignments(e);
+      if (!targetCompany && !targetDivision) return true;
+      return assignments.some(a => {
+        const matchCompany = !targetCompany ||
+          normalizeCompany(a.name) === targetCompany ||
+          normalizeCompany(a.code) === targetCompany ||
+          normalizeCompany(a.companyCode) === targetCompany;
+
+        const matchDivision = !targetDivision ||
+          normalizeCompany(a.class) === targetDivision ||
+          normalizeCompany(a.deptName) === targetDivision;
+
+        return matchCompany && matchDivision;
+      });
+    });
+  }, [values.companyName, values.divisi, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
 
   const budgetOptions = useMemo(
     () =>

@@ -85,20 +85,26 @@ const buildInitialForm = (data, isDuplicate = false) => {
   return {
     ...base,
     ...data.editData,
-    tanggalFrp: isDuplicate ? today : (data.editData.tanggalFrp || today),
+    tanggalFrp: isDuplicate ? today : (data.editData.tanggalFrp || data.editData.frpDate || today),
     id: isDuplicate ? '' : (data.editData.id || ''),
     rpReference: isDuplicate ? '' : (data.editData.rpReference || ''),
     fromRpId: isDuplicate ? '' : (data.editData.fromRpId || ''),
     status: isDuplicate ? '' : (data.editData.status || ''),
     frpNo: isDuplicate ? '' : (data.editData.frpNo || ''),
     paymentDate: data.editData.paymentDate || today,
+    keteranganFrp: data.editData.keteranganFrp || data.editData.frpDescription || '',
+    bankTujuan: data.editData.bankTujuan || data.editData.destinationBank || '',
+    rekBankTujuan: data.editData.rekBankTujuan || data.editData.destinationBankAccount || '',
+    extDocType: data.editData.extDocType || data.editData.externalDocumentType || '',
+    extDocNumber: data.editData.extDocNumber || data.editData.externalDocumentNumber || '',
+    kurs: String(data.editData.kurs || data.editData.exchangeRate || '1'),
     checkDocs: Array.isArray(data.editData.checkDocs) ? data.editData.checkDocs : base.checkDocs,
     items: Array.isArray(data.editData.items)
       ? data.editData.items.map(i => ({
         memo: i.memo || '',
         budgetId: i.budgetId || '',
         qty: String(i.qty || '1'),
-        hargaSatuan: String(i.hargaSatuan || i.harga || '0'),
+        hargaSatuan: String(i.hargaSatuan || i.price || i.harga || '0'),
       }))
       : getDefaultItems(),
   }
@@ -195,7 +201,7 @@ export default function NewFRP() {
     frpService.getFormData(query)
       .then(async data => {
         setFrpData(data)
-        setUser(data?.user)
+      setUser(data?.user)
         const isDuplicate = searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'
         const initial = buildInitialForm(data, isDuplicate)
 
@@ -272,23 +278,77 @@ export default function NewFRP() {
   const filteredEmployees = useMemo(() => {
     let sourceEmployees = FRP.user?.role === 'administrator' ? FRP.employees : FRP.departmentEmployees;
     if (!sourceEmployees || sourceEmployees.length === 0) {
-      sourceEmployees = [{ fullName: FRP.user?.fullName || '' }];
+      sourceEmployees = [{
+        fullName: FRP.user?.fullName || '',
+        companies: [{
+          name: FRP.user?.selectedCompany || '',
+          code: FRP.user?.selectedCompany || '',
+          class: FRP.user?.selectedDivision || '',
+          deptName: FRP.user?.selectedDivision || '',
+        }]
+      }];
     }
+    const targetCompany = normalizeCompany(values.companyName);
+    const targetDivision = normalizeCompany(values.divisi);
+
     return sourceEmployees.filter(e => {
-      const assignments = getEmployeeAssignments(e)
-      if (!values.companyName && !values.divisi) return true
-      return assignments.some(a => (!values.companyName || a.name === values.companyName) && (!values.divisi || a.class === values.divisi))
-    })
-  }, [values.companyName, values.divisi, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role])
+      const assignments = getEmployeeAssignments(e);
+      if (!targetCompany && !targetDivision) return true;
+      return assignments.some(a => {
+        const matchCompany = !targetCompany ||
+          normalizeCompany(a.name) === targetCompany ||
+          normalizeCompany(a.code) === targetCompany ||
+          normalizeCompany(a.companyCode) === targetCompany;
+
+        const matchDivision = !targetDivision ||
+          normalizeCompany(a.class) === targetDivision ||
+          normalizeCompany(a.deptName) === targetDivision;
+
+        return matchCompany && matchDivision;
+      });
+    });
+  }, [values.companyName, values.divisi, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
 
   const budgetOptions = useMemo(
     () =>
       (FRP.budgets || []).filter(b => {
         const tc = (b.company || 'PT PILAR NIAGA MAKMUR').trim().toUpperCase()
         const sc = (values.companyName || '').trim().toUpperCase()
-        return !sc || tc === sc
+        const matchCompany = !sc || tc === sc
+
+        if (!matchCompany) return false
+
+        // Divisi tertentu (HCGA, IT, Marketing, Product) memiliki akses ke seluruh budget
+        const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
+        const currentDivisi = (values.divisi || '').trim().toUpperCase()
+        if (fullAccessDivisions.includes(currentDivisi)) {
+          return true
+        }
+
+        if (values.divisi) {
+          const sd = values.divisi.trim().toUpperCase()
+          // Find matching departments in FRP.departments
+          const matchedDepts = (FRP.departments || []).filter(d => {
+            const matchName = (d.name || '').trim().toUpperCase() === sd || (d.class || '').trim().toUpperCase() === sd
+            const matchDeptCompany = !sc || (d.company || '').trim().toUpperCase() === sc
+            return matchName && matchDeptCompany
+          })
+
+          if (matchedDepts.length > 0) {
+            const deptIds = matchedDepts.map(d => String(d.id))
+            const bDeptId = String(b.department_id !== undefined ? b.department_id : (b.departmentId || ''))
+            return deptIds.includes(bDeptId)
+          } else {
+            // Fallback if master departments list is empty/missing
+            const bDeptName = (b.department || '').trim().toUpperCase()
+            const bClass = (b.class || '').trim().toUpperCase()
+            return bDeptName === sd || bClass === sd
+          }
+        }
+
+        return true
       }),
-    [values.companyName, FRP.budgets],
+    [values.companyName, values.divisi, FRP.budgets, FRP.departments],
   )
 
   const calculateRowAmount = item =>
@@ -441,10 +501,33 @@ export default function NewFRP() {
       }
 
       const payload = {
-        ...values,
         frpId: values.id || undefined,
+        fromRpId: values.fromRpId || undefined,
+        
+        companyName: values.companyName,
+        divisi: values.divisi,
+        dimintaOleh: values.dimintaOleh,
+        rpReference: values.rpReference,
+        attachLink: values.attachLink,
+
+        frpDate: values.tanggalFrp,
+        currency: values.currency,
+        exchangeRate: String(values.kurs),
+        frpDescription: values.keteranganFrp,
+        vendor: values.vendor,
+        internalPoNumber: values.internalPoNumber,
+        externalDocumentType: values.extDocType,
+        externalDocumentNumber: values.extDocNumber,
+        paymentMethod: values.paymentMethod,
+        paymentDate: values.paymentDate,
+        destinationBank: values.bankTujuan,
+        destinationBankAccount: values.rekBankTujuan,
+        checkDocs: values.checkDocs,
         items: values.items.map(item => ({
-          ...item,
+          budgetId: item.budgetId || null,
+          memo: item.memo || '',
+          qty: normalizeNumber(item.qty),
+          price: normalizeNumber(item.hargaSatuan),
           amount: calculateRowAmount(item),
         })),
       }

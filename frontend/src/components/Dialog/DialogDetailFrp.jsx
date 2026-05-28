@@ -70,6 +70,12 @@ function DialogFrpDetail({
   title = 'Detail FRP',
   eyebrow = 'Request Detail',
   onClose,
+  canApprove = false,
+  isApprovedView = false,
+  userRole = '',
+  onApprove,
+  onReject,
+  onRevert,
 }) {
   useEffect(() => {
     if (!isOpen) {
@@ -284,52 +290,123 @@ function DialogFrpDetail({
           </div>
         </div>
 
-        <div className="dashboard-popup__actions" style={{ position: 'relative', zIndex: 1, padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 24px 24px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            className="dashboard-popup__button dashboard-popup__button--secondary"
-            onClick={() => {
-              window.location.href = `/?revisi=${request.id}&duplicate=1`
-            }}
-            style={{ 
-              display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px'
-            }}
-          >
-            <span className="material-icons-round" style={{ fontSize: '18px' }}>content_copy</span>
-            Duplicate
-          </button>
-          <button
-            type="button"
-            className="dashboard-popup__button"
-            onClick={() => openPrintPreview(request)}
-            style={{ 
-              display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
-              background: 'linear-gradient(135deg, #1a2a57 0%, #2d4a8c 100%)',
-              color: '#fff', border: 'none',
-              boxShadow: '0 8px 20px rgba(26, 42, 87, 0.28)', transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 12px 28px rgba(26, 42, 87, 0.4)'}
-            onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(26, 42, 87, 0.28)'}
-          >
-            <span className="material-icons-round" style={{ fontSize: '18px' }}>visibility</span>
-            Preview
-          </button>
-          <button
-            type="button"
-            className="dashboard-popup__button"
-            onClick={() => buildPostForm('/generate-pdf', request, '_blank')}
-            style={{ 
-              display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: '#fff', border: 'none',
-              boxShadow: '0 8px 20px rgba(16, 185, 129, 0.28)', transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 12px 28px rgba(16, 185, 129, 0.4)'}
-            onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.28)'}
-          >
-            <span className="material-icons-round" style={{ fontSize: '18px' }}>download</span>
-            Download
-          </button>
+        <div className="dashboard-popup__actions" style={{ position: 'relative', zIndex: 1, padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 24px 24px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {canApprove && !isApprovedView && (
+              <>
+                <button
+                  type="button"
+                  className="dashboard-popup__button"
+                  onClick={() => {
+                    onReject?.(request)
+                  }}
+                  style={{ 
+                    display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    color: '#fff', border: 'none',
+                    boxShadow: '0 8px 20px rgba(239, 68, 68, 0.28)', transition: 'all 0.2s',
+                    cursor: 'pointer'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 12px 28px rgba(239, 68, 68, 0.4)'}
+                  onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(239, 68, 68, 0.28)'}
+                >
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  className="dashboard-popup__button"
+                  onClick={() => {
+                    onApprove?.(request)
+                  }}
+                  style={{ 
+                    display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: '#fff', border: 'none',
+                    boxShadow: '0 8px 20px rgba(16, 185, 129, 0.28)', transition: 'all 0.2s',
+                    cursor: 'pointer'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 12px 28px rgba(16, 185, 129, 0.4)'}
+                  onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.28)'}
+                >
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
+                  Approve
+                </button>
+              </>
+            )}
+            {canApprove && isApprovedView && userRole === 'administrator' && (
+              <button
+                type="button"
+                className="dashboard-popup__button"
+                onClick={() => {
+                  onRevert?.(request)
+                }}
+                style={{ 
+                  display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: '#fff', border: 'none',
+                  boxShadow: '0 8px 20px rgba(217, 119, 6, 0.28)', transition: 'all 0.2s',
+                  cursor: 'pointer'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 12px 28px rgba(217, 119, 6, 0.4)'}
+                onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(217, 119, 6, 0.28)'}
+              >
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>restart_alt</span>
+                Revert
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
+            <button
+              type="button"
+              className="dashboard-popup__button dashboard-popup__button--secondary"
+              onClick={() => {
+                window.location.href = `/?revisi=${request.id}&duplicate=1`
+              }}
+              style={{ 
+                display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
+                cursor: 'pointer'
+              }}
+            >
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>content_copy</span>
+              Duplicate
+            </button>
+            <button
+              type="button"
+              className="dashboard-popup__button"
+              onClick={() => openPrintPreview(request)}
+              style={{ 
+                display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
+                background: 'linear-gradient(135deg, #1a2a57 0%, #2d4a8c 100%)',
+                color: '#fff', border: 'none',
+                boxShadow: '0 8px 20px rgba(26, 42, 87, 0.28)', transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 12px 28px rgba(26, 42, 87, 0.4)'}
+              onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(26, 42, 87, 0.28)'}
+            >
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>visibility</span>
+              Preview
+            </button>
+            <button
+              type="button"
+              className="dashboard-popup__button"
+              onClick={() => buildPostForm('/generate-pdf', request, '_blank')}
+              style={{ 
+                display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: '115px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#fff', border: 'none',
+                boxShadow: '0 8px 20px rgba(16, 185, 129, 0.28)', transition: 'all 0.2s',
+                cursor: 'pointer'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 12px 28px rgba(16, 185, 129, 0.4)'}
+              onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.28)'}
+            >
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>download</span>
+              Download
+            </button>
+          </div>
         </div>
       </div>
     </div>

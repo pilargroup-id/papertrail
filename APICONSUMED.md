@@ -1032,7 +1032,7 @@ Body mengikuti data FRP yang ingin dipreview.
 
 ---
 
-## Generate FRP PDF
+## Gefrrate FRP PDF
 
 ```http
 POST /generate-pdf

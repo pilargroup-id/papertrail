@@ -549,7 +549,7 @@ function normalizeFrpItems(items = []) {
             budgetId: item.budgetId || item.budget_id || null,
             memo: item.memo || '',
             qty: Number(item.qty || 0),
-            price: Number(item.price || 0),
+            price: Number(item.price || item.hargaSatuan || 0),
             amount: Number(item.amount || 0),
         }))
         : [];
@@ -752,12 +752,34 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                 error: 'User company or department snapshot is missing from auth session',
             });
         }
+
+        // Fetch old items if it is an update/revision, needed for budget validation and update
+        let oldItems = [];
+        if (req.body.frpId) {
+            const frpId = req.body.frpId;
+            const [oldItemRows] = await client.query(`
+                SELECT id, budget_id, memo, qty, price, amount
+                FROM items_frp
+                WHERE frp_request_id = ?
+            `, [frpId]);
+
+            oldItems = oldItemRows.map(item => ({
+                id: item.id,
+                budgetId: item.budget_id,
+                memo: item.memo || '',
+                qty: Number(item.qty || 0),
+                price: Number(item.price || 0),
+                amount: Number(item.amount || 0),
+            }));
+        }
+
         // Validate budgets before deducting/saving
-        const kurs = parseFloat(req.body.kurs) || 1;
+        const kurs = parseFloat(req.body.exchangeRate) || parseFloat(req.body.kurs) || 1;
         for (const item of (req.body.items || [])) {
             if (item.budgetId) {
                 const reqAmount = parseFloat(item.amount) || 0;
-                const unitPriceIdr = (parseFloat(item.hargaSatuan) || 0) * kurs;
+                const price = parseFloat(item.price) || parseFloat(item.hargaSatuan) || 0;
+                const unitPriceIdr = price * kurs;
 
                 // Find if this budgetId was used in old items of the same FRP
                 let revertedAmount = 0;
@@ -792,21 +814,6 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
         // Handle update / revision
         if (req.body.frpId) {
             const frpId = req.body.frpId;
-
-            const [oldItemRows] = await client.query(`
-                SELECT id, budget_id, memo, qty, price, amount
-                FROM items_frp
-                WHERE frp_request_id = ?
-            `, [frpId]);
-
-            const oldItems = oldItemRows.map(item => ({
-                id: item.id,
-                budgetId: item.budget_id,
-                memo: item.memo || '',
-                qty: Number(item.qty || 0),
-                price: Number(item.price || 0),
-                amount: Number(item.amount || 0),
-            }));
 
             await client.query(`
                 UPDATE frp_request SET
@@ -850,7 +857,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                 snapshot.companyCode,
                 snapshot.companyName,
 
-                req.body.frpDate || null,
+                req.body.frpDate || req.body.tanggalFrp || null,
 
                 snapshot.departmentId,
                 snapshot.departmentName,
@@ -865,15 +872,15 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
 
                 req.body.currency || 'IDR',
                 req.body.exchangeRate || req.body.kurs || '1',
-                req.body.frpDescription || '',
+                req.body.frpDescription || req.body.keteranganFrp || '',
                 req.body.vendor || '',
                 req.body.internalPoNumber || '',
-                req.body.externalDocumentType || '',
-                req.body.externalDocumentNumber || '',
+                req.body.externalDocumentType || req.body.extDocType || '',
+                req.body.externalDocumentNumber || req.body.extDocNumber || '',
                 req.body.paymentMethod || 'Transfer',
-                req.body.paymentDate || null,
-                req.body.destinationBank || '',
-                req.body.destinationBankAccount || '',
+                req.body.paymentDate || req.body.payment_date || null,
+                req.body.destinationBank || req.body.bankTujuan || '',
+                req.body.destinationBankAccount || req.body.rekBankTujuan || '',
                 JSON.stringify(req.body.checkDocs || []),
 
                 snapshot.createdByUserId,
@@ -987,7 +994,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             snapshot.companyCode,
             snapshot.companyName,
 
-            req.body.frpDate || null,
+            req.body.frpDate || req.body.tanggalFrp || null,
 
             snapshot.departmentId,
             snapshot.departmentName,
@@ -1002,15 +1009,15 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
 
             req.body.currency || 'IDR',
             req.body.exchangeRate || req.body.kurs || '1',
-            req.body.frpDescription || '',
+            req.body.frpDescription || req.body.keteranganFrp || '',
             req.body.vendor || '',
             req.body.internalPoNumber || '',
-            req.body.externalDocumentType || '',
-            req.body.externalDocumentNumber || '',
+            req.body.externalDocumentType || req.body.extDocType || '',
+            req.body.externalDocumentNumber || req.body.extDocNumber || '',
             req.body.paymentMethod || 'Transfer',
-            req.body.paymentDate || null,
-            req.body.destinationBank || '',
-            req.body.destinationBankAccount || '',
+            req.body.paymentDate || req.body.payment_date || null,
+            req.body.destinationBank || req.body.bankTujuan || '',
+            req.body.destinationBankAccount || req.body.rekBankTujuan || '',
             JSON.stringify(req.body.checkDocs || []),
 
             snapshot.createdByUserName,

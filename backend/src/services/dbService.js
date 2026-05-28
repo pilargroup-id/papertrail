@@ -164,10 +164,11 @@ async function fetchAllFrpRequests() {
 
     if (requestIds.length > 0) {
         const [itemRows] = await db.query(`
-            SELECT *
-            FROM items_frp
-            WHERE frp_request_id IN (?)
-            ORDER BY created_at ASC
+            SELECT i.*, mb.project_name
+            FROM items_frp i
+            LEFT JOIN master_budgets mb ON i.budget_id = mb.id
+            WHERE i.frp_request_id IN (?)
+            ORDER BY i.created_at ASC
         `, [requestIds]);
 
         itemsByRequestId = itemRows.reduce((acc, item) => {
@@ -176,6 +177,7 @@ async function fetchAllFrpRequests() {
             acc[item.frp_request_id].push({
                 id: item.id,
                 budgetId: item.budget_id || '',
+                projectName: item.project_name || '',
                 memo: item.memo || '',
                 qty: Number(item.qty || 0),
                 price: Number(item.price || 0),
@@ -199,13 +201,16 @@ async function fetchAllFrpRequests() {
         departmentName: r.department_name || '',
         departmentClass: r.department_class || '',
         departmentCode: r.department_code || '',
+        divisi: r.department_class || '',
 
         jobLevelId: r.job_level_id || null,
         jobLevelName: r.job_level_name || '',
         jobLevelRank: r.job_level_rank || null,
 
-        frpDate: r.frp_date ? new Date(r.frp_date).toISOString().slice(0, 10) : '',
+        frpDate: r.frp_date ? new Date(r.frp_date).toISOString().slice(0, 10) : (r.created_at ? new Date(r.created_at).toISOString().slice(0, 10) : ''),
+        tanggalFrp: r.frp_date ? new Date(r.frp_date).toISOString().slice(0, 10) : (r.created_at ? new Date(r.created_at).toISOString().slice(0, 10) : ''),
         requestedBy: r.requested_by || '',
+        dimintaOleh: r.requested_by || '',
 
         currency: r.currency || 'IDR',
         exchangeRate: String(r.kurs || '1'),
@@ -249,10 +254,11 @@ async function fetchAllRpRequests() {
 
     if (requestIds.length > 0) {
         const [itemRows] = await db.query(`
-            SELECT *
-            FROM items_rp
-            WHERE rp_request_id IN (?)
-            ORDER BY created_at ASC
+            SELECT i.*, mb.project_name
+            FROM items_rp i
+            LEFT JOIN master_budgets mb ON i.budget_id = mb.id
+            WHERE i.rp_request_id IN (?)
+            ORDER BY i.created_at ASC
         `, [requestIds]);
 
         itemsByRequestId = itemRows.reduce((acc, item) => {
@@ -261,6 +267,7 @@ async function fetchAllRpRequests() {
             acc[item.rp_request_id].push({
                 id: item.id,
                 budgetId: item.budget_id || '',
+                projectName: item.project_name || '',
                 memo: item.memo || '',
                 qty: Number(item.qty || 0),
                 price: Number(item.price || 0),

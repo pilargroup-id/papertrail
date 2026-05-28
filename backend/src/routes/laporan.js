@@ -85,7 +85,9 @@ router.get('/api/data/laporan', checkAuth, checkLaporan, async (req, res) => {
             id: r.id,
             frpNo: r.frpNo,
             frpDate: r.frpDate,
+            tanggalFrp: r.frpDate,
             requestedBy: r.requestedBy,
+            dimintaOleh: r.requestedBy,
 
             companyId: r.companyId,
             companyCode: r.companyCode,
@@ -95,6 +97,7 @@ router.get('/api/data/laporan', checkAuth, checkLaporan, async (req, res) => {
             departmentName: r.departmentName,
             departmentClass: r.departmentClass,
             departmentCode: r.departmentCode,
+            divisi: r.departmentClass,
 
             vendor: r.vendor,
             totalAmount: parseItemAmount(r.items),

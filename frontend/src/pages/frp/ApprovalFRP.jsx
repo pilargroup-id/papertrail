@@ -451,6 +451,7 @@ export default function ApprovalFRP() {
 
       if (result.success) {
         setConfirmAction(null)
+        setSelectedRequest(null)
         loadData()
       } else {
         window.alert(result.error || 'Gagal memproses data')
@@ -559,10 +560,9 @@ export default function ApprovalFRP() {
     { label: 'Divisi', key: 'division' },
     { label: 'Total', key: 'total' },
     { label: 'Status', key: 'status' },
-    { label: 'Aksi', key: null },
     { label: 'Detail', key: null },
   ]
-  const desktopColumnWidths = ['19%', '20%', '10%', '13%', '13%', '16%', '9%']
+  const desktopColumnWidths = ['22%', '24%', '12%', '16%', '16%', '10%']
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const safeCurrentPage = Math.min(currentPage, totalPages)
   const paginated = useMemo(() => {
@@ -762,16 +762,6 @@ export default function ApprovalFRP() {
                           )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          {data?.canApprove && !isApprovedView && (
-                            <>
-                              <button type="button" onClick={() => setConfirmAction({ request, action: 'approve' })} style={{ flex: 1, background: '#dcfce7', color: '#15803d', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Approve</button>
-                              <button type="button" onClick={() => setConfirmAction({ request, action: 'reject' })} style={{ flex: 1, background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Reject</button>
-                            </>
-                          )}
-                          {data?.canApprove && isApprovedView && user.role === 'administrator' && (
-                            <button type="button" onClick={() => setConfirmAction({ request, action: 'revert' })} style={{ flex: 1, background: '#fef9c3', color: '#92400e', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit' }}>Revert</button>
-                          )}
-                          {!isApprovedView && <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ flex: 1, background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Duplicate</button>}
                           <button type="button" onClick={() => setSelectedRequest(request)} style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Detail</button>
                         </div>
                       </div>
@@ -905,20 +895,6 @@ export default function ApprovalFRP() {
                                   </div>
                                 </td>
                                 <td style={{ ...td, whiteSpace: 'normal' }}>
-                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                    {!isApprovedView && <button type="button" onClick={() => window.location.href = `/?revisi=${request.id}&duplicate=1`} style={{ background: '#e0e7ff', color: '#4338ca', border: '1px solid #c7d2fe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Duplicate</button>}
-                                    {data?.canApprove && !isApprovedView && (
-                                      <>
-                                        <button type="button" onClick={() => setConfirmAction({ request, action: 'approve' })} style={{ background: '#dcfce7', color: '#15803d', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Approve</button>
-                                        <button type="button" onClick={() => setConfirmAction({ request, action: 'reject' })} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Reject</button>
-                                      </>
-                                    )}
-                                    {data?.canApprove && isApprovedView && user.role === 'administrator' && (
-                                      <button type="button" onClick={() => setConfirmAction({ request, action: 'revert' })} style={{ background: '#fef9c3', color: '#92400e', border: 'none', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Revert</button>
-                                    )}
-                                  </div>
-                                </td>
-                                <td style={{ ...td, whiteSpace: 'normal' }}>
                                   <button type="button" onClick={() => setSelectedRequest(request)} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Detail</button>
                                 </td>
                               </tr>
@@ -926,29 +902,56 @@ export default function ApprovalFRP() {
                                 <tr key={`${request.id}-expanded`} style={{ background: absoluteIndex % 2 === 0 ? '#f8fbff' : '#f3f7fb' }}>
                                   <td colSpan={desktopHeaders.length} style={{ padding: '0 14px 14px', borderBottom: '1px solid #f1f5f9' }}>
                                     <div style={{ border: '1px solid #dbe5f0', borderRadius: '12px', background: 'white', padding: '14px 16px', marginTop: '-2px' }}>
-                                      <div style={{ display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '1fr 1fr', gap: '14px 18px' }}>
-                                        <div>
-                                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Memo</div>
-                                          <div style={detailValueBox}>{request.items?.[0]?.memo || '-'}</div>
-                                        </div>
-                                        <div>
-                                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Keterangan</div>
-                                          <div style={detailValueBox}>{request.keteranganFrp || '-'}</div>
-                                        </div>
-                                        <div>
-                                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Vendor</div>
-                                          <div style={detailValueBox}>{request.vendor || '-'}</div>
-                                        </div>
-                                        <div>
-                                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Pemohon</div>
-                                          <div style={detailValueBox}>{request.dimintaOleh || '-'}</div>
-                                        </div>
-                                        {isApprovedView ? (
+                                      {isApprovedView && request.approvedBy ? (
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px 18px', marginBottom: '16px' }}>
                                           <div>
                                             <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Approved By</div>
                                             <div style={detailValueBox}>{request.approvedBy || '-'}</div>
                                           </div>
-                                        ) : null}
+                                        </div>
+                                      ) : null}
+
+                                      <div style={{ marginTop: isApprovedView && request.approvedBy ? '16px' : '0' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <span className="material-icons-round" style={{ fontSize: '16px', color: '#1e40af' }}>receipt_long</span>
+                                          Detail Item & Anggaran
+                                        </div>
+                                        <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1.5px solid #d7e0ea', background: 'white' }}>
+                                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '950px' }}>
+                                            <thead>
+                                              <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #d7e0ea' }}>
+                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '50px' }}>No</th>
+                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Memo / Keterangan</th>
+                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '130px' }}>Budget ID</th>
+                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Nama Project</th>
+                                                <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '70px' }}>Qty</th>
+                                                <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px' }}>Harga Satuan</th>
+                                                <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px' }}>Total</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {(request.items || []).length > 0 ? (
+                                                (request.items || []).map((item, idx) => (
+                                                  <tr key={item.id || idx} style={{ borderBottom: idx === request.items.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                                                    <td style={{ padding: '8px 12px', color: '#64748b', fontWeight: 500 }}>{idx + 1}</td>
+                                                    <td style={{ padding: '8px 12px', color: '#1e293b', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.memo || '-'}</td>
+                                                    <td style={{ padding: '8px 12px', color: '#475569', fontWeight: 500 }}>
+                                                      {item.budgetId || '-'}
+                                                    </td>
+                                                    <td style={{ padding: '8px 12px', color: '#334155', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.projectName || '-'}</td>
+                                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontWeight: 500 }}>{item.qty || 1}</td>
+                                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>{formatCurrency(Number(item.price) || 0)}</td>
+                                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#0f172a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>{formatCurrency(Number(item.amount) || 0)}</td>
+                                                  </tr>
+                                                ))
+                                              ) : (
+                                                <tr>
+                                                  <td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
+                                                </tr>
+                                              )}
+                                            </tbody>
+                                          </table>
+                                        </div>
                                       </div>
                                     </div>
                                   </td>
@@ -984,6 +987,12 @@ export default function ApprovalFRP() {
         isOpen={!!selectedRequest}
         request={selectedRequest}
         onClose={() => setSelectedRequest(null)}
+        canApprove={data?.canApprove}
+        isApprovedView={isApprovedView}
+        userRole={user.role}
+        onApprove={(req) => setConfirmAction({ request: req, action: 'approve' })}
+        onReject={(req) => setConfirmAction({ request: req, action: 'reject' })}
+        onRevert={(req) => setConfirmAction({ request: req, action: 'revert' })}
       />
 
       <DialogConfirm
