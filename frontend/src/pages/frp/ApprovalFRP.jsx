@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState, Fragment } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import DialogFrpDetail from '../../components/Dialog/DialogDetailFrp'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import { useUser } from '../../contexts/UserContext'
+import FilterApprovalFrp from './FilterApprovalFrp'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -15,10 +16,10 @@ function parseAmount(amount) {
 function formatDate(value) {
   return value
     ? new Intl.DateTimeFormat('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }).format(new Date(value))
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(value))
     : '-'
 }
 
@@ -42,14 +43,14 @@ function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
         inputRef.current.showPicker()
         return
       }
-    } catch (_) {}
+    } catch (_) { }
     inputRef.current.focus()
     inputRef.current.click()
   }
 
   return (
     <div
-      style={{ position: 'relative' }}
+      style={{ position: 'relative', width: '100%' }}
       onClick={openPicker}
     >
       <input
@@ -69,9 +70,9 @@ function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
         }}
       />
       <div
+        className="filter-input-element"
         style={{
           ...style,
-          paddingRight: '48px',
           display: 'flex',
           alignItems: 'center',
           color: value ? '#1e293b' : '#94a3b8',
@@ -82,33 +83,55 @@ function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {value ? formatDate(value) : placeholder}
         </span>
-        <button
-          type="button"
-          onClick={openPicker}
-          aria-label="Buka kalender"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            right: '8px',
-            transform: 'translateY(-50%)',
-            width: '34px',
-            height: '34px',
-            borderRadius: '10px',
-            border: 'none',
-            background: '#e2e8f0',
-            color: '#475569',
-            display: 'grid',
-            placeItems: 'center',
-            padding: 0,
-            pointerEvents: 'none',
-          }}
-        >
-          <span className="material-icons-round" style={{ fontSize: '18px' }}>calendar_month</span>
-        </button>
       </div>
     </div>
   )
 }
+
+function FilterField({ label, icon, children }) {
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      {label && (
+        <span
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            left: '12px',
+            background: 'white',
+            padding: '0 6px',
+            fontSize: '11px',
+            fontWeight: '700',
+            color: '#64748b',
+            zIndex: 3,
+            pointerEvents: 'none',
+            letterSpacing: '0.02em',
+          }}
+        >
+          {label}
+        </span>
+      )}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+        {icon && (
+          <span
+            className="material-icons-round"
+            style={{
+              position: 'absolute',
+              left: '12px',
+              color: '#64748b',
+              fontSize: '18px',
+              pointerEvents: 'none',
+              zIndex: 3,
+            }}
+          >
+            {icon}
+          </span>
+        )}
+        {children}
+      </div>
+    </div>
+  )
+}
+
 
 function SearchableSelect({
   value,
@@ -125,10 +148,10 @@ function SearchableSelect({
     typeof option === 'string'
       ? { value: option, label: option, keywords: option }
       : {
-          value: option.value,
-          label: option.label,
-          keywords: option.keywords || option.label || option.value,
-        },
+        value: option.value,
+        label: option.label,
+        keywords: option.keywords || option.label || option.value,
+      },
   )
 
   const selectedOption = normalizedOptions.find(option => option.value === value)
@@ -150,9 +173,10 @@ function SearchableSelect({
   }, [])
 
   return (
-    <div ref={ref} style={{ position: 'relative', zIndex: open ? 20 : 1 }}>
+    <div ref={ref} style={{ position: 'relative', zIndex: open ? 20 : 1, width: '100%' }}>
       <button
         type="button"
+        className="select-dropdown-btn"
         onClick={() => setOpen(current => !current)}
         style={{
           ...style,
@@ -161,7 +185,7 @@ function SearchableSelect({
           justifyContent: 'space-between',
           textAlign: 'left',
           minHeight: style?.minHeight || '42px',
-          boxShadow: style?.boxShadow || 'inset 0 1px 0 rgba(255,255,255,0.65)',
+          boxShadow: 'none',
         }}
       >
         <span
@@ -203,7 +227,7 @@ function SearchableSelect({
               value={search}
               onChange={event => setSearch(event.target.value)}
               placeholder="Cari..."
-              style={{ ...style, fontSize: '0.875rem', padding: '8px 10px', minHeight: 'unset' }}
+              style={{ ...style, paddingLeft: '10px', fontSize: '0.875rem', padding: '8px 10px', minHeight: 'unset' }}
             />
           </div>
           <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: '1px solid #f1f5f9' }}>
@@ -305,7 +329,7 @@ export default function ApprovalFRP() {
     if (sortConfig.key !== key) {
       return <span className="material-icons-round" style={{ fontSize: '14px', marginLeft: '4px', verticalAlign: 'middle', opacity: 0.3 }}>unfold_more</span>
     }
-    return sortConfig.direction === 'asc' 
+    return sortConfig.direction === 'asc'
       ? <span className="material-icons-round" style={{ fontSize: '14px', marginLeft: '4px', verticalAlign: 'middle', color: '#2563eb' }}>arrow_upward</span>
       : <span className="material-icons-round" style={{ fontSize: '14px', marginLeft: '4px', verticalAlign: 'middle', color: '#2563eb' }}>arrow_downward</span>
   }
@@ -320,11 +344,11 @@ export default function ApprovalFRP() {
 
         return response.json()
       })
-      .then(d => { 
+      .then(d => {
         setData(d)
         setUser(d?.user)
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false))
   }
 
@@ -485,31 +509,34 @@ export default function ApprovalFRP() {
       window.setTimeout(() => {
         setCopiedFrpId(current => (current === requestId ? null : current))
       }, 1400)
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const user = data?.user || {}
+  const canApprove = data?.canApprove
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
+
   const statusColors = {
     PENDING: { background: '#fef08a', color: '#854d0e' },
     APPROVED: { background: '#bbf7d0', color: '#166534' },
     REJECTED: { background: '#fecaca', color: '#991b1b' },
   }
+
   const filterInput = {
     width: '100%',
-    padding: '9px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #dde3ed',
+    padding: '9px 12px 9px 36px',
+    borderRadius: '12px',
+    border: '1.5px solid #dbe5f0',
     fontSize: '13px',
     background: 'white',
     boxSizing: 'border-box',
     fontFamily: 'inherit',
     outline: 'none',
     color: '#1e293b',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
     minHeight: '42px',
   }
+
   const detailValueBox = {
     padding: '10px 12px',
     borderRadius: '10px',
@@ -522,18 +549,22 @@ export default function ApprovalFRP() {
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
     transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
   }
+
   const requesters = useMemo(
     () => (data?.requests ? [...new Set(data.requests.map((request) => request.dimintaOleh).filter(Boolean))].sort() : []),
     [data],
   )
+
   const requesterOptions = useMemo(
     () => requesters.map(requester => ({ value: requester, label: requester })),
     [requesters],
   )
+
   const divisionOptions = useMemo(
     () => divisions.map(division => ({ value: division, label: division })),
     [divisions],
   )
+
   const statusOptions = useMemo(
     () => [
       { value: 'APPROVED', label: 'APPROVED' },
@@ -541,15 +572,7 @@ export default function ApprovalFRP() {
     ],
     [],
   )
-  const filterGridStyle = useMemo(
-    () => ({
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : getGridColumns(5, false, isTablet),
-      gap: isMobile ? '10px' : '15px',
-      alignItems: 'flex-end',
-    }),
-    [isMobile, isTablet],
-  )
+
   useEffect(() => {
     setCurrentPage(1)
   }, [filters, isApprovedView, rowsPerPage])
@@ -562,155 +585,313 @@ export default function ApprovalFRP() {
     { label: 'Status', key: 'status' },
     { label: 'Detail', key: null },
   ]
-  const desktopColumnWidths = ['22%', '24%', '12%', '16%', '16%', '10%']
+
+  const desktopColumnWidths = ['22%', '24%', '12%', '14%', '16%', '12%']
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const safeCurrentPage = Math.min(currentPage, totalPages)
+
   const paginated = useMemo(() => {
     const start = (safeCurrentPage - 1) * rowsPerPage
     return filtered.slice(start, start + rowsPerPage)
   }, [filtered, rowsPerPage, safeCurrentPage])
+
   const rangeStart = filtered.length === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
   const rangeEnd = Math.min(filtered.length, safeCurrentPage * rowsPerPage)
 
+  const exportToCSV = () => {
+    if (!filtered || filtered.length === 0) return
+    const headers = ['No FRP', 'Tanggal FRP', 'Pemohon', 'Vendor', 'Divisi', 'Total', 'Status']
+    const rows = filtered.map(req => [
+      req.frpNo || '',
+      formatDate(req.tanggalFrp),
+      req.dimintaOleh || '',
+      req.vendor || '',
+      req.divisi || '',
+      calcTotal(req),
+      req.status || ''
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `FRP_${isApprovedView ? 'History' : 'Pending'}_Export_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const renderPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+    let startPage = Math.max(1, safeCurrentPage - Math.floor(maxVisiblePages / 2))
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          type="button"
+          onClick={() => setCurrentPage(i)}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '8px',
+            border: i === safeCurrentPage ? 'none' : '1px solid #dbe5f0',
+            background: i === safeCurrentPage ? '#1e5e4d' : 'white',
+            color: i === safeCurrentPage ? 'white' : '#475569',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
+            display: 'grid',
+            placeItems: 'center',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            if (i !== safeCurrentPage) {
+              e.currentTarget.style.background = '#f8fafc'
+              e.currentTarget.style.borderColor = '#cbd5e1'
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (i !== safeCurrentPage) {
+              e.currentTarget.style.background = 'white'
+              e.currentTarget.style.borderColor = '#dbe5f0'
+            }
+          }}
+        >
+          {i}
+        </button>
+      )
+    }
+    return pages
+  }
+
   return (
     <>
+      <style>{`
+        .filter-input-element {
+          transition: all 0.2s ease-in-out;
+        }
+        .filter-input-element:focus, .filter-input-element:hover {
+          border-color: #1e5e4d !important;
+          box-shadow: 0 0 0 3px rgba(30, 94, 77, 0.15) !important;
+        }
+        .select-dropdown-btn {
+          transition: all 0.2s ease-in-out;
+        }
+        .select-dropdown-btn:focus, .select-dropdown-btn:hover {
+          border-color: #1e5e4d !important;
+          box-shadow: 0 0 0 3px rgba(30, 94, 77, 0.15) !important;
+        }
+        .dashboard-main-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .dashboard-main-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .dashboard-main-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
+        .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
+
       <main
         className="dashboard-main"
         style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}
       >
-            {loading && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b' }}>
-                Memuat data...
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b' }}>
+            Memuat data...
+          </div>
+        )}
+
+        {/* Unified Table & Filter Card */}
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'white',
+            borderRadius: '16px',
+            border: '1.5px solid #e8edf4',
+            boxShadow: '0 4px 20px -2px rgba(148, 163, 184, 0.08)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Top Filter Area (Integrated inside the card) */}
+          <div
+            style={{
+              background: 'white',
+              padding: isMobile ? '16px 12px' : '20px 24px',
+              borderBottom: '1.5px solid #e8edf4',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: '#e6f2f0',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: '#1e5e4d',
+                }}>
+                  <span className="material-icons-round" style={{ fontSize: '20px' }}>filter_alt</span>
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>
+                    Approval FRP
+                  </h2>
+                  <p style={{ margin: '1px 0 0', fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+                    {filtered.length} data sesuai filter aktif
+                  </p>
+                </div>
               </div>
-            )}
-            <div
-              style={{
-                background: '#f1f5f9',
-                borderRadius: '16px',
-                padding: isMobile ? '10px 12px' : '20px',
-                marginBottom: isMobile ? '12px' : '20px',
-                border: '1px solid #e2e8f0',
-              }}
-            >
-              {isMobile && (
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setFiltersOpen(v => !v)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: '2px 0', marginBottom: filtersOpen ? '10px' : 0, cursor: 'pointer', fontFamily: 'inherit' }}
+                  onClick={loadData}
+                  title="Segarkan data"
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    border: '1.5px solid #dbe5f0',
+                    background: 'white',
+                    color: '#475569',
+                    display: 'grid',
+                    placeItems: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f8fafc'
+                    e.currentTarget.style.borderColor = '#cbd5e1'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'white'
+                    e.currentTarget.style.borderColor = '#dbe5f0'
+                  }}
                 >
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="material-icons-round" style={{ fontSize: '17px' }}>tune</span>
-                    Filter & Pencarian
-                    {Object.values(filters).some(Boolean) && (
-                      <span style={{ background: '#2563eb', color: 'white', borderRadius: '999px', fontSize: '10px', fontWeight: 700, padding: '1px 7px', lineHeight: 1.6 }}>
-                        {Object.values(filters).filter(Boolean).length}
-                      </span>
-                    )}
-                  </span>
-                  <span className="material-icons-round" style={{ fontSize: '20px', color: '#94a3b8' }}>
-                    {filtersOpen ? 'expand_less' : 'expand_more'}
-                  </span>
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
                 </button>
-              )}
-              {(!isMobile || filtersOpen) && (
-              <div
-                style={filterGridStyle}
-              >
-                {[
-                  {
-                    label: 'Search',
-                    content: (
-                      <input
-                        style={filterInput}
-                        placeholder="Cari No FRP / Vendor..."
-                        value={filters.search}
-                        onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
-                      />
-                    ),
-                  },
-                  {
-                    label: 'Tanggal',
-                    content: (
-                      <DateField
-                        value={filters.date}
-                        onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
-                        style={filterInput}
-                      />
-                    ),
-                  },
-                  {
-                    label: 'Pemohon',
-                    content: (
-                      <SearchableSelect
-                        value={filters.requester}
-                        onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
-                        options={requesterOptions}
-                        placeholder="Semua Pemohon"
-                        style={filterInput}
-                      />
-                    ),
-                  },
-                  {
-                    label: isApprovedView ? 'Status' : null,
-                    content: isApprovedView ? (
-                      <SearchableSelect
-                        value={filters.status}
-                        onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
-                        options={statusOptions}
-                        placeholder="Semua Status"
-                        style={filterInput}
-                      />
-                    ) : null,
-                  },
-                  {
-                    label: 'Divisi',
-                    content: (
-                      <SearchableSelect
-                        value={filters.division}
-                        onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
-                        options={divisionOptions}
-                        placeholder="Semua Divisi"
-                        style={filterInput}
-                      />
-                    ),
-                  },
-                ].map(({ label, content }, i) =>
-                  label || content ? (
-                    <div key={i} style={{ gridColumn: isMobile && i === 0 ? '1 / -1' : undefined }}>
-                      {label && (
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px', letterSpacing: '0.04em' }}>
-                          {label}
-                        </label>
-                      )}
-                      {content}
-                    </div>
-                  ) : null,
-                )}
               </div>
-              )}
             </div>
 
             <div
               style={{
-                flex: 1,
-                minHeight: 0,
                 display: 'flex',
-                flexDirection: 'column',
-                background: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                border: '1px solid #e2e8f0',
-                overflow: 'hidden',
+                gap: '12px',
+                flexWrap: 'wrap',
+                width: '100%',
+                alignItems: 'center',
               }}
             >
-              {filtered.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#94a3b8', padding: '4rem 2rem' }}>
-                  <span className="material-icons-round" style={{ fontSize: '48px', marginBottom: '1rem', opacity: 0.5 }}>task</span>
-                  <h3 style={{ margin: '0 0 0.5rem', color: '#64748b', fontWeight: 600 }}>Belum Ada Data</h3>
-                </div>
-              ) : isMobile ? (
-                <>
-                  <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile
+                    ? '1fr'
+                    : `repeat(${isApprovedView ? 5 : 4}, minmax(140px, 1fr))`,
+                  gap: '12px',
+                  flex: 1,
+                  minWidth: isMobile ? '100%' : '600px',
+                }}
+              >
+                {/* Search */}
+                <FilterField label="Cari" icon="search">
+                  <input
+                    className="filter-input-element"
+                    style={filterInput}
+                    placeholder="No FRP / Vendor..."
+                    value={filters.search}
+                    onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
+                  />
+                </FilterField>
+
+                {/* Tanggal */}
+                <FilterField label="Tanggal" icon="calendar_month">
+                  <DateField
+                    value={filters.date}
+                    onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
+                    style={filterInput}
+                  />
+                </FilterField>
+
+                {/* Pemohon */}
+                <FilterField label="Pemohon" icon="person">
+                  <SearchableSelect
+                    value={filters.requester}
+                    onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
+                    options={requesterOptions}
+                    placeholder="Semua Pemohon"
+                    style={filterInput}
+                  />
+                </FilterField>
+
+                {/* Status (only if approved view) */}
+                {isApprovedView && (
+                  <FilterField label="Status" icon="rule">
+                    <SearchableSelect
+                      value={filters.status}
+                      onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
+                      options={statusOptions}
+                      placeholder="Semua Status"
+                      style={filterInput}
+                    />
+                  </FilterField>
+                )}
+
+                {/* Divisi */}
+                <FilterField label="Divisi" icon="business">
+                  <SearchableSelect
+                    value={filters.division}
+                    onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
+                    options={divisionOptions}
+                    placeholder="Semua Divisi"
+                    style={filterInput}
+                  />
+                </FilterField>
+              </div>
+
+            </div>
+          </div>
+          {/* Table Container */}
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'white',
+              overflow: 'hidden',
+            }}
+          >
+            {filtered.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#94a3b8', padding: '4rem 2rem' }}>
+                <span className="material-icons-round" style={{ fontSize: '48px', marginBottom: '1rem', opacity: 0.5 }}>task</span>
+                <h3 style={{ margin: '0 0 0.5rem', color: '#64748b', fontWeight: 600 }}>Belum Ada Data</h3>
+              </div>
+            ) : isMobile ? (
+              <>
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {paginated.map((request) => {
                     const total = calcTotal(request)
                     const statusStyle = statusColors[request.status] || {}
@@ -762,49 +943,87 @@ export default function ApprovalFRP() {
                           )}
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button type="button" onClick={() => setSelectedRequest(request)} style={{ flex: 1, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}>Detail</button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRequest(request)}
+                            style={{
+                              flex: 1,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              background: 'rgba(16, 185, 129, 0.1)',
+                              color: '#059669',
+                              border: '1.5px solid rgba(16, 185, 129, 0.3)',
+                              padding: '8px',
+                              borderRadius: '20px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '13px',
+                              fontFamily: 'inherit',
+                              transition: 'all 0.2s ease-in-out',
+                              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.05)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)'
+                              e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)'
+                              e.currentTarget.style.transform = 'translateY(-1px)'
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.1)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'
+                              e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)'
+                              e.currentTarget.style.transform = 'translateY(0)'
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.05)'
+                            }}
+                          >
+                            <span className="material-icons-round" style={{ fontSize: '16px' }}>open_in_new</span>
+                            Detail
+                          </button>
                         </div>
                       </div>
                     )
                   })}
+                </div>
+
+                {/* Pagination Mobile */}
+                <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
+                  <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {filtered.length}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>
+                    <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px' }}>
+                      {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+                    </select>
+                    <button type="button" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={safeCurrentPage === 1} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Prev</button>
+                    <button type="button" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={safeCurrentPage === totalPages} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Next</button>
                   </div>
-                  <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {filtered.length}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>
-                      <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px' }}>
-                        {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
-                      </select>
-                      <button type="button" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={safeCurrentPage === 1} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Prev</button>
-                      <button type="button" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={safeCurrentPage === totalPages} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Next</button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
+                </div>
+              </>
+            ) : (
+              <>
                 <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  {/* Desktop Headers */}
                   <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
                     <colgroup>
                       {desktopColumnWidths.map((width, index) => <col key={`desktop-head-col-${index}`} style={{ width }} />)}
                     </colgroup>
                     <thead>
                       <tr>
-                        {desktopHeaders.map((header) => (
+                        {desktopHeaders.map((header, idx) => (
                           <th
                             key={header.label}
                             onClick={() => requestSort(header.key)}
                             style={{
-                              padding: '10px 14px',
+                              padding: '14px 16px',
                               textAlign: 'left',
-                              color: '#64748b',
+                              color: '#475569',
                               fontWeight: 700,
                               fontSize: '11px',
                               textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
+                              letterSpacing: '0.06em',
                               whiteSpace: 'nowrap',
                               background: '#f8fafc',
-                              borderBottom: '2px solid #e2e8f0',
-                              boxShadow: '0 2px 4px -1px rgba(15,23,42,0.06)',
+                              borderBottom: '1.5px solid #e2e8f0',
                               cursor: header.key ? 'pointer' : 'default',
                               userSelect: 'none',
                             }}
@@ -818,7 +1037,9 @@ export default function ApprovalFRP() {
                       </tr>
                     </thead>
                   </table>
-                  <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+
+                  {/* Desktop Body */}
+                  <div className="dashboard-main-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
                     <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
                       <colgroup>
                         {desktopColumnWidths.map((width, index) => <col key={`desktop-body-col-${index}`} style={{ width }} />)}
@@ -829,64 +1050,110 @@ export default function ApprovalFRP() {
                           const statusStyle = statusColors[request.status] || {}
                           const absoluteIndex = (safeCurrentPage - 1) * rowsPerPage + idx
                           const rowBg = absoluteIndex % 2 === 0 ? 'white' : '#fafbfc'
-                          const td = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }
                           const isExpanded = expandedRowId === request.id
+
+                          const td = {
+                            padding: '14px 16px',
+                            borderBottom: '1px solid #e8edf4',
+                            verticalAlign: 'middle',
+                            background: rowBg,
+                          }
+
                           return (
-                            <>
+                            <React.Fragment key={request.id}>
                               <tr
-                                key={request.id}
-                                style={{ background: rowBg }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = '#eff6ff' }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = rowBg }}
+                                style={{ background: rowBg, transition: 'background 0.2s' }}
+                                onMouseEnter={(e) => {
+                                  const children = e.currentTarget.children
+                                  for (let i = 0; i < children.length; i++) {
+                                    children[i].style.background = '#eff6ff'
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  const children = e.currentTarget.children
+                                  for (let i = 0; i < children.length; i++) {
+                                    children[i].style.background = rowBg
+                                  }
+                                }}
                               >
+                                {/* 1. Ringkasan */}
                                 <td style={td}>
-                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    {/* Accordion Toggle Button */}
                                     <button
                                       type="button"
                                       onClick={() => setExpandedRowId(current => (current === request.id ? null : request.id))}
                                       style={{
-                                        width: '34px',
-                                        height: '34px',
-                                        borderRadius: '10px',
-                                        border: '1px solid #cbd5e1',
-                                        background: isExpanded ? '#dbeafe' : '#f8fafc',
-                                        color: isExpanded ? '#1d4ed8' : '#64748b',
-                                        display: 'grid',
-                                        placeItems: 'center',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '50%',
+                                        border: '1.5px solid rgba(30, 94, 77, 0.15)',
+                                        background: isExpanded ? 'rgba(30, 94, 77, 0.15)' : 'rgba(30, 94, 77, 0.05)',
+                                        color: '#1e5e4d',
                                         cursor: 'pointer',
+                                        transition: 'all 0.2s',
                                         padding: 0,
                                         flexShrink: 0,
                                       }}
-                                      aria-label={isExpanded ? 'Sembunyikan info tambahan' : 'Lihat info tambahan'}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(30, 94, 77, 0.15)'
+                                        e.currentTarget.style.borderColor = 'rgba(30, 94, 77, 0.3)'
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (!isExpanded) {
+                                          e.currentTarget.style.background = 'rgba(30, 94, 77, 0.05)'
+                                          e.currentTarget.style.borderColor = 'rgba(30, 94, 77, 0.15)'
+                                        }
+                                      }}
                                     >
-                                      <span className="material-icons-round" style={{ fontSize: '18px' }}>
-                                        {isExpanded ? 'expand_less' : 'expand_more'}
+                                      <span className="material-icons-round" style={{ fontSize: '18px', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                        expand_more
                                       </span>
                                     </button>
+
                                     <div style={{ minWidth: 0 }}>
                                       <button
                                         type="button"
                                         onClick={() => copyFrpNo(request.id, request.frpNo)}
                                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
                                       >
-                                        <span style={{ fontWeight: 700, color: '#1e40af', fontSize: '0.82rem', marginBottom: '4px', wordBreak: 'break-word' }}>{request.frpNo}</span>
-                                        <span className="material-icons-round" style={{ fontSize: '15px', color: copiedFrpId === request.id ? '#15803d' : '#94a3b8' }}>
+                                        <span style={{ fontWeight: 700, color: '#1e40af', fontSize: '0.85rem', marginBottom: '2px', wordBreak: 'break-word' }}>{request.frpNo}</span>
+                                        <span className="material-icons-round" style={{ fontSize: '14px', color: copiedFrpId === request.id ? '#15803d' : '#94a3b8' }}>
                                           {copiedFrpId === request.id ? 'check' : 'content_copy'}
                                         </span>
                                       </button>
-                                      <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.45 }}>{formatDate(request.tanggalFrp)}</div>
+                                      <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>{formatDate(request.tanggalFrp)}</div>
                                     </div>
                                   </div>
                                 </td>
+
+                                {/* 2. Pemohon & Vendor */}
                                 <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                                  <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '4px' }}>{request.dimintaOleh || '-'}</div>
+                                  <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '2px' }}>{request.dimintaOleh || '-'}</div>
                                   <div style={{ fontSize: '12px', color: '#64748b' }}>{request.vendor || '-'}</div>
                                 </td>
-                                <td style={{ ...td, whiteSpace: 'normal' }}><span style={{ background: '#e0e7ef', color: '#334155', borderRadius: '6px', padding: '2px 8px', fontSize: '12px', fontWeight: 600, display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word' }}>{request.divisi}</span></td>
-                                <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, whiteSpace: 'normal', color: '#0f172a', wordBreak: 'break-word' }}>{formatCurrency(total)}</td>
+
+                                {/* 3. Divisi */}
+                                <td style={{ ...td, whiteSpace: 'normal' }}>
+                                  <span style={{ background: '#e0e7ef', color: '#334155', borderRadius: '6px', padding: '2px 8px', fontSize: '12px', fontWeight: 600, display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word' }}>
+                                    {request.divisi}
+                                  </span>
+                                </td>
+
+                                {/* 4. Total */}
+                                <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>
+                                  {formatCurrency(total)}
+                                </td>
+
+                                {/* 5. Status */}
                                 <td style={td}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <span style={{ alignSelf: 'flex-start', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em', ...statusStyle }}>{request.status}</span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <span style={{ alignSelf: 'flex-start', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em', ...statusStyle }}>
+                                      {request.status}
+                                    </span>
                                     {isApprovedView && request.approvedBy ? (
                                       <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4, wordBreak: 'break-word' }}>
                                         <span style={{ fontWeight: 700, color: '#475569' }}>By:</span> {request.approvedBy}
@@ -894,93 +1161,326 @@ export default function ApprovalFRP() {
                                     ) : null}
                                   </div>
                                 </td>
-                                <td style={{ ...td, whiteSpace: 'normal' }}>
-                                  <button type="button" onClick={() => setSelectedRequest(request)} style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' }}>Detail</button>
+
+                                {/* 6. Detail */}
+                                <td style={{ ...td, borderRight: 'none' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedRequest(request)}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '6px',
+                                      background: 'rgba(16, 185, 129, 0.1)',
+                                      color: '#059669',
+                                      border: '1.5px solid rgba(16, 185, 129, 0.3)',
+                                      borderRadius: '20px',
+                                      padding: '6px 14px',
+                                      fontSize: '12px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease-in-out',
+                                      boxShadow: '0 2px 4px rgba(16, 185, 129, 0.05)',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)'
+                                      e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)'
+                                      e.currentTarget.style.transform = 'translateY(-1px)'
+                                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.1)'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'
+                                      e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)'
+                                      e.currentTarget.style.transform = 'translateY(0)'
+                                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.05)'
+                                    }}
+                                  >
+                                    <span className="material-icons-round" style={{ fontSize: '15px' }}>open_in_new</span>
+                                    Detail
+                                  </button>
                                 </td>
                               </tr>
-                              {isExpanded ? (
-                                <tr key={`${request.id}-expanded`} style={{ background: absoluteIndex % 2 === 0 ? '#f8fbff' : '#f3f7fb' }}>
-                                  <td colSpan={desktopHeaders.length} style={{ padding: '0 14px 14px', borderBottom: '1px solid #f1f5f9' }}>
-                                    <div style={{ border: '1px solid #dbe5f0', borderRadius: '12px', background: 'white', padding: '14px 16px', marginTop: '-2px' }}>
-                                      {isApprovedView && request.approvedBy ? (
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px 18px', marginBottom: '16px' }}>
-                                          <div>
-                                            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Approved By</div>
-                                            <div style={detailValueBox}>{request.approvedBy || '-'}</div>
-                                          </div>
-                                        </div>
-                                      ) : null}
 
-                                      <div style={{ marginTop: isApprovedView && request.approvedBy ? '16px' : '0' }}>
-                                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                          <span className="material-icons-round" style={{ fontSize: '16px', color: '#1e40af' }}>receipt_long</span>
-                                          Detail Item & Anggaran
+                              {/* Expand Row Details Card */}
+                              {isExpanded && (
+                                <tr key={`${request.id}-expanded`}>
+                                  <td colSpan={desktopHeaders.length} style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e8edf4' }}>
+                                    <div
+                                      style={{
+                                        border: '1.5px solid #e2e8f0',
+                                        borderRadius: '16px',
+                                        background: 'white',
+                                        padding: '20px',
+                                        boxShadow: '0 4px 12px rgba(15,23,42,0.03)'
+                                      }}
+                                    >
+                                      {/* Header Block with Title and Action Buttons */}
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '16px' }}>
+                                        {/* Title block */}
+                                        <div style={{ minWidth: 0 }}>
+                                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e40af', wordBreak: 'break-word' }}>
+                                            {request.frpNo} {request.vendor ? `- ${request.vendor}` : ''}
+                                          </h4>
+                                          <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
+                                            {request.dimintaOleh || '-'} - {formatDate(request.tanggalFrp)}
+                                          </p>
                                         </div>
-                                        <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1.5px solid #d7e0ea', background: 'white' }}>
-                                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '950px' }}>
-                                            <thead>
-                                              <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #d7e0ea' }}>
-                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '50px' }}>No</th>
-                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Memo / Keterangan</th>
-                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '130px' }}>Budget ID</th>
-                                                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Nama Project</th>
-                                                <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '70px' }}>Qty</th>
-                                                <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px' }}>Harga Satuan</th>
-                                                <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px' }}>Total</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              {(request.items || []).length > 0 ? (
-                                                (request.items || []).map((item, idx) => (
-                                                  <tr key={item.id || idx} style={{ borderBottom: idx === request.items.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
-                                                    <td style={{ padding: '8px 12px', color: '#64748b', fontWeight: 500 }}>{idx + 1}</td>
-                                                    <td style={{ padding: '8px 12px', color: '#1e293b', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.memo || '-'}</td>
-                                                    <td style={{ padding: '8px 12px', color: '#475569', fontWeight: 500 }}>
-                                                      {item.budgetId || '-'}
-                                                    </td>
-                                                    <td style={{ padding: '8px 12px', color: '#334155', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.projectName || '-'}</td>
-                                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontWeight: 500 }}>{item.qty || 1}</td>
-                                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>{formatCurrency(Number(item.price) || 0)}</td>
-                                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#0f172a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>{formatCurrency(Number(item.amount) || 0)}</td>
-                                                  </tr>
-                                                ))
-                                              ) : (
-                                                <tr>
-                                                  <td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
-                                                </tr>
-                                              )}
-                                            </tbody>
-                                          </table>
+
+                                        {/* Action Buttons */}
+                                        <div style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '8px',
+                                          flexShrink: 0,
+                                        }}>
+                                          {canApprove && !isApprovedView && (
+                                            <>
+                                              <button
+                                                type="button"
+                                                onClick={() => requestAction(request, 'reject')}
+                                                style={{
+                                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                                  color: 'white', border: 'none', borderRadius: '8px',
+                                                  padding: '8px 16px', fontSize: '12px', fontWeight: 700,
+                                                  cursor: 'pointer', boxShadow: '0 4px 10px rgba(239,68,68,0.15)',
+                                                  transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 6px 14px rgba(239,68,68,0.25)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 4px 10px rgba(239,68,68,0.15)'}
+                                              >
+                                                <span className="material-icons-round" style={{ fontSize: '16px' }}>cancel</span>
+                                                Reject
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => requestAction(request, 'approve')}
+                                                style={{
+                                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                  color: 'white', border: 'none', borderRadius: '8px',
+                                                  padding: '8px 16px', fontSize: '12px', fontWeight: 700,
+                                                  cursor: 'pointer', boxShadow: '0 4px 10px rgba(16,185,129,0.15)',
+                                                  transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 6px 14px rgba(16,185,129,0.25)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 4px 10px rgba(16,185,129,0.15)'}
+                                              >
+                                                <span className="material-icons-round" style={{ fontSize: '16px' }}>check_circle</span>
+                                                Approve
+                                              </button>
+                                            </>
+                                          )}
+                                          {canApprove && isApprovedView && user.role === 'administrator' && (
+                                            <button
+                                              type="button"
+                                              onClick={() => requestAction(request, 'revert')}
+                                              style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                                color: 'white', border: 'none', borderRadius: '8px',
+                                                padding: '8px 16px', fontSize: '12px', fontWeight: 700,
+                                                cursor: 'pointer', boxShadow: '0 4px 10px rgba(217,119,6,0.15)',
+                                                transition: 'all 0.2s'
+                                              }}
+                                              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 6px 14px rgba(217,119,6,0.25)'}
+                                              onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 4px 10px rgba(217,119,6,0.15)'}
+                                            >
+                                              <span className="material-icons-round" style={{ fontSize: '16px' }}>restart_alt</span>
+                                              Revert
+                                            </button>
+                                          )}
+
+
                                         </div>
                                       </div>
+
+                                      {isApprovedView && request.approvedBy && (
+                                        <div style={{ marginBottom: '16px' }}>
+                                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '4px' }}>Approved By</div>
+                                          <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: '8px', background: '#f8fafc', border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: 600, color: '#334155' }}>
+                                            {request.approvedBy || '-'}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                                        <div>
+                                          <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                                            Detail Item & Anggaran
+                                          </div>
+                                          <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1.5px solid #d7e0ea', background: 'white' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '950px' }}>
+                                              <thead>
+                                                <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #d7e0ea' }}>
+                                                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '50px' }}>No</th>
+                                                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Memo / Keterangan</th>
+                                                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '130px' }}>Budget ID</th>
+                                                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase' }}>Nama Project</th>
+                                                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '70px' }}>Qty</th>
+                                                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px' }}>Harga Satuan</th>
+                                                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px' }}>Total</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {(request.items || []).length > 0 ? (
+                                                  (request.items || []).map((item, idx) => (
+                                                    <tr key={item.id || idx} style={{ borderBottom: idx === request.items.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                                                      <td style={{ padding: '8px 12px', color: '#64748b', fontWeight: 500 }}>{idx + 1}</td>
+                                                      <td style={{ padding: '8px 12px', color: '#1e293b', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.memo || '-'}</td>
+                                                      <td style={{ padding: '8px 12px', color: '#475569', fontWeight: 500 }}>{item.budgetId || '-'}</td>
+                                                      <td style={{ padding: '8px 12px', color: '#334155', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.projectName || '-'}</td>
+                                                      <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontWeight: 500 }}>{item.qty || 1}</td>
+                                                      <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>{formatCurrency(Number(item.price) || 0)}</td>
+                                                      <td style={{ padding: '8px 12px', textAlign: 'right', color: '#0f172a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>{formatCurrency(Number(item.amount) || 0)}</td>
+                                                    </tr>
+                                                  ))
+                                                ) : (
+                                                  <tr>
+                                                    <td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
+                                                  </tr>
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </div>
+
+
+
+                                      </div>
+
                                     </div>
                                   </td>
                                 </tr>
-                              ) : null}
-                            </>
+                              )}
+                            </React.Fragment>
                           )
                         })}
                       </tbody>
                     </table>
                   </div>
                 </div>
-                <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px 14px', display: 'flex', flexWrap: 'nowrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
-                  <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>{rangeStart}-{rangeEnd} dari {filtered.length} data</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'nowrap', justifyContent: 'flex-end' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>Rows per page</span>
-                      <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px', background: 'white' }}>
-                        {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
+
+                {/* Desktop Pagination */}
+                <div
+                  style={{
+                    flexShrink: 0,
+                    borderTop: '1px solid #e2e8f0',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'white',
+                    borderRadius: '0 0 16px 16px',
+                    flexWrap: isMobile ? 'wrap' : 'nowrap',
+                    gap: '16px',
+                  }}
+                >
+                  {/* Left: Row Selector & Data Range info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Rows</span>
+                      <select
+                        value={rowsPerPage}
+                        onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          border: '1.5px solid #dbe5f0',
+                          background: 'white',
+                          fontFamily: 'inherit',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          color: '#1e293b',
+                          cursor: 'pointer',
+                          outline: 'none',
+                        }}
+                      >
+                        {[10, 25, 50, 100].map((size) => (
+                          <option key={size} value={size}>{size}</option>
+                        ))}
                       </select>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>Page {safeCurrentPage} / {totalPages}</div>
-                    <button type="button" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={safeCurrentPage === 1} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: '12px' }}>Prev</button>
-                    <button type="button" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={safeCurrentPage === totalPages} style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white', color: '#475569', borderRadius: '8px', padding: '6px 10px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: '12px' }}>Next</button>
+                    <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+                      Menampilkan {rangeStart}-{rangeEnd} dari {filtered.length} data
+                    </span>
+                  </div>
+
+                  {/* Right: Pagination buttons */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={safeCurrentPage === 1}
+                      style={{
+                        border: '1px solid #dbe5f0',
+                        background: safeCurrentPage === 1 ? '#f1f5f9' : 'white',
+                        color: safeCurrentPage === 1 ? '#94a3b8' : '#475569',
+                        borderRadius: '8px',
+                        padding: '8px 14px',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
+                        fontFamily: 'inherit',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (safeCurrentPage !== 1) {
+                          e.currentTarget.style.background = '#f8fafc'
+                          e.currentTarget.style.borderColor = '#cbd5e1'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (safeCurrentPage !== 1) {
+                          e.currentTarget.style.background = 'white'
+                          e.currentTarget.style.borderColor = '#dbe5f0'
+                        }
+                      }}
+                    >
+                      Previous
+                    </button>
+
+                    {renderPageNumbers()}
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safeCurrentPage === totalPages}
+                      style={{
+                        border: '1px solid #dbe5f0',
+                        background: safeCurrentPage === totalPages ? '#f1f5f9' : 'white',
+                        color: safeCurrentPage === totalPages ? '#94a3b8' : '#475569',
+                        borderRadius: '8px',
+                        padding: '8px 14px',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
+                        fontFamily: 'inherit',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (safeCurrentPage !== totalPages) {
+                          e.currentTarget.style.background = '#f8fafc'
+                          e.currentTarget.style.borderColor = '#cbd5e1'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (safeCurrentPage !== totalPages) {
+                          e.currentTarget.style.background = 'white'
+                          e.currentTarget.style.borderColor = '#dbe5f0'
+                        }
+                      }}
+                    >
+                      Next
+                    </button>
                   </div>
                 </div>
-                </>
-              )}
-            </div>
+              </>
+            )}
+          </div>
+        </div>
       </main>
 
       <DialogFrpDetail
