@@ -1,5 +1,5 @@
 import React from 'react'
-import ButtonTemplate from './ButtonTemplate.jsx'
+
 
 function ButtonCreateBudgets({
   label, // Destructured to avoid passing it down to the DOM
@@ -11,19 +11,18 @@ function ButtonCreateBudgets({
   ...buttonProps
 }) {
   return (
-    <ButtonTemplate
-      variant="primary"
+    <button
       type={type}
-      className={className}
+      className={`frp-btn-primary ${className}`.trim()}
       {...buttonProps}
     >
       {icon || (
-        <span className="material-icons-round" style={{ fontSize: '20px' }}>
-          add_circle
+        <span className="material-icons-round" style={{ fontSize: '16px' }}>
+          add
         </span>
       )}
-      <span>{value || children || 'Add Items'}</span>
-    </ButtonTemplate>
+      {value || children || 'Add Items'}
+    </button>
   )
 }
 

@@ -221,7 +221,7 @@ export default function DataTableItemsRp({
       <div style={{ ...S.totalRow, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '0.85rem' : '1rem' }}>
         <button type="button" style={{ ...S.btnAdd, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={addRow}>
           <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-          Tambah Baris
+          Add Item
         </button>
         <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
           <span style={S.totalLabel}>Total Estimated Value</span>

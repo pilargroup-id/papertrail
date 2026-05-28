@@ -1015,7 +1015,7 @@ export default function FormPage() {
                 >
                   <button type="button" style={{ ...S.btnAdd, width: isMobile ? '100%' : 'auto', justifyContent: 'center' }} onClick={handleAddRow}>
                     <span className="material-icons-round" style={{ fontSize: '16px' }}>add</span>
-                    Tambah Baris
+                    Add Item
                   </button>
                   <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                     <span style={S.totalLabel}>Total Pembayaran</span>

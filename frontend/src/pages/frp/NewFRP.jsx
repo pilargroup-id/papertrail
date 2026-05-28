@@ -794,7 +794,7 @@ export default function NewFRP() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <ButtonAddItemsFrp onClick={handleAddRow} value="Tambah Baris" />
+                  <ButtonAddItemsFrp onClick={handleAddRow} value="Add Item" />
                 </div>
               </div>
               
