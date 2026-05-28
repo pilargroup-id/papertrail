@@ -9,7 +9,7 @@ import '../../styles/frp/new-frp.css'
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
 const normalizeNumber = v => { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return Number.isNaN(n) ? 0 : n }
-const formatCurrency = v => new Intl.NumberFormat('id-ID').format(normalizeNumber(v))
+const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
 const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
 const normalizeCompany = v => String(v || '').trim().toUpperCase()
 

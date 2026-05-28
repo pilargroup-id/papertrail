@@ -2,7 +2,7 @@ import React from 'react'
 import SearchableSelect from '../template/SearchableSelect.jsx'
 
 const normalizeNumber = v => { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return Number.isNaN(n) ? 0 : n }
-const formatCurrency = v => new Intl.NumberFormat('id-ID').format(normalizeNumber(v))
+const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
 const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
 
 const S = {

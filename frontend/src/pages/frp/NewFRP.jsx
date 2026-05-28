@@ -16,7 +16,7 @@ const normalizeNumber = v => {
   return Number.isNaN(n) ? 0 : n
 }
 
-const formatCurrency = v => new Intl.NumberFormat('id-ID').format(normalizeNumber(v))
+const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
 
 const formatNumberInput = v => {
   if (v === undefined || v === null || v === '') return ''
@@ -599,7 +599,7 @@ export default function NewFRP() {
                       value={values.companyName}
                       onChange={selectedValue => updateField('companyName', selectedValue)}
                       options={companySelectOptions}
-                      placeholder="Pilih company..."
+                      placeholder="Select company..."
                       className="frp-select"
                       menuPosition="fixed"
                     />
@@ -633,7 +633,7 @@ export default function NewFRP() {
                         }
                       }}
                       options={currencySelectOptions}
-                      placeholder="Pilih currency..."
+                      placeholder="Select currency..."
                       className="frp-select"
                       menuPosition="fixed"
                     />
@@ -659,7 +659,7 @@ export default function NewFRP() {
                       value={values.divisi}
                       onChange={selectedValue => updateField('divisi', selectedValue)}
                       options={divisionSelectOptions}
-                      placeholder="Pilih divisi..."
+                      placeholder="Select divisi..."
                       className="frp-select"
                       menuPosition="fixed"
                     />
@@ -667,13 +667,13 @@ export default function NewFRP() {
                     <input className="frp-input-readonly" value={values.divisi} readOnly />
                   )}
                 </FloatingGroup>
-                <FloatingGroup label="Diminta Oleh">
+                <FloatingGroup label="Request by">
                   <SearchableSelect
                     name="dimintaOleh"
                     value={values.dimintaOleh}
                     onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
                     options={employeeSelectOptions}
-                    placeholder="Pilih karyawan..."
+                    placeholder="Select karyawan..."
                     className="frp-select"
                     menuPosition="fixed"
                   />
@@ -682,7 +682,7 @@ export default function NewFRP() {
                   <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <FloatingGroup label="Keterangan FRP" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <FloatingGroup label="Description" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
                 <textarea
                   name="keteranganFrp"
                   className="frp-textarea"
@@ -713,13 +713,13 @@ export default function NewFRP() {
                       updateField('rekBankTujuan', selected?.no_rekening || '')
                     }}
                     options={vendorSelectOptions}
-                    placeholder="Pilih vendor..."
+                    placeholder="Select vendor..."
                     className="frp-select"
                     menuPosition="fixed"
                   />
                 </FloatingGroup>
                 <FloatingGroup label="Internal PO Number">
-                  <input name="internalPoNumber" className="frp-input" placeholder="Nomor PO internal..." value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
+                  <input name="internalPoNumber" className="frp-input" placeholder="Internal PO Number..." value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
                 </FloatingGroup>
               </div>
               <div className="frp-grid-3" style={{ marginTop: "16px" }}>
@@ -729,13 +729,13 @@ export default function NewFRP() {
                     value={values.extDocType}
                     onChange={selectedValue => updateField('extDocType', selectedValue)}
                     options={extDocTypeOptions}
-                    placeholder="Pilih tipe..."
+                    placeholder="Select tipe..."
                     className="frp-select"
                     menuPosition="fixed"
                   />
                 </FloatingGroup>
                 <FloatingGroup label="Ext Doc Number">
-                  <input name="extDocNumber" className="frp-input" placeholder="Nomor dokumen..." value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
+                  <input name="extDocNumber" className="frp-input" placeholder="Document Number..." value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
                 </FloatingGroup>
                 <FloatingGroup label="Payment Method">
                   <SearchableSelect
@@ -753,11 +753,11 @@ export default function NewFRP() {
                 <FloatingGroup label="Payment Date">
                   <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
                 </FloatingGroup>
-                <FloatingGroup label="Bank Tujuan">
-                  <input name="bankTujuan" className="frp-input" placeholder="Nama bank..." value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
+                <FloatingGroup label="destination bank">
+                  <input name="bankTujuan" className="frp-input" placeholder="Bank Name..." value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
                 </FloatingGroup>
                 <FloatingGroup label="Rekening Bank Tujuan">
-                  <input name="rekBankTujuan" className="frp-input" placeholder="Nomor rekening..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
+                  <input name="rekBankTujuan" className="frp-input" placeholder="account number..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
                 </FloatingGroup>
               </div>
               <FloatingGroup label="Attach Link" style={{ marginTop: '16px' }}>
@@ -811,6 +811,7 @@ export default function NewFRP() {
                   calculateRowAmount={calculateRowAmount}
                   budgets={frpData?.budgets || []}
                   kurs={values.kurs}
+                  currency={values.currency}
                 />
               </div>
 
@@ -821,8 +822,8 @@ export default function NewFRP() {
               )}
 
               <div className="frp-footer" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-start', gap: '10px', background: '#f8fafc', padding: '8px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: isMobile ? '10px' : 0 }}>
-                  <span className="frp-total-label" style={{ fontSize: '0.85rem', margin: 0 }}>Total Pembayaran:</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-start', gap: '10px', marginBottom: isMobile ? '10px' : 0 }}>
+                  <span className="frp-total-label" style={{ fontSize: '0.85rem', margin: 0 }}>Total Payment:</span>
                   <div className="frp-total-value" style={{ fontSize: '1.2rem', margin: 0 }}>Rp {formatCurrency(totalAmount)}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', flexDirection: isMobile ? 'column-reverse' : 'row' }}>

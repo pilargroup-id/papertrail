@@ -12,7 +12,7 @@ const normalizeNumber = v => {
   return Number.isNaN(n) ? 0 : n
 }
 
-const formatCurrency = v => new Intl.NumberFormat('id-ID').format(normalizeNumber(v))
+const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
 
 const formatNumberInput = v => {
   if (v === undefined || v === null || v === '') return ''

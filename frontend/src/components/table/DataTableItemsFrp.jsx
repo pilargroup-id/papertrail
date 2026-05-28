@@ -6,7 +6,7 @@ const normalizeNumber = v => {
   return Number.isNaN(n) ? 0 : n
 }
 
-const formatCurrency = v => new Intl.NumberFormat('id-ID').format(normalizeNumber(v))
+const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
 
 const formatNumberInput = v => {
   if (v === undefined || v === null || v === '') return ''
@@ -26,7 +26,8 @@ export default function DataTableItemsFrp({
   totalAmount,
   calculateRowAmount,
   budgets,
-  kurs
+  kurs,
+  currency = 'IDR'
 }) {
   const getBudgetObj = budgetId => {
     return (budgets || []).find(b => b.id === budgetId)
@@ -85,7 +86,7 @@ export default function DataTableItemsFrp({
                   <input type="number" name={`items[${idx}][qty]`} className="frp-input" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
                 </div>
                 <div className="frp-form-group">
-                  <label className="frp-label">Harga Satuan</label>
+                  <label className="frp-label">Harga Satuan ({currency})</label>
                   <input
                     type="text"
                     name={`items[${idx}][hargaSatuan]`}
@@ -108,7 +109,7 @@ export default function DataTableItemsFrp({
               </div>
               <div className="frp-item-card-amount" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '9px 10px', borderRadius: '10px', border: '1px solid #dcfce7', background: '#f0fdf4' }}>
-                  <span className="frp-total-label" style={{ fontSize: '0.8rem' }}>Sisa Budget</span>
+                  <span className="frp-total-label" style={{ fontSize: '0.8rem' }}>Budget Remaining</span>
                   <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: '#16a34a' }}>
                     {item.budgetId ? `Rp ${formatCurrency(getSisaBudget(item.budgetId))}` : '-'}
                   </strong>
@@ -130,10 +131,10 @@ export default function DataTableItemsFrp({
               <tr>
                 <th className="frp-th" style={{ width: "20%" }}>Memo</th>
                 <th className="frp-th" style={{ width: "25%" }}>Budget</th>
-                <th className="frp-th" style={{ width: "14%", textAlign: "right" }}>Sisa Budget</th>
+                <th className="frp-th" style={{ width: "14%", textAlign: "right" }}>Budget Remaining</th>
                 <th className="frp-th" style={{ width: "7%", textAlign: "center" }}>Qty</th>
-                <th className="frp-th" style={{ width: "16%", textAlign: "right" }}>Harga Satuan</th>
-                <th className="frp-th" style={{ width: "14%", textAlign: "right" }}>Amount (IDR)</th>
+                <th className="frp-th" style={{ width: "16%", textAlign: "right" }}>Unit Price ({currency})</th>
+                <th className="frp-th" style={{ width: "14%", textAlign: "right" }}>Total(IDR)</th>
                 <th className="frp-th" style={{ width: "4%" }} />
               </tr>
             </thead>
@@ -156,7 +157,7 @@ export default function DataTableItemsFrp({
                       value={item.budgetId}
                       onChange={selectedValue => updateItem(idx, 'budgetId', selectedValue)}
                       options={budgetSelectOptions}
-                      placeholder="Pilih Budget"
+                      placeholder="Select Budget"
                       className="frp-td-select"
                       style={{ minHeight: '34px', padding: '6px 10px', fontSize: '0.85rem' }}
                       menuPosition="fixed"
@@ -189,13 +190,13 @@ export default function DataTableItemsFrp({
                   </td>
                   <td className="frp-td">
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>Rp</span>
+                      <span style={{ position: 'absolute', left: '8px', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>{currency}</span>
                       <input
                         type="text"
                         name={`items[${idx}][hargaSatuan]`}
                         className="frp-td-input"
                         style={{
-                          paddingLeft: '24px',
+                          paddingLeft: '32px',
                           paddingRight: '8px',
                           textAlign: 'right',
                           fontSize: '0.85rem',
