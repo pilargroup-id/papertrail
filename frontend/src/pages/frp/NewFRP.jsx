@@ -587,7 +587,7 @@ export default function NewFRP() {
           <div className="frp-top-panel">
             {/* Informasi FRP */}
             <div className="frp-card">
-              <h3 className="frp-section-title" style={{ marginBottom: '16px' }}>
+              <h3 className="frp-section-title" style={{ marginBottom: '20px' }}>
                 <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>info</span>
                 Informasi FRP
               </h3>
@@ -651,7 +651,7 @@ export default function NewFRP() {
                   </FloatingGroup>
                 </div>
               </div>
-              <div className="frp-grid-3" style={{ marginTop: "16px" }}>
+              <div className="frp-grid-3" style={{ marginTop: "20px" }}>
                 <FloatingGroup label="Divisi">
                   {FRP.user?.role === 'administrator' ? (
                     <SearchableSelect
@@ -682,7 +682,7 @@ export default function NewFRP() {
                   <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <FloatingGroup label="Description" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <FloatingGroup label="Description" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
                 <textarea
                   name="keteranganFrp"
                   className="frp-textarea"
@@ -696,7 +696,7 @@ export default function NewFRP() {
 
             {/* Vendor & Pembayaran */}
             <div className="frp-card">
-              <h3 className="frp-section-title" style={{ marginBottom: '16px' }}>
+              <h3 className="frp-section-title" style={{ marginBottom: '20px' }}>
                 <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>store</span>
                 Vendor &amp; Pembayaran
               </h3>
@@ -722,7 +722,7 @@ export default function NewFRP() {
                   <input name="internalPoNumber" className="frp-input" placeholder="Internal PO Number..." value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <div className="frp-grid-3" style={{ marginTop: "16px" }}>
+              <div className="frp-grid-3" style={{ marginTop: "20px" }}>
                 <FloatingGroup label="Ext Doc Type">
                   <SearchableSelect
                     name="extDocType"
@@ -749,7 +749,7 @@ export default function NewFRP() {
                   />
                 </FloatingGroup>
               </div>
-              <div className="frp-grid-3" style={{ marginTop: "16px" }}>
+              <div className="frp-grid-3" style={{ marginTop: "20px" }}>
                 <FloatingGroup label="Payment Date">
                   <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
                 </FloatingGroup>
@@ -760,7 +760,7 @@ export default function NewFRP() {
                   <input name="rekBankTujuan" className="frp-input" placeholder="account number..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <FloatingGroup label="Attach Link" style={{ marginTop: '16px' }}>
+              <FloatingGroup label="Attach Link" style={{ marginTop: '20px' }}>
                 <input name="attachLink" className="frp-input" placeholder="https://..." value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} />
               </FloatingGroup>
             </div>
