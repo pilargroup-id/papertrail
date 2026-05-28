@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import SearchableSelect from '../../components/template/SearchableSelect.jsx'
 import DataTableItemsFrp from '../../components/table/DataTableItemsFrp.jsx'
+import ButtonAddItemsFrp from '../../components/button/ButtonAddItemsFrp.jsx'
 import { frpService } from '../../services/frp/new-frp'
 import '../../styles/frp/new-frp.css';
 
@@ -561,7 +562,7 @@ export default function NewFRP() {
   }
 
   return (
-    <main className="dashboard-main">
+    <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: '16px' }}>
       {loading && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>
           Memuat data...
@@ -573,266 +574,266 @@ export default function NewFRP() {
         </div>
       )}
       {!loading && !error && (
-        <form id="frpForm" onSubmit={handleSubmit}>
+        <form id="frpForm" onSubmit={handleSubmit} className="frp-shell">
           {values.id && <input type="hidden" name="frpId" value={values.id} />}
 
           {values.rpReference && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '12px', marginBottom: '1.5rem', color: '#1e40af', fontWeight: 600, fontSize: '0.9rem' }}>
-              <span className="material-icons-round" style={{ color: '#2563eb', fontSize: '20px' }}>info</span>
+            <div className="frp-ref-banner">
+              <span className="material-icons-round" style={{ fontSize: '18px' }}>info</span>
               Membuat FRP dari referensi Request Purchase No: <strong>{values.rpReference}</strong>
             </div>
           )}
 
-          <div className="frp-card">
-            {/* Informasi FRP & Vendor Pembayaran Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : '4.5fr 5.5fr',
-              gap: isMobile ? '1.5rem' : '2.5rem',
-              alignItems: 'start'
-            }}>
-              {/* Informasi FRP */}
-              <div>
-                <h3 className="frp-section-title">
-                  <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>info</span>
-                  Informasi FRP
-                </h3>
-                <div className="frp-grid-2">
-                  <FloatingGroup label="Company Name">
-                    {visibleCompanyField ? (
-                      <SearchableSelect
-                        name="companyName"
-                        value={values.companyName}
-                        onChange={selectedValue => updateField('companyName', selectedValue)}
-                        options={companySelectOptions}
-                        placeholder="Pilih company..."
-                        className="frp-select"
-                        menuPosition="fixed"
-                      />
-                    ) : (
-                      <input className="frp-input-readonly" value={values.companyName} readOnly />
-                    )}
-                  </FloatingGroup>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <FloatingGroup label="Currency" style={{ flex: 1, minWidth: 0 }}>
-                      <SearchableSelect
-                        name="currency"
-                        value={values.currency}
-                        onChange={async selectedValue => {
-                          updateField('currency', selectedValue)
-                          if (selectedValue === 'IDR') {
-                            updateField('kurs', '1')
-                          } else {
-                            updateField('kurs', 'Memuat...')
-                            try {
-                              const data = await frpService.getKurs(selectedValue)
-                              if (data.success && data.rate) {
-                                updateField('kurs', String(data.rate))
-                              } else {
-                                updateField('kurs', '1')
-                                console.error('API Error:', data.error)
-                              }
-                            } catch (e) {
-                              updateField('kurs', '1')
-                              console.error('Gagal mengambil kurs:', e)
-                            }
-                          }
-                        }}
-                        options={currencySelectOptions}
-                        placeholder="Pilih currency..."
-                        className="frp-select"
-                        menuPosition="fixed"
-                      />
-                    </FloatingGroup>
-                    <FloatingGroup label="Rate" style={{ width: '150px', flexShrink: 0 }}>
-                      <input
-                        name="kurs"
-                        className="frp-input"
-                        placeholder="0"
-                        style={{ width: '100%', background: values.currency === 'IDR' ? '#f8fafc' : undefined, color: values.currency === 'IDR' ? '#94a3b8' : undefined }}
-                        value={values.kurs}
-                        onChange={e => updateField('kurs', e.target.value)}
-                        readOnly={values.currency === 'IDR'}
-                      />
-                    </FloatingGroup>
-                  </div>
-                </div>
-                <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
-                  <FloatingGroup label="Divisi">
-                    {FRP.user?.role === 'administrator' ? (
-                      <SearchableSelect
-                        name="divisi"
-                        value={values.divisi}
-                        onChange={selectedValue => updateField('divisi', selectedValue)}
-                        options={divisionSelectOptions}
-                        placeholder="Pilih divisi..."
-                        className="frp-select"
-                        menuPosition="fixed"
-                      />
-                    ) : (
-                      <input className="frp-input-readonly" value={values.divisi} readOnly />
-                    )}
-                  </FloatingGroup>
-                  <FloatingGroup label="Diminta Oleh">
+          <div className="frp-top-panel">
+            {/* Informasi FRP */}
+            <div className="frp-card">
+              <h3 className="frp-section-title" style={{ marginBottom: '12px' }}>
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>info</span>
+                Informasi FRP
+              </h3>
+              <div className="frp-grid-2">
+                <FloatingGroup label="Company Name">
+                  {visibleCompanyField ? (
                     <SearchableSelect
-                      name="dimintaOleh"
-                      value={values.dimintaOleh}
-                      onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
-                      options={employeeSelectOptions}
-                      placeholder="Pilih karyawan..."
+                      name="companyName"
+                      value={values.companyName}
+                      onChange={selectedValue => updateField('companyName', selectedValue)}
+                      options={companySelectOptions}
+                      placeholder="Pilih company..."
+                      className="frp-select"
+                      menuPosition="fixed"
+                    />
+                  ) : (
+                    <input className="frp-input-readonly" value={values.companyName} readOnly />
+                  )}
+                </FloatingGroup>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <FloatingGroup label="Currency" style={{ flex: 1, minWidth: 0 }}>
+                    <SearchableSelect
+                      name="currency"
+                      value={values.currency}
+                      onChange={async selectedValue => {
+                        updateField('currency', selectedValue)
+                        if (selectedValue === 'IDR') {
+                          updateField('kurs', '1')
+                        } else {
+                          updateField('kurs', 'Memuat...')
+                          try {
+                            const data = await frpService.getKurs(selectedValue)
+                            if (data.success && data.rate) {
+                              updateField('kurs', String(data.rate))
+                            } else {
+                              updateField('kurs', '1')
+                              console.error('API Error:', data.error)
+                            }
+                          } catch (e) {
+                            updateField('kurs', '1')
+                            console.error('Gagal mengambil kurs:', e)
+                          }
+                        }
+                      }}
+                      options={currencySelectOptions}
+                      placeholder="Pilih currency..."
                       className="frp-select"
                       menuPosition="fixed"
                     />
                   </FloatingGroup>
-                  <FloatingGroup label="Tanggal FRP">
-                    <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
+                  <FloatingGroup label="Rate" style={{ width: '120px', flexShrink: 0 }}>
+                    <input
+                      name="kurs"
+                      className="frp-input"
+                      placeholder="0"
+                      style={{ width: '100%', background: values.currency === 'IDR' ? '#f8fafc' : undefined, color: values.currency === 'IDR' ? '#94a3b8' : undefined }}
+                      value={values.kurs}
+                      onChange={e => updateField('kurs', e.target.value)}
+                      readOnly={values.currency === 'IDR'}
+                    />
                   </FloatingGroup>
                 </div>
-                <FloatingGroup label="Keterangan FRP" style={{ marginTop: '1rem' }}>
-                  <textarea
-                    name="keteranganFrp"
-                    className="frp-textarea"
-                    value={values.keteranganFrp}
-                    onChange={e => updateField('keteranganFrp', e.target.value)}
-                    placeholder="Tulis keterangan..."
+              </div>
+              <div className="frp-grid-3" style={{ marginTop: "8px" }}>
+                <FloatingGroup label="Divisi">
+                  {FRP.user?.role === 'administrator' ? (
+                    <SearchableSelect
+                      name="divisi"
+                      value={values.divisi}
+                      onChange={selectedValue => updateField('divisi', selectedValue)}
+                      options={divisionSelectOptions}
+                      placeholder="Pilih divisi..."
+                      className="frp-select"
+                      menuPosition="fixed"
+                    />
+                  ) : (
+                    <input className="frp-input-readonly" value={values.divisi} readOnly />
+                  )}
+                </FloatingGroup>
+                <FloatingGroup label="Diminta Oleh">
+                  <SearchableSelect
+                    name="dimintaOleh"
+                    value={values.dimintaOleh}
+                    onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
+                    options={employeeSelectOptions}
+                    placeholder="Pilih karyawan..."
+                    className="frp-select"
+                    menuPosition="fixed"
+                  />
+                </FloatingGroup>
+                <FloatingGroup label="Tanggal FRP">
+                  <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
+                </FloatingGroup>
+              </div>
+              <FloatingGroup label="Keterangan FRP" style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+                <textarea
+                  name="keteranganFrp"
+                  className="frp-textarea"
+                  value={values.keteranganFrp}
+                  onChange={e => updateField('keteranganFrp', e.target.value)}
+                  placeholder="Tulis keterangan..."
+                  style={{ height: '100%' }}
+                />
+              </FloatingGroup>
+            </div>
+
+            {/* Vendor & Pembayaran */}
+            <div className="frp-card">
+              <h3 className="frp-section-title" style={{ marginBottom: '12px' }}>
+                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>store</span>
+                Vendor &amp; Pembayaran
+              </h3>
+              <div className="frp-grid-2">
+                <FloatingGroup label="Vendor">
+                  <SearchableSelect
+                    name="vendor"
+                    value={values.vendor}
+                    onChange={selectedValue => {
+                      const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
+                      console.log('Selected vendor:', selected)
+                      updateField('vendor', selectedValue)
+                      updateField('bankTujuan', selected?.bank || '')
+                      updateField('rekBankTujuan', selected?.no_rekening || '')
+                    }}
+                    options={vendorSelectOptions}
+                    placeholder="Pilih vendor..."
+                    className="frp-select"
+                    menuPosition="fixed"
+                  />
+                </FloatingGroup>
+                <FloatingGroup label="Internal PO Number">
+                  <input name="internalPoNumber" className="frp-input" placeholder="Nomor PO internal..." value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
+                </FloatingGroup>
+              </div>
+              <div className="frp-grid-3" style={{ marginTop: "8px" }}>
+                <FloatingGroup label="Ext Doc Type">
+                  <SearchableSelect
+                    name="extDocType"
+                    value={values.extDocType}
+                    onChange={selectedValue => updateField('extDocType', selectedValue)}
+                    options={extDocTypeOptions}
+                    placeholder="Pilih tipe..."
+                    className="frp-select"
+                    menuPosition="fixed"
+                  />
+                </FloatingGroup>
+                <FloatingGroup label="Ext Doc Number">
+                  <input name="extDocNumber" className="frp-input" placeholder="Nomor dokumen..." value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
+                </FloatingGroup>
+                <FloatingGroup label="Payment Method">
+                  <SearchableSelect
+                    name="paymentMethod"
+                    value={values.paymentMethod}
+                    onChange={selectedValue => updateField('paymentMethod', selectedValue)}
+                    options={paymentMethodOptions}
+                    placeholder="Pilih metode..."
+                    className="frp-select"
+                    menuPosition="fixed"
                   />
                 </FloatingGroup>
               </div>
-
-              {/* Vendor & Pembayaran */}
-              <div>
-                <h3 className="frp-section-title">
-                  <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>store</span>
-                  Vendor &amp; Pembayaran
-                </h3>
-                <div className="frp-grid-2">
-                  <FloatingGroup label="Vendor">
-                    <SearchableSelect
-                      name="vendor"
-                      value={values.vendor}
-                      onChange={selectedValue => {
-                        const selected = (FRP.vendors || []).find(v => v.name === selectedValue)
-                        console.log('Selected vendor:', selected)
-                        updateField('vendor', selectedValue)
-                        updateField('bankTujuan', selected?.bank || '')
-                        updateField('rekBankTujuan', selected?.no_rekening || '')
-                      }}
-                      options={vendorSelectOptions}
-                      placeholder="Pilih vendor..."
-                      className="frp-select"
-                      menuPosition="fixed"
-                    />
-                  </FloatingGroup>
-                  <FloatingGroup label="Internal PO Number">
-                    <input name="internalPoNumber" className="frp-input" placeholder="Nomor PO internal..." value={values.internalPoNumber} onChange={e => updateField('internalPoNumber', e.target.value)} />
-                  </FloatingGroup>
-                </div>
-                <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
-                  <FloatingGroup label="Ext Doc Type">
-                    <SearchableSelect
-                      name="extDocType"
-                      value={values.extDocType}
-                      onChange={selectedValue => updateField('extDocType', selectedValue)}
-                      options={extDocTypeOptions}
-                      placeholder="Pilih tipe..."
-                      className="frp-select"
-                      menuPosition="fixed"
-                    />
-                  </FloatingGroup>
-                  <FloatingGroup label="Ext Doc Number">
-                    <input name="extDocNumber" className="frp-input" placeholder="Nomor dokumen..." value={values.extDocNumber} onChange={e => updateField('extDocNumber', e.target.value)} />
-                  </FloatingGroup>
-                  <FloatingGroup label="Payment Method">
-                    <SearchableSelect
-                      name="paymentMethod"
-                      value={values.paymentMethod}
-                      onChange={selectedValue => updateField('paymentMethod', selectedValue)}
-                      options={paymentMethodOptions}
-                      placeholder="Pilih metode..."
-                      className="frp-select"
-                      menuPosition="fixed"
-                    />
-                  </FloatingGroup>
-                </div>
-                <div className="frp-grid-3" style={{ marginTop: "1rem" }}>
-                  <FloatingGroup label="Payment Date">
-                    <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
-                  </FloatingGroup>
-                  <FloatingGroup label="Bank Tujuan">
-                    <input name="bankTujuan" className="frp-input" placeholder="Nama bank..." value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
-                  </FloatingGroup>
-                  <FloatingGroup label="Rekening Bank Tujuan">
-                    <input name="rekBankTujuan" className="frp-input" placeholder="Nomor rekening..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
-                  </FloatingGroup>
-                </div>
-                <FloatingGroup label="Attach Link" style={{ marginTop: '1rem' }}>
-                  <input name="attachLink" className="frp-input" placeholder="https://..." value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} />
+              <div className="frp-grid-3" style={{ marginTop: "8px" }}>
+                <FloatingGroup label="Payment Date">
+                  <DateField name="paymentDate" value={values.paymentDate} onChange={e => updateField('paymentDate', e.target.value)} />
+                </FloatingGroup>
+                <FloatingGroup label="Bank Tujuan">
+                  <input name="bankTujuan" className="frp-input" placeholder="Nama bank..." value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
+                </FloatingGroup>
+                <FloatingGroup label="Rekening Bank Tujuan">
+                  <input name="rekBankTujuan" className="frp-input" placeholder="Nomor rekening..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
                 </FloatingGroup>
               </div>
+              <FloatingGroup label="Attach Link" style={{ marginTop: '8px' }}>
+                <input name="attachLink" className="frp-input" placeholder="https://..." value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} />
+              </FloatingGroup>
             </div>
+          </div>
 
-            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
-
-            {/* Checklist Documents Section */}
-            <div>
-              <h3 className="frp-section-title">
-                <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '20px' }}>checklist</span>
-                Checklist Documents
-              </h3>
-              <div className="frp-check-row">
-                {CHECK_DOCS.map(doc => {
-                  const checked = values.checkDocs.includes(doc)
-                  return (
-                    <div
-                      key={doc}
-                      className={`frp-check-item ${checked ? 'frp-check-item-active' : ''}`}
-                      onClick={() => handleCheckDocToggle(doc)}
-                    >
-                      <span className="material-icons-round" style={{ fontSize: '16px' }}>
-                        {checked ? 'check_box' : 'check_box_outline_blank'}
-                      </span>
-                      <input type="checkbox" name="checkDocs[]" value={doc} checked={checked} onChange={() => { }} style={{ display: 'none' }} />
-                      {doc}
-                    </div>
-                  )
-                })}
+          <div className="frp-bottom-panel">
+            <div className="frp-card frp-card--scroll">
+              <div className="frp-card-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <h3 className="frp-section-title">
+                    <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>list_alt</span>
+                    Detail Items
+                  </h3>
+                  <div className="frp-check-row">
+                    {CHECK_DOCS.map(doc => {
+                      const checked = values.checkDocs.includes(doc)
+                      return (
+                        <div
+                          key={doc}
+                          className={`frp-check-item ${checked ? 'frp-check-item-active' : ''}`}
+                          onClick={() => handleCheckDocToggle(doc)}
+                        >
+                          <span className="material-icons-round" style={{ fontSize: '14px' }}>
+                            {checked ? 'check_circle' : 'radio_button_unchecked'}
+                          </span>
+                          <input type="checkbox" name="checkDocs[]" value={doc} checked={checked} onChange={() => { }} style={{ display: 'none' }} />
+                          {doc}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <ButtonAddItemsFrp onClick={handleAddRow} value="Tambah Baris" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <span className="frp-total-label" style={{ fontSize: '0.75rem', margin: 0 }}>Total:</span>
+                    <div className="frp-total-value" style={{ fontSize: '1rem', margin: 0 }}>Rp {formatCurrency(totalAmount)}</div>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
-
-            {/* Line Items Section */}
-            <DataTableItemsFrp
-              items={values.items}
-              isMobile={isMobile}
-              budgetSelectOptions={budgetSelectOptions}
-              updateItem={updateItem}
-              handleAddRow={handleAddRow}
-              handleRemoveRow={handleRemoveRow}
-              getBudgetAmount={getBudgetAmount}
-              totalAmount={totalAmount}
-              calculateRowAmount={calculateRowAmount}
-              budgets={frpData?.budgets || []}
-              kurs={values.kurs}
-            />
-
-            <div style={{ borderTop: '1px solid #e2e8f0', margin: '1.5rem 0' }}></div>
-
-            {submitError && (
-              <div style={{ background: '#fee2e2', color: '#991b1b', borderRadius: '10px', padding: '10px 16px', marginBottom: '1rem', fontSize: '0.875rem', fontWeight: 500 }}>
-                {submitError}
+              
+              <div className="frp-items-scrollable">
+                <DataTableItemsFrp
+                  items={values.items}
+                  isMobile={isMobile}
+                  budgetSelectOptions={budgetSelectOptions}
+                  updateItem={updateItem}
+                  handleAddRow={handleAddRow}
+                  handleRemoveRow={handleRemoveRow}
+                  getBudgetAmount={getBudgetAmount}
+                  totalAmount={totalAmount}
+                  calculateRowAmount={calculateRowAmount}
+                  budgets={frpData?.budgets || []}
+                  kurs={values.kurs}
+                />
               </div>
-            )}
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flexDirection: isMobile ? 'column-reverse' : 'row', justifyContent: 'flex-end' }}>
-              <button type="button" className="frp-btn-secondary" onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting}>
-                <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
-                Reset
-              </button>
-              <button type="submit" className="frp-btn-primary" style={{ opacity: submitting ? 0.7 : 1 }} disabled={submitting}>
-                <span className="material-icons-round" style={{ fontSize: '18px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
-                {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
-              </button>
+              {submitError && (
+                <div className="frp-error-banner" style={{ marginTop: '10px' }}>
+                  {submitError}
+                </div>
+              )}
+
+              <div className="frp-footer">
+                <button type="button" className="frp-btn-secondary" onClick={() => setValues(buildInitialForm(FRP, searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'))} disabled={submitting}>
+                  <span className="material-icons-round" style={{ fontSize: '16px' }}>refresh</span>
+                  Reset
+                </button>
+                <button type="submit" className="frp-btn-primary" disabled={submitting}>
+                  <span className="material-icons-round" style={{ fontSize: '16px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
+                  {submitting ? 'Menyimpan...' : 'Submit ke Approval'}
+                </button>
+              </div>
             </div>
           </div>
         </form>

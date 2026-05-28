@@ -1,6 +1,5 @@
 import React from 'react'
 import SearchableSelect from '../template/SearchableSelect.jsx'
-import ButtonAddItemsFrp from '../button/ButtonAddItemsFrp.jsx'
 
 const normalizeNumber = v => {
   const n = Number(String(v).replace(/[^0-9.-]/g, ''))
@@ -55,15 +54,6 @@ export default function DataTableItemsFrp({
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <ButtonAddItemsFrp onClick={handleAddRow} value="Tambah Baris" />
-        </div>
-        <div style={{ textAlign: 'right', background: '#f8fafc', padding: '8px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-          <span className="frp-total-label" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '4px' }}>Total Pembayaran</span>
-          <div className="frp-total-value" style={{ fontSize: '1.25rem', margin: 0 }}>Rp {formatCurrency(totalAmount)}</div>
-        </div>
-      </div>
       {isMobile ? (
         <div>
           {items.map((item, idx) => (
