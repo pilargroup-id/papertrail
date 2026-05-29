@@ -5,6 +5,7 @@ import SearchableSelect from '../../components/template/SearchableSelect.jsx'
 import DataTableItemsFrp from '../../components/table/DataTableItemsFrp.jsx'
 import ButtonAddItemsFrp from '../../components/button/ButtonAddItemsFrp.jsx'
 import { frpService } from '../../services/frp/new-frp'
+import DialogValidationNewFRP from '../../components/Dialog/DialogValidationNewFRP.jsx'
 import '../../styles/frp/new-frp.css';
 
 const MOBILE_BREAKPOINT = 768
@@ -243,6 +244,7 @@ export default function NewFRP() {
   const [submitError, setSubmitError] = useState(null)
   const [error, setError] = useState(null)
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
   useEffect(() => {
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
@@ -507,10 +509,9 @@ export default function NewFRP() {
     'Purchase Order',
   ]
 
-  const handleSubmit = async e => {
+  const handlePreSubmit = async e => {
     e.preventDefault()
     setSubmitError(null)
-
     setSubmitting(true)
 
     try {
@@ -566,6 +567,17 @@ export default function NewFRP() {
         }
       }
 
+      setIsConfirmOpen(true)
+    } catch (err) {
+      setSubmitError(err.message || 'Koneksi gagal, coba lagi.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const processSubmit = async () => {
+    setSubmitting(true)
+    try {
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
 
       const payload = {
@@ -612,6 +624,7 @@ export default function NewFRP() {
       setSubmitError(err.message || 'Koneksi gagal, coba lagi.')
     } finally {
       setSubmitting(false)
+      setIsConfirmOpen(false)
     }
   }
 
@@ -628,7 +641,7 @@ export default function NewFRP() {
         </div>
       )}
       {!loading && !error && (
-        <form id="frpForm" onSubmit={handleSubmit} className="frp-shell">
+        <form id="frpForm" onSubmit={handlePreSubmit} className="frp-shell">
           {values.id && <input type="hidden" name="frpId" value={values.id} />}
 
           {values.rpReference && (
@@ -722,15 +735,7 @@ export default function NewFRP() {
                   )}
                 </FloatingGroup>
                 <FloatingGroup label="Request by">
-                  <SearchableSelect
-                    name="dimintaOleh"
-                    value={values.dimintaOleh}
-                    onChange={selectedValue => updateField('dimintaOleh', selectedValue)}
-                    options={employeeSelectOptions}
-                    placeholder="Select karyawan..."
-                    className="frp-select"
-                    menuPosition="fixed"
-                  />
+                  <input className="frp-input-readonly" value={values.dimintaOleh} readOnly />
                 </FloatingGroup>
                 <FloatingGroup label="FRP Date">
                   <DateField name="tanggalFrp" value={values.tanggalFrp} onChange={e => updateField('tanggalFrp', e.target.value)} />
@@ -895,6 +900,15 @@ export default function NewFRP() {
           </div>
         </form>
       )}
+
+      <DialogValidationNewFRP
+        isOpen={isConfirmOpen}
+        isLoading={submitting}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={processSubmit}
+        frpNo={values.frpNo || values.id}
+        dimintaOleh={values.dimintaOleh || FRP.user?.fullName}
+      />
     </main>
   )
 }

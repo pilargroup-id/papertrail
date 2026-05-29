@@ -448,6 +448,11 @@ export default function AdminPage() {
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [renderedType, setRenderedType] = useState(type)
 
+  const companyNames = useMemo(() => {
+    const names = (data?.companies || []).map(company => company.name || company).filter(Boolean)
+    return names.length ? names : COMPANIES
+  }, [data?.companies])
+
   // Synchronous state reset — runs before browser paint, no stale-data flash
   if (renderedType !== type) {
     setRenderedType(type)
@@ -536,10 +541,6 @@ export default function AdminPage() {
 
   const showFilter = type === 'budgets'
   const listData = data?.listData || []
-  const companyNames = useMemo(() => {
-    const names = (data?.companies || []).map(company => company.name || company).filter(Boolean)
-    return names.length ? names : COMPANIES
-  }, [data?.companies])
 
   return (
     <>

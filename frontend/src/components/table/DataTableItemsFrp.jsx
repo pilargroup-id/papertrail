@@ -57,7 +57,12 @@ export default function DataTableItemsFrp({
     <div>
       {isMobile ? (
         <div>
-          {items.map((item, idx) => (
+          {items.map((item, idx) => {
+            const remaining = item.budgetId ? getSisaBudget(item.budgetId) : null
+            const subtotal = calculateRowAmount ? calculateRowAmount(item) : (normalizeNumber(item.qty) * normalizeNumber(item.hargaSatuan) * (normalizeNumber(kurs) || 1))
+            const previewRemaining = remaining !== null ? remaining - subtotal : null
+
+            return (
             <div key={idx} className="frp-item-card">
               <div className="frp-item-card-header">
                 <div className="frp-item-card-title">Item {idx + 1}</div>
@@ -110,19 +115,20 @@ export default function DataTableItemsFrp({
               <div className="frp-item-card-amount" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '9px 10px', borderRadius: '10px', border: '1px solid #dcfce7', background: '#f0fdf4' }}>
                   <span className="frp-total-label" style={{ fontSize: '0.8rem' }}>Budget Remaining</span>
-                  <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: '#16a34a' }}>
-                    {item.budgetId ? `Rp ${formatCurrency(getSisaBudget(item.budgetId))}` : '-'}
+                  <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: previewRemaining !== null && previewRemaining < 0 ? '#ef4444' : '#16a34a' }}>
+                    {previewRemaining !== null ? `Rp ${formatCurrency(previewRemaining)}` : '-'}
                   </strong>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '9px 10px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#eff6ff' }}>
                   <span className="frp-total-label" style={{ fontSize: '0.8rem' }}>Amount (IDR)</span>
                   <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: '#1f4e8c' }}>
-                    Rp {formatCurrency(calculateRowAmount ? calculateRowAmount(item) : 0)}
+                    Rp {formatCurrency(subtotal)}
                   </strong>
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <div className="no-scrollbar" style={{ overflowX: 'auto' }}>
@@ -139,7 +145,12 @@ export default function DataTableItemsFrp({
               </tr>
             </thead>
             <tbody>
-              {items.map((item, idx) => (
+              {items.map((item, idx) => {
+                const remaining = item.budgetId ? getSisaBudget(item.budgetId) : null
+                const subtotal = calculateRowAmount ? calculateRowAmount(item) : (normalizeNumber(item.qty) * normalizeNumber(item.hargaSatuan) * (normalizeNumber(kurs) || 1))
+                const previewRemaining = remaining !== null ? remaining - subtotal : null
+
+                return (
                 <tr key={idx}>
                   <td className="frp-td">
                     <input
@@ -168,14 +179,14 @@ export default function DataTableItemsFrp({
                       display: 'inline-block',
                       fontFamily: 'monospace',
                       fontWeight: 600,
-                      color: item.budgetId ? '#16a34a' : '#94a3b8',
+                      color: previewRemaining !== null && previewRemaining < 0 ? '#ef4444' : (item.budgetId ? '#16a34a' : '#94a3b8'),
                       fontSize: '0.85rem',
                       padding: '4px 8px',
                       borderRadius: '6px',
-                      background: item.budgetId ? '#f0fdf4' : 'transparent',
+                      background: item.budgetId ? (previewRemaining !== null && previewRemaining < 0 ? '#fef2f2' : '#f0fdf4') : 'transparent',
                       whiteSpace: 'nowrap'
                     }}>
-                      {item.budgetId ? `Rp ${formatCurrency(getSisaBudget(item.budgetId))}` : '-'}
+                      {previewRemaining !== null ? `Rp ${formatCurrency(previewRemaining)}` : '-'}
                     </span>
                   </td>
                   <td className="frp-td" style={{ textAlign: 'center' }}>
@@ -230,7 +241,7 @@ export default function DataTableItemsFrp({
                       border: '1px dashed #cbd5e1',
                       whiteSpace: 'nowrap'
                     }}>
-                      Rp {formatCurrency(calculateRowAmount ? calculateRowAmount(item) : 0)}
+                      Rp {formatCurrency(subtotal)}
                     </span>
                   </td>
                   <td className="frp-td" style={{ textAlign: 'center' }}>
@@ -239,7 +250,8 @@ export default function DataTableItemsFrp({
                     </button>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

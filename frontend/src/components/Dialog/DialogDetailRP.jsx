@@ -263,14 +263,14 @@ function DialogDetailRP({
               <h3 style={headingStyle}><span className="material-icons-round" style={iconStyle}>info</span> Informasi Request Purchase</h3>
               <div style={grid2}>
                 <div><label style={labelStyle}>Company Name</label><input readOnly value={request.companyName || ''} style={fieldStyle} className="dialog-input-premium" /></div>
-                <div><label style={labelStyle}>Tanggal Dibutuhkan</label><input readOnly value={formatDisplayDate(request.tanggalDibutuhkan || request.tanggalRp)} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>Tanggal Dibutuhkan</label><input readOnly value={formatDisplayDate(request.requiredDate || request.tanggalDibutuhkan || request.tanggalRp)} style={fieldStyle} className="dialog-input-premium" /></div>
               </div>
               <div style={grid3}>
                 <div><label style={labelStyle}>Divisi</label><input readOnly value={request.divisi || ''} style={fieldStyle} className="dialog-input-premium" /></div>
-                <div><label style={labelStyle}>Class</label><input readOnly value={request.class || ''} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>Class</label><input readOnly value={request.classClass || request.class || ''} style={fieldStyle} className="dialog-input-premium" /></div>
                 <div><label style={labelStyle}>Dibuat Oleh</label><input readOnly value={request.dibuatOleh || ''} style={fieldStyle} className="dialog-input-premium" /></div>
               </div>
-              <div><label style={labelStyle}>Deskripsi (Alasan Permintaan Barang)</label><textarea rows="2" readOnly value={request.deskripsi || request.keteranganRp || ''} style={{ ...fieldStyle, resize: 'none' }} className="dialog-input-premium" /></div>
+              <div><label style={labelStyle}>Deskripsi (Alasan Permintaan Barang)</label><textarea rows="2" readOnly value={request.description || request.deskripsi || request.keteranganRp || ''} style={{ ...fieldStyle, resize: 'none' }} className="dialog-input-premium" /></div>
             </div>
 
             <div style={sectionStyle} className="dialog-section-premium">
@@ -281,7 +281,7 @@ function DialogDetailRP({
               </div>
               <div style={grid2}>
                 <div><label style={labelStyle}>Vendor Suggestion</label><input readOnly value={request.vendorSuggestion || ''} style={fieldStyle} className="dialog-input-premium" /></div>
-                <div><label style={labelStyle}>PIC Penerima</label><input readOnly value={request.picPenerima || ''} style={fieldStyle} className="dialog-input-premium" /></div>
+                <div><label style={labelStyle}>PIC Penerima</label><input readOnly value={request.receiverPic || request.picPenerima || ''} style={fieldStyle} className="dialog-input-premium" /></div>
               </div>
             </div>
 

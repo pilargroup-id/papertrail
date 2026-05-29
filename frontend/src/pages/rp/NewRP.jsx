@@ -142,7 +142,11 @@ const buildInitialRp = data => {
     ...base,
     ...data.editData,
     divisi: editDivisi,
-    tanggalDibutuhkan: data.editData.tanggalDibutuhkan || today,
+    tanggalDibutuhkan: data.editData.tanggalDibutuhkan || data.editData.requiredDate || today,
+    deskripsi: data.editData.deskripsi || data.editData.description || '',
+    picPenerima: data.editData.picPenerima || data.editData.receiverPic || '',
+    kategoriPembelian: data.editData.kategoriPembelian || data.editData.purchaseCategory || '',
+    diprosesOleh: data.editData.diprosesOleh || data.editData.processedByDepartment || '',
     items: Array.isArray(data.editData.items)
       ? data.editData.items.map(item => ({
           budgetId: item.budgetId || '',
@@ -292,6 +296,36 @@ export default function NewRP() {
 
   const handleSubmit = async e => {
     e.preventDefault()
+    
+    if (!values.companyName) {
+      setSubmitError('Kolom Company Name wajib diisi.')
+      return
+    }
+    if (!values.tanggalDibutuhkan) {
+      setSubmitError('Kolom Date Required wajib diisi.')
+      return
+    }
+    if (!values.deskripsi || values.deskripsi.trim() === '') {
+      setSubmitError('Kolom Description wajib diisi.')
+      return
+    }
+    if (!values.kategoriPembelian) {
+      setSubmitError('Kolom Category Payment wajib diisi.')
+      return
+    }
+    if (!values.diprosesOleh) {
+      setSubmitError('Kolom Division to Process wajib diisi.')
+      return
+    }
+    if (!values.vendorSuggestion) {
+      setSubmitError('Kolom Vendor Suggestion wajib diisi.')
+      return
+    }
+    if (!values.picPenerima || values.picPenerima.trim() === '') {
+      setSubmitError('Kolom PIC wajib diisi.')
+      return
+    }
+
     const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
     const deptClass = selectedDept ? selectedDept.class : values.class;
     
@@ -308,7 +342,15 @@ export default function NewRP() {
     try {
       const processId = searchParams.get('process')
       
-      let payload = { ...values }
+      let payload = { 
+        ...values,
+        purchaseCategory: values.kategoriPembelian,
+        description: values.deskripsi,
+        processedByDepartment: values.diprosesOleh,
+        requiredDate: values.tanggalDibutuhkan,
+        vendorSuggestion: values.vendorSuggestion,
+        receiverPic: values.picPenerima,
+      }
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
       payload.divisi = selectedDept ? selectedDept.name : values.divisi;
       payload.class = selectedDept ? selectedDept.class : '';
@@ -425,6 +467,19 @@ export default function NewRP() {
                   <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>store</span>
                   Vendor &amp; Proses
                 </h3>
+                <div style={{ marginBottom: '20px' }}>
+                  <FloatingGroup label="Vendor Suggestion">
+                    <SearchableSelect
+                      name="vendorSuggestion"
+                      value={values.vendorSuggestion}
+                      onChange={v => updateField('vendorSuggestion', v)}
+                      options={vendorOptions}
+                      placeholder="Pilih Vendor"
+                      className="frp-select"
+                      menuPosition="fixed"
+                    />
+                  </FloatingGroup>
+                </div>
                 <div className="frp-grid-3">
                   <FloatingGroup label="category payment">
                     <SearchableSelect
@@ -448,19 +503,6 @@ export default function NewRP() {
                       menuPosition="fixed"
                     />
                   </FloatingGroup>
-                  <FloatingGroup label="Vendor Suggestion">
-                    <SearchableSelect
-                      name="vendorSuggestion"
-                      value={values.vendorSuggestion}
-                      onChange={v => updateField('vendorSuggestion', v)}
-                      options={vendorOptions}
-                      placeholder="Pilih Vendor"
-                      className="frp-select"
-                      menuPosition="fixed"
-                    />
-                  </FloatingGroup>
-                </div>
-                <div className="frp-grid-2" style={{ marginTop: '20px' }}>
                   <FloatingGroup label="PIC">
                     <input
                       name="picPenerima"

@@ -691,17 +691,22 @@ async function validateFrpBudgetAccess(client, user, items) {
         throw error;
     }
 
-    if (!policy.canCrossDepartmentBudget) {
-        const userDepartmentClass = String(
-            user.departmentClass ||
-            user.selectedDivision ||
-            user.departmentName ||
-            ''
-        ).trim().toUpperCase();
+    if (!policy.canCrossDepartmentBudget && user.role !== 'administrator') {
+        const uClass = String(user.departmentClass || user.selectedDivision || '').trim().toUpperCase();
+        const uName = String(user.departmentName || '').trim().toUpperCase();
+        const uId = String(user.departmentId || '');
 
-        const invalidBudgets = budgets.filter(b =>
-            String(b.department_class || '').trim().toUpperCase() !== userDepartmentClass
-        );
+        const invalidBudgets = budgets.filter(b => {
+            const bClass = String(b.department_class || '').trim().toUpperCase();
+            const bName = String(b.department_name || '').trim().toUpperCase();
+            const bId = String(b.department_id || '');
+
+            if (uClass && (bClass === uClass || bName === uClass)) return false;
+            if (uName && (bClass === uName || bName === uName)) return false;
+            if (uId && bId && uId === bId) return false;
+            
+            return true;
+        });
 
         if (invalidBudgets.length) {
             const error = new Error(

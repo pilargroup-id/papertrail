@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogDetailRP from '../../components/Dialog/DialogDetailRP'
+import DialogConfirm from '../../components/Dialog/DialogConfirm'
+import ButtonRevert from '../../components/button/ButtonRevert'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -29,63 +31,295 @@ function getRpTotal(rp) {
 }
 
 const STATUS_CONFIG = {
-  waiting_manager: { label: 'Menunggu Manager', bg: '#fef9c3', color: '#92400e', icon: 'schedule' },
-  division_review: { label: 'Diproses', bg: '#dbeafe', color: '#1e40af', icon: 'autorenew' },
-  final_approved:  { label: 'Menunggu Persetujuan', bg: '#e0e7ff', color: '#3730a3', icon: 'gavel' },
-  approved:        { label: 'Approved', bg: '#bbf7d0', color: '#166534', icon: 'check_circle' },
-  REJECTED:        { label: 'Rejected', bg: '#fecaca', color: '#991b1b', icon: 'cancel' },
-  CREATED_FRP:     { label: 'FRP Dibuat', bg: '#d1fae5', color: '#065f46', icon: 'receipt_long' },
+  waiting_manager: { label: 'Manager Approval', bg: '#fffbeb', color: '#b45309', border: '#fde68a', icon: 'schedule' },
+  division_review: { label: 'Diproses', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'autorenew' },
+  final_review:  { label: 'Approval Proses', bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', icon: 'gavel' },
+  approved:        { label: 'Approved', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'check_circle' },
+  REJECTED:        { label: 'Rejected', bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', icon: 'cancel' },
+  CREATED_FRP:     { label: 'FRP Dibuat', bg: '#f0fdfa', color: '#0f766e', border: '#99f6e4', icon: 'receipt_long' },
 }
 
 function StatusBadge({ status }) {
-  const cfg = STATUS_CONFIG[status] || { label: status, bg: '#e2e8f0', color: '#475569', icon: 'help' }
+  const cfg = STATUS_CONFIG[status] || { label: status, bg: '#f8fafc', color: '#475569', border: '#e2e8f0', icon: 'help' }
   return (
     <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '4px',
-      padding: '3px 10px', borderRadius: '20px', fontSize: '11px',
-      fontWeight: 700, background: cfg.bg, color: cfg.color,
-      whiteSpace: 'nowrap',
+      display: 'inline-flex', alignItems: 'center', gap: '6px',
+      padding: '4.5px 12px', borderRadius: '24px', fontSize: '11.5px',
+      fontWeight: 600, background: cfg.bg, color: cfg.color,
+      border: `1px solid ${cfg.border}`,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+      whiteSpace: 'nowrap', letterSpacing: '0.01em'
     }}>
-      <span className="material-icons-round" style={{ fontSize: '13px' }}>{cfg.icon}</span>
+      <span className="material-icons-round" style={{ fontSize: '14px' }}>{cfg.icon}</span>
       {cfg.label}
     </span>
   )
 }
 
-function SearchInput({ value, onChange, placeholder }) {
+function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
+  const inputRef = useRef(null)
+
+  const openPicker = () => {
+    if (!inputRef.current) return
+    try {
+      if (typeof inputRef.current.showPicker === 'function') {
+        inputRef.current.showPicker()
+        return
+      }
+    } catch (_) { }
+    inputRef.current.focus()
+    inputRef.current.click()
+  }
+
   return (
-    <div style={{ position: 'relative' }}>
-      <span className="material-icons-round" style={{
-        position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
-        fontSize: '18px', color: '#94a3b8', pointerEvents: 'none',
-      }}>search</span>
+    <div
+      style={{ position: 'relative', width: '100%' }}
+      onClick={openPicker}
+    >
       <input
-        type="text"
+        ref={inputRef}
+        type="date"
         value={value}
         onChange={onChange}
-        placeholder={placeholder}
+        aria-label={placeholder}
         style={{
-          width: '100%', boxSizing: 'border-box',
-          padding: '9px 12px 9px 36px', borderRadius: '10px',
-          border: '1.5px solid #dde3ed', fontSize: '13px',
-          background: 'white', fontFamily: 'inherit', outline: 'none',
-          color: '#1e293b', boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          minHeight: '42px',
+          position: 'absolute',
+          inset: 0,
+          opacity: 0,
+          cursor: 'pointer',
+          width: '100%',
+          height: '100%',
+          zIndex: 2,
         }}
       />
+      <div
+        className="filter-input-element"
+        style={{
+          ...style,
+          display: 'flex',
+          alignItems: 'center',
+          color: value ? '#1e293b' : '#94a3b8',
+          cursor: 'pointer',
+          position: 'relative',
+        }}
+      >
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {value ? formatDate(value) : placeholder}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function FilterField({ label, icon, children }) {
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      {label && (
+        <span
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            left: '12px',
+            background: 'white',
+            padding: '0 6px',
+            fontSize: '11px',
+            fontWeight: '700',
+            color: '#64748b',
+            zIndex: 3,
+            pointerEvents: 'none',
+            letterSpacing: '0.02em',
+          }}
+        >
+          {label}
+        </span>
+      )}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+        {icon && (
+          <span
+            className="material-icons-round"
+            style={{
+              position: 'absolute',
+              left: '12px',
+              color: '#64748b',
+              fontSize: '18px',
+              pointerEvents: 'none',
+              zIndex: 3,
+            }}
+          >
+            {icon}
+          </span>
+        )}
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder = 'Pilih...',
+  style,
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef(null)
+
+  const normalizedOptions = options.map(option =>
+    typeof option === 'string'
+      ? { value: option, label: option, keywords: option }
+      : {
+        value: option.value,
+        label: option.label,
+        keywords: option.keywords || option.label || option.value,
+      },
+  )
+
+  const selectedOption = normalizedOptions.find(option => option.value === value)
+  const filteredOptions = normalizedOptions.filter(option =>
+    String(option.keywords || '').toLowerCase().includes(search.toLowerCase()),
+  )
+
+  useEffect(() => {
+    if (!open) setSearch('')
+  }, [open])
+
+  useEffect(() => {
+    const handleOutside = event => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false)
+    }
+
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative', zIndex: open ? 20 : 1, width: '100%' }}>
+      <button
+        type="button"
+        className="select-dropdown-btn"
+        onClick={() => setOpen(current => !current)}
+        style={{
+          ...style,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          textAlign: 'left',
+          minHeight: style?.minHeight || '42px',
+          boxShadow: 'none',
+        }}
+      >
+        <span
+          style={{
+            display: 'block',
+            flex: 1,
+            color: value ? '#1e293b' : '#94a3b8',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            paddingRight: '12px',
+          }}
+        >
+          {selectedOption?.label || placeholder}
+        </span>
+        <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', flexShrink: 0 }}>
+          {open ? 'expand_less' : 'expand_more'}
+        </span>
+      </button>
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            right: 0,
+            background: 'white',
+            border: '1.5px solid #dbe5f0',
+            borderRadius: '12px',
+            boxShadow: '0 14px 30px rgba(15, 23, 42, 0.14)',
+            zIndex: 200,
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ padding: '8px' }}>
+            <input
+              autoFocus
+              type="text"
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Cari..."
+              style={{ ...style, paddingLeft: '10px', fontSize: '0.875rem', padding: '8px 10px', minHeight: 'unset' }}
+            />
+          </div>
+          <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: '1px solid #f1f5f9' }}>
+            <button
+              type="button"
+              onClick={() => {
+                onChange('')
+                setOpen(false)
+              }}
+              style={{
+                width: '100%',
+                border: 'none',
+                background: 'white',
+                textAlign: 'left',
+                padding: '10px 12px',
+                fontFamily: 'inherit',
+                fontSize: '0.875rem',
+                color: '#94a3b8',
+                cursor: 'pointer',
+              }}
+            >
+              {placeholder}
+            </button>
+            {filteredOptions.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value)
+                  setOpen(false)
+                }}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderTop: '1px solid #f8fafc',
+                  background: option.value === value ? '#eff6ff' : 'white',
+                  color: option.value === value ? '#1f4e8c' : '#1e293b',
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  fontFamily: 'inherit',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  fontWeight: option.value === value ? 700 : 500,
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+            {filteredOptions.length === 0 && (
+              <div style={{ padding: '12px', color: '#94a3b8', fontSize: '0.875rem', textAlign: 'center' }}>
+                Tidak ditemukan
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export default function StatusRP() {
   const navigate = useNavigate()
-  const { setUser } = useUser()
+  const { user, setUser } = useUser()
 
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
-  const [search, setSearch]   = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  const [filters, setFilters] = useState({ search: '', status: '', date: '', division: '' })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -96,7 +330,11 @@ export default function StatusRP() {
     () => (typeof window === 'undefined' ? 1280 : window.innerWidth)
   )
 
-  useEffect(() => {
+  const [actionLoading, setActionLoading] = useState(false)
+  const [confirmRevert, setConfirmRevert] = useState(null)
+
+  const loadData = () => {
+    setLoading(true)
     fetch('/api/data/rp-approval?view=all')
       .then(res => {
         if (!res.ok) { window.location.href = '/login'; throw new Error('Unauthorized') }
@@ -105,7 +343,43 @@ export default function StatusRP() {
       .then(d => { setData(d); setUser(d?.user) })
       .catch(err => setError(err.message || 'Gagal memuat data'))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadData()
   }, [])
+
+  const processRevert = async () => {
+    if (!confirmRevert) return
+    setActionLoading(true)
+    let url = ''
+    if (confirmRevert.status === 'division_review') {
+      url = `/api/rp/${confirmRevert.id}/process-revert`
+    } else if (confirmRevert.status === 'final_review') {
+      url = `/api/rp/${confirmRevert.id}/process-manager-revert`
+    } else {
+      url = `/api/rp/${confirmRevert.id}/revert`
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const result = await response.json()
+      if (result.success) {
+        setConfirmRevert(null)
+        setDetailRequest(null)
+        loadData()
+      } else {
+        window.alert(result.error || 'Gagal memproses data')
+      }
+    } catch (error) {
+      window.alert(error.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
 
   useEffect(() => {
     const handler = () => setViewportWidth(window.innerWidth)
@@ -118,17 +392,34 @@ export default function StatusRP() {
 
   const calcTotal = req => getRpTotal(req)
 
+  const divisions = useMemo(
+    () => (data?.requests ? [...new Set(data.requests.map((req) => req.departmentName || req.departmentClass || '-'))].sort() : []),
+    [data],
+  )
+
+  const divisionOptions = useMemo(
+    () => divisions.map(division => ({ value: division, label: division })),
+    [divisions],
+  )
+
   const filtered = useMemo(() => {
     if (!data?.requests) return []
     return data.requests
       .filter(req => {
         const matchSearch =
-          !search ||
-          (req.rpNo || '').toLowerCase().includes(search.toLowerCase()) ||
-          (req.vendorSuggestion || '').toLowerCase().includes(search.toLowerCase()) ||
-          (req.keteranganRp || '').toLowerCase().includes(search.toLowerCase())
-        const matchStatus = !filterStatus || req.status === filterStatus
-        return matchSearch && matchStatus
+          !filters.search ||
+          (req.rpNo || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+          (req.vendorSuggestion || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+          (req.description || '').toLowerCase().includes(filters.search.toLowerCase())
+        const matchStatus = !filters.status || req.status === filters.status
+        
+        const reqDate = req.createdAt ? new Date(req.createdAt).toISOString().split('T')[0] : ''
+        const matchDate = !filters.date || reqDate === filters.date
+        
+        const reqDiv = req.departmentName || req.departmentClass || '-'
+        const matchDivision = !filters.division || reqDiv === filters.division
+        
+        return matchSearch && matchStatus && matchDate && matchDivision
       })
       .sort((a, b) => {
         if (sortConfig.key === 'date') {
@@ -146,7 +437,7 @@ export default function StatusRP() {
         if (vA > vB) return sortConfig.direction === 'asc' ? 1 : -1
         return 0
       })
-  }, [data, search, filterStatus, sortConfig])
+  }, [data, filters, sortConfig])
 
   const totalPages    = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const safePage      = Math.min(currentPage, totalPages)
@@ -155,7 +446,7 @@ export default function StatusRP() {
     return filtered.slice(start, start + rowsPerPage)
   }, [filtered, rowsPerPage, safePage])
 
-  useEffect(() => { setCurrentPage(1) }, [search, filterStatus, rowsPerPage])
+  useEffect(() => { setCurrentPage(1) }, [filters, rowsPerPage])
 
   const toggleSort = key => {
     setSortConfig(prev =>
@@ -182,105 +473,221 @@ export default function StatusRP() {
     } catch (_) {}
   }
 
-  const th = {
-    padding: '11px 14px', textAlign: 'left', background: '#f8fafc',
-    fontWeight: 700, color: '#475569', fontSize: '11px',
-    textTransform: 'uppercase', letterSpacing: '0.5px',
-    whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
-    borderBottom: '2px solid #e2e8f0',
-  }
-  const td = {
-    padding: '11px 14px', borderBottom: '1px solid #f1f5f9',
-    verticalAlign: 'middle', fontSize: '0.875rem', color: '#1e293b',
+  const filterInput = {
+    width: '100%',
+    padding: '9px 12px 9px 36px',
+    borderRadius: '12px',
+    border: '1.5px solid #dbe5f0',
+    fontSize: '13px',
+    background: 'white',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+    outline: 'none',
+    color: '#1e293b',
+    minHeight: '42px',
   }
 
   const rangeStart = filtered.length === 0 ? 0 : (safePage - 1) * rowsPerPage + 1
   const rangeEnd   = Math.min(filtered.length, safePage * rowsPerPage)
 
   return (
-    <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column' }}>
-      {/* ── Header ── */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <h2 style={{ margin: 0, fontSize: isMobile ? '1.1rem' : '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-          <span className="material-icons-round" style={{ verticalAlign: 'middle', marginRight: '8px', color: '#1f4e8c', fontSize: '1.4rem' }}>receipt_long</span>
-          Status RP
-        </h2>
-        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
-          Daftar semua Form Request Payment yang pernah dibuat
-        </p>
-      </div>
-
-      {/* ── Filter Bar ── */}
-      <div style={{
-        background: '#f1f5f9', borderRadius: '14px',
-        padding: isMobile ? '12px' : '16px 20px',
-        marginBottom: '16px', border: '1px solid #e2e8f0',
-        display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end',
-      }}>
-        <div style={{ flex: '2 1 200px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px', letterSpacing: '0.04em' }}>Search</label>
-          <SearchInput
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Cari No RP / Vendor / Keterangan..."
-          />
-        </div>
-        <div style={{ flex: '1 1 140px' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px', letterSpacing: '0.04em' }}>Status</label>
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            style={{
-              width: '100%', padding: '9px 12px', borderRadius: '10px',
-              border: '1.5px solid #dde3ed', fontSize: '13px', background: 'white',
-              fontFamily: 'inherit', outline: 'none', color: '#1e293b',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)', minHeight: '42px', cursor: 'pointer',
-            }}
-          >
-            <option value="">Semua Status</option>
-            <option value="PENDING">Pending</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-          </select>
-        </div>
-        {(search || filterStatus) && (
-          <button
-            onClick={() => { setSearch(''); setFilterStatus('') }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '4px',
-              padding: '9px 14px', borderRadius: '10px', border: '1.5px solid #e2e8f0',
-              background: 'white', color: '#64748b', fontSize: '13px', fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit', minHeight: '42px',
-              alignSelf: 'flex-end',
-            }}
-          >
-            <span className="material-icons-round" style={{ fontSize: '16px' }}>close</span>
-            Reset
-          </button>
+    <>
+      <style>{`
+        .filter-input-element {
+          transition: all 0.2s ease-in-out;
+        }
+        .filter-input-element:focus, .filter-input-element:hover {
+          border-color: #1e4e8c !important;
+          box-shadow: 0 0 0 3px rgba(30, 78, 140, 0.15) !important;
+        }
+        .select-dropdown-btn {
+          transition: all 0.2s ease-in-out;
+        }
+        .select-dropdown-btn:focus, .select-dropdown-btn:hover {
+          border-color: #1e4e8c !important;
+          box-shadow: 0 0 0 3px rgba(30, 78, 140, 0.15) !important;
+        }
+      `}</style>
+      <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
+        {loading && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b', gap: '10px', padding: '4rem' }}>
+            <span className="material-icons-round" style={{ fontSize: '32px', opacity: 0.4 }}>hourglass_empty</span>
+            Memuat data...
+          </div>
         )}
-      </div>
 
-      {/* ── Content ── */}
-      {loading && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#64748b', gap: '10px', padding: '4rem' }}>
-          <span className="material-icons-round" style={{ fontSize: '32px', opacity: 0.4 }}>hourglass_empty</span>
-          Memuat data...
-        </div>
-      )}
+        {error && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#ef4444', gap: '10px', padding: '4rem' }}>
+            <span className="material-icons-round">error</span> {error}
+          </div>
+        )}
 
-      {error && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#ef4444', gap: '10px', padding: '4rem' }}>
-          <span className="material-icons-round">error</span> {error}
-        </div>
-      )}
+        {!loading && !error && (
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'white',
+            borderRadius: '16px',
+            border: '1.5px solid #e8edf4',
+            boxShadow: '0 4px 20px -2px rgba(148, 163, 184, 0.08)',
+            overflow: 'hidden',
+          }}>
+            {/* Top Filter Area (Integrated inside the card) */}
+            <div
+              style={{
+                background: 'white',
+                padding: isMobile ? '16px 12px' : '20px 24px',
+                borderBottom: '1.5px solid #e8edf4',
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: '#eff6ff',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: '#1e40af',
+                  }}>
+                    <span className="material-icons-round" style={{ fontSize: '20px' }}>receipt_long</span>
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>
+                      Status RP
+                    </h2>
+                    <p style={{ margin: '1px 0 0', fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+                      {filtered.length} data sesuai filter aktif
+                    </p>
+                  </div>
+                </div>
 
-      {!loading && !error && (
-        <div style={{
-          flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
-          background: 'white', borderRadius: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0',
-          overflow: 'hidden',
-        }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={loadData}
+                    title="Segarkan data"
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      border: '1.5px solid #dbe5f0',
+                      background: 'white',
+                      color: '#475569',
+                      display: 'grid',
+                      placeItems: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#f8fafc'
+                      e.currentTarget.style.borderColor = '#cbd5e1'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'white'
+                      e.currentTarget.style.borderColor = '#dbe5f0'
+                    }}
+                  >
+                    <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                  width: '100%',
+                  alignItems: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: isMobile
+                      ? '1fr'
+                      : `repeat(4, minmax(140px, 1fr))`,
+                    gap: '12px',
+                    flex: 1,
+                    minWidth: isMobile ? '100%' : '600px',
+                  }}
+                >
+                  {/* Search */}
+                  <FilterField label="Cari" icon="search">
+                    <input
+                      className="filter-input-element"
+                      style={filterInput}
+                      placeholder="No RP / Vendor..."
+                      value={filters.search}
+                      onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
+                    />
+                  </FilterField>
+
+                  {/* Tanggal */}
+                  <FilterField label="Tanggal" icon="calendar_month">
+                    <DateField
+                      value={filters.date}
+                      onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
+                      style={filterInput}
+                    />
+                  </FilterField>
+
+                  {/* Status */}
+                  <FilterField label="Status" icon="rule">
+                    <SearchableSelect
+                      value={filters.status}
+                      onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
+                      options={[
+                        { value: 'waiting_manager', label: 'Manager Approval' },
+                        { value: 'division_review', label: 'Diproses' },
+                        { value: 'final_review', label: 'Approval Proses' },
+                        { value: 'approved', label: 'Approved' },
+                        { value: 'REJECTED', label: 'Rejected' },
+                        { value: 'CREATED_FRP', label: 'FRP Dibuat' },
+                      ]}
+                      placeholder="Semua Status"
+                      style={filterInput}
+                    />
+                  </FilterField>
+
+                  {/* Divisi */}
+                  <FilterField label="Divisi" icon="business">
+                    <SearchableSelect
+                      value={filters.division}
+                      onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
+                      options={divisionOptions}
+                      placeholder="Semua Divisi"
+                      style={filterInput}
+                    />
+                  </FilterField>
+                </div>
+
+                {Object.values(filters).some(Boolean) && (
+                  <button
+                    onClick={() => setFilters({ search: '', status: '', date: '', division: '' })}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '4px',
+                      padding: '9px 14px', borderRadius: '10px', border: '1.5px solid #e2e8f0',
+                      background: 'white', color: '#64748b', fontSize: '13px', fontWeight: 600,
+                      cursor: 'pointer', fontFamily: 'inherit', minHeight: '42px',
+                    }}
+                  >
+                    <span className="material-icons-round" style={{ fontSize: '16px' }}>close</span>
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ── Table Container ── */}
+            <div style={{
+              flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
+              background: 'white', overflow: 'hidden',
+            }}>
           {filtered.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#94a3b8', padding: '4rem 2rem' }}>
               <span className="material-icons-round" style={{ fontSize: '52px', marginBottom: '1rem', opacity: 0.4 }}>receipt_long</span>
@@ -311,9 +718,9 @@ export default function StatusRP() {
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: '10px' }}>
                         {[
-                          { label: 'Tanggal', value: formatDate(req.tanggalRp) },
+                          { label: 'Tanggal', value: formatDate(req.createdAt) },
                           { label: 'Vendor', value: req.vendorSuggestion || '-' },
-                          { label: 'Divisi', value: req.divisi || '-' },
+                          { label: 'Divisi', value: req.departmentName || req.departmentClass || '-' },
                           { label: 'Total', value: formatCurrency(total) },
                         ].map(({ label, value }) => (
                           <div key={label}>
@@ -347,8 +754,8 @@ export default function StatusRP() {
           ) : (
             /* ── Desktop Table View ── */
             <>
-              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
+              <div className="frp-items-scrollable" style={{ flex: 1, minHeight: 0, overflowX: 'hidden' }}>
+                <table className="frp-table">
                   <colgroup>
                     <col style={{ width: '16%' }} />
                     <col style={{ width: '12%' }} />
@@ -358,7 +765,7 @@ export default function StatusRP() {
                     <col style={{ width: '12%' }} />
                     <col style={{ width: '12%' }} />
                   </colgroup>
-                  <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                  <thead>
                     <tr>
                       {[
                         { label: 'No RP', key: 'rpNo' },
@@ -371,7 +778,8 @@ export default function StatusRP() {
                       ].map(({ label, key }) => (
                         <th
                           key={label}
-                          style={{ ...th, cursor: key ? 'pointer' : 'default' }}
+                          className="frp-th"
+                          style={{ cursor: key ? 'pointer' : 'default', textAlign: label === 'Detail' ? 'right' : 'left' }}
                           onClick={() => key && toggleSort(key)}
                         >
                           {label}
@@ -385,12 +793,10 @@ export default function StatusRP() {
                       const total = calcTotal(req)
                       return (
                         <tr key={req.id}
-                          style={{ transition: 'background 0.12s', cursor: 'pointer' }}
+                          style={{ cursor: 'pointer' }}
                           onClick={() => setDetailRequest(req)}
-                          onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
-                          <td style={td}>
+                          <td className="frp-td">
                             <button
                               type="button"
                               onClick={() => copyRpNo(req.id, req.rpNo)}
@@ -402,21 +808,28 @@ export default function StatusRP() {
                               </span>
                             </button>
                           </td>
-                          <td style={{ ...td, color: '#475569', fontSize: '0.82rem' }}>{formatDate(req.tanggalRp)}</td>
-                          <td style={{ ...td, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={req.vendorSuggestion}>{req.vendorSuggestion || '-'}</td>
-                          <td style={{ ...td, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#475569' }} title={req.divisi}>{req.divisi || '-'}</td>
-                          <td style={{ ...td, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: '0.82rem' }}>{formatCurrency(total)}</td>
-                          <td style={td}><StatusBadge status={req.status} /></td>
-                          <td style={td} onClick={(e) => e.stopPropagation()}>
+                          <td className="frp-td" style={{ color: '#475569', fontSize: '0.82rem' }}>{formatDate(req.createdAt)}</td>
+                          <td className="frp-td" style={{ maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={req.vendorSuggestion}>{req.vendorSuggestion || '-'}</td>
+                          <td className="frp-td" style={{ maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#475569' }} title={req.departmentName || req.departmentClass}>{req.departmentName || req.departmentClass || '-'}</td>
+                          <td className="frp-td" style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: '0.82rem' }}>{formatCurrency(total)}</td>
+                          <td className="frp-td"><StatusBadge status={req.status} /></td>
+                          <td className="frp-td" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'right' }}>
                             <button
                               type="button"
                               onClick={() => setDetailRequest(req)}
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '4px',
                                 background: '#eff6ff', color: '#1d4ed8',
-                                border: '1px solid #bfdbfe', padding: '6px 10px',
+                                border: '1px solid #bfdbfe', padding: '6px 12px',
                                 borderRadius: '8px', cursor: 'pointer',
                                 fontWeight: 600, fontSize: '12px', fontFamily: 'inherit',
+                                transition: 'all 0.2s',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#dbeafe'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#eff6ff'
                               }}
                             >
                               <span className="material-icons-round" style={{ fontSize: '15px' }}>open_in_new</span>
@@ -447,6 +860,7 @@ export default function StatusRP() {
               </div>
             </>
           )}
+          </div>
         </div>
       )}
 
@@ -454,7 +868,27 @@ export default function StatusRP() {
         isOpen={!!detailRequest}
         request={detailRequest}
         onClose={() => setDetailRequest(null)}
+        extraFooter={
+          user?.role === 'administrator' && ['division_review', 'final_review'].includes(detailRequest?.status) ? (
+            <ButtonRevert onClick={() => setConfirmRevert(detailRequest)}>
+              Revert
+            </ButtonRevert>
+          ) : null
+        }
       />
-    </main>
+
+      <DialogConfirm
+        isOpen={!!confirmRevert}
+        title="Revert Request Purchase?"
+        message={`Status RP akan dikembalikan ke ${confirmRevert?.status === 'division_review' ? 'Manager Approval' : 'Proses Divisi'}.`}
+        confirmLabel="Ya, Revert"
+        tone="warning"
+        icon="restart_alt"
+        onClose={() => setConfirmRevert(null)}
+        onConfirm={processRevert}
+        loading={actionLoading}
+      />
+      </main>
+    </>
   )
 }

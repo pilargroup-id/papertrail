@@ -294,6 +294,7 @@ async function fetchAllRpRequests() {
         departmentName: r.department_name || '',
         departmentClass: r.department_class || '',
         departmentCode: r.department_code || '',
+        divisi: r.department_class || r.department_name || '',
 
         classId: r.class_id || null,
         className: r.class_name || '',
@@ -306,9 +307,11 @@ async function fetchAllRpRequests() {
 
         requestedBy: r.requested_by || '',
         purchaseCategory: r.purchase_category || '',
+        kategoriPembelian: r.purchase_category || '',
         description: r.description || '',
 
         processedByDepartment: r.processed_by_department || '',
+        diprosesOleh: r.processed_by_department || '',
 
         requiredDate: r.required_date ? new Date(r.required_date).toISOString().slice(0, 10) : '',
 
@@ -321,6 +324,7 @@ async function fetchAllRpRequests() {
         createdBy: r.created_by,
         createdByUserId: r.created_by_user_id || '',
         createdByUserName: r.created_by_user_name || '',
+        dibuatOleh: r.created_by_user_name || r.created_by || '',
 
         managerApprovedBy: r.manager_approved_by,
         managerApprovedAt: r.manager_approved_at,

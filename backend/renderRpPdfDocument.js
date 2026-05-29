@@ -183,21 +183,21 @@ function renderRpPdfDocument(formData = {}, preview = false) {
       <div class="info-box">
         <div class="info-row"><div class="info-label">Dibuat Oleh</div><div class="info-value">${escapeHtml(formData.dibuatOleh)}</div></div>
         <div class="info-row"><div class="info-label">Divisi</div><div class="info-value">${escapeHtml(formData.divisi)}</div></div>
-        <div class="info-row"><div class="info-label">Class</div><div class="info-value">${escapeHtml(formData.class)}</div></div>
-        <div class="info-row"><div class="info-label">Tanggal</div><div class="info-value">${escapeHtml(formData.tanggalDibutuhkan)}</div></div>
+        <div class="info-row"><div class="info-label">Class</div><div class="info-value">${escapeHtml(formData.classClass || formData.class)}</div></div>
+        <div class="info-row"><div class="info-label">Tanggal</div><div class="info-value">${escapeHtml(formData.requiredDate || formData.tanggalDibutuhkan)}</div></div>
       </div>
       <div class="info-box">
         <div class="info-row"><div class="info-label">Kategori</div><div class="info-value">${escapeHtml(formData.kategoriPembelian)}</div></div>
         <div class="info-row"><div class="info-label">Diproses Oleh</div><div class="info-value">${escapeHtml(formData.diprosesOleh)}</div></div>
         <div class="info-row"><div class="info-label">Vendor Sug.</div><div class="info-value">${escapeHtml(formData.vendorSuggestion || '-')}</div></div>
-        <div class="info-row"><div class="info-label">PIC Penerima</div><div class="info-value">${escapeHtml(formData.picPenerima || '-')}</div></div>
+        <div class="info-row"><div class="info-label">PIC Penerima</div><div class="info-value">${escapeHtml(formData.receiverPic || formData.picPenerima || '-')}</div></div>
       </div>
     </div>
 
-    ${formData.deskripsi ? `
+    ${(formData.description || formData.deskripsi) ? `
     <div class="desc-box">
       <div class="desc-label">Deskripsi / Alasan Permintaan</div>
-      <div class="desc-value">${escapeHtml(formData.deskripsi).replace(/\n/g, '<br>')}</div>
+      <div class="desc-value">${escapeHtml(formData.description || formData.deskripsi).replace(/\n/g, '<br>')}</div>
     </div>
     ` : ''}
 

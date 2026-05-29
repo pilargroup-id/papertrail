@@ -12,6 +12,7 @@ import ButtonPreview from '../../components/button/ButtonPreview.jsx'
 import ButtonPrintPdf from '../../components/button/ButtonPrintPdf.jsx'
 import ButtonCheckData from '../../components/button/ButtonCheckData.jsx'
 import ButtonKeFrp from '../../components/button/ButtonKeFrp.jsx'
+import FilterApprovalRp from './FilterApprovalRp.jsx'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -19,7 +20,7 @@ const TABLET_BREAKPOINT = 1100
 const STATUS_META = {
   waiting_manager: { label: 'Menunggu Manager', background: '#fef3c7', color: '#92400e' },
   division_review: { label: 'Menunggu Proses', background: '#dbeafe', color: '#1d4ed8' },
-  final_approved: { label: 'Approval Proses', background: '#ede9fe', color: '#6d28d9' },
+  final_review: { label: 'Approval Proses', background: '#ede9fe', color: '#6d28d9' },
   approved: { label: 'Approved', background: '#bbf7d0', color: '#166534' },
   REJECTED: { label: 'Rejected', background: '#fecaca', color: '#991b1b' },
   CREATED_FRP: { label: 'Created FRP', background: '#cffafe', color: '#0e7490' },
@@ -101,230 +102,6 @@ const getGridColumns = (desktopColumns, isMobile, isTablet) => {
   return `repeat(${desktopColumns}, minmax(0, 1fr))`
 }
 
-function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
-  const inputRef = useRef(null)
-
-  const openPicker = () => {
-    if (!inputRef.current) return
-    try {
-      if (typeof inputRef.current.showPicker === 'function') {
-        inputRef.current.showPicker()
-        return
-      }
-    } catch (_) {}
-    inputRef.current.focus()
-    inputRef.current.click()
-  }
-
-  return (
-    <div style={{ position: 'relative' }} onClick={openPicker}>
-      <input
-        ref={inputRef}
-        type="date"
-        value={value}
-        onChange={onChange}
-        aria-label={placeholder}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0,
-          cursor: 'pointer',
-          width: '100%',
-          height: '100%',
-          zIndex: 2,
-        }}
-      />
-      <div
-        style={{
-          ...style,
-          paddingRight: '48px',
-          display: 'flex',
-          alignItems: 'center',
-          color: value ? '#1e293b' : '#94a3b8',
-          cursor: 'pointer',
-          position: 'relative',
-        }}
-      >
-        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {value ? formatDate(value) : placeholder}
-        </span>
-        <button
-          type="button"
-          onClick={openPicker}
-          aria-label="Buka kalender"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            right: '8px',
-            transform: 'translateY(-50%)',
-            width: '34px',
-            height: '34px',
-            borderRadius: '10px',
-            border: 'none',
-            background: '#e2e8f0',
-            color: '#475569',
-            display: 'grid',
-            placeItems: 'center',
-            padding: 0,
-            pointerEvents: 'none',
-          }}
-        >
-          <span className="material-icons-round" style={{ fontSize: '18px' }}>calendar_month</span>
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function SearchableSelect({ value, onChange, options, placeholder = 'Pilih...', style }) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const ref = useRef(null)
-
-  const normalizedOptions = options.map(option =>
-    typeof option === 'string'
-      ? { value: option, label: option, keywords: option }
-      : {
-          value: option.value,
-          label: option.label,
-          keywords: option.keywords || option.label || option.value,
-        },
-  )
-
-  const selectedOption = normalizedOptions.find(option => option.value === value)
-  const filteredOptions = normalizedOptions.filter(option =>
-    String(option.keywords || '').toLowerCase().includes(search.toLowerCase()),
-  )
-
-  useEffect(() => {
-    if (!open) setSearch('')
-  }, [open])
-
-  useEffect(() => {
-    const handleOutside = event => {
-      if (ref.current && !ref.current.contains(event.target)) setOpen(false)
-    }
-
-    document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
-  }, [])
-
-  return (
-    <div ref={ref} style={{ position: 'relative', zIndex: open ? 20 : 1 }}>
-      <button
-        type="button"
-        onClick={() => setOpen(current => !current)}
-        style={{
-          ...style,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          textAlign: 'left',
-          minHeight: style?.minHeight || '42px',
-          boxShadow: style?.boxShadow || 'inset 0 1px 0 rgba(255,255,255,0.65)',
-        }}
-      >
-        <span
-          style={{
-            display: 'block',
-            flex: 1,
-            color: value ? '#1e293b' : '#94a3b8',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            paddingRight: '12px',
-          }}
-        >
-          {selectedOption?.label || placeholder}
-        </span>
-        <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', flexShrink: 0 }}>
-          {open ? 'expand_less' : 'expand_more'}
-        </span>
-      </button>
-      {open && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            background: 'white',
-            border: '1.5px solid #dbe5f0',
-            borderRadius: '12px',
-            boxShadow: '0 14px 30px rgba(15, 23, 42, 0.14)',
-            zIndex: 200,
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ padding: '8px' }}>
-            <input
-              autoFocus
-              type="text"
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              placeholder="Cari..."
-              style={{ ...style, fontSize: '0.875rem', padding: '8px 10px', minHeight: 'unset' }}
-            />
-          </div>
-          <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: '1px solid #f1f5f9' }}>
-            <button
-              type="button"
-              onClick={() => {
-                onChange('')
-                setOpen(false)
-              }}
-              style={{
-                width: '100%',
-                border: 'none',
-                background: 'white',
-                textAlign: 'left',
-                padding: '10px 12px',
-                fontFamily: 'inherit',
-                fontSize: '0.875rem',
-                color: '#94a3b8',
-                cursor: 'pointer',
-              }}
-            >
-              {placeholder}
-            </button>
-            {filteredOptions.map(option => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value)
-                  setOpen(false)
-                }}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderTop: '1px solid #f8fafc',
-                  background: option.value === value ? '#eff6ff' : 'white',
-                  color: option.value === value ? '#1f4e8c' : '#1e293b',
-                  textAlign: 'left',
-                  padding: '10px 12px',
-                  fontFamily: 'inherit',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  fontWeight: option.value === value ? 700 : 500,
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-            {filteredOptions.length === 0 && (
-              <div style={{ padding: '12px', color: '#94a3b8', fontSize: '0.875rem', textAlign: 'center' }}>
-                Tidak ditemukan
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function RpApprovalPage() {
   const { pathname } = useLocation()
@@ -450,8 +227,16 @@ export default function RpApprovalPage() {
 
   const doAction = async (id, action, body = {}) => {
     setActionLoading(true)
+    let actualAction = action
+    if (action === 'revert' && confirmAction?.rp) {
+      if (confirmAction.rp.status === 'division_review') {
+        actualAction = 'process-revert'
+      } else if (confirmAction.rp.status === 'final_review') {
+        actualAction = 'process-manager-revert'
+      }
+    }
     try {
-      const response = await fetch(`/api/rp/${id}/${action}`, {
+      const response = await fetch(`/api/rp/${id}/${actualAction}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -649,20 +434,43 @@ export default function RpApprovalPage() {
   }
 
   const renderRowActions = (rp, options = {}) => {
-    const { showDetail = true, showPreview = true, showKeFrp = true } = options
+    const { showDetail = true, showPreview = true, showKeFrp = true, showActions = true, showRevert = true } = options
     const canManagerApprove =
       rp.status === 'waiting_manager' &&
       (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && userDivision === rp.divisi))
     const canProcess = rp.status === 'division_review' && (isAdmin || isProcessDivision(rp.diprosesOleh))
-    const canFinalApprove = rp.status === 'final_approved' && (isAdmin || isProcessManager(rp.diprosesOleh))
+    const canFinalApprove = rp.status === 'final_review' && (isAdmin || isProcessManager(rp.diprosesOleh))
     const canCreateFrp =
       rp.status === 'approved' &&
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
 
+    const showDetailActionPill = showDetail && rp.status !== 'waiting_manager'
+    const showRevertAction = isAdmin && showRevert && ['division_review', 'final_review'].includes(rp.status)
+
     return (
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-        {showDetail && (
-          <ButtonDetail onClick={() => setSelected(rp)}>Detail</ButtonDetail>
+        {showDetail && rp.status === 'waiting_manager' && (
+          <ButtonDetail variant="approve" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
+        )}
+        
+        {(showDetailActionPill || showRevertAction) && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            borderRadius: '30px',
+            padding: '4px',
+            gap: '4px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+          }}>
+            {showDetailActionPill && (
+              <ButtonDetail variant="action" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
+            )}
+            {showRevertAction && (
+              <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
+            )}
+          </div>
         )}
         {showPreview && ['approved', 'CREATED_FRP'].includes(rp.status) && (
           <>
@@ -670,29 +478,53 @@ export default function RpApprovalPage() {
             <ButtonPrintPdf onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')}>Print PDF</ButtonPrintPdf>
           </>
         )}
-        {canManagerApprove && (
-          <>
-            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')}>Approve</ButtonApprove>
+        {showActions && canManagerApprove && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            borderRadius: '30px',
+            padding: '4px',
+            gap: '4px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+          }}>
             <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'manager-reject')}>Reject</ButtonReject>
-          </>
+            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')}>Approve</ButtonApprove>
+          </div>
         )}
-        {canProcess && (
-          <>
-            <ButtonCheckData onClick={() => navigate(`/rp?process=${rp.id}`)}>Check Data</ButtonCheckData>
+        {showActions && canProcess && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            borderRadius: '30px',
+            padding: '4px',
+            gap: '4px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+          }}>
             <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')}>Reject</ButtonReject>
-          </>
+            <ButtonCheckData onClick={() => navigate(`/rp?process=${rp.id}`)}>Check Data</ButtonCheckData>
+          </div>
         )}
-        {canFinalApprove && (
-          <>
-            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Final Approve</ButtonApprove>
+        {showActions && canFinalApprove && (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            borderRadius: '30px',
+            padding: '4px',
+            gap: '4px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+          }}>
             <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-reject')}>Reject</ButtonReject>
-          </>
+            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Final Approve</ButtonApprove>
+          </div>
         )}
         {canCreateFrp && showKeFrp && (
           <ButtonKeFrp onClick={() => navigate(`/frp?fromRp=${rp.id}`)}>Ke FRP</ButtonKeFrp>
-        )}
-        {isAdmin && rp.status !== 'waiting_manager' && (
-          <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
         )}
       </div>
     )
@@ -708,7 +540,7 @@ export default function RpApprovalPage() {
       selected.status === 'waiting_manager' &&
       (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && userDivision === selected.divisi))
     const canProcess = selected.status === 'division_review' && (isAdmin || isProcessDivision(selected.diprosesOleh))
-    const canFinalApprove = selected.status === 'final_approved' && (isAdmin || isProcessManager(selected.diprosesOleh))
+    const canFinalApprove = selected.status === 'final_review' && (isAdmin || isProcessManager(selected.diprosesOleh))
     const canCreateFrp =
       selected.status === 'approved' &&
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
@@ -853,14 +685,13 @@ export default function RpApprovalPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: getGridColumns(3, isMobile, isTablet), gap: '0.75rem' }}>
                   {[
                     ['Company', selected.companyName],
-                    ['Divisi', selected.divisi],
-                    ['Class', selected.class],
+                    ['Divisi & Proses', <><div style={{ marginBottom: '2px', fontWeight: 600 }}>{selected.divisi || '-'}</div><div style={{ fontSize: '10px', color: '#64748b', fontWeight: 500 }}>Process by {selected.diprosesOleh || '-'}</div></>],
+                    ['Class', selected.classClass || selected.class],
                     ['Dibuat Oleh', selected.dibuatOleh],
                     ['Kategori', selected.kategoriPembelian],
-                    ['Diproses Oleh', selected.diprosesOleh],
-                    ['Tanggal Dibutuhkan', formatDate(selected.tanggalDibutuhkan)],
+                    ['Tanggal Dibutuhkan', formatDate(selected.requiredDate || selected.tanggalDibutuhkan)],
                     ['Vendor Suggestion', selected.vendorSuggestion],
-                    ['PIC Penerima', selected.picPenerima],
+                    ['PIC Penerima', selected.receiverPic || selected.picPenerima],
                   ].map(([label, value]) => (
                     <div key={label} className="dialog-section-premium" style={{ marginBottom: 0 }}>
                       <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em', marginBottom: '4px' }}>{label}</div>
@@ -871,7 +702,7 @@ export default function RpApprovalPage() {
 
                 <div className="dialog-section-premium">
                   <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.04em', marginBottom: '4px' }}>Deskripsi</div>
-                  <div style={{ ...detailValueBox, border: 'none', background: 'transparent', padding: 0, minHeight: 'auto', boxShadow: 'none' }}>{selected.deskripsi || '-'}</div>
+                  <div style={{ ...detailValueBox, border: 'none', background: 'transparent', padding: 0, minHeight: 'auto', boxShadow: 'none' }}>{selected.description || selected.deskripsi || '-'}</div>
                 </div>
 
                 {selected.processChanges?.length > 0 && (
@@ -996,7 +827,7 @@ export default function RpApprovalPage() {
               </button>
             )}
 
-            {isAdmin && selected.status !== 'waiting_manager' && (
+            {isAdmin && ['division_review', 'final_review'].includes(selected.status) && (
               <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'revert')} className="btn-dialog btn-dialog-warning">
                 <span className="material-icons-round" style={{ fontSize: '18px' }}>undo</span>
                 Revert
@@ -1016,121 +847,116 @@ export default function RpApprovalPage() {
   return (
     <>
       <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
-        {isMobile ? (
-          <div ref={tabDropdownRef} style={{ position: 'relative', marginBottom: '12px' }}>
-            <button
-              type="button"
-              onClick={() => setTabDropdownOpen(v => !v)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '12px', border: '2px solid #1f4e8c', background: '#eff6ff', color: '#1f4e8c', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem' }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="material-icons-round" style={{ fontSize: '18px' }}>{tabs.find(t => t.key === tab)?.icon}</span>
-                {tabs.find(t => t.key === tab)?.label}
-                <span style={{ background: '#1f4e8c', color: 'white', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[tab] ?? 0}</span>
-              </span>
-              <span className="material-icons-round" style={{ fontSize: '20px' }}>{tabDropdownOpen ? 'expand_less' : 'expand_more'}</span>
-            </button>
-            {tabDropdownOpen && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'white', border: '1.5px solid #dbe5f0', borderRadius: '12px', boxShadow: '0 14px 30px rgba(15,23,42,0.14)', zIndex: 50, overflow: 'hidden' }}>
+
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'white', borderRadius: '16px', boxShadow: '0 4px 20px -2px rgba(148, 163, 184, 0.08)', border: '1.5px solid #e8edf4', overflow: 'hidden' }}>
+          <FilterApprovalRp
+            filters={filters}
+            setFilters={setFilters}
+            creatorOptions={creatorOptions}
+            statusOptions={statusOptions}
+            divisionOptions={divisionOptions}
+            processorOptions={processorOptions}
+            isMobile={isMobile}
+            filteredCount={filtered.length}
+            onRefresh={() => loadData(tab)}
+          />
+
+          {/* TABS INSIDE CARD, BELOW FILTER, ABOVE TABLE */}
+          <div style={{ padding: isMobile ? '0 12px 12px 12px' : '0 24px 16px 24px', background: 'white' }}>
+            {isMobile ? (
+              <div ref={tabDropdownRef} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setTabDropdownOpen(v => !v)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '12px', border: '2px solid #1f4e8c', background: '#eff6ff', color: '#1f4e8c', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem' }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="material-icons-round" style={{ fontSize: '18px' }}>{tabs.find(t => t.key === tab)?.icon}</span>
+                    {tabs.find(t => t.key === tab)?.label}
+                    <span style={{ background: '#1f4e8c', color: 'white', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[tab] ?? 0}</span>
+                  </span>
+                  <span className="material-icons-round" style={{ fontSize: '20px' }}>{tabDropdownOpen ? 'expand_less' : 'expand_more'}</span>
+                </button>
+                {tabDropdownOpen && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'white', border: '1.5px solid #dbe5f0', borderRadius: '12px', boxShadow: '0 14px 30px rgba(15,23,42,0.14)', zIndex: 50, overflow: 'hidden' }}>
+                    {tabs.map(item => {
+                      const active = tab === item.key
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => { setTab(item.key); setTabDropdownOpen(false) }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', border: 'none', borderTop: '1px solid #f1f5f9', background: active ? '#eff6ff' : 'white', color: active ? '#1f4e8c' : '#334155', fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem', textAlign: 'left' }}
+                        >
+                          <span className="material-icons-round" style={{ fontSize: '18px', flexShrink: 0 }}>{item.icon}</span>
+                          <span style={{ flex: 1 }}>{item.label}</span>
+                          <span style={{ background: active ? '#1f4e8c' : '#e2e8f0', color: active ? 'white' : '#475569', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[item.key] ?? 0}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', background: '#f8fafc', padding: '6px', borderRadius: '16px', border: '1px solid #e2e8f0', width: '100%', boxSizing: 'border-box' }}>
                 {tabs.map(item => {
+                  const count = D.counts?.[item.key] ?? 0
                   const active = tab === item.key
                   return (
                     <button
                       key={item.key}
                       type="button"
-                      onClick={() => { setTab(item.key); setTabDropdownOpen(false) }}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', border: 'none', borderTop: '1px solid #f1f5f9', background: active ? '#eff6ff' : 'white', color: active ? '#1f4e8c' : '#334155', fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem', textAlign: 'left' }}
+                      onClick={() => setTab(item.key)}
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 16px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: active ? 'white' : 'transparent',
+                        color: active ? '#1e40af' : '#64748b',
+                        fontWeight: active ? 700 : 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        fontSize: '0.85rem',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: active ? '0 2px 8px rgba(15, 23, 42, 0.06)' : 'none',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.color = '#334155'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.color = '#64748b'
+                        }
+                      }}
                     >
-                      <span className="material-icons-round" style={{ fontSize: '18px', flexShrink: 0 }}>{item.icon}</span>
-                      <span style={{ flex: 1 }}>{item.label}</span>
-                      <span style={{ background: active ? '#1f4e8c' : '#e2e8f0', color: active ? 'white' : '#475569', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[item.key] ?? 0}</span>
+                      <span className="material-icons-round" style={{ fontSize: '18px' }}>{item.icon}</span>
+                      {item.label}
+                      <span style={{
+                        background: active ? '#1e40af' : '#e2e8f0',
+                        color: active ? 'white' : '#64748b',
+                        borderRadius: '20px',
+                        padding: '2px 8px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        marginLeft: '4px',
+                        transition: 'all 0.2s'
+                      }}>
+                        {count}
+                      </span>
                     </button>
                   )
                 })}
               </div>
             )}
           </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-            {tabs.map(item => {
-              const count = D.counts?.[item.key] ?? 0
-              const active = tab === item.key
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => setTab(item.key)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '10px', border: active ? '2px solid #1f4e8c' : '1.5px solid #e2e8f0', background: active ? '#eff6ff' : 'white', color: active ? '#1f4e8c' : '#64748b', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.85rem' }}
-                >
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>{item.icon}</span>
-                  {item.label} ({count})
-                </button>
-              )
-            })}
-          </div>
-        )}
 
-        <div style={{ background: '#f1f5f9', borderRadius: '16px', padding: isMobile ? '10px 12px' : '20px', marginBottom: isMobile ? '12px' : '20px', border: '1px solid #e2e8f0' }}>
-          {isMobile && (
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(v => !v)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: '2px 0', marginBottom: filtersOpen ? '10px' : 0, cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span className="material-icons-round" style={{ fontSize: '17px' }}>tune</span>
-                Filter & Pencarian
-                {Object.values(filters).some(Boolean) && (
-                  <span style={{ background: '#2563eb', color: 'white', borderRadius: '999px', fontSize: '10px', fontWeight: 700, padding: '1px 7px', lineHeight: 1.6 }}>
-                    {Object.values(filters).filter(Boolean).length}
-                  </span>
-                )}
-              </span>
-              <span className="material-icons-round" style={{ fontSize: '20px', color: '#94a3b8' }}>
-                {filtersOpen ? 'expand_less' : 'expand_more'}
-              </span>
-            </button>
-          )}
-          {(!isMobile || filtersOpen) && (
-          <div style={filterGridStyle}>
-            {[
-              {
-                label: 'Search',
-                content: <input style={filterInput} placeholder="Cari No RP / Vendor / Kategori..." value={filters.search} onChange={event => setFilters(current => ({ ...current, search: event.target.value }))} />,
-              },
-              {
-                label: 'Tanggal',
-                content: <DateField value={filters.date} onChange={event => setFilters(current => ({ ...current, date: event.target.value }))} style={filterInput} />,
-              },
-              {
-                label: 'Pemohon',
-                content: <SearchableSelect value={filters.creator} onChange={value => setFilters(current => ({ ...current, creator: value }))} options={creatorOptions} placeholder="Semua Pemohon" style={filterInput} />,
-              },
-              {
-                label: 'Status',
-                content: <SearchableSelect value={filters.status} onChange={value => setFilters(current => ({ ...current, status: value }))} options={statusOptions} placeholder="Semua Status" style={filterInput} />,
-              },
-              {
-                label: 'Divisi',
-                content: <SearchableSelect value={filters.division} onChange={value => setFilters(current => ({ ...current, division: value }))} options={divisionOptions} placeholder="Semua Divisi" style={filterInput} />,
-              },
-              {
-                label: 'Diproses',
-                content: <SearchableSelect value={filters.processor} onChange={value => setFilters(current => ({ ...current, processor: value }))} options={processorOptions} placeholder="Semua Proses" style={filterInput} />,
-              },
-            ].map(({ label, content }, index) => (
-              <div key={label} style={{ gridColumn: isMobile && index === 0 ? '1 / -1' : undefined }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', marginBottom: '6px', letterSpacing: '0.04em' }}>
-                  {label}
-                </label>
-                {content}
-              </div>
-            ))}
-          </div>
-          )}
-        </div>
-
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'white', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           <DataTableRp
             loading={loading}
             isMobile={isMobile}

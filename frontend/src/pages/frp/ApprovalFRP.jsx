@@ -395,10 +395,20 @@ export default function ApprovalFRP() {
     }
 
     const filteredList = data.requests.filter((request) => {
+      const searchLower = (filters.search || '').toLowerCase()
       const matchSearch =
-        !filters.search ||
-        (request.frpNo || '').toLowerCase().includes(filters.search.toLowerCase()) ||
-        (request.vendor || '').toLowerCase().includes(filters.search.toLowerCase())
+        !searchLower ||
+        (request.frpNo || '').toLowerCase().includes(searchLower) ||
+        (request.vendor || '').toLowerCase().includes(searchLower) ||
+        (request.dimintaOleh || '').toLowerCase().includes(searchLower) ||
+        (request.divisi || '').toLowerCase().includes(searchLower) ||
+        (request.status || '').toLowerCase().includes(searchLower) ||
+        (request.approvedBy || '').toLowerCase().includes(searchLower) ||
+        (request.items || []).some(item => 
+          (item.memo || '').toLowerCase().includes(searchLower) ||
+          (item.budgetId || '').toLowerCase().includes(searchLower) ||
+          (item.projectName || '').toLowerCase().includes(searchLower)
+        )
       const matchDate = !filters.date || request.tanggalFrp === filters.date
       const matchRequester =
         !filters.requester ||
@@ -583,10 +593,10 @@ export default function ApprovalFRP() {
     { label: 'Divisi', key: 'division' },
     { label: 'Total', key: 'total' },
     { label: 'Status', key: 'status' },
-    { label: 'Detail', key: null },
+    { label: 'Action', key: null },
   ]
 
-  const desktopColumnWidths = ['22%', '24%', '12%', '14%', '16%', '12%']
+  const desktopColumnWidths = ['15%', '17%', '7%', '7%', '9%', '15%']
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const safeCurrentPage = Math.min(currentPage, totalPages)
 
@@ -836,7 +846,7 @@ export default function ApprovalFRP() {
                 </FilterField>
 
                 {/* Pemohon */}
-                <FilterField label="Pemohon" icon="person">
+                <FilterField label="Request By" icon="person">
                   <SearchableSelect
                     value={filters.requester}
                     onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
@@ -942,42 +952,91 @@ export default function ApprovalFRP() {
                             </div>
                           )}
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {canApprove && !isApprovedView && (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              background: '#f1f5f9',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '30px',
+                              padding: '4px',
+                              gap: '4px',
+                              width: '100%',
+                            }}>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); requestAction(request, 'reject'); }}
+                                style={{
+                                  flex: 1,
+                                  display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
+                                  background: 'white',
+                                  color: '#ef4444', 
+                                  border: '1px solid transparent', 
+                                  borderRadius: '24px',
+                                  padding: '5px 10px', 
+                                  fontSize: '11px', 
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                  transition: 'all 0.2s',
+                                }}
+                              >
+                                <span className="material-icons-round" style={{ fontSize: '14px' }}>close</span>
+                                Reject
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); requestAction(request, 'approve'); }}
+                                style={{
+                                  flex: 1,
+                                  display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
+                                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                  color: 'white', 
+                                  border: 'none', 
+                                  borderRadius: '24px',
+                                  padding: '5px 10px', 
+                                  fontSize: '11px', 
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
+                                  transition: 'all 0.2s',
+                                }}
+                              >
+                                <span className="material-icons-round" style={{ fontSize: '14px' }}>check</span>
+                                Approve
+                              </button>
+                            </div>
+                          )}
                           <button
                             type="button"
                             onClick={() => setSelectedRequest(request)}
                             style={{
-                              flex: 1,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              background: 'rgba(16, 185, 129, 0.1)',
-                              color: '#059669',
-                              border: '1.5px solid rgba(16, 185, 129, 0.3)',
-                              padding: '8px',
-                              borderRadius: '20px',
+                              width: '100%',
+                              display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
+                              background: 'white',
+                              color: '#3b82f6', 
+                              border: '1px solid transparent', 
+                              borderRadius: '24px',
+                              padding: '5px 10px', 
+                              fontSize: '11px', 
+                              fontWeight: 600,
                               cursor: 'pointer',
-                              fontWeight: 700,
-                              fontSize: '13px',
-                              fontFamily: 'inherit',
-                              transition: 'all 0.2s ease-in-out',
-                              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.05)',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)'
-                              e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)'
-                              e.currentTarget.style.transform = 'translateY(-1px)'
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.1)'
+                              e.currentTarget.style.background = '#eff6ff'
+                              e.currentTarget.style.color = '#2563eb'
+                              e.currentTarget.style.borderColor = '#93c5fd'
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'
-                              e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)'
-                              e.currentTarget.style.transform = 'translateY(0)'
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.05)'
+                              e.currentTarget.style.background = 'white'
+                              e.currentTarget.style.color = '#3b82f6'
+                              e.currentTarget.style.borderColor = 'transparent'
                             }}
                           >
-                            <span className="material-icons-round" style={{ fontSize: '16px' }}>open_in_new</span>
+                            <span className="material-icons-round" style={{ fontSize: '14px' }}>open_in_new</span>
                             Detail
                           </button>
                         </div>
@@ -1163,43 +1222,112 @@ export default function ApprovalFRP() {
                                   </div>
                                 </td>
 
-                                {/* 6. Detail */}
+                                {/* 6. Action */}
                                 <td style={{ ...td, borderRight: 'none' }}>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setSelectedRequest(request); }}
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '6px',
-                                      background: 'rgba(16, 185, 129, 0.1)',
-                                      color: '#059669',
-                                      border: '1.5px solid rgba(16, 185, 129, 0.3)',
-                                      borderRadius: '20px',
-                                      padding: '6px 14px',
-                                      fontSize: '12px',
-                                      fontWeight: 700,
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s ease-in-out',
-                                      boxShadow: '0 2px 4px rgba(16, 185, 129, 0.05)',
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)'
-                                      e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)'
-                                      e.currentTarget.style.transform = 'translateY(-1px)'
-                                      e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.1)'
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'
-                                      e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)'
-                                      e.currentTarget.style.transform = 'translateY(0)'
-                                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.05)'
-                                    }}
-                                  >
-                                    <span className="material-icons-round" style={{ fontSize: '15px' }}>open_in_new</span>
-                                    Detail
-                                  </button>
+                                  {((canApprove && !isApprovedView) || (canApprove && isApprovedView && user.role === 'administrator')) ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+                                      {canApprove && !isApprovedView && (
+                                        <div style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          background: '#f1f5f9',
+                                          border: '1px solid #e2e8f0',
+                                          borderRadius: '30px',
+                                          padding: '4px',
+                                          gap: '4px',
+                                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                                        }}>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); requestAction(request, 'reject'); }}
+                                            style={{
+                                              display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                              background: 'white',
+                                              color: '#ef4444', 
+                                              border: '1px solid transparent', 
+                                              borderRadius: '24px',
+                                              padding: '4px 10px', 
+                                              fontSize: '11px', 
+                                              fontWeight: 600,
+                                              cursor: 'pointer',
+                                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.background = '#fee2e2'
+                                              e.currentTarget.style.color = '#dc2626'
+                                              e.currentTarget.style.borderColor = '#fca5a5'
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.background = 'white'
+                                              e.currentTarget.style.color = '#ef4444'
+                                              e.currentTarget.style.borderColor = 'transparent'
+                                            }}
+                                          >
+                                            <span className="material-icons-round" style={{ fontSize: '14px' }}>close</span>
+                                            Reject
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => { e.stopPropagation(); requestAction(request, 'approve'); }}
+                                            style={{
+                                              display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                              color: 'white', 
+                                              border: 'none', 
+                                              borderRadius: '24px',
+                                              padding: '4px 12px', 
+                                              fontSize: '11px', 
+                                              fontWeight: 600,
+                                              cursor: 'pointer',
+                                              boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
+                                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              e.currentTarget.style.transform = 'translateY(-1px)'
+                                              e.currentTarget.style.boxShadow = '0 4px 10px rgba(16,185,129,0.4)'
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.currentTarget.style.transform = 'translateY(0)'
+                                              e.currentTarget.style.boxShadow = '0 2px 6px rgba(16,185,129,0.3)'
+                                            }}
+                                          >
+                                            <span className="material-icons-round" style={{ fontSize: '14px' }}>check</span>
+                                            Approve
+                                          </button>
+                                        </div>
+                                      )}
+                                      {canApprove && isApprovedView && user.role === 'administrator' && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => { e.stopPropagation(); requestAction(request, 'revert'); }}
+                                          style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                            background: 'rgba(245, 158, 11, 0.1)',
+                                            color: '#d97706', border: '1.5px solid rgba(245, 158, 11, 0.4)', borderRadius: '20px',
+                                            padding: '6px 12px', fontSize: '11px', fontWeight: 700,
+                                            cursor: 'pointer', boxShadow: '0 2px 4px rgba(217,119,6,0.05)',
+                                            transition: 'all 0.2s',
+                                          }}
+                                          onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.2)'
+                                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.6)'
+                                            e.currentTarget.style.transform = 'translateY(-1px)'
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)'
+                                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.4)'
+                                            e.currentTarget.style.transform = 'translateY(0)'
+                                          }}
+                                        >
+                                          <span className="material-icons-round" style={{ fontSize: '14px' }}>restart_alt</span>
+                                          Revert
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>-</div>
+                                  )}
                                 </td>
                               </tr>
 
@@ -1237,94 +1365,38 @@ export default function ApprovalFRP() {
                                                 </div>
                                               )}
 
-                                              {((canApprove && !isApprovedView) || (canApprove && isApprovedView && user.role === 'administrator')) && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                  {canApprove && !isApprovedView && (
-                                                    <>
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => requestAction(request, 'reject')}
-                                                        style={{
-                                                          display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                                          background: 'rgba(239, 68, 68, 0.1)',
-                                                          color: '#dc2626', border: '1.5px solid rgba(239, 68, 68, 0.4)', borderRadius: '24px',
-                                                          padding: '6px 14px', fontSize: '12px', fontWeight: 700,
-                                                          cursor: 'pointer', boxShadow: '0 4px 12px rgba(239,68,68,0.05)',
-                                                          transition: 'all 0.2s',
-                                                          backdropFilter: 'blur(8px)'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'
-                                                          e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.6)'
-                                                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(239,68,68,0.1)'
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
-                                                          e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)'
-                                                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(239,68,68,0.05)'
-                                                        }}
-                                                      >
-                                                        <span className="material-icons-round" style={{ fontSize: '16px' }}>cancel</span>
-                                                        Reject
-                                                      </button>
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => requestAction(request, 'approve')}
-                                                        style={{
-                                                          display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                                          background: 'rgba(16, 185, 129, 0.1)',
-                                                          color: '#059669', border: '1.5px solid rgba(16, 185, 129, 0.4)', borderRadius: '24px',
-                                                          padding: '6px 14px', fontSize: '12px', fontWeight: 700,
-                                                          cursor: 'pointer', boxShadow: '0 4px 12px rgba(16,185,129,0.05)',
-                                                          transition: 'all 0.2s',
-                                                          backdropFilter: 'blur(8px)'
-                                                        }}
-                                                        onMouseEnter={(e) => {
-                                                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)'
-                                                          e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.6)'
-                                                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(16,185,129,0.1)'
-                                                        }}
-                                                        onMouseLeave={(e) => {
-                                                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'
-                                                          e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'
-                                                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.05)'
-                                                        }}
-                                                      >
-                                                        <span className="material-icons-round" style={{ fontSize: '16px' }}>check_circle</span>
-                                                        Approve
-                                                      </button>
-                                                    </>
-                                                  )}
-                                                  {canApprove && isApprovedView && user.role === 'administrator' && (
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => requestAction(request, 'revert')}
-                                                      style={{
-                                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                                        background: 'rgba(245, 158, 11, 0.1)',
-                                                        color: '#d97706', border: '1.5px solid rgba(245, 158, 11, 0.4)', borderRadius: '24px',
-                                                        padding: '6px 14px', fontSize: '12px', fontWeight: 700,
-                                                        cursor: 'pointer', boxShadow: '0 4px 12px rgba(217,119,6,0.05)',
-                                                        transition: 'all 0.2s',
-                                                        backdropFilter: 'blur(8px)'
-                                                      }}
-                                                      onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(245, 158, 11, 0.2)'
-                                                        e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.6)'
-                                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(217,119,6,0.1)'
-                                                      }}
-                                                      onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)'
-                                                        e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.4)'
-                                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(217,119,6,0.05)'
-                                                      }}
-                                                    >
-                                                      <span className="material-icons-round" style={{ fontSize: '16px' }}>restart_alt</span>
-                                                      Revert
-                                                    </button>
-                                                  )}
-                                                </div>
-                                              )}
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => { e.stopPropagation(); setSelectedRequest(request); }}
+                                                  style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                    background: 'white',
+                                                    color: '#3b82f6', 
+                                                    border: '1px solid transparent', 
+                                                    borderRadius: '24px',
+                                                    padding: '4px 10px', 
+                                                    fontSize: '11px', 
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                  }}
+                                                  onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = '#eff6ff'
+                                                    e.currentTarget.style.color = '#2563eb'
+                                                    e.currentTarget.style.borderColor = '#93c5fd'
+                                                  }}
+                                                  onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = 'white'
+                                                    e.currentTarget.style.color = '#3b82f6'
+                                                    e.currentTarget.style.borderColor = 'transparent'
+                                                  }}
+                                                >
+                                                  <span className="material-icons-round" style={{ fontSize: '14px' }}>open_in_new</span>
+                                                  Detail
+                                                </button>
+                                              </div>
                                             </div>
                                           </div>
                                           <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'rgba(255, 255, 255, 0.6)' }}>

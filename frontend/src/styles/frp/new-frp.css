@@ -275,6 +275,8 @@
 
 .frp-th {
   padding: 7px 10px;
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
   border-bottom: 2px solid #e2e8f0;
   background: #f8fafc;
   font-weight: 700;
@@ -288,7 +290,7 @@
   z-index: 1;
 }
 
-.frp-table thead tr th:first-child { border-top-left-radius: 8px; }
+.frp-table thead tr th:first-child { border-left: 1px solid #e2e8f0; border-top-left-radius: 8px; }
 .frp-table thead tr th:last-child  { border-top-right-radius: 8px; }
 
 .frp-td {

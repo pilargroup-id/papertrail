@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 function ButtonRevert({
   children,
   className = '',
@@ -5,15 +7,31 @@ function ButtonRevert({
   type = 'button',
   ...buttonProps
 }) {
-  const toneClass = `users-table-card__action--${tone}`
+  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <button
       type={type}
-      className={['users-table-card__action', toneClass, className].filter(Boolean).join(' ')}
+      className={className}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        background: isHovered ? '#ffedd5' : 'white',
+        color: isHovered ? '#c2410c' : '#f97316', 
+        border: '1px solid transparent', 
+        borderColor: isHovered ? '#fdba74' : 'transparent',
+        borderRadius: '24px',
+        padding: '4px 10px', 
+        fontSize: '11px', 
+        fontWeight: 600,
+        cursor: 'pointer',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       {...buttonProps}
     >
-      <span className="material-icons-round" style={{ fontSize: '15px' }}>
+      <span className="material-icons-round" style={{ fontSize: '14px' }}>
         restart_alt
       </span>
       {children}

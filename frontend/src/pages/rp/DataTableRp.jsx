@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import ButtonDetailStatusRp from '../../components/button/ButtonDetailStatusRp.jsx'
 
 
@@ -52,15 +52,15 @@ function renderStatus(status) {
 }
 
 const desktopHeaders = [
-  { label: 'Ringkasan', key: 'date' },
-  { label: 'Pemohon', key: 'creator' },
-  { label: 'Divisi', key: 'division' },
-  { label: 'Proses', key: 'processor' },
+  { label: 'FRP Number & Date', key: 'date' },
+  { label: 'Requestor & Vendor', key: 'creator' },
+  { label: 'Division & Process', key: 'division' },
+  { label: 'Receiver PIC', key: 'receiverPic' },
   { label: 'Total', key: 'total' },
   { label: 'Status', key: 'status' },
-  { label: 'Detail', key: null },
+  { label: 'Action', key: null },
 ]
-const desktopColumnWidths = ['19%', '15%', '9%', '11%', '13%', '13%', '9%']
+const desktopColumnWidths = ['15%', '15%', '9%', '11%', '13%', '13%', '18%']
 
 export default function DataTableRp({
   loading,
@@ -81,6 +81,16 @@ export default function DataTableRp({
   calcTotal,
 }) {
   const [expandedId, setExpandedId] = useState(null)
+  const [copiedId, setCopiedId] = useState(null)
+
+  const copyRpNo = async (id, rpNo) => {
+    if (!rpNo) return
+    try {
+      await navigator.clipboard.writeText(rpNo)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(c => c === id ? null : c), 1400)
+    } catch (_) {}
+  }
 
   const toggleExpand = (id, e) => {
     e.stopPropagation()
@@ -229,9 +239,18 @@ export default function DataTableRp({
                         </span>
                       </button>
                       <div>
-                        <div style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem', marginBottom: '2px' }}>
-                          {rp.rpNo || 'Draft'}
-                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); copyRpNo(rp.id, rp.rpNo); }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          <span style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem', marginBottom: '2px' }}>
+                            {rp.rpNo || 'Draft'}
+                          </span>
+                          <span className="material-icons-round" style={{ fontSize: '14px', color: copiedId === rp.id ? '#15803d' : '#94a3b8' }}>
+                            {copiedId === rp.id ? 'check' : 'content_copy'}
+                          </span>
+                        </button>
                         <div style={{ fontSize: '12px', color: '#64748b' }}>
                           {formatDate(rp.createdAt || rp.tanggalDibutuhkan)}
                         </div>
@@ -244,9 +263,8 @@ export default function DataTableRp({
                   >
                     {[
                       ['Pemohon', rp.dibuatOleh || '-'],
-                      ['Divisi', rp.divisi || '-'],
-                      ['Kategori', rp.kategoriPembelian || '-'],
-                      ['Diproses', rp.diprosesOleh || '-'],
+                      ['Vendor', rp.vendorSuggestion || '-'],
+                      ['Divisi & Proses', `${rp.divisi || '-'} (Process by ${rp.diprosesOleh || '-'})`],
                     ].map(([label, value]) => (
                       <div key={label}>
                         <div
@@ -297,17 +315,52 @@ export default function DataTableRp({
                     style={{
                       borderTop: '1.5px solid #dbeafe',
                       background: 'linear-gradient(135deg, #f0f7ff 0%, #eff6ff 100%)',
-                      padding: '12px 14px',
+                      padding: '16px 14px',
                       display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                      alignItems: 'center',
+                      flexDirection: 'column',
+                      gap: '12px',
                     }}
                   >
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: '4px' }}>
-                      Aksi:
-                    </span>
-                    {renderRowActions(rp)}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="material-icons-round" style={{ fontSize: '14px' }}>receipt_long</span>
+                        Detail Item
+                      </span>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {renderRowActions(rp, { showDetail: true, showPreview: true, showKeFrp: true, showActions: true })}
+                      </div>
+                    </div>
+
+                    <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'white' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', minWidth: '600px' }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid rgba(215, 224, 234, 0.6)' }}>
+                            <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '40px' }}>No</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase' }}>Item / Memo</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '50px' }}>Qty</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '120px' }}>Harga Satuan</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '120px' }}>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(rp.items || []).length > 0 ? (
+                            (rp.items || []).map((item, idx) => (
+                              <tr key={item.id || idx} style={{ borderBottom: idx === rp.items.length - 1 ? 'none' : '1px solid rgba(241, 245, 249, 0.8)' }}>
+                                <td style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                                <td style={{ padding: '8px 12px', color: '#1e293b', fontWeight: 600, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.memo || item.description || '-'}</td>
+                                <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontWeight: 600 }}>{item.qty || 1}</td>
+                                <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 500 }}>{formatCurrency(Number(item.price || item.estimatedValue) || 0)}</td>
+                                <td style={{ padding: '8px 12px', textAlign: 'right', color: '#0f172a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(Number(item.amount || (item.qty * item.estimatedValue)) || 0)}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={5} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>
@@ -401,54 +454,27 @@ export default function DataTableRp({
         .accordion-row-actions {
           animation: accordionSlideDown 0.2s cubic-bezier(0.4,0,0.2,1);
         }
-        .chevron-btn {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
-          border: 1.5px solid #dbe5f0;
-          background: white;
-          color: #94a3b8;
-          display: grid;
-          place-items: center;
-          cursor: pointer;
-          flex-shrink: 0;
-          transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+        .dashboard-main-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
         }
-        .chevron-btn:hover {
-          background: #eff6ff;
-          color: #2563eb;
-          border-color: #93c5fd;
-          box-shadow: 0 2px 8px rgba(37,99,235,0.12);
+        .dashboard-main-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
         }
-        .chevron-btn.is-open {
-          background: #eff6ff;
-          color: #2563eb;
-          border-color: #93c5fd;
+        .dashboard-main-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
         }
-        .chevron-icon {
-          font-size: 16px;
-          transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
-        }
-        .chevron-icon.is-open {
-          transform: rotate(180deg);
+        .dashboard-main-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
         }
       `}</style>
 
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Fixed header */}
-        <table
-          style={{
-            width: '100%',
-            maxWidth: '100%',
-            borderCollapse: 'separate',
-            borderSpacing: 0,
-            fontSize: '0.875rem',
-            tableLayout: 'fixed',
-          }}
-        >
+      <div className="dashboard-main-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+        <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
           <colgroup>
             {desktopColumnWidths.map((width, i) => (
-              <col key={`desktop-head-col-${i}`} style={{ width }} />
+              <col key={`desktop-col-${i}`} style={{ width }} />
             ))}
           </colgroup>
           <thead>
@@ -458,17 +484,16 @@ export default function DataTableRp({
                   key={header.label || `hdr-${header.key}`}
                   onClick={() => requestSort(header.key)}
                   style={{
-                    padding: '10px 14px',
+                    padding: '14px 16px',
                     textAlign: 'left',
-                    color: '#64748b',
+                    color: '#475569',
                     fontWeight: 700,
                     fontSize: '11px',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
+                    letterSpacing: '0.06em',
                     whiteSpace: 'nowrap',
                     background: '#f8fafc',
-                    borderBottom: '2px solid #e2e8f0',
-                    boxShadow: '0 2px 4px -1px rgba(15,23,42,0.06)',
+                    borderBottom: '1.5px solid #e2e8f0',
                     cursor: header.key ? 'pointer' : 'default',
                     userSelect: 'none',
                   }}
@@ -481,173 +506,215 @@ export default function DataTableRp({
               ))}
             </tr>
           </thead>
-        </table>
+          <tbody>
+            {paginated.map((rp, index) => {
+              const isOpen = expandedId === rp.id
+              const absoluteIndex = (safeCurrentPage - 1) * rowsPerPage + index
+              const rowBg = absoluteIndex % 2 === 0 ? 'white' : '#fafbfc'
 
-        {/* Scrollable body */}
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
-          <table
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              borderCollapse: 'separate',
-              borderSpacing: 0,
-              fontSize: '0.875rem',
-              tableLayout: 'fixed',
-            }}
-          >
-            <colgroup>
-              {desktopColumnWidths.map((width, i) => (
-                <col key={`desktop-body-col-${i}`} style={{ width }} />
-              ))}
-            </colgroup>
-            <tbody>
-              {paginated.map((rp, index) => {
-                const isOpen = expandedId === rp.id
-                const rowBg = index % 2 === 0 ? 'white' : '#fafbfc'
-                const td = { padding: '11px 14px', borderBottom: isOpen ? 'none' : '1px solid #f1f5f9', verticalAlign: 'top' }
-                const tdAccordion = { padding: '11px 14px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' }
-                return (
-                  <>
-                    <tr
-                      key={rp.id}
-                      style={{ background: isOpen ? '#eff6ff' : rowBg, cursor: 'pointer' }}
-                      onClick={() => setSelected(rp)}
-                      onMouseEnter={(e) => {
-                        if (!isOpen) e.currentTarget.style.background = '#eff6ff'
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isOpen) e.currentTarget.style.background = rowBg
-                      }}
-                    >
-                      <td style={td}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                          {/* Chevron toggle — di dalam sel Ringkasan */}
+              const td = {
+                padding: '14px 16px',
+                borderBottom: '1px solid #e8edf4',
+                verticalAlign: 'middle',
+                background: rowBg,
+              }
+
+              return (
+                <React.Fragment key={rp.id}>
+                  <tr
+                    style={{ background: rowBg, transition: 'background 0.2s', cursor: 'pointer' }}
+                    onClick={() => setExpandedId(prev => (prev === rp.id ? null : rp.id))}
+                    onMouseEnter={(e) => {
+                      const children = e.currentTarget.children
+                      for (let i = 0; i < children.length; i++) {
+                        children[i].style.background = '#eff6ff'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const children = e.currentTarget.children
+                      for (let i = 0; i < children.length; i++) {
+                        children[i].style.background = rowBg
+                      }
+                    }}
+                  >
+                    {/* Ringkasan */}
+                    <td style={td}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {/* Accordion Toggle Button */}
                           <button
                             type="button"
-                            onClick={(e) => toggleExpand(rp.id, e)}
+                            onClick={(e) => { e.stopPropagation(); setExpandedId(prev => (prev === rp.id ? null : rp.id)); }}
                             style={{
-                              width: '34px',
-                              height: '34px',
-                              borderRadius: '10px',
-                              border: '1px solid #cbd5e1',
-                              background: isOpen ? '#dbeafe' : '#f8fafc',
-                              color: isOpen ? '#1d4ed8' : '#64748b',
-                              display: 'grid',
-                              placeItems: 'center',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '50%',
+                              border: '1.5px solid rgba(30, 94, 77, 0.15)',
+                              background: isOpen ? 'rgba(30, 94, 77, 0.15)' : 'rgba(30, 94, 77, 0.05)',
+                              color: '#1e5e4d',
                               cursor: 'pointer',
+                              transition: 'all 0.2s',
                               padding: 0,
                               flexShrink: 0,
-                              transition: 'background 0.18s, color 0.18s, border-color 0.18s',
                             }}
-                            aria-label={isOpen ? 'Sembunyikan aksi' : 'Lihat aksi'}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(30, 94, 77, 0.15)'
+                              e.currentTarget.style.borderColor = 'rgba(30, 94, 77, 0.3)'
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isOpen) {
+                                e.currentTarget.style.background = 'rgba(30, 94, 77, 0.05)'
+                                e.currentTarget.style.borderColor = 'rgba(30, 94, 77, 0.15)'
+                              }
+                            }}
                           >
-                            <span className="material-icons-round" style={{ fontSize: '18px' }}>
-                              {isOpen ? 'expand_less' : 'expand_more'}
+                            <span className="material-icons-round" style={{ fontSize: '18px', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                              expand_more
                             </span>
                           </button>
+
                           <div style={{ minWidth: 0 }}>
-                            <div
-                              style={{
-                                fontWeight: 800,
-                                color: '#1e40af',
-                                fontSize: '0.82rem',
-                                marginBottom: '4px',
-                                wordBreak: 'break-word',
-                              }}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); copyRpNo(rp.id, rp.rpNo); }}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}
                             >
-                              {rp.rpNo || 'Draft'}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.45 }}>
+                              <span style={{ fontWeight: 700, color: '#1e40af', fontSize: '0.85rem', marginBottom: '2px', wordBreak: 'break-word' }}>{rp.rpNo || 'Draft'}</span>
+                              <span className="material-icons-round" style={{ fontSize: '14px', color: copiedId === rp.id ? '#15803d' : '#94a3b8' }}>
+                                {copiedId === rp.id ? 'check' : 'content_copy'}
+                              </span>
+                            </button>
+                            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
                               {formatDate(rp.createdAt || rp.tanggalDibutuhkan)}
                             </div>
                           </div>
                         </div>
-                      </td>
-                      <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                        <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
-                          {rp.dibuatOleh || '-'}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>{rp.kategoriPembelian || '-'}</div>
-                      </td>
-                      <td style={{ ...td, whiteSpace: 'normal' }}>
-                        <span
-                          style={{
-                            background: '#e0e7ef',
-                            color: '#334155',
-                            borderRadius: '6px',
-                            padding: '2px 8px',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            display: 'inline-block',
-                            maxWidth: '100%',
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          {rp.divisi || '-'}
-                        </span>
-                      </td>
-                      <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        {rp.diprosesOleh || '-'}
-                      </td>
+                    </td>
+                    {/* Pemohon & Vendor */}
+                    <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
+                      <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '2px' }}>
+                        {rp.dibuatOleh || '-'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>{rp.vendorSuggestion || '-'}</div>
+                    </td>
+                    {/* Divisi & Proses */}
+                    <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
+                      <span style={{ background: '#e0e7ef', color: '#334155', borderRadius: '6px', padding: '2px 8px', fontSize: '12px', fontWeight: 600, display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word', marginBottom: '4px' }}>
+                        {rp.divisi || '-'}
+                      </span>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+                        Process by {rp.diprosesOleh || '-'}
+                      </div>
+                    </td>
+                    {/* PIC Penerima */}
+                    <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', color: '#334155', fontWeight: 500 }}>
+                      {rp.receiverPic || rp.picPenerima || '-'}
+                    </td>
+                    {/* Total */}
+                    <td
+                      style={{
+                        ...td,
+                        fontFamily: 'IBM Plex Mono, monospace',
+                        fontWeight: 700,
+                        color: '#0f172a',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {formatCurrency(calcTotal(rp))}
+                    </td>
+                    {/* Status */}
+                    <td style={td}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {renderStatus(rp.status)}
+                      </div>
+                    </td>
+                    {/* Action Column */}
+                    <td style={{ ...td, borderRight: 'none' }} onClick={(e) => e.stopPropagation()}>
+                      {renderRowActions(rp, { showDetail: false, showPreview: false, showKeFrp: false, showActions: true, showRevert: false })}
+                    </td>
+                  </tr>
+
+                  {/* Accordion row — tombol aksi & detail items */}
+                  {isOpen && (
+                    <tr key={`${rp.id}-accordion`}>
                       <td
+                        colSpan={desktopHeaders.length}
                         style={{
-                          ...td,
-                          fontFamily: 'IBM Plex Mono, monospace',
-                          fontWeight: 800,
-                          whiteSpace: 'normal',
-                          color: '#0f172a',
-                          wordBreak: 'break-word',
+                          padding: '16px 20px',
+                          background: '#f8fafc',
+                          borderBottom: '1px solid #e8edf4'
                         }}
                       >
-                        {formatCurrency(calcTotal(rp))}
-                      </td>
-                      <td style={td}>{renderStatus(rp.status)}</td>
-                      <td style={{ ...td, whiteSpace: 'normal' }} onClick={(e) => e.stopPropagation()}>
-                        <ButtonDetailStatusRp onClick={() => setSelected(rp)}>
-                          Detail
-                        </ButtonDetailStatusRp>
-                      </td>
-                    </tr>
-
-                    {/* Accordion row — tombol aksi */}
-                    {isOpen && (
-                      <tr key={`${rp.id}-accordion`} style={{ background: '#f0f7ff' }}>
-                        <td
-                          colSpan={desktopColumnWidths.length}
+                        <div
                           style={{
-                            ...tdAccordion,
-                            padding: '10px 20px 12px 52px',
-                            borderTop: '1px dashed #bfdbfe',
+                            border: '1.5px solid rgba(226, 232, 240, 0.6)',
+                            borderRadius: '24px',
+                            background: 'rgba(255, 255, 255, 0.4)',
+                            backdropFilter: 'blur(12px)',
+                            padding: '24px',
+                            boxShadow: '0 8px 32px rgba(15, 23, 42, 0.04)',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            animation: 'accordionSlideDown 0.2s cubic-bezier(0.4,0,0.2,1)',
                           }}
                         >
-                          <div className="accordion-row-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span
-                              style={{
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                color: '#3b82f6',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                marginRight: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                              }}
-                            >
-                              <span className="material-icons-round" style={{ fontSize: '14px' }}>bolt</span>
-                              Aksi Cepat
-                            </span>
-                            {renderRowActions(rp, { showDetail: false, showPreview: true, showKeFrp: true })}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span className="material-icons-round" style={{ fontSize: '16px', color: '#3b82f6' }}>receipt_long</span>
+                                Detail Item & Anggaran
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                {renderRowActions(rp, { showDetail: true, showPreview: true, showKeFrp: true, showActions: false })}
+                              </div>
+                            </div>
+                            
+                            <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'rgba(255, 255, 255, 0.6)' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '950px' }}>
+                                <thead>
+                                  <tr style={{ background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid rgba(215, 224, 234, 0.6)' }}>
+                                    <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '50px', letterSpacing: '0.04em' }}>No</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Memo / Keterangan</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '130px', letterSpacing: '0.04em' }}>Budget ID</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Nama Project</th>
+                                    <th style={{ padding: '12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '70px', letterSpacing: '0.04em' }}>Qty</th>
+                                    <th style={{ padding: '12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px', letterSpacing: '0.04em' }}>Harga Satuan</th>
+                                    <th style={{ padding: '12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px', letterSpacing: '0.04em' }}>Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(rp.items || []).length > 0 ? (
+                                    (rp.items || []).map((item, idx) => (
+                                      <tr key={item.id || idx} style={{ borderBottom: idx === rp.items.length - 1 ? 'none' : '1px solid rgba(241, 245, 249, 0.8)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(248, 250, 252, 0.8)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                        <td style={{ padding: '12px', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                                        <td style={{ padding: '12px', color: '#1e293b', fontWeight: 600, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.memo || item.description || '-'}</td>
+                                        <td style={{ padding: '12px', color: '#475569', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' }}>{item.budgetId || '-'}</td>
+                                        <td style={{ padding: '12px', color: '#334155', fontWeight: 600, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.projectName || '-'}</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', color: '#334155', fontWeight: 600 }}>{item.qty || 1}</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', color: '#334155', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem', fontWeight: 500 }}>{formatCurrency(Number(item.price || item.estimatedValue) || 0)}</td>
+                                        <td style={{ padding: '12px', textAlign: 'right', color: '#0f172a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.85rem' }}>{formatCurrency(Number(item.amount || (item.qty * item.estimatedValue)) || 0)}</td>
+                                      </tr>
+                                    ))
+                                  ) : (
+                                    <tr>
+                                      <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Desktop pagination */}

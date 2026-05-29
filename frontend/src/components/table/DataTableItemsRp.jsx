@@ -12,7 +12,7 @@ const S = {
   input: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)', transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s' },
   select: { width: '100%', minWidth: 0, padding: '9px 12px', borderRadius: '10px', border: '1.5px solid #d7e0ea', fontSize: '0.9rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', color: '#1e293b', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)' },
   table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0 },
-  th: { padding: '8px 10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0', background: '#f8fafc', fontWeight: 700, color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' },
+  th: { padding: '8px 10px', textAlign: 'left', borderTop: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '2px solid #e2e8f0', background: '#f8fafc', fontWeight: 700, color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' },
   td: { padding: '6px 10px', borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' },
   tdInput: { width: '100%', minWidth: 0, padding: '6px 10px', height: '34px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.85rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc' },
   tdSelect: { width: '100%', minWidth: 0, padding: '6px 10px', height: '34px', borderRadius: '8px', border: '1.5px solid #d7e0ea', fontSize: '0.85rem', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none', background: '#f8fafc', cursor: 'pointer' },
@@ -45,6 +45,7 @@ export default function DataTableItemsRp({
           {items.map((item, idx) => {
             const remaining = getBudgetRemaining(item.budgetId)
             const subtotal = normalizeNumber(item.qty) * normalizeNumber(item.estimatedValue)
+            const previewRemaining = remaining !== null ? remaining - subtotal : null
             return (
               <div key={idx} style={S.itemCard}>
                 <div style={S.itemCardHeader}>
@@ -81,7 +82,7 @@ export default function DataTableItemsRp({
                 <div style={{ ...S.itemCardAmount, display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '9px 10px', borderRadius: '10px', border: '1px solid #dcfce7', background: '#f0fdf4' }}>
                     <span style={S.totalLabel}>Budget Remaining</span>
-                    <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: remaining !== null && remaining < 0 ? '#ef4444' : '#16a34a', overflowWrap: 'anywhere' }}>{remaining !== null ? `Rp ${formatCurrency(remaining)}` : '-'}</strong>
+                    <strong style={{ minWidth: 0, textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.9rem', color: previewRemaining !== null && previewRemaining < 0 ? '#ef4444' : '#16a34a', overflowWrap: 'anywhere' }}>{previewRemaining !== null ? `Rp ${formatCurrency(previewRemaining)}` : '-'}</strong>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '9px 10px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#eff6ff' }}>
                     <span style={S.totalLabel}>Subtotal Estimated</span>
@@ -97,20 +98,21 @@ export default function DataTableItemsRp({
           <table style={S.table}>
             <thead>
               <tr>
-                <th style={{ ...S.th, width: '22%' }}>Item</th>
+                <th style={{ ...S.th, width: '22%', borderLeft: '1px solid #e2e8f0', borderTopLeftRadius: '8px' }}>Item</th>
                 <th style={{ ...S.th, width: '18%' }}>Memo</th>
                 <th style={{ ...S.th, width: '22%' }}>Link Pembelian</th>
                 <th style={{ ...S.th, width: '6%', textAlign: 'center' }}>Qty</th>
                 <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Sisa Budget</th>
                 <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Harga Satuan</th>
                 <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Amount (IDR)</th>
-                <th style={{ ...S.th, width: '3%' }} />
+                <th style={{ ...S.th, width: '3%', borderTopRightRadius: '8px' }} />
               </tr>
             </thead>
             <tbody>
               {items.map((item, idx) => {
                 const remaining = getBudgetRemaining(item.budgetId)
                 const subtotal = normalizeNumber(item.qty) * normalizeNumber(item.estimatedValue)
+                const previewRemaining = remaining !== null ? remaining - subtotal : null
                 return (
                   <tr key={idx}>
                     <td style={S.td}>
@@ -157,14 +159,14 @@ export default function DataTableItemsRp({
                         display: 'inline-block',
                         fontFamily: 'monospace',
                         fontWeight: 600,
-                        color: remaining !== null && remaining < 0 ? '#ef4444' : (item.budgetId ? '#16a34a' : '#94a3b8'),
+                        color: previewRemaining !== null && previewRemaining < 0 ? '#ef4444' : (item.budgetId ? '#16a34a' : '#94a3b8'),
                         fontSize: '0.85rem',
                         padding: '4px 8px',
                         borderRadius: '6px',
-                        background: item.budgetId ? (remaining !== null && remaining < 0 ? '#fef2f2' : '#f0fdf4') : 'transparent',
+                        background: item.budgetId ? (previewRemaining !== null && previewRemaining < 0 ? '#fef2f2' : '#f0fdf4') : 'transparent',
                         whiteSpace: 'nowrap'
                       }}>
-                        {remaining !== null ? `Rp ${formatCurrency(remaining)}` : '-'}
+                        {previewRemaining !== null ? `Rp ${formatCurrency(previewRemaining)}` : '-'}
                       </span>
                     </td>
                     <td style={S.td}>
