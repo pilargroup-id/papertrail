@@ -8,7 +8,7 @@ import CreateButton from '../components/button/CreateButton.jsx'
 import ButtonCreateBudgets from '../components/button/ButtonCreateBudgets.jsx'
 import DataTableBudgets from '../components/table/DataTableBudgets.jsx'
 import DialogCreateBudgets from '../components/Dialog/DialogCreateBudgets.jsx'
-
+import Vendor from './vendor/Vendor.jsx'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -19,11 +19,6 @@ const VALID_TYPES = ['vendors', 'budgets']
 const PAGE_META = {
   vendors: { title: 'Master Vendor', noun: 'Vendor', icon: 'store', accent: '#0f766e', description: 'Rapikan data vendor dan informasi rekening tujuan pembayaran.' },
   budgets: { title: 'Master Anggaran', noun: 'Anggaran', icon: 'savings', accent: '#b45309', description: 'Kelola budget ID, company, departemen, dan limit anggaran tahunan.' },
-}
-
-const COLUMN_WIDTHS = {
-  vendors: ['5%', '33%', '30%', '22%', '10%'],
-  budgets: ['4%', '10%', '13%', '10%', '7%', '7%', '22%', '18%', '9%'],
 }
 
 function getBlankForm(type, defaultCompany = '') {
@@ -315,123 +310,6 @@ function FormFields({ type, form, onChange, companyNames = COMPANIES, department
   return null
 }
 
-
-
-function matchesSearch(type, item, search) {
-  if (!search) return true
-  const q = search.toLowerCase()
-  if (type === 'vendors') return (item.name || '').toLowerCase().includes(q) || (item.bank || '').toLowerCase().includes(q) || String(item.no_rekening || '').toLowerCase().includes(q)
-  if (type === 'budgets') return (item.id || '').toLowerCase().includes(q) || (item.department || '').toLowerCase().includes(q) || (item.description || '').toLowerCase().includes(q)
-  return true
-}
-
-function TableRows({ type, listData, onEdit, onDelete, companyFilter, search, companyNames = COMPANIES, styles }) {
-  const defaultCompany = companyNames[0] || COMPANIES[0]
-  const filtered = listData.filter(item => {
-    if (companyFilter) {
-      if (type === 'budgets' && (item.company || defaultCompany) !== companyFilter) return false
-    }
-    return matchesSearch(type, item, search)
-  })
-
-  if (filtered.length === 0) return <tr><td colSpan="10" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>Tidak ada data</td></tr>
-
-  return filtered.map((item, idx) => {
-    const rowBg = idx % 2 === 0 ? 'white' : '#fafbfc'
-    return (
-      <tr key={item.originalIndex ?? idx} style={{ background: rowBg }} onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff' }} onMouseLeave={e => { e.currentTarget.style.background = rowBg }}>
-        <td style={styles.td}>{idx + 1}</td>
-        {type === 'vendors' && <>
-          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.name}</strong></td>
-          <td style={styles.td}>{item.bank}</td>
-          <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</td>
-        </>}
-        {type === 'budgets' && <>
-          <td style={styles.td}><strong style={{ color: '#1e293b' }}>{item.id}</strong></td>
-          <td style={{ ...styles.td, fontSize: '0.82rem', fontWeight: 700 }}>{item.company || defaultCompany}</td>
-          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeSoft }}>{item.department}</span></td>
-          <td style={styles.td}>{item.class}</td>
-          <td style={styles.td}><span style={{ ...styles.badge, ...styles.badgeCode }}>{item.type}</span></td>
-          <td style={{ ...styles.td, fontSize: '0.85rem', color: '#64748b' }}>{item.description}</td>
-          <td style={{ ...styles.td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>{formatCurrency(item.totalAmount || 0)}</td>
-        </>}
-        <td style={styles.td}>
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            <CreateButton variant="accordion" tone="primary" onClick={() => onEdit(item)}><span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span></CreateButton>
-            <CreateButton variant="accordion" tone="danger" onClick={() => onDelete(typeof item.originalIndex !== 'undefined' ? item.originalIndex : idx)}><span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span></CreateButton>
-          </div>
-        </td>
-      </tr>
-    )
-  })
-}
-
-function MobileList({ type, listData, onEdit, onDelete, companyFilter, search, companyNames = COMPANIES, styles }) {
-  const defaultCompany = companyNames[0] || COMPANIES[0]
-  const filtered = listData.filter(item => {
-    if (companyFilter) {
-      if (type === 'budgets' && (item.company || defaultCompany) !== companyFilter) return false
-    }
-    return matchesSearch(type, item, search)
-  })
-
-  if (filtered.length === 0) {
-    return <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8' }}>Tidak ada data</div>
-  }
-
-  return filtered.map((item, idx) => (
-    <div key={item.originalIndex ?? idx} style={styles.mobileItemCard}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ minWidth: 0 }}>
-          {type === 'vendors' && <>
-            <div style={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>{item.name}</div>
-            <div style={{ marginTop: '4px', color: '#64748b', fontSize: '0.84rem' }}>{item.bank}</div>
-          </>}
-          {type === 'budgets' && <>
-            <div style={{ fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>{item.id}</div>
-            <div style={{ marginTop: '4px', color: '#64748b', fontSize: '0.84rem' }}>{item.company || defaultCompany}</div>
-          </>}
-        </div>
-        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-          <CreateButton variant="accordion" tone="primary" onClick={() => onEdit(item)}><span className="material-icons-round" style={{ fontSize: '16px' }}>edit</span></CreateButton>
-          <CreateButton variant="accordion" tone="danger" onClick={() => onDelete(typeof item.originalIndex !== 'undefined' ? item.originalIndex : idx)}><span className="material-icons-round" style={{ fontSize: '16px' }}>delete</span></CreateButton>
-        </div>
-      </div>
-
-      <div style={styles.mobileMetaGrid}>
-        {type === 'vendors' && <>
-          <div>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Rekening</div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace' }}>{item.no_rekening}</div>
-          </div>
-        </>}
-        {type === 'budgets' && <>
-          <div>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Dept</div>
-            <span style={{ ...styles.badge, ...styles.badgeSoft }}>{item.department}</span>
-          </div>
-          <div>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Type</div>
-            <span style={{ ...styles.badge, ...styles.badgeCode }}>{item.type}</span>
-          </div>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '4px' }}>Limit Tahunan</div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: '#0f172a' }}>{formatCurrency(item.totalAmount || 0)}</div>
-          </div>
-        </>}
-      </div>
-    </div>
-  ))
-}
-
-function TableHeadRow({ type, styles }) {
-  const cols = {
-    vendors: ['No', 'Nama Vendor', 'Bank', 'No Rekening', 'Aksi'],
-    budgets: ['No', 'Budget ID', 'Company', 'Dept', 'Class', 'Type', 'Deskripsi', 'Total Amount', 'Aksi'],
-  }
-  return <thead><tr>{(cols[type] || []).map(col => <th key={col} style={styles.th}>{col}</th>)}</tr></thead>
-}
-
 export default function AdminPage() {
   const { type } = useParams()
 
@@ -548,89 +426,71 @@ export default function AdminPage() {
         {loading && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>Memuat data...</div>}
 
         {!loading && <>
-          {type !== 'budgets' && (
-            <section style={styles.card}>
-              <SectionHeading icon="add_circle" title={`Tambah ${meta.noun} Baru`} subtitle={`Isi form berikut untuk menambahkan data ${meta.noun.toLowerCase()} baru ke sistem.`} accent={meta.accent} />
-              <form onSubmit={handleAdd}>
-                <FormFields type={type} form={addForm} onChange={updateAddForm} companyNames={companyNames} departments={data?.departments || []} styles={styles} />
-                <div style={{ display: 'flex', justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
-                  <CreateButton type="submit" variant="accordion" tone="primary" disabled={saving} style={{ width: isMobile ? '100%' : 'auto', opacity: saving ? 0.7 : 1 }}>
-                    <span className="material-icons-round" style={{ fontSize: '18px' }}>save</span>
-                    {saving ? 'Menyimpan...' : 'Simpan Data'}
-                  </CreateButton>
-                </div>
-              </form>
-            </section>
-          )}
-
-          <section style={styles.listShell}>
-            <div style={styles.toolbar}>
-              <div>
-                <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1rem' }}>Daftar {meta.noun}</h3>
-                <p style={{ margin: '0.3rem 0 0', color: '#64748b', fontSize: '0.84rem' }}>Lihat, filter, edit, dan hapus data {meta.noun.toLowerCase()} dari satu tampilan.</p>
-              </div>
-              <div style={styles.filterWrap}>
-                <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Cari</label>
-                  <div style={{ position: 'relative' }}>
-                    <span className="material-icons-round" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '18px', pointerEvents: 'none' }}>search</span>
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Cari ${meta.noun.toLowerCase()}...`}
-                      style={{ ...styles.select, paddingLeft: '36px', cursor: 'text' }} />
+          {type === 'budgets' ? (
+            <>
+              <section style={styles.listShell}>
+                <div style={styles.toolbar}>
+                  <div>
+                    <h3 style={{ margin: 0, color: '#1e293b', fontSize: '1rem' }}>Daftar {meta.noun}</h3>
+                    <p style={{ margin: '0.3rem 0 0', color: '#64748b', fontSize: '0.84rem' }}>Lihat, filter, edit, dan hapus data {meta.noun.toLowerCase()} dari satu tampilan.</p>
+                  </div>
+                  <div style={styles.filterWrap}>
+                    <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Cari</label>
+                      <div style={{ position: 'relative' }}>
+                        <span className="material-icons-round" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '18px', pointerEvents: 'none' }}>search</span>
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Cari ${meta.noun.toLowerCase()}...`}
+                          style={{ ...styles.select, paddingLeft: '36px', cursor: 'text' }} />
+                      </div>
+                    </div>
+                    {showFilter && (
+                      <>
+                        <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Filter PT</label>
+                          <SearchableSelect
+                            style={styles.select}
+                            value={companyFilter}
+                            onChange={val => setCompanyFilter(val)}
+                            options={companyNames}
+                            placeholder="Semua Perusahaan"
+                            menuPosition="fixed"
+                          />
+                        </div>
+                        <ButtonCreateBudgets
+                          label="Anggaran"
+                          value="Tambah Anggaran"
+                          icon={<span className="material-icons-round" style={{ fontSize: '20px' }}>add_circle</span>}
+                          onClick={() => setIsCreateOpen(true)}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
-                {showFilter && (
-                  <>
-                    <div style={{ minWidth: isMobile ? '100%' : '220px' }}>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '6px', letterSpacing: '0.05em' }}>Filter PT</label>
-                      <SearchableSelect
-                        style={styles.select}
-                        value={companyFilter}
-                        onChange={val => setCompanyFilter(val)}
-                        options={companyNames}
-                        placeholder="Semua Perusahaan"
-                        menuPosition="fixed"
-                      />
-                    </div>
-                    <ButtonCreateBudgets
-                      label="Anggaran"
-                      value="Tambah Anggaran"
-                      icon={<span className="material-icons-round" style={{ fontSize: '20px' }}>add_circle</span>}
-                      onClick={() => setIsCreateOpen(true)}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
 
-            {type === 'budgets' ? (
-              <DataTableBudgets
-                listData={listData}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                companyFilter={companyFilter}
-                search={search}
-                companyNames={companyNames}
-                isMobile={isMobile}
-              />
-            ) : isMobile ? (
-              <MobileList type={type} listData={listData} onEdit={handleEdit} onDelete={handleDelete} companyFilter={companyFilter} search={search} companyNames={companyNames} styles={styles} />
-            ) : (
-              <div style={styles.tableContain}>
-                <table style={styles.table}>
-                  <colgroup>{(COLUMN_WIDTHS[type] || []).map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
-                  <TableHeadRow type={type} styles={styles} />
-                </table>
-                <div style={styles.scrollBody}>
-                  <table style={styles.table}>
-                    <colgroup>{(COLUMN_WIDTHS[type] || []).map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
-                    <tbody>
-                      <TableRows type={type} listData={listData} onEdit={handleEdit} onDelete={handleDelete} companyFilter={companyFilter} search={search} companyNames={companyNames} styles={styles} />
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </section>
+                <DataTableBudgets
+                  listData={listData}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  companyFilter={companyFilter}
+                  search={search}
+                  companyNames={companyNames}
+                  isMobile={isMobile}
+                />
+              </section>
+            </>
+          ) : (
+            <Vendor
+              listData={listData}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              saving={saving}
+              addForm={addForm}
+              updateAddForm={updateAddForm}
+              handleAdd={handleAdd}
+              search={search}
+              setSearch={setSearch}
+            />
+          )}
         </>}
       </main>
 

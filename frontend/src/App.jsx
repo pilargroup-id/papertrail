@@ -11,8 +11,8 @@ import NewFRP from './pages/frp/NewFRP'
 import ApprovalPage from './pages/frp/ApprovalPage'
 import AdminPage from './pages/AdminPage'
 import FrpDetailPage from './pages/frp/FrpDetailPage'
-import DashboardPage from './pages/DashboardPage'
-import LaporanPage from './pages/LaporanPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
+import ReportPage from './pages/report/ReportPage'
 import NewRP from './pages/rp/NewRP'
 import RpApprovalPage from './pages/rp/RpApprovalPage'
 import StatusFRP from './pages/frp/StatusFRP'
@@ -34,7 +34,7 @@ export default function App() {
             <Route path="/approval" element={<ApprovalPage />} />
             <Route path="/approved" element={<ApprovalPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/laporan" element={<LaporanPage />} />
+            <Route path="/laporan" element={<ReportPage />} />
             <Route path="/admin/:type" element={<AdminPage />} />
             <Route path="/rp" element={<NewRP />} />
             <Route path="/rp-approval" element={<RpApprovalPage />} />

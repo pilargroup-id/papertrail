@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PieChart } from '@mui/x-charts/PieChart'
-import { useUser } from '../contexts/UserContext'
-import CardBigBox from '../components/cardbox/CardBigBox'
-import RevenueLastUpdate from '../components/template/RevenueLastUpdate'
+import { useUser } from '../../contexts/UserContext'
+import CardBigBox from '../../components/cardbox/CardBigBox'
+import RevenueLastUpdate from '../../components/template/RevenueLastUpdate'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -25,7 +25,7 @@ function formatDate(value) {
 }
 
 const STATUS_STYLE = {
-  PENDING: { bg: '#fef08a', color: '#854d0e' },
+PENDING: { bg: '#fef08a', color: '#854d0e' },
   APPROVED: { bg: '#bbf7d0', color: '#166534' },
   REJECTED: { bg: '#fecaca', color: '#991b1b' },
 }

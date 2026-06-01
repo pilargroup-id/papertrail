@@ -331,6 +331,25 @@ export default function DataTableRp({
                       </div>
                     </div>
 
+                    {rp.processChanges?.changes?.length > 0 && (
+                      <div style={{ border: '1px solid #fde68a', background: '#fffbeb', borderRadius: '12px', padding: '14px 16px' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#92400e', letterSpacing: '0.04em', marginBottom: '10px' }}>Perubahan Oleh Divisi Pemroses</div>
+                        <div style={{ display: 'grid', gap: '6px' }}>
+                          {rp.processChanges.changes.map((change, index) => (
+                            <div key={`${change.field}-${index}`} style={{ fontSize: '0.85rem', color: '#78350f', lineHeight: 1.45 }}>
+                              <strong>{change.field}:</strong>{' '}
+                              <span style={{ color: '#dc2626', textDecoration: 'line-through' }}>{change.oldValue || '(kosong)'}</span>
+                              <span style={{ color: '#64748b' }}> -&gt; </span>
+                              <span style={{ color: '#16a34a', fontWeight: 700 }}>{change.newValue || '(kosong)'}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#92400e', marginTop: '8px' }}>
+                          Diubah oleh: {rp.processUpdatedBy || '-'} {rp.processUpdatedAt ? `(${formatDate(rp.processUpdatedAt)})` : ''}
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'white' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', minWidth: '600px' }}>
                         <thead>
@@ -671,6 +690,25 @@ export default function DataTableRp({
                               </div>
                             </div>
                             
+                            {rp.processChanges?.changes?.length > 0 && (
+                              <div style={{ border: '1px solid #fde68a', background: '#fffbeb', borderRadius: '12px', padding: '14px 16px' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#92400e', letterSpacing: '0.04em', marginBottom: '10px' }}>Perubahan Oleh Divisi Pemroses</div>
+                                <div style={{ display: 'grid', gap: '6px' }}>
+                                  {rp.processChanges.changes.map((change, index) => (
+                                    <div key={`${change.field}-${index}`} style={{ fontSize: '0.85rem', color: '#78350f', lineHeight: 1.45 }}>
+                                      <strong>{change.field}:</strong>{' '}
+                                      <span style={{ color: '#dc2626', textDecoration: 'line-through' }}>{change.oldValue || '(kosong)'}</span>
+                                      <span style={{ color: '#64748b' }}> -&gt; </span>
+                                      <span style={{ color: '#16a34a', fontWeight: 700 }}>{change.newValue || '(kosong)'}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#92400e', marginTop: '8px' }}>
+                                  Diubah oleh: {rp.processUpdatedBy || '-'} {rp.processUpdatedAt ? `(${formatDate(rp.processUpdatedAt)})` : ''}
+                                </div>
+                              </div>
+                            )}
+
                             <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'rgba(255, 255, 255, 0.6)' }}>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '950px' }}>
                                 <thead>
