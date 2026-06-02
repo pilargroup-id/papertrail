@@ -103,11 +103,6 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
 
   const primaryItems = hideMenu ? [] : [
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
-    { label: 'Generate Document', icon: 'description', children: [
-      { label: 'Generate Document', href: '/document/generate', icon: 'note_add' },
-      { label: 'Riwayat Document', href: '/document/riwayat', icon: 'history' },
-      { label: 'Kelola Template', href: '/document/template', icon: 'folder_open' },
-    ]},
     { label: 'FRP', icon: 'receipt_long', children: [
       { label: 'New FRP', href: '/frp', icon: 'note_add' },
       ...(userIsAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(userJobLevel) ? [
@@ -118,6 +113,11 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
     { label: 'RP', icon: 'shopping_bag', children: [
       { label: 'New RP', href: '/rp', icon: 'note_add' },
       { label: 'Status RP', href: '/rp-approval', icon: 'rule' },
+    ]},
+    { label: 'Document', icon: 'description', children: [
+      { label: 'Generate Document', href: '/document/generate', icon: 'note_add' },
+      { label: 'Riwayat Document', href: '/document/riwayat', icon: 'history' },
+      { label: 'Kelola Template', href: '/document/template', icon: 'folder_open' },
     ]},
     ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{
       label: 'Report', icon: 'analytics', children: [

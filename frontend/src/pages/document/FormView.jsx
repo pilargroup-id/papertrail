@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Copy, Download, RefreshCw, Save, Plus, CheckCircle2 } from 'lucide-react';
+import { Copy, Download, RefreshCw, Save, Plus, CheckCircle2, Check } from 'lucide-react';
 import '../../styles/frp/new-frp.css';
+import SearchableSelect from '../../components/template/SearchableSelect.jsx';
 
 function FloatingGroup({ label, children, style, className }) {
   return (
@@ -47,26 +48,46 @@ function DateField({ name, value, onChange, required }) {
   )
 }
 
-function ResultBanner({ doc, loading, onCopy, onDownload, onDuplicate, onSave, onNew }) {
+function ResultBanner({ doc, loading, isEditing, onDownload, onDuplicate, onSave, onNew }) {
+  const [copied, setCopied] = useState(false);
+  const currentYear = new Date().getFullYear();
+
+  const handleCopy = () => {
+    if (doc) {
+      navigator.clipboard.writeText(doc.doc_number);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div style={{ background: 'linear-gradient(135deg, #1f4e8c 0%, #2d6bbf 100%)', borderRadius: '12px', padding: '16px', color: '#fff', position: 'relative', overflow: 'hidden', marginTop: '20px', flexShrink: 0 }}>
+    <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', position: 'sticky', top: '0', zIndex: 50, overflow: 'hidden', marginBottom: '20px', flexShrink: 0, boxShadow: '0 10px 20px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-        <CheckCircle2 size={16} color="#93c5fd" />
-        <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.8)' }}>Nomor Dokumen Berhasil Dibuat</span>
+        <CheckCircle2 size={16} color={doc ? "#10b981" : "#94a3b8"} />
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#475569' }}>Document Number</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '1.4rem', fontWeight: 800, wordBreak: 'break-all', lineHeight: 1.2 }}>{doc.doc_number}</span>
-        <button type="button" onClick={onCopy} title="Salin" style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center' }}>
-          <Copy size={16} />
+        <span style={{ fontSize: '1.4rem', fontWeight: 800, wordBreak: 'break-all', lineHeight: 1.2, color: doc ? '#1e293b' : '#94a3b8' }}>
+          {doc ? doc.doc_number : `--/-----/--/${currentYear}`}
+        </span>
+        <button type="button" onClick={handleCopy} title="Salin" disabled={!doc} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px', cursor: doc ? 'pointer' : 'not-allowed', color: copied ? '#10b981' : (doc ? '#475569' : '#cbd5e1'), display: 'flex', alignItems: 'center', opacity: doc ? 1 : 0.5, transition: 'all 0.2s' }}>
+          {copied ? <Check size={16} /> : <Copy size={16} />}
         </button>
       </div>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <button type="button" onClick={onNew} className="frp-btn-secondary" style={{ background: '#fff', color: '#1f4e8c', borderColor: '#fff' }}><Plus size={14} /> Buat Baru</button>
-        <button type="button" onClick={onDuplicate} className="frp-btn-secondary" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', borderColor: 'rgba(255,255,255,0.25)' }}><Copy size={14} /> Duplikat</button>
-        <button type="button" onClick={onDownload} className="frp-btn-primary" style={{ background: '#10b981' }}><Download size={14} /> Download .docx</button>
-        <button type="button" onClick={onSave} disabled={loading} className="frp-btn-primary" style={{ background: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.25)' }}>
-          {loading ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />} Simpan
-        </button>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button type="button" onClick={onNew} disabled={!doc} className="frp-btn-secondary" style={{ background: '#f1f5f9', color: '#1f4e8c', borderColor: '#e2e8f0', opacity: doc ? 1 : 0.5, cursor: doc ? 'pointer' : 'not-allowed' }}><Plus size={14} /> New</button>
+        <button type="button" onClick={onDuplicate} disabled={!doc} className="frp-btn-secondary" style={{ background: '#f1f5f9', color: '#1f4e8c', borderColor: '#e2e8f0', opacity: doc ? 1 : 0.5, cursor: doc ? 'pointer' : 'not-allowed' }}><Copy size={14} /> Duplicate</button>
+        <button type="button" onClick={onDownload} disabled={!doc} className="frp-btn-primary" style={{ background: '#10b981', opacity: doc ? 1 : 0.5, cursor: doc ? 'pointer' : 'not-allowed' }}><Download size={14} /> Download</button>
+        
+        {doc ? (
+          <button type="button" onClick={onSave} disabled={loading} className="frp-btn-primary">
+            {loading ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={14} />} Simpan
+          </button>
+        ) : (
+          <button type="submit" disabled={loading} className="frp-btn-primary" style={{ marginLeft: 'auto', padding: '0.5rem 1.5rem' }}>
+            {loading ? <><RefreshCw size={17} style={{ animation: 'spin 1s linear infinite' }} /> Memproses...</> : isEditing ? <><Save size={17} /> Simpan Perubahan</> : <><Plus size={17} /> Generate Number</>}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -80,39 +101,68 @@ export default function FormView({ editingDoc, generatedDoc, formData, templates
   return (
     <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: isMobile ? '12px' : '16px' }}>
       <form onSubmit={hSubmit} className="frp-shell" style={{ overflowY: 'auto' }}>
+        <ResultBanner 
+          doc={generatedDoc} 
+          loading={loading}
+          isEditing={!!editingDoc}
+          onDownload={() => hDownload(generatedDoc)} 
+          onDuplicate={() => startDuplicate(generatedDoc)} 
+          onSave={hSubmit} 
+          onNew={resetForm}
+        />
         <div className="frp-top-panel">
           {/* Card Perusahaan & Template */}
           <div className="frp-card">
             <h3 className="frp-section-title" style={{ marginBottom: '20px' }}>
               <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>business</span>
-              Perusahaan & Template
+              Company & Template
             </h3>
             
             <div className="frp-grid-2">
-              <FloatingGroup label="Perusahaan">
-                <select name="company" value={formData.company} onChange={hChange} disabled={!!editingDoc} className="frp-select">
-                  <option value="PNM">PT Pilar Niaga Makmur (PNM)</option>
-                  <option value="PKS">PT Pilkada (PKS)</option>
-                  <option value="PKP">PT Pikasa (PKP)</option>
-                </select>
+              <FloatingGroup label="Company">
+                <SearchableSelect
+                  name="company"
+                  value={formData.company}
+                  onChange={v => hChange({ target: { name: 'company', value: v } })}
+                  options={[
+                    { value: 'PNM', label: 'PT Pilar Niaga Makmur (PNM)' },
+                    { value: 'PKS', label: 'PT Pilkada (PKS)' },
+                    { value: 'PKP', label: 'PT Pikasa (PKP)' }
+                  ]}
+                  disabled={!!editingDoc}
+                  className="frp-select"
+                  searchable={false}
+                />
               </FloatingGroup>
               
               <FloatingGroup label="Internal / External">
-                <select name="internal_external" value={formData.internal_external} onChange={hChange} className="frp-select">
-                  <option value="Internal">Internal</option>
-                  <option value="External">External</option>
-                </select>
+                <SearchableSelect
+                  name="internal_external"
+                  value={formData.internal_external}
+                  onChange={v => hChange({ target: { name: 'internal_external', value: v } })}
+                  options={[
+                    { value: 'Internal', label: 'Internal' },
+                    { value: 'External', label: 'External' }
+                  ]}
+                  className="frp-select"
+                  searchable={false}
+                />
               </FloatingGroup>
             </div>
             
-            <FloatingGroup label="Template Dokumen" style={{ marginTop: '20px' }}>
-              <select name="template_name" value={formData.template_name} onChange={hChange} className="frp-select">
-                {templates.length === 0 ? <option value="">— Belum ada template —</option> : templates.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+            <FloatingGroup label="Document Template" style={{ marginTop: '20px' }}>
+              <SearchableSelect
+                name="template_name"
+                value={formData.template_name}
+                onChange={v => hChange({ target: { name: 'template_name', value: v } })}
+                options={templates.length === 0 ? [{ value: '', label: '— Belum ada template —' }] : templates.map(t => ({ value: t, label: t }))}
+                className="frp-select"
+                searchable={false}
+              />
             </FloatingGroup>
             
-            <FloatingGroup label="Judul Dokumen" style={{ marginTop: '20px' }}>
-              <input type="text" name="judul_dokumen" value={formData.judul_dokumen} onChange={hChange} placeholder="Contoh: Perjanjian Kerja Sama Pemasaran..." required className="frp-input" />
+            <FloatingGroup label="Document Title" style={{ marginTop: '20px' }}>
+              <input type="text" name="judul_dokumen" value={formData.judul_dokumen} onChange={hChange} placeholder="Example: Marketing Cooperation Agreement..." required className="frp-input" />
             </FloatingGroup>
           </div>
 
@@ -128,31 +178,35 @@ export default function FormView({ editingDoc, generatedDoc, formData, templates
                 <input value={userName || ''} readOnly className="frp-input-readonly" />
               </FloatingGroup>
               
-              <FloatingGroup label="Divisi">
-                <select name="division" value={formData.division} onChange={hChange} required className="frp-select">
-                  <option value="">— Pilih —</option>
-                  {masterData.divisions.map((d, i) => <option key={i} value={d.name}>{d.name}</option>)}
-                </select>
+              <FloatingGroup label="Division">
+                <SearchableSelect
+                  name="division"
+                  value={formData.division}
+                  onChange={v => hChange({ target: { name: 'division', value: v } })}
+                  options={[...new Set(masterData.divisions.map(d => d?.name).filter(Boolean))].map(name => ({ value: name, label: name }))}
+                  placeholder="— Pilih —"
+                  className="frp-select"
+                />
               </FloatingGroup>
             </div>
 
             <div className="frp-grid-2" style={{ marginTop: '20px' }}>
-              <FloatingGroup label="Tanggal Dokumen">
+              <FloatingGroup label="Document Date">
                 <DateField name="doc_date" value={formData.doc_date} onChange={hChange} required />
               </FloatingGroup>
               
-              <FloatingGroup label="Klasifikasi">
-                <input type="text" name="klasifikasi" value={formData.klasifikasi} onChange={hChange} placeholder="Surat Edaran..." className="frp-input" />
+              <FloatingGroup label="Classification">
+                <input type="text" name="klasifikasi" value={formData.klasifikasi} onChange={hChange} placeholder="Classification..." className="frp-input" />
               </FloatingGroup>
             </div>
             
             <div className="frp-grid-2" style={{ marginTop: '20px' }}>
-              <FloatingGroup label="Perihal">
-                <input type="text" name="perihal" value={formData.perihal} onChange={hChange} placeholder="Perihal dokumen..." className="frp-input" />
+              <FloatingGroup label="Regarding">
+                <input type="text" name="regarding" value={formData.regarding} onChange={hChange} placeholder="Regarding..." className="frp-input" />
               </FloatingGroup>
               
-              <FloatingGroup label="Ditandatangani Oleh">
-                <input type="text" name="signed_by" value={formData.signed_by} onChange={hChange} placeholder="Nama penandatangan" className="frp-input" />
+              <FloatingGroup label="Signed By">
+                <input type="text" name="signed_by" value={formData.signed_by} onChange={hChange} placeholder="Signed By..." className="frp-input" />
               </FloatingGroup>
             </div>
           </div>
@@ -165,28 +219,15 @@ export default function FormView({ editingDoc, generatedDoc, formData, templates
               <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>link</span>
               Keterangan & Lampiran
             </h3>
-            <FloatingGroup label="Link Dokumen">
+            <FloatingGroup label="Document Link">
               <input type="text" name="link_document" value={formData.link_document} onChange={hChange} placeholder="https://..." className="frp-input" />
             </FloatingGroup>
             
-            <FloatingGroup label="Keterangan" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100px' }}>
-              <textarea name="keterangan" value={formData.keterangan} onChange={hChange} placeholder="Catatan opsional..." className="frp-textarea" style={{ height: '100%' }} />
+            <FloatingGroup label="Notes" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: '100px' }}>
+              <textarea name="notes" value={formData.notes} onChange={hChange} placeholder="Notes..." className="frp-textarea" style={{ height: '100%' }} />
             </FloatingGroup>
           </div>
 
-          {generatedDoc ? (
-            <ResultBanner doc={generatedDoc} loading={loading}
-              onCopy={() => { navigator.clipboard.writeText(generatedDoc.doc_number); alert('Nomor disalin!'); }}
-              onDownload={() => hDownload(generatedDoc)} onDuplicate={() => startDuplicate(generatedDoc)} onSave={hSubmit} onNew={resetForm}
-            />
-          ) : (
-            <div className="frp-footer">
-               <div />
-               <button type="submit" disabled={loading} className="frp-btn-primary" style={{ padding: '0.75rem 2.5rem' }}>
-                 {loading ? <><RefreshCw size={17} style={{ animation: 'spin 1s linear infinite' }} /> Memproses...</> : editingDoc ? <><Save size={17} /> Simpan Perubahan</> : <><Plus size={17} /> Generate Nomor Baru</>}
-               </button>
-            </div>
-          )}
         </div>
       </form>
     </main>

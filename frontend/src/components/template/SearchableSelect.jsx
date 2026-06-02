@@ -12,6 +12,7 @@ export default function SearchableSelect({
   dropdownStyle,
   disabled = false,
   menuPosition = 'absolute', // kept for API compat, portal is always used
+  searchable = true,
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -88,28 +89,30 @@ export default function SearchableSelect({
 
   const dropdown = (
     <div ref={dropdownRef} style={dropdownPortalStyle}>
-      <div style={{ padding: '8px' }}>
-        <input
-          autoFocus
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Cari..."
-          style={{
-            width: '100%',
-            padding: '8px 10px',
-            borderRadius: '10px',
-            border: '1.5px solid #d7e0ea',
-            fontSize: '0.875rem',
-            boxSizing: 'border-box',
-            fontFamily: 'inherit',
-            outline: 'none',
-            background: '#f8fafc',
-            color: '#1e293b',
-          }}
-        />
-      </div>
-      <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: '1px solid #f1f5f9' }}>
+      {searchable && (
+        <div style={{ padding: '8px' }}>
+          <input
+            autoFocus
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cari..."
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              borderRadius: '10px',
+              border: '1.5px solid #d7e0ea',
+              fontSize: '0.875rem',
+              boxSizing: 'border-box',
+              fontFamily: 'inherit',
+              outline: 'none',
+              background: '#f8fafc',
+              color: '#1e293b',
+            }}
+          />
+        </div>
+      )}
+      <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: searchable ? '1px solid #f1f5f9' : 'none' }}>
         <button
           type="button"
           onClick={() => { onChange(''); setOpen(false) }}

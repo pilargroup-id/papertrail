@@ -53,7 +53,7 @@ router.get('/api/document/master-departments', checkAuth, async (req, res) => {
              WHERE c.code = ? ORDER BY d.name`,
             [company],
         );
-        res.json({ departments: rows });
+        res.json({ departments: rows, user: req.session.user });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

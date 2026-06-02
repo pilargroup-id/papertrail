@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
+import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import SearchableSelect from '../../components/template/SearchableSelect.jsx'
 import DataTableItemsRp from '../../components/table/DataTableItemsRp.jsx'
 import ButtonAddItemsFrp from '../../components/button/ButtonAddItemsFrp.jsx'
@@ -170,6 +171,7 @@ export default function NewRP() {
   const [submitError, setSubmitError] = useState(null)
   const [error, setError] = useState(null)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [successDialog, setSuccessDialog] = useState({ isOpen: false, title: '', message: '', subMessage: '', rpNo: '' })
   const [vw, setVw] = useState(typeof window === 'undefined' ? 1280 : window.innerWidth)
 
   useEffect(() => {
@@ -359,8 +361,13 @@ export default function NewRP() {
         const res = await fetch(`/api/rp/${processId}/process-update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         const result = await res.json()
         if (result.success) {
-          alert('Data berhasil diupdate oleh divisi pemroses!')
-          navigate('/rp-approval')
+          setSuccessDialog({
+            isOpen: true,
+            title: 'Update Berhasil!',
+            message: 'Data berhasil diupdate oleh divisi pemroses.',
+            subMessage: 'Anda akan dialihkan kembali ke halaman Approval RP.',
+            rpNo: ''
+          })
         } else {
           setSubmitError(result.error || 'Gagal menyimpan')
         }
@@ -375,8 +382,13 @@ export default function NewRP() {
         const res = await fetch('/api/rp/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         const result = await res.json()
         if (result.success) {
-          alert(`RP berhasil disimpan!\nNomor: ${result.rpNo}`)
-          navigate('/rp-approval')
+          setSuccessDialog({
+            isOpen: true,
+            title: 'Berhasil!',
+            message: 'Request Purchase Anda telah berhasil disimpan.',
+            subMessage: 'Anda akan dialihkan kembali ke halaman Approval RP.',
+            rpNo: result.rpNo
+          })
         } else {
           setSubmitError(result.error || 'Gagal menyimpan')
         }
@@ -585,6 +597,18 @@ export default function NewRP() {
           isLoading={submitting}
           onClose={() => setShowConfirm(false)}
           onConfirm={executeSubmit}
+        />
+        <DialogSuccesAction
+          isOpen={successDialog.isOpen}
+          title={successDialog.title}
+          message={successDialog.message}
+          subMessage={successDialog.subMessage}
+          rpNo={successDialog.rpNo}
+          onConfirm={() => {
+            setSuccessDialog(prev => ({ ...prev, isOpen: false }))
+            navigate('/rp-approval')
+          }}
+          buttonText="Kembali ke Approval"
         />
       </main>
     </>

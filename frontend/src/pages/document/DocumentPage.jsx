@@ -11,7 +11,7 @@ const asArray = v => (Array.isArray(v) ? v : []);
 
 // view: 'form' | 'history' | 'templates'
 export default function DocumentPage({ view = 'form' }) {
-  const { user } = useUser();
+  const { user, setUser } = useUser();
   const userName = user?.fullName || user?.name || '';
 
   const [masterData, setMasterData]   = useState({ divisions: [] });
@@ -57,6 +57,9 @@ export default function DocumentPage({ view = 'form' }) {
     try {
       const res = await axios.get('/api/document/master-departments', { params: { company } });
       setMasterData(p => ({ ...p, divisions: asArray(res.data.departments) }));
+      if (res.data.user) {
+        setUser(res.data.user);
+      }
     } catch (e) { console.error(e); }
   }
 
