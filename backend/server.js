@@ -26,6 +26,7 @@ const laporanRoutes   = require('./src/routes/laporan');
 const dashboardRoutes = require('./src/routes/dashboard');
 const pdfRoutes       = require('./src/routes/pdf');
 const budgetRoutes    = require('./src/routes/budget');
+const documentRoutes  = require('./src/routes/document');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -86,6 +87,7 @@ app.use(laporanRoutes);
 app.use(dashboardRoutes);
 app.use(pdfRoutes);
 app.use(budgetRoutes);
+app.use(documentRoutes);
 // ============================================================
 // DEV MODE — Proxy ke Vite untuk HMR (Hot Module Replacement)
 // ============================================================

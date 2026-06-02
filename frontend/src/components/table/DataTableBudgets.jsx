@@ -24,7 +24,7 @@ function buildStyles() {
   return {
     tableContain: { display: 'flex', flexDirection: 'column' },
     scrollBody: { },
-    table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed', minWidth: '1000px' },
+    table: { width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' },
     th: {
       position: 'sticky',
       top: 0,
@@ -39,7 +39,6 @@ function buildStyles() {
       fontSize: '11px',
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
-      whiteSpace: 'nowrap',
     },
     td: {
       padding: '11px 14px',
@@ -221,7 +220,7 @@ export default function DataTableBudgets({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <div style={{ overflowX: 'auto', width: '100%' }}>
+      <div style={{ width: '100%' }}>
         <div style={styles.tableContain}>
         <table style={styles.table}>
           <colgroup>

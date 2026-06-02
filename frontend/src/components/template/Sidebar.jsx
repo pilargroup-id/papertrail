@@ -78,6 +78,7 @@ function getInitialExpanded(pathname) {
   const map = {
     'FRP': ['/', '/frp', '/approval', '/approved', '/status_frp'],
     'Request Purchase': ['/rp', '/rp-approval'],
+    'Generate Document': ['/document/generate', '/document/riwayat', '/document/template'],
     'Master Data': null,
   }
   const initial = {}
@@ -113,6 +114,11 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
       { label: 'Status RP', href: '/rp-approval', icon: 'rule' },
     ]},
     ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{ label: 'Report', href: '/laporan', icon: 'analytics' }] : []),
+    { label: 'Generate Document', icon: 'description', children: [
+      { label: 'Generate Document', href: '/document/generate', icon: 'note_add' },
+      { label: 'Riwayat Document', href: '/document/riwayat', icon: 'history' },
+      { label: 'Kelola Template', href: '/document/template', icon: 'folder_open' },
+    ]},
     ...(userIsAdmin ? [{
       label: 'Master Data', icon: 'dns', children: [
         { label: 'Vendor', href: '/admin/vendors', icon: 'storefront' },

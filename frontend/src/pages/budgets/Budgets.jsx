@@ -26,7 +26,6 @@ const thStyle = {
   textTransform: 'uppercase',
   letterSpacing: '0.05em',
   borderBottom: '2px solid #e2e8f0',
-  whiteSpace: 'nowrap',
 }
 
 const tdStyle = {
@@ -210,7 +209,7 @@ export default function Budgets() {
               <p style={{ margin: 0, fontSize: '1.1rem' }}>Belum ada data anggaran</p>
             </div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead style={{ position: 'sticky', top: 0, background: '#f8fafc', zIndex: 10 }}>
                 <tr>
                   <th style={{...thStyle, width: '4%'}}>No</th>
