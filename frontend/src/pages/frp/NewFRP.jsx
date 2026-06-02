@@ -382,9 +382,9 @@ export default function NewFRP() {
   const budgetOptions = useMemo(
     () => {
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      const sd = selectedDept ? selectedDept.name.trim().toUpperCase() : (values.divisi || '').trim().toUpperCase();
-      const sk = selectedDept ? selectedDept.class.trim().toUpperCase() : '';
-      const sc = (values.companyName || '').trim().toUpperCase();
+      const sd = selectedDept ? String(selectedDept.name || '').trim().toUpperCase() : String(values.divisi || '').trim().toUpperCase();
+      const sk = selectedDept ? String(selectedDept.class || '').trim().toUpperCase() : '';
+      const sc = String(values.companyName || '').trim().toUpperCase();
 
       return (FRP.budgets || []).filter(b => {
         const tc = (b.company || 'PT PILAR NIAGA MAKMUR').trim().toUpperCase()

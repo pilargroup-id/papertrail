@@ -96,37 +96,42 @@ export default function HistoryView({ filtered, pageSize, setPageSize, setCurren
   const isMobile = useIsMobile();
 
   return (
-    <div style={{ position: 'relative', height: isMobile ? 'auto' : '100%', padding: isMobile ? '0.5rem 0' : '0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+    <div style={{ position: 'relative', height: isMobile ? 'auto' : '100%', padding: isMobile ? '1rem 1rem 3rem 1rem' : '1.5rem 1.5rem 4rem 1.5rem', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       {editDoc && <EditModal doc={editDoc} templates={templates} masterData={masterData} userName={userName} onClose={() => setEditDoc(null)} onSaved={() => { fetchData(); setEditDoc(null); }} />}
 
       <div style={{ ...card, padding: isMobile ? '0.75rem' : '1rem', borderRadius: isMobile ? '1rem' : '1.25rem', flex: isMobile ? '0 0 auto' : 1, display: 'flex', flexDirection: 'column', minHeight: isMobile ? 'auto' : 0, overflow: isMobile ? 'visible' : 'hidden', background: 'linear-gradient(180deg,rgba(255,255,255,0.99),rgba(248,250,255,0.98))', border: '1.5px solid rgba(26,42,87,0.10)' }}>
 
         {/* Filter Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: '0.75rem', justifyContent: 'space-between', padding: isMobile ? '0.6rem 0.75rem' : '0.6rem 0.85rem', background: 'linear-gradient(180deg,#f8fafc,#f1f5f9)', borderRadius: '1rem', border: '1px solid rgba(26,42,87,0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: token.muted, paddingRight: '0.65rem', borderRight: '1px solid rgba(26,42,87,0.08)', flexShrink: 0 }}>
-              <SlidersHorizontal size={13} />
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Filter</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.75rem', justifyContent: 'space-between', padding: isMobile ? '0.6rem 0.75rem' : '0.7rem 1rem', background: '#ffffff', borderRadius: '1rem', border: '1px solid rgba(26,42,87,0.08)', boxShadow: '0 2px 6px rgba(15,23,42,0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: '0.1rem', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+            <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+            <div className="hide-scrollbar" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, overflowX: 'auto', flexWrap: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: token.muted, paddingRight: '0.65rem', borderRight: '1px solid rgba(26,42,87,0.08)', flexShrink: 0 }}>
+                <SlidersHorizontal size={14} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Filter</span>
+              </div>
+              <input type="search" value={searchTerm} placeholder="Cari dokumen..." onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} style={{ height: '2.25rem', padding: '0 0.85rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.12)', borderRadius: '0.6rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: '#f8fafc', flexShrink: 0, minWidth: '180px', transition: 'border 0.2s' }} />
+              <select value={searchIntExt} onChange={e => { setSearchIntExt(e.target.value); setCurrentPage(1); }} style={{ height: '2.25rem', padding: '0 0.85rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.12)', borderRadius: '0.6rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: '#f8fafc', cursor: 'pointer', flexShrink: 0, transition: 'border 0.2s' }}>
+                <option value="">Semua Tipe (Int/Ext)</option><option value="Internal">Internal</option><option value="External">External</option>
+              </select>
+              <input type="date" value={searchDate} onChange={e => { setSearchDate(e.target.value); setCurrentPage(1); }} style={{ height: '2.25rem', padding: '0 0.85rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.12)', borderRadius: '0.6rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: '#f8fafc', flexShrink: 0, transition: 'border 0.2s' }} />
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }} style={{ height: '2.25rem', padding: '0 0.85rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.12)', borderRadius: '0.6rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: '#f8fafc', cursor: 'pointer', flexShrink: 0, transition: 'border 0.2s' }}>
+                {[10,25,50,100].map(n => <option key={n} value={n}>{n} baris</option>)}
+              </select>
+              {(searchTerm || searchDate || searchIntExt) && (
+                <button type="button" onClick={() => { setSearchTerm(''); setSearchDate(''); setSearchIntExt(''); setCurrentPage(1); }} style={{ height: '2.25rem', padding: '0 0.85rem', fontSize: '0.82rem', fontWeight: 600, border: '1px solid rgba(239,68,68,0.24)', borderRadius: '0.6rem', background: 'rgba(239,68,68,0.06)', color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0, transition: 'background 0.2s' }}><X size={14} /> Reset</button>
+              )}
             </div>
-            <input type="search" value={searchTerm} placeholder="Cari dokumen..." onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} style={{ height: '2.35rem', padding: '0 0.8rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.10)', borderRadius: '0.8rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: 'linear-gradient(180deg,#f4f6f8,#eceff3)' }} />
-            <select value={searchIntExt} onChange={e => { setSearchIntExt(e.target.value); setCurrentPage(1); }} style={{ height: '2.35rem', padding: '0 0.8rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.10)', borderRadius: '0.8rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: 'linear-gradient(180deg,#f4f6f8,#eceff3)', cursor: 'pointer' }}>
-              <option value="">Semua</option><option value="Internal">Internal</option><option value="External">External</option>
-            </select>
-            <input type="date" value={searchDate} onChange={e => { setSearchDate(e.target.value); setCurrentPage(1); }} style={{ height: '2.35rem', padding: '0 0.8rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.10)', borderRadius: '0.8rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: 'linear-gradient(180deg,#f4f6f8,#eceff3)' }} />
-            <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }} style={{ height: '2.35rem', padding: '0 0.8rem', fontSize: '0.82rem', border: '1px solid rgba(26,42,87,0.10)', borderRadius: '0.8rem', outline: 'none', fontFamily: 'inherit', color: token.text, background: 'linear-gradient(180deg,#f4f6f8,#eceff3)', cursor: 'pointer' }}>
-              {[10,25,50,100].map(n => <option key={n} value={n}>{n} baris</option>)}
-            </select>
-            {(searchTerm || searchDate || searchIntExt) && (
-              <button type="button" onClick={() => { setSearchTerm(''); setSearchDate(''); setSearchIntExt(''); setCurrentPage(1); }} style={{ height: '2.35rem', padding: '0 0.8rem', fontSize: '0.82rem', fontWeight: 700, border: '1px solid rgba(239,68,68,0.24)', borderRadius: '0.8rem', background: 'rgba(239,68,68,0.07)', color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '0.35rem' }}><X size={13} /> Reset</button>
-            )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: token.blueMid, background: 'rgba(26,42,87,0.06)', border: '1px solid rgba(26,42,87,0.10)', padding: '0.38rem 0.8rem', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
-              <FileText size={11} /> {filtered.length} dokumen
-            </span>
-            <button type="button" onClick={fetchData} disabled={tableLoading} style={{ height: '2.35rem', width: '2.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(26,42,87,0.10)', borderRadius: '0.8rem', background: 'linear-gradient(180deg,#f4f6f8,#eceff3)', cursor: tableLoading ? 'not-allowed' : 'pointer', color: token.muted }}>
-              <RefreshCw size={13} style={tableLoading ? { animation: 'spin 1s linear infinite' } : {}} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
+            {!isMobile && (
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: token.blueMid, background: 'rgba(26,42,87,0.06)', border: '1px solid rgba(26,42,87,0.08)', padding: '0.4rem 0.85rem', borderRadius: '0.6rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                <FileText size={12} /> {filtered.length} dokumen
+              </span>
+            )}
+            <button type="button" onClick={fetchData} disabled={tableLoading} style={{ height: '2.25rem', width: '2.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(26,42,87,0.12)', borderRadius: '0.6rem', background: '#f8fafc', cursor: tableLoading ? 'not-allowed' : 'pointer', color: token.muted, transition: 'background 0.2s' }}>
+              <RefreshCw size={14} style={tableLoading ? { animation: 'spin 1s linear infinite' } : {}} />
             </button>
           </div>
         </div>

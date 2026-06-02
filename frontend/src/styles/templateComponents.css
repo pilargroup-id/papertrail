@@ -134,7 +134,7 @@ select {
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   transition:
     width var(--layout-transition-duration) var(--layout-transition-easing),
     transform 0.3s ease;
@@ -298,6 +298,13 @@ select {
 .sidebar-nav {
   flex: 1;
   padding: 1.5rem 0;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 .sidebar-bottom {
@@ -625,14 +632,6 @@ select {
   z-index: 4;
 }
 
-.sidebar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.sidebar::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-teal-dark) 100%);
-}
 
 .header-main {
   position: sticky;

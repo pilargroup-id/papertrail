@@ -10,7 +10,7 @@ export default function TemplatesView({ templates, uploadLoading, uploadMsg, sho
   const handleDrop = e => { e.preventDefault(); setDragOver(false); const file = e.dataTransfer.files[0]; if (file) hUpload({ target: { files: [file] } }); };
 
   return (
-    <div style={{ position: 'relative', height: isMobile ? 'auto' : '100%', padding: isMobile ? '0.5rem 0' : '0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+    <div style={{ position: 'relative', height: isMobile ? 'auto' : '100%', padding: isMobile ? '1rem 1rem 3rem 1rem' : '1.5rem 1.5rem 4rem 1.5rem', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%' }}>
       {showNote && (
         <>
           <div onClick={() => setShowNote(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(5px)', zIndex: 9000 }} />

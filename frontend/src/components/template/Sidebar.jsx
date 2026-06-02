@@ -79,6 +79,7 @@ function getInitialExpanded(pathname) {
     'FRP': ['/', '/frp', '/approval', '/approved', '/status_frp'],
     'Request Purchase': ['/rp', '/rp-approval'],
     'Generate Document': ['/document/generate', '/document/riwayat', '/document/template'],
+    'Report': ['/laporan-frp', '/laporan-rp'],
     'Master Data': null,
   }
   const initial = {}
@@ -102,6 +103,11 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
 
   const primaryItems = hideMenu ? [] : [
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
+    { label: 'Generate Document', icon: 'description', children: [
+      { label: 'Generate Document', href: '/document/generate', icon: 'note_add' },
+      { label: 'Riwayat Document', href: '/document/riwayat', icon: 'history' },
+      { label: 'Kelola Template', href: '/document/template', icon: 'folder_open' },
+    ]},
     { label: 'FRP', icon: 'receipt_long', children: [
       { label: 'New FRP', href: '/frp', icon: 'note_add' },
       ...(userIsAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(userJobLevel) ? [
@@ -113,12 +119,12 @@ export default function Sidebar({ collapsed = false, mobileOpen = false, userNam
       { label: 'New RP', href: '/rp', icon: 'note_add' },
       { label: 'Status RP', href: '/rp-approval', icon: 'rule' },
     ]},
-    ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{ label: 'Report', href: '/laporan', icon: 'analytics' }] : []),
-    { label: 'Generate Document', icon: 'description', children: [
-      { label: 'Generate Document', href: '/document/generate', icon: 'note_add' },
-      { label: 'Riwayat Document', href: '/document/riwayat', icon: 'history' },
-      { label: 'Kelola Template', href: '/document/template', icon: 'folder_open' },
-    ]},
+    ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{
+      label: 'Report', icon: 'analytics', children: [
+        { label: 'Report FRP', href: '/laporan-frp', icon: 'receipt_long' },
+        { label: 'Report RP', href: '/laporan-rp', icon: 'shopping_bag' }
+      ]
+    }] : []),
     ...(userIsAdmin ? [{
       label: 'Master Data', icon: 'dns', children: [
         { label: 'Vendor', href: '/admin/vendors', icon: 'storefront' },

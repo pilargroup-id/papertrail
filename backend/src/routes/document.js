@@ -47,7 +47,10 @@ router.get('/api/document/master-departments', checkAuth, async (req, res) => {
     const company = req.query.company || 'PNM';
     try {
         const [rows] = await centralDb.query(
-            'SELECT id, name, code FROM master_departments WHERE company = ? ORDER BY name',
+            `SELECT d.id, d.name, d.code 
+             FROM master_departments d
+             JOIN master_companies c ON d.company_id = c.id
+             WHERE c.code = ? ORDER BY d.name`,
             [company],
         );
         res.json({ departments: rows });
@@ -117,7 +120,10 @@ router.post('/api/document/generate', checkAuth, async (req, res) => {
     try {
         // Ambil department code dari pilargroup
         const [[deptRow]] = await centralDb.query(
-            'SELECT code FROM master_departments WHERE name = ? AND company = ?',
+            `SELECT d.code 
+             FROM master_departments d
+             JOIN master_companies c ON d.company_id = c.id
+             WHERE d.name = ? AND c.code = ?`,
             [division, company],
         );
         if (!deptRow) return res.status(400).json({ error: 'Department tidak ditemukan' });

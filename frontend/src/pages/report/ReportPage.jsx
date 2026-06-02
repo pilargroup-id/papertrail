@@ -16,9 +16,9 @@ const RP_STATUS_META = {
   CREATED_FRP: { label: 'Created FRP', background: '#cffafe', color: '#0e7490' },
 }
 
-export default function LaporanPage() {
+export default function LaporanPage({ type = 'frp' }) {
   const navigate = useNavigate()
-  const [reportType, setReportType] = useState('frp')
+  const reportType = type
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(null)
@@ -26,7 +26,12 @@ export default function LaporanPage() {
   const [viewportWidth, setViewportWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
-  const [filters, setFilters] = useState({ search: '', status: 'APPROVED', company: '', divisi: '', from: '', to: '' })
+  const [filters, setFilters] = useState({ search: '', status: type === 'rp' ? 'approved' : 'APPROVED', company: '', divisi: '', from: '', to: '' })
+
+  useEffect(() => {
+    setFilters({ search: '', status: type === 'rp' ? 'approved' : 'APPROVED', company: '', divisi: '', from: '', to: '' })
+    setCurrentPage(1)
+  }, [type])
 
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth)
@@ -192,7 +197,6 @@ export default function LaporanPage() {
           filters={filters}
           setFilters={setFilters}
           reportType={reportType}
-          setReportType={setReportType}
           statusOptions={statusOptions}
           companyOptions={companyOptions}
           divisiOptions={divisiOptions}

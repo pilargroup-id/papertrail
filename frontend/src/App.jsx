@@ -35,7 +35,8 @@ export default function App() {
             <Route path="/approval" element={<ApprovalPage />} />
             <Route path="/approved" element={<ApprovalPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/laporan" element={<ReportPage />} />
+            <Route path="/laporan-frp" element={<ReportPage type="frp" />} />
+            <Route path="/laporan-rp" element={<ReportPage type="rp" />} />
             <Route path="/admin/:type" element={<AdminPage />} />
             <Route path="/rp" element={<NewRP />} />
             <Route path="/rp-approval" element={<RpApprovalPage />} />
