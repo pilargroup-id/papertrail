@@ -1158,3 +1158,40 @@ RP PROCESS:
 ```
 
 Jika department user tidak punya akses cross budget, maka user hanya boleh menggunakan budget dari department sendiri.
+
+---
+
+## 5. Admin / Master Data
+
+### Get Admin Data
+```http
+GET /api/data/admin?type=vendors
+GET /api/data/admin?type=budgets
+```
+Berfungsi untuk mengambil list data (misal list `vendors` dari `vendors.json` atau budgets dari tabel `master_budgets`). Data dikembalikan dalam properti `listData`.
+
+### Create Admin Data
+```http
+POST /api/admin/:type/add
+```
+Contoh parameter `:type` adalah `vendors` atau `budgets`. Untuk `vendors`, data disimpan ke `vendors.json`.
+**Body untuk vendors**:
+```json
+{
+  "name": "Nama Vendor",
+  "bank": "Nama Bank",
+  "no_rekening": "12345"
+}
+```
+
+### Delete Admin Data
+```http
+POST /api/admin/:type/delete/:index
+```
+Untuk vendors, index mengacu pada posisi (indeks array) di dalam file `vendors.json`.
+
+### Edit Admin Data
+```http
+POST /api/admin/:type/edit/:index
+```
+Mengubah data berdasarkan original index array di json.

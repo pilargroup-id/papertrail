@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "no_rekening": "",
     "bank": "VA MANDIRI",
@@ -143,5 +143,25 @@
     "no_rekening": "7540276743 / PT BERKAH TUMBUH BERSAMA I",
     "bank": "BCA",
     "name": "PT BERKAH TUMBUH BERSAMA INDONESIA"
+  },
+  {
+    "name": "dsadsa",
+    "bank": "BCA",
+    "no_rekening": "083232321"
+  },
+  {
+    "name": "tes fatih",
+    "bank": "BCA",
+    "no_rekening": "032183921"
+  },
+  {
+    "name": "tes ikus",
+    "bank": "BCA",
+    "no_rekening": "083231312"
+  },
+  {
+    "name": "fatihhh",
+    "bank": "BCA",
+    "no_rekening": "90890880"
   }
 ]

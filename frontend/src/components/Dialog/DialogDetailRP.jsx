@@ -273,6 +273,25 @@ function DialogDetailRP({
               <div><label style={labelStyle}>Deskripsi (Alasan Permintaan Barang)</label><textarea rows="2" readOnly value={request.description || request.deskripsi || request.keteranganRp || ''} style={{ ...fieldStyle, resize: 'none' }} className="dialog-input-premium" /></div>
             </div>
 
+            {request.processChanges?.changes?.length > 0 && (
+              <div style={{ border: '1px solid #fde68a', background: '#fffbeb', borderRadius: '12px', padding: '14px 16px', marginBottom: '8px' }} className="dialog-section-premium">
+                <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#92400e', letterSpacing: '0.04em', marginBottom: '10px' }}>Perubahan Oleh Divisi Pemroses</div>
+                <div style={{ display: 'grid', gap: '6px' }}>
+                  {request.processChanges.changes.map((change, index) => (
+                    <div key={`${change.field}-${index}`} style={{ fontSize: '0.85rem', color: '#78350f', lineHeight: 1.45 }}>
+                      <strong>{change.field}:</strong>{' '}
+                      <span style={{ color: '#dc2626', textDecoration: 'line-through' }}>{change.oldValue || '(kosong)'}</span>
+                      <span style={{ color: '#64748b' }}> -&gt; </span>
+                      <span style={{ color: '#16a34a', fontWeight: 700 }}>{change.newValue || '(kosong)'}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#92400e', marginTop: '8px' }}>
+                  Diubah oleh: {request.processUpdatedBy || '-'} {request.processUpdatedAt ? `(${formatDisplayDate(request.processUpdatedAt)})` : ''}
+                </div>
+              </div>
+            )}
+
             <div style={sectionStyle} className="dialog-section-premium">
               <h3 style={headingStyle}><span className="material-icons-round" style={iconStyle}>store</span> Vendor & Proses</h3>
               <div style={grid2}>

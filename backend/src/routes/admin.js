@@ -90,8 +90,13 @@ router.get('/api/data/admin', checkAuth, checkIT, async (req, res) => {
             `);
 
             listData = rows.map(mapBudgetRow);
-        } else {
-            listData = readJson(`${type}.json`).map((item, index) => ({
+        } else if (type === 'vendors') {
+            const [rows] = await db.query(`
+                SELECT id, name, bank, no_rekening
+                FROM master_vendor
+                ORDER BY id ASC
+            `);
+            listData = rows.map((item, index) => ({
                 ...item,
                 originalIndex: index,
             }));
@@ -195,13 +200,14 @@ router.post('/api/admin/:type/add', checkAuth, checkIT, async (req, res) => {
             return res.json({ success: true, id: budgetId });
         }
 
-        const data = readJson(`${type}.json`);
-        const newItem = req.body;
-
-        data.push(newItem);
-        writeJson(`${type}.json`, data);
-
-        res.json({ success: true });
+        if (type === 'vendors') {
+            const newItem = req.body;
+            await db.query(`
+                INSERT INTO master_vendor (name, bank, no_rekening)
+                VALUES (?, ?, ?)
+            `, [newItem.name || '', newItem.bank || '', newItem.no_rekening || '']);
+            return res.json({ success: true });
+        }
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
@@ -242,11 +248,17 @@ router.post('/api/admin/:type/delete/:index', checkAuth, checkIT, async (req, re
             return res.json({ success: true, id: targetId });
         }
 
-        const data = readJson(`${type}.json`);
-        data.splice(parseInt(index, 10), 1);
-        writeJson(`${type}.json`, data);
-
-        res.json({ success: true });
+        if (type === 'vendors') {
+            const [rows] = await db.query(`
+                SELECT id FROM master_vendor ORDER BY id ASC
+            `);
+            const targetId = rows[parseInt(index, 10)]?.id;
+            if (!targetId) {
+                return res.status(400).json({ success: false, error: 'Item not found' });
+            }
+            await db.query(`DELETE FROM master_vendor WHERE id = ?`, [targetId]);
+            return res.json({ success: true });
+        }
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
@@ -321,13 +333,22 @@ router.post('/api/admin/:type/edit/:index', checkAuth, checkIT, async (req, res)
             });
         }
 
-        const data = readJson(`${type}.json`);
-        const updatedItem = req.body;
-
-        data[parseInt(index, 10)] = updatedItem;
-        writeJson(`${type}.json`, data);
-
-        res.json({ success: true });
+        if (type === 'vendors') {
+            const [rows] = await db.query(`
+                SELECT id FROM master_vendor ORDER BY id ASC
+            `);
+            const targetId = rows[parseInt(index, 10)]?.id;
+            if (!targetId) {
+                return res.status(400).json({ success: false, error: 'Item not found' });
+            }
+            const updatedItem = req.body;
+            await db.query(`
+                UPDATE master_vendor
+                SET name = ?, bank = ?, no_rekening = ?
+                WHERE id = ?
+            `, [updatedItem.name || '', updatedItem.bank || '', updatedItem.no_rekening || '', targetId]);
+            return res.json({ success: true });
+        }
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }

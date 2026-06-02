@@ -465,7 +465,7 @@ export default function RpApprovalPage() {
             boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
           }}>
             {showDetailActionPill && (
-              <ButtonDetail variant="action" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
+              <ButtonDetail variant="approve" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
             )}
             {showRevertAction && (
               <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
@@ -705,11 +705,11 @@ export default function RpApprovalPage() {
                   <div style={{ ...detailValueBox, border: 'none', background: 'transparent', padding: 0, minHeight: 'auto', boxShadow: 'none' }}>{selected.description || selected.deskripsi || '-'}</div>
                 </div>
 
-                {selected.processChanges?.length > 0 && (
+                {selected.processChanges?.changes?.length > 0 && (
                   <div style={{ border: '1px solid #fde68a', background: '#fffbeb', borderRadius: '12px', padding: '14px 16px' }}>
                     <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#92400e', letterSpacing: '0.04em', marginBottom: '10px' }}>Perubahan Oleh Divisi Pemroses</div>
                     <div style={{ display: 'grid', gap: '6px' }}>
-                      {selected.processChanges.map((change, index) => (
+                      {selected.processChanges.changes.map((change, index) => (
                         <div key={`${change.field}-${index}`} style={{ fontSize: '0.85rem', color: '#78350f', lineHeight: 1.45 }}>
                           <strong>{change.field}:</strong>{' '}
                           <span style={{ color: '#dc2626', textDecoration: 'line-through' }}>{change.oldValue || '(kosong)'}</span>
