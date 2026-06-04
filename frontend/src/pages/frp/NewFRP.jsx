@@ -70,6 +70,7 @@ const blankForm = {
   paymentMethod: 'Transfer',
   paymentDate: today,
   attachLink: '',
+  attachFile: null,
   keteranganFrp: '',
   checkDocs: ['Form Request Payment'],
   items: getDefaultItems(),
@@ -616,6 +617,13 @@ export default function NewFRP() {
       const d = await frpService.saveFrp(payload)
 
       if (d.success) {
+        if (values.attachFile) {
+          try {
+            await frpService.uploadAttachment(d.id, values.attachFile)
+          } catch (uploadErr) {
+            console.error('Failed to upload attachment:', uploadErr)
+          }
+        }
         navigate('/approval')
       } else {
         setSubmitError(d.error || 'Gagal menyimpan, coba lagi.')
@@ -819,9 +827,83 @@ export default function NewFRP() {
                   <input name="rekBankTujuan" className="frp-input" placeholder="account number..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
                 </FloatingGroup>
               </div>
-              <FloatingGroup label="Attach Link" style={{ marginTop: '20px' }}>
-                <input name="attachLink" className="frp-input" placeholder="https://..." value={values.attachLink} onChange={e => updateField('attachLink', e.target.value)} />
-              </FloatingGroup>
+              <div style={{ marginTop: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '6px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attachment</label>
+                <div 
+                  style={{
+                    border: '2px dashed #cbd5e1',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    backgroundColor: '#f8fafc',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: values.attachFile ? 'space-between' : 'center',
+                    gap: '12px'
+                  }}
+                  onClick={() => document.getElementById('frp-file-upload').click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      updateField('attachFile', e.dataTransfer.files[0]);
+                    }
+                  }}
+                  onMouseOver={e => e.currentTarget.style.borderColor = '#94a3b8'}
+                  onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                >
+                  <input 
+                    id="frp-file-upload"
+                    type="file" 
+                    name="attachFile" 
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        updateField('attachFile', e.target.files[0])
+                      }
+                    }} 
+                  />
+                  {values.attachFile ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                      <span className="material-icons-round" style={{ fontSize: '28px', color: '#10b981' }}>description</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: 1, overflow: 'hidden' }}>
+                        <span style={{ fontSize: '0.85rem', color: '#334155', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{values.attachFile.name}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{(values.attachFile.size / 1024).toFixed(2)} KB</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="frp-btn-del"
+                        onClick={(e) => { e.stopPropagation(); updateField('attachFile', null); document.getElementById('frp-file-upload').value = ''; }}
+                        style={{ flexShrink: 0, width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        title="Hapus File"
+                      >
+                        <span className="material-icons-round" style={{ fontSize: '18px' }}>delete</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span className="material-icons-round" style={{ fontSize: '28px', color: '#94a3b8' }}>cloud_upload</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '0.85rem', color: '#475569' }}>
+                          <span style={{ color: '#2563eb', fontWeight: '600' }}>Klik untuk upload</span> atau drag & drop
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Maks. 10MB (Dokumen/Gambar)</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {values.attachLink && typeof values.attachLink === 'string' && (
+                  <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 10px', backgroundColor: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                    <span className="material-icons-round" style={{ fontSize: '16px', color: '#2563eb' }}>attachment</span>
+                    <a href={`/api/frp/${values.id}/attachment`} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}>
+                      Lihat Attachment Tersimpan
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -591,10 +591,11 @@ export default function ApprovalFRP() {
     { label: 'Divisi', key: 'division' },
     { label: 'Total', key: 'total' },
     { label: 'Status', key: 'status' },
+    { label: 'Attach', key: null },
     { label: 'Action', key: null },
   ]
 
-  const desktopColumnWidths = ['15%', '17%', '7%', '7%', '9%', '15%']
+  const desktopColumnWidths = ['14%', '15%', '7%', '7%', '9%', '8%', '14%']
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
   const safeCurrentPage = Math.min(currentPage, totalPages)
 
@@ -943,14 +944,26 @@ export default function ApprovalFRP() {
                               <div style={{ fontSize: '13px', color: '#1e293b' }}>{request.approvedBy}</div>
                             </div>
                           )}
-                          {request.attachLink && (
-                            <div style={{ gridColumn: '1 / -1' }}>
-                              <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Attach Link</div>
-                              <div style={{ fontSize: '13px' }}><a href={request.attachLink} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>Buka Link</a></div>
-                            </div>
-                          )}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {request.attachLink && (
+                            <a
+                              href={`/api/frp/${request.id}/attachment`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                width: '100%',
+                                display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
+                                background: '#f8fafc', color: '#475569',
+                                border: '1px solid #cbd5e1', borderRadius: '24px', padding: '5px 10px',
+                                fontSize: '11px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)', boxSizing: 'border-box'
+                              }}
+                            >
+                              <span className="material-icons-round" style={{ fontSize: '14px' }}>attach_file</span>
+                              Lihat Dokumen
+                            </a>
+                          )}
                           {canApprove && !isApprovedView && (
                             <div style={{
                               display: 'flex',
@@ -1220,7 +1233,31 @@ export default function ApprovalFRP() {
                                   </div>
                                 </td>
 
-                                {/* 6. Action */}
+                                {/* 6. Attach */}
+                                <td style={td}>
+                                  {request.attachLink ? (
+                                    <a
+                                      href={`/api/frp/${request.id}/attachment`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                        background: '#f8fafc', color: '#475569',
+                                        border: '1px solid #cbd5e1', padding: '4px 8px',
+                                        borderRadius: '8px', cursor: 'pointer',
+                                        fontWeight: 600, fontSize: '11px', textDecoration: 'none'
+                                      }}
+                                    >
+                                      <span className="material-icons-round" style={{ fontSize: '14px' }}>attach_file</span>
+                                      File
+                                    </a>
+                                  ) : (
+                                    <span style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>-</span>
+                                  )}
+                                </td>
+
+                                {/* 7. Action */}
                                 <td style={{ ...td, borderRight: 'none' }}>
                                   {((canApprove && !isApprovedView) || request.canRevert) ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>

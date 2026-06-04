@@ -227,6 +227,7 @@ async function fetchAllFrpRequests() {
         destinationBankAccount: r.destination_bank_account || '',
 
         frpDescription: r.frp_description || '',
+        attachLink: r.attachment_link || '',
 
         checkDocs: typeof r.check_docs === 'string' ? JSON.parse(r.check_docs) : (r.check_docs || []),
         items: itemsByRequestId[r.id] || [],

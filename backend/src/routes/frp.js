@@ -545,13 +545,14 @@ router.post('/api/frp/:id/attachment', checkAuth, upload.single('attachment'), a
             resumable: false,
         });
 
-        // Simpan path ke DB
+        // Simpan public URL ke DB
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
         await db.query(
             'UPDATE frp_request SET attachment_link = ? WHERE id = ?',
-            [filename, frpId]
+            [publicUrl, frpId]
         );
 
-        res.json({ success: true, path: filename });
+        res.json({ success: true, path: publicUrl });
     } catch (e) {
         console.error('Upload error:', e);
         res.status(500).json({ success: false, error: e.message });
@@ -571,7 +572,13 @@ router.delete('/api/frp/:id/attachment', checkAuth, async (req, res) => {
             return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
         }
 
-        await bucket.file(rows[0].attachment_link).delete();
+        let filenameToDelete = rows[0].attachment_link;
+        const bucketPrefix = `https://storage.googleapis.com/${bucket.name}/`;
+        if (filenameToDelete.startsWith(bucketPrefix)) {
+            filenameToDelete = filenameToDelete.substring(bucketPrefix.length);
+        }
+
+        await bucket.file(filenameToDelete).delete();
 
         await db.query(
             'UPDATE frp_request SET attachment_link = NULL WHERE id = ?',
@@ -598,12 +605,23 @@ router.get('/api/frp/:id/attachment', checkAuth, async (req, res) => {
             return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
         }
 
-        const [signedUrl] = await bucket.file(rows[0].attachment_link).getSignedUrl({
+        let attachmentLink = rows[0].attachment_link;
+        const bucketPrefix = `https://storage.googleapis.com/${bucket.name}/`;
+
+        if (attachmentLink.startsWith(bucketPrefix)) {
+            // File in our private GCP bucket
+            attachmentLink = attachmentLink.substring(bucketPrefix.length);
+        } else if (attachmentLink.startsWith('http')) {
+            // External link (e.g. Google Drive)
+            return res.redirect(attachmentLink);
+        }
+
+        const [signedUrl] = await bucket.file(attachmentLink).getSignedUrl({
             action: 'read',
             expires: Date.now() + 15 * 60 * 1000, // 15 menit
         });
 
-        res.json({ success: true, url: signedUrl });
+        res.redirect(signedUrl);
     } catch (e) {
         console.error('Get attachment error:', e);
         res.status(500).json({ success: false, error: e.message });

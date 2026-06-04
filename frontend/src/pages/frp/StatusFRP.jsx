@@ -307,13 +307,26 @@ export default function StatusFRP() {
                           </div>
                         ))}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedFrpId(req.id)}
-                        style={{ width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}
-                      >
-                        Lihat Detail
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {req.attachLink && (
+                          <a
+                            href={`/api/frp/${req.id}/attachment`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ flex: 1, textAlign: 'center', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', textDecoration: 'none', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px', boxSizing: 'border-box' }}
+                          >
+                            <span className="material-icons-round" style={{ fontSize: '16px' }}>attach_file</span>
+                            File
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFrpId(req.id)}
+                          style={{ flex: 2, width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}
+                        >
+                          Lihat Detail
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
@@ -333,13 +346,14 @@ export default function StatusFRP() {
               <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
                   <colgroup>
-                    <col style={{ width: '16%' }} />
-                    <col style={{ width: '12%' }} />
-                    <col style={{ width: '18%' }} />
-                    <col style={{ width: '16%' }} />
                     <col style={{ width: '14%' }} />
                     <col style={{ width: '12%' }} />
-                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '14%' }} />
+                    <col style={{ width: '13%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '10%' }} />
                   </colgroup>
                   <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                     <tr>
@@ -350,6 +364,7 @@ export default function StatusFRP() {
                         { label: 'Divisi', key: 'divisi' },
                         { label: 'Total', key: 'total' },
                         { label: 'Status', key: 'status' },
+                        { label: 'Attach', key: null },
                         { label: 'Detail', key: null },
                       ].map(({ label, key }) => (
                         <th
@@ -388,6 +403,27 @@ export default function StatusFRP() {
                           <td style={{ ...td, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#475569' }} title={req.divisi}>{req.divisi || '-'}</td>
                           <td style={{ ...td, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: '0.82rem' }}>{formatCurrency(total)}</td>
                           <td style={td}><StatusBadge status={req.status} /></td>
+                          <td style={td}>
+                            {req.attachLink ? (
+                              <a
+                                href={`/api/frp/${req.id}/attachment`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                  background: '#f8fafc', color: '#475569',
+                                  border: '1px solid #cbd5e1', padding: '6px 10px',
+                                  borderRadius: '8px', cursor: 'pointer',
+                                  fontWeight: 600, fontSize: '12px', textDecoration: 'none'
+                                }}
+                              >
+                                <span className="material-icons-round" style={{ fontSize: '15px' }}>attach_file</span>
+                                File
+                              </a>
+                            ) : (
+                              <span style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>-</span>
+                            )}
+                          </td>
                           <td style={td}>
                             <button
                               type="button"
