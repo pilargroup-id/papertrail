@@ -7,7 +7,7 @@ async function migrate() {
         host: 'localhost',
         user: 'root',
         password: '',
-        database: 'frp_db'
+        database: 'papertrail'
     });
 
     const requests = JSON.parse(fs.readFileSync('./data/rp-requests.json', 'utf8'));

@@ -229,11 +229,13 @@ export default function RpApprovalPage() {
     setActionLoading(true)
     let actualAction = action
     if (action === 'revert' && confirmAction?.rp) {
-      if (confirmAction.rp.status === 'division_review') {
-        actualAction = 'process-revert'
-      } else if (confirmAction.rp.status === 'final_review') {
-        actualAction = 'process-manager-revert'
-      }
+        if (confirmAction.rp.status === 'division_review') {
+            actualAction = 'process-revert'
+        } else if (confirmAction.rp.status === 'final_review') {
+            actualAction = 'process-manager-revert'
+        } else if (confirmAction.rp.status === 'approved') {
+            actualAction = 'revert-approved'
+        }
     }
     try {
       const response = await fetch(`/api/rp/${id}/${actualAction}`, {
@@ -445,7 +447,7 @@ export default function RpApprovalPage() {
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
 
     const showDetailActionPill = showDetail && rp.status !== 'waiting_manager'
-    const showRevertAction = isAdmin && showRevert && ['division_review', 'final_review'].includes(rp.status)
+    const showRevertAction = showRevert && rp.canRevert
 
     return (
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -827,11 +829,11 @@ export default function RpApprovalPage() {
               </button>
             )}
 
-            {isAdmin && ['division_review', 'final_review'].includes(selected.status) && (
-              <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'revert')} className="btn-dialog btn-dialog-warning">
-                <span className="material-icons-round" style={{ fontSize: '18px' }}>undo</span>
-                Revert
-              </button>
+            {selected.canRevert && (
+                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'revert')} className="btn-dialog btn-dialog-warning">
+                    <span className="material-icons-round" style={{ fontSize: '18px' }}>undo</span>
+                    Revert
+                </button>
             )}
 
             <button type="button" onClick={() => setSelected(null)} className="btn-dialog btn-dialog-close">

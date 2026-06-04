@@ -1224,7 +1224,7 @@ export default function ApprovalFRP() {
 
                                 {/* 6. Action */}
                                 <td style={{ ...td, borderRight: 'none' }}>
-                                  {((canApprove && !isApprovedView) || (canApprove && isApprovedView && user.role === 'administrator')) ? (
+                                  {((canApprove && !isApprovedView) || request.canRevert) ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
                                       {canApprove && !isApprovedView && (
                                         <div style={{
@@ -1297,7 +1297,7 @@ export default function ApprovalFRP() {
                                           </button>
                                         </div>
                                       )}
-                                      {canApprove && isApprovedView && user.role === 'administrator' && (
+                                      {request.canRevert && isApprovedView && (
                                         <button
                                           type="button"
                                           onClick={(e) => { e.stopPropagation(); requestAction(request, 'revert'); }}

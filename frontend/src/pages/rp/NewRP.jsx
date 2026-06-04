@@ -172,6 +172,7 @@ export default function NewRP() {
   const [error, setError] = useState(null)
   const [showConfirm, setShowConfirm] = useState(false)
   const [successDialog, setSuccessDialog] = useState({ isOpen: false, title: '', message: '', subMessage: '', rpNo: '' })
+  const [processorDepts, setProcessorDepts] = useState([])
   const [vw, setVw] = useState(typeof window === 'undefined' ? 1280 : window.innerWidth)
 
   useEffect(() => {
@@ -182,6 +183,11 @@ export default function NewRP() {
         setData(d)
         setUser(d?.user)
         setValues(buildInitialRp(d))
+
+         fetch('/api/rp/processor-departments')
+          .then(r => r.json())
+          .then(depts => setProcessorDepts(depts))
+          .catch(() => {})
       })
       .catch(e => setError(e.message || 'Gagal memuat'))
       .finally(() => setLoading(false))
@@ -267,13 +273,11 @@ export default function NewRP() {
   }, [D.budgets, values.divisi, values.companyName, departments, D.departments])
 
   const processDivOptions = useMemo(() => {
-    const source = D.departments?.length
-      ? D.departments
-        .filter(d => !values.companyName || normalizeCompany(d.company) === normalizeCompany(values.companyName))
-        .map(d => d.name)
-      : (D.processDivisions || ['IT', 'HCGA', 'Product'])
-    return [...new Set(source.filter(Boolean))].sort().map(d => ({ value: d, label: d }))
-  }, [D.departments, D.processDivisions, values.companyName])
+      if (processorDepts.length > 0) {
+          return processorDepts.map(d => ({ value: d, label: d }))
+      }
+      return ['IT', 'HCGA'].map(d => ({ value: d, label: d }))
+  }, [processorDepts])
   
   const companyOptions = useMemo(() => {
     const names = [

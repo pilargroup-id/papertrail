@@ -18,6 +18,8 @@ Thumbs.db
 *.swp
 *.swo
 
+credentials/
+
 # Environment variables
 .env
 .env.local

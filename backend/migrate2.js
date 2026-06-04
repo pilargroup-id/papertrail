@@ -1,6 +1,6 @@
 const mysql = require('mysql2/promise');
 async function run() {
-  const db = await mysql.createConnection({ host: 'localhost', user: 'root', database: 'frp_db' });
+  const db = await mysql.createConnection({ host: 'localhost', user: 'root', database: 'papertrail' });
   const [res1] = await db.query("UPDATE rp_request SET status = 'waiting_manager' WHERE status = 'PENDING_MANAGER'");
   console.log('Update PENDING_MANAGER:', res1.affectedRows);
   const [res2] = await db.query("UPDATE rp_request SET status = 'division_review' WHERE status = 'PENDING_PROCESS'");

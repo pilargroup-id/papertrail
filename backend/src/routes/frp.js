@@ -18,6 +18,10 @@ const {
 } = require('../services/dbService');
 const { normalizeCompanyCode } = require('../utils/company');
 
+const { bucket } = require('../config/storage');
+const { upload } = require('../middleware/upload');
+const path = require('path');
+
 const router = express.Router();
 
 // ============================================================
@@ -469,6 +473,9 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
     const { isRequestInUserScope } = require('../middleware/scope');
     const isApprovedView = req.query.view === 'approved';
     const isAllView = req.query.view === 'all';
+
+    const hasLookAccess = await canLookAllFrp(u);
+
     let reqs = await fetchAllFrpRequests();
 
     const pendingCount = reqs.filter(r => r.status === 'PENDING' && isRequestInUserScope(r, u)).length;
@@ -482,7 +489,7 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
             : reqs.filter(r => r.status === 'PENDING');
     }
 
-    if (u.role !== 'administrator') {
+    if (!hasLookAccess) {
         reqs = reqs.filter(r => isRequestInUserScope(r, u));
     }
 
@@ -490,7 +497,7 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
         ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
 
     res.json({
-        requests: reqs,
+        requests: reqs.map(r => enrichReqWithRevert(r, u)), // pakai helper
         canApprove,
         isApprovedView,
         counts: { pending: pendingCount, approved: approvedCount },
@@ -507,6 +514,102 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
 // ============================================================
 // FRP CRUD
 // ============================================================
+
+router.post('/api/frp/:id/attachment', checkAuth, upload.single('attachment'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'File tidak ditemukan' });
+        }
+
+        const frpId = req.params.id;
+
+        const [frpRows] = await db.query(
+            'SELECT frp_no FROM frp_request WHERE id = ?',
+            [frpId]
+        );
+
+        if (!frpRows.length) {
+            return res.status(404).json({ success: false, error: 'FRP tidak ditemukan' });
+        }
+
+        const frpNo = frpRows[0].frp_no.replace(/\//g, '-'); // sanitize kalau ada slash
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const ext = path.extname(req.file.originalname).toLowerCase();
+        const filename = `frp/${year}/${month}/${frpNo}${ext}`;
+
+        const blob = bucket.file(filename);
+        await blob.save(req.file.buffer, {
+            contentType: req.file.mimetype,
+            resumable: false,
+        });
+
+        // Simpan path ke DB
+        await db.query(
+            'UPDATE frp_request SET attachment_link = ? WHERE id = ?',
+            [filename, frpId]
+        );
+
+        res.json({ success: true, path: filename });
+    } catch (e) {
+        console.error('Upload error:', e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+router.delete('/api/frp/:id/attachment', checkAuth, async (req, res) => {
+    try {
+        const frpId = req.params.id;
+
+        const [rows] = await db.query(
+            'SELECT attachment_link FROM frp_request WHERE id = ?',
+            [frpId]
+        );
+
+        if (!rows.length || !rows[0].attachment_link) {
+            return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
+        }
+
+        await bucket.file(rows[0].attachment_link).delete();
+
+        await db.query(
+            'UPDATE frp_request SET attachment_link = NULL WHERE id = ?',
+            [frpId]
+        );
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Delete error:', e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+router.get('/api/frp/:id/attachment', checkAuth, async (req, res) => {
+    try {
+        const frpId = req.params.id;
+
+        const [rows] = await db.query(
+            'SELECT attachment_link FROM frp_request WHERE id = ?',
+            [frpId]
+        );
+
+        if (!rows.length || !rows[0].attachment_link) {
+            return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
+        }
+
+        const [signedUrl] = await bucket.file(rows[0].attachment_link).getSignedUrl({
+            action: 'read',
+            expires: Date.now() + 15 * 60 * 1000, // 15 menit
+        });
+
+        res.json({ success: true, url: signedUrl });
+    } catch (e) {
+        console.error('Get attachment error:', e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 
 router.get('/api/frp/:id', checkAuth, async (req, res) => {
     try {
@@ -604,6 +707,44 @@ async function adjustBudgetUsage(client, items, direction = 'deduct') {
             item.budgetId,
         ]);
     }
+}
+
+// Cek apakah user boleh lihat semua FRP lintas divisi
+async function canLookAllFrp(user) {
+    if (user.role === 'administrator') return true;
+
+    const departmentClass = String(
+        user.departmentClass ||
+        user.selectedDivision ||
+        ''
+    ).trim();
+
+    const [rows] = await db.query(`
+        SELECT 1 FROM budget_access_policies
+        WHERE module = 'FRP'
+          AND flow = 'LOOK'
+          AND department_class = ?
+          AND is_active = 1
+        LIMIT 1
+    `, [departmentClass]);
+
+    return rows.length > 0;
+}
+
+// Tambahkan flag canRevert ke tiap request
+function enrichReqWithRevert(r, u) {
+    const isIT = u.selectedDivision === 'IT';
+    // support kedua format
+    const frpDeptClass = r.department_class || r.departmentClass || '';
+    const isOwnDivision = u.selectedDivision === frpDeptClass;
+
+    return {
+        ...r,
+        canRevert:
+            u.role === 'administrator' ||
+            isIT ||
+            (Number(u.jobLevelRank || 0) >= 3 && isOwnDivision),
+    };
 }
 
 async function getBudgetAccessPolicy(client, moduleName, user) {
@@ -833,7 +974,6 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                     department_class = ?,
                     department_code = ?,
 
-                    job_level_id = ?,
                     job_level_name = ?,
                     job_level_rank = ?,
 
@@ -869,7 +1009,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                 snapshot.departmentClass,
                 snapshot.departmentCode,
 
-                snapshot.jobLevelId,
+                
                 snapshot.jobLevelName,
                 snapshot.jobLevelRank,
 
@@ -944,7 +1084,6 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
                 department_class,
                 department_code,
 
-                job_level_id,
                 job_level_name,
                 job_level_rank,
 
@@ -980,7 +1119,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
 
                 ?, ?, ?, ?,
 
-                ?, ?, ?,
+                ?, ?,
 
                 ?,
 
@@ -1006,7 +1145,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             snapshot.departmentClass,
             snapshot.departmentCode,
 
-            snapshot.jobLevelId,
+            
             snapshot.jobLevelName,
             snapshot.jobLevelRank,
 
@@ -1112,9 +1251,32 @@ router.post('/api/frp/:id/:action', checkAuth, async (req, res) => {
         } else if (action === 'delete') {
             await db.query(`DELETE FROM frp_request WHERE id = ?`, [frpId]);
         } else if (action === 'revert') {
-            if (u.role !== 'administrator') {
-                return res.status(403).json({ success: false, error: 'Hanya administrator yang bisa melakukan revert' });
+            // Ambil department_class FRP dari DB, jangan percaya body
+            const [frpRows] = await db.query(
+                'SELECT department_class FROM frp_request WHERE id = ?',
+                [frpId]
+            );
+
+            if (!frpRows.length) {
+                return res.status(404).json({ success: false, error: 'FRP tidak ditemukan' });
             }
+
+            const frpDeptClass = frpRows[0].department_class;
+            const isIT = u.selectedDivision === 'IT';
+            const isOwnDivision = u.selectedDivision === frpDeptClass;
+
+            const canRevert =
+                u.role === 'administrator' ||
+                isIT ||
+                (Number(u.jobLevelRank || 0) >= 3 && isOwnDivision);
+
+            if (!canRevert) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Hanya IT, atau supervisor/manager divisi terkait yang bisa melakukan revert',
+                });
+            }
+
             await db.query(`
                 UPDATE frp_request 
                 SET status = 'PENDING', approved_by_actual = NULL, approved_at = NULL, approved_by = NULL

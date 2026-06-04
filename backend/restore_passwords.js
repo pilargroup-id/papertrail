@@ -5,7 +5,7 @@ async function main() {
         host: 'localhost',
         user: 'root',
         password: '',
-        database: 'frp_db'
+        database: 'papertrail'
     });
 
     const fatihHash = '$2y$12$kMUbbSBmzNo5/satKuK3Yu3g2jKTF1ei6J2m89.2FT0JK4og0oC.i';

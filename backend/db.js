@@ -11,7 +11,7 @@ const commonConfig = {
 
 const frpDb = mysql.createPool({
     ...commonConfig,
-    database: process.env.FRP_DB_NAME || process.env.DB_NAME || 'frp_db',
+    database: process.env.FRP_DB_NAME || process.env.DB_NAME || 'papertrail',
 });
 
 const centralDb = mysql.createPool({

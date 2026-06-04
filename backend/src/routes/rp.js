@@ -193,11 +193,107 @@ async function validateRpBudgetAccess(client, user, items) {
     }
 }
 
+
+
 // ============================================================
 // RP PAGES
 // ============================================================
 
 router.get('/rp', checkAuth, (req, res) => res.sendSPA());
+
+async function isShortFlowDepartment(client, user) {
+    const departmentClass = String(
+        user.departmentClass || user.selectedDivision || ''
+    ).trim();
+
+    const [rows] = await client.query(`
+        SELECT 1 FROM budget_access_policies
+        WHERE module = 'RP'
+          AND flow = 'CREATE'
+          AND department_class = ?
+          AND can_cross_department_budget = 1
+          AND is_active = 1
+        LIMIT 1
+    `, [departmentClass]);
+
+    return rows.length > 0;
+}
+
+async function getRpLookScope(user) {
+    if (user.role === 'administrator') return 'all';
+
+    const departmentClass = String(
+        user.departmentClass || user.selectedDivision || ''
+    ).trim();
+
+    const [rows] = await db.query(`
+        SELECT 1 FROM budget_access_policies
+        WHERE module = 'RP'
+          AND flow = 'LOOK'
+          AND department_class = ?
+          AND is_active = 1
+        LIMIT 1
+    `, [departmentClass]);
+
+    if (rows.length > 0) return 'processor'; // hanya RP yang mengarah ke dept mereka
+    return 'own'; // hanya RP dari dept mereka sendiri
+}
+
+function enrichRpWithRevert(r, u) {
+    const isAdmin = u.role === 'administrator';
+    const rank = Number(u.jobLevelRank || 0);
+
+    // Revert dari waiting_manager → tidak ada (manager approve/reject langsung)
+    
+    // Revert dari division_review → waiting_manager
+    // oleh: admin, atau rank >= 3 dari processor department
+    const canRevertDivisionReview =
+        r.status === 'division_review' &&
+        (isAdmin || (rank >= 3 && u.selectedDivision === r.diprosesOleh));
+
+    // Revert dari final_review → division_review  
+    // oleh: admin, atau rank >= 3 dari processor department
+    const canRevertFinalReview =
+        r.status === 'final_review' &&
+        (isAdmin || (rank >= 3 && u.selectedDivision === r.diprosesOleh));
+
+    // Revert dari approved → waiting_manager
+    // oleh: admin, atau rank >= 3 dari department terkait (IT/HCGA short flow: dept requester, 4-step: processor dept)
+    const canRevertApproved =
+        r.status === 'approved' &&
+        (isAdmin || (
+            rank >= 3 &&
+            (u.selectedDivision === r.diprosesOleh || u.selectedDivision === r.divisi)
+        ));
+
+    return {
+        ...r,
+        canRevert: canRevertDivisionReview || canRevertFinalReview || canRevertApproved,
+        canRevertTo: canRevertApproved ? 'waiting_manager'
+            : canRevertFinalReview ? 'division_review'
+            : canRevertDivisionReview ? 'waiting_manager'
+            : null,
+    };
+}
+
+async function hasRpBudgetPolicy(client, user) {
+    const departmentClass = getUserDepartmentClass(user);
+
+    const [rows] = await client.query(`
+        SELECT id
+        FROM budget_access_policies
+        WHERE module = 'RP'
+          AND flow = 'CREATE'
+          AND department_class = ?
+          AND can_cross_department_budget = 1
+          AND is_active = 1
+        LIMIT 1
+    `, [departmentClass]);
+
+    return rows.length > 0;
+}
+
+
 router.get('/rp-approval', checkAuth, (req, res) => res.sendSPA());
 router.get('/rp-approved', checkAuth, (req, res) => res.sendSPA());
 router.get('/rp/:id', checkAuth, (req, res) => res.sendSPA());
@@ -327,6 +423,21 @@ router.get('/api/rp/next-number/:department', checkAuth, async (req, res) => {
     }
 });
 
+router.get('/api/rp/processor-departments', checkAuth, async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT DISTINCT department_class, department_name
+            FROM budget_access_policies
+            WHERE module = 'RP'
+              AND flow = 'PROCESS'
+              AND is_active = 1
+        `);
+        res.json(rows.map(r => r.department_class).filter(Boolean));
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ============================================================
 // RP SAVE
 // ============================================================
@@ -412,7 +523,6 @@ router.post('/api/rp/save', checkAuth, async (req, res) => {
                     class_class = ?,
                     class_code = ?,
 
-                    job_level_id = ?,
                     job_level_name = ?,
                     job_level_rank = ?,
 
@@ -444,7 +554,6 @@ router.post('/api/rp/save', checkAuth, async (req, res) => {
                 classClass,
                 classCode,
 
-                snapshot.jobLevelId,
                 snapshot.jobLevelName,
                 snapshot.jobLevelRank,
 
@@ -507,7 +616,6 @@ router.post('/api/rp/save', checkAuth, async (req, res) => {
                 class_class,
                 class_code,
 
-                job_level_id,
                 job_level_name,
                 job_level_rank,
 
@@ -544,7 +652,7 @@ router.post('/api/rp/save', checkAuth, async (req, res) => {
 
                 ?, ?, ?, ?,
 
-                ?, ?, ?,
+                ?, ?,
 
                 ?, ?, ?, ?, ?, ?, ?,
 
@@ -571,7 +679,6 @@ router.post('/api/rp/save', checkAuth, async (req, res) => {
             classClass,
             classCode,
 
-            snapshot.jobLevelId,
             snapshot.jobLevelName,
             snapshot.jobLevelRank,
 
@@ -644,11 +751,25 @@ router.get('/api/data/rp-approval', checkAuth, async (req, res) => {
         if (u.role !== 'administrator') reqs = reqs.filter(r => isRpInUserScope(r, u));
     }
 
+    const lookScope = await getRpLookScope(u);
+
+    if (lookScope === 'own') {
+        reqs = reqs.filter(r =>
+            sameCompanyName(r.companyName, u.selectedCompany) &&
+            r.divisi === u.selectedDivision
+        );
+    } else if (lookScope === 'processor') {
+        reqs = reqs.filter(r =>
+            sameCompanyName(r.companyName, u.selectedCompany) &&
+            r.diprosesOleh === u.selectedDivision
+        );
+    }
+
     const canApprove = u.role === 'administrator' ||
         ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
 
     res.json({
-        requests: reqs,
+        requests: reqs.map(r => enrichRpWithRevert(r, u)),
         canApprove,
         view,
         counts: {
@@ -750,23 +871,6 @@ function isManagerLevel(user) {
 
 function sameText(a, b) {
     return String(a || '').trim().toUpperCase() === String(b || '').trim().toUpperCase();
-}
-
-async function hasRpBudgetPolicy(client, user) {
-    const departmentClass = getUserDepartmentClass(user);
-
-    const [rows] = await client.query(`
-        SELECT id
-        FROM budget_access_policies
-        WHERE module = 'RP'
-          AND flow = 'CREATE'
-          AND department_class = ?
-          AND can_cross_department_budget = 1
-          AND is_active = 1
-        LIMIT 1
-    `, [departmentClass]);
-
-    return rows.length > 0;
 }
 
 async function getAllowedRpProcessorDepartments(client) {
@@ -894,28 +998,30 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         if (action === 'manager-approve') {
             if (rp.status !== 'waiting_manager') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
+
+            const rpUser = { departmentClass: rp.departmentClass, selectedDivision: rp.departmentClass };
+            const shortFlow = await isShortFlowDepartment(client, rpUser);
+            const nextStatus = shortFlow ? 'approved' : 'division_review';
 
             await client.query(`
                 UPDATE rp_request
                 SET
-                    status = 'division_review',
+                    status = ?,
                     manager_approved_by = ?,
                     manager_approved_at = NOW()
+                    ${shortFlow ? ', process_manager_approved_by = ?, process_manager_approved_at = NOW()' : ''}
                 WHERE id = ?
-            `, [u.fullName, rp.id]);
+            `, shortFlow
+                ? [nextStatus, u.fullName, u.fullName, rp.id]
+                : [nextStatus, u.fullName, rp.id]
+            );
 
         } else if (action === 'manager-reject') {
             if (rp.status !== 'waiting_manager') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             await client.query(`
@@ -927,40 +1033,20 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                     rejected_reason = ?,
                     rejected_stage = 'manager'
                 WHERE id = ?
-            `, [
-                u.fullName,
-                req.body.reason || '',
-                rp.id,
-            ]);
+            `, [u.fullName, req.body.reason || '', rp.id]);
 
         } else if (action === 'process-update') {
             if (rp.status !== 'division_review') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             const changes = [];
-
-            const headerFields = [
-                'vendorSuggestion',
-                'requiredDate',
-                'receiverPic',
-                'description',
-            ];
+            const headerFields = ['vendorSuggestion', 'requiredDate', 'receiverPic', 'description'];
 
             headerFields.forEach(field => {
-                if (
-                    req.body[field] !== undefined &&
-                    String(req.body[field]) !== String(rp[field] || '')
-                ) {
-                    changes.push({
-                        field,
-                        oldValue: rp[field] || '',
-                        newValue: req.body[field],
-                    });
+                if (req.body[field] !== undefined && String(req.body[field]) !== String(rp[field] || '')) {
+                    changes.push({ field, oldValue: rp[field] || '', newValue: req.body[field] });
                 }
             });
 
@@ -969,18 +1055,9 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
 
             newItems.forEach((newItem, i) => {
                 const oldItem = oldItems[i] || {};
-
                 ['memo', 'qty', 'price', 'amount', 'budgetId', 'link_item'].forEach(field => {
-                    if (
-                        newItem[field] !== undefined &&
-                        String(newItem[field]) !== String(oldItem[field] || '')
-                    ) {
-                        changes.push({
-                            field: `items[${i}].${field}`,
-                            oldValue: oldItem[field] || '',
-                            newValue: newItem[field],
-                            itemIndex: i,
-                        });
+                    if (newItem[field] !== undefined && String(newItem[field]) !== String(oldItem[field] || '')) {
+                        changes.push({ field: `items[${i}].${field}`, oldValue: oldItem[field] || '', newValue: newItem[field], itemIndex: i });
                     }
                 });
             });
@@ -1007,10 +1084,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                 req.body.requiredDate !== undefined ? req.body.requiredDate : rp.requiredDate,
                 req.body.receiverPic !== undefined ? req.body.receiverPic : rp.receiverPic,
                 req.body.description !== undefined ? req.body.description : rp.description,
-                JSON.stringify({
-                    note: req.body.note || '',
-                    changes,
-                }),
+                JSON.stringify({ note: req.body.note || '', changes }),
                 u.fullName,
                 rp.id,
             ]);
@@ -1018,10 +1092,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         } else if (action === 'process-direct') {
             if (rp.status !== 'division_review') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             await client.query(`
@@ -1032,22 +1103,12 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                     process_changes = ?,
                     status = 'final_review'
                 WHERE id = ?
-            `, [
-                u.fullName,
-                JSON.stringify({
-                    note: req.body.note || 'RP checked without changes',
-                    changes: [],
-                }),
-                rp.id,
-            ]);
+            `, [u.fullName, JSON.stringify({ note: req.body.note || 'RP checked without changes', changes: [] }), rp.id]);
 
         } else if (action === 'process-revert') {
             if (rp.status !== 'division_review') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             await client.query(`
@@ -1061,11 +1122,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                     process_updated_at = NOW()
                 WHERE id = ?
             `, [
-                JSON.stringify({
-                    note: req.body.reason || 'Returned to requester department manager review',
-                    revertedBy: u.fullName,
-                    revertedFrom: 'division_review',
-                }),
+                JSON.stringify({ note: req.body.reason || 'Returned to requester department manager review', revertedBy: u.fullName, revertedFrom: 'division_review' }),
                 u.fullName,
                 rp.id,
             ]);
@@ -1073,10 +1130,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         } else if (action === 'process-reject') {
             if (rp.status !== 'division_review') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             await client.query(`
@@ -1088,19 +1142,12 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                     rejected_reason = ?,
                     rejected_stage = 'process'
                 WHERE id = ?
-            `, [
-                u.fullName,
-                req.body.reason || '',
-                rp.id,
-            ]);
+            `, [u.fullName, req.body.reason || '', rp.id]);
 
         } else if (action === 'process-manager-approve') {
             if (rp.status !== 'final_review') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             await client.query(`
@@ -1115,10 +1162,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         } else if (action === 'process-manager-revert') {
             if (rp.status !== 'final_review') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             await client.query(`
@@ -1132,11 +1176,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                     process_updated_at = NOW()
                 WHERE id = ?
             `, [
-                JSON.stringify({
-                    note: req.body.reason || 'Returned to processor review',
-                    revertedBy: u.fullName,
-                    revertedFrom: 'final_review',
-                }),
+                JSON.stringify({ note: req.body.reason || 'Returned to processor review', revertedBy: u.fullName, revertedFrom: 'final_review' }),
                 u.fullName,
                 rp.id,
             ]);
@@ -1144,10 +1184,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         } else if (action === 'process-manager-reject') {
             if (rp.status !== 'final_review') {
                 await client.rollback();
-                return res.status(400).json({
-                    success: false,
-                    error: 'Invalid status for this action',
-                });
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
             await client.query(`
@@ -1159,29 +1196,58 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                     rejected_reason = ?,
                     rejected_stage = 'process-manager'
                 WHERE id = ?
+            `, [u.fullName, req.body.reason || '', rp.id]);
+
+        } else if (action === 'revert-approved') {
+            if (rp.status !== 'approved') {
+                await client.rollback();
+                return res.status(400).json({ success: false, error: 'Invalid status for this action' });
+            }
+
+            const rpUser = { departmentClass: rp.departmentClass, selectedDivision: rp.departmentClass };
+            const shortFlow = await isShortFlowDepartment(client, rpUser);
+            const isOwnManagerDept = shortFlow
+                ? u.selectedDivision === rp.departmentClass
+                : u.selectedDivision === rp.processedByDepartment;
+
+            const canRevertApproved =
+                isAdmin ||
+                (Number(u.jobLevelRank || 0) >= 3 && isOwnManagerDept);
+
+            if (!canRevertApproved) {
+                await client.rollback();
+                return res.status(403).json({ success: false, error: 'Tidak ada akses untuk revert RP yang sudah approved' });
+            }
+
+            await client.query(`
+                UPDATE rp_request
+                SET
+                    status = 'waiting_manager',
+                    manager_approved_by = NULL,
+                    manager_approved_at = NULL,
+                    process_manager_approved_by = NULL,
+                    process_manager_approved_at = NULL,
+                    process_changes = ?,
+                    process_updated_by = ?,
+                    process_updated_at = NOW()
+                WHERE id = ?
             `, [
+                JSON.stringify({ note: req.body.reason || 'Reverted from approved', revertedBy: u.fullName, revertedFrom: 'approved' }),
                 u.fullName,
-                req.body.reason || '',
                 rp.id,
             ]);
 
         } else if (action === 'delete') {
             if (!isAdmin) {
                 await client.rollback();
-                return res.status(403).json({
-                    success: false,
-                    error: 'Hanya administrator yang dapat menghapus RP',
-                });
+                return res.status(403).json({ success: false, error: 'Hanya administrator yang dapat menghapus RP' });
             }
 
             await client.query('DELETE FROM rp_request WHERE id = ?', [rp.id]);
 
         } else {
             await client.rollback();
-            return res.status(400).json({
-                success: false,
-                error: 'Unknown action',
-            });
+            return res.status(400).json({ success: false, error: 'Unknown action' });
         }
 
         await client.commit();
