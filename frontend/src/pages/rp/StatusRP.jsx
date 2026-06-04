@@ -31,12 +31,12 @@ function getRpTotal(rp) {
 }
 
 const STATUS_CONFIG = {
-  waiting_manager: { label: 'Manager Approval', bg: '#fffbeb', color: '#b45309', border: '#fde68a', icon: 'schedule' },
-  division_review: { label: 'Diproses', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'autorenew' },
-  final_review:  { label: 'Approval Proses', bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', icon: 'gavel' },
-  approved:        { label: 'Approved', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'check_circle' },
-  REJECTED:        { label: 'Rejected', bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', icon: 'cancel' },
-  CREATED_FRP:     { label: 'FRP Dibuat', bg: '#f0fdfa', color: '#0f766e', border: '#99f6e4', icon: 'receipt_long' },
+  waiting_manager: { label: 'waiting_manager', bg: '#fffbeb', color: '#b45309', border: '#fde68a', icon: 'schedule' },
+  division_review: { label: 'division_review', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: 'autorenew' },
+  final_review:  { label: 'final_review', bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe', icon: 'gavel' },
+  approved:        { label: 'approved', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: 'check_circle' },
+  REJECTED:        { label: 'REJECTED', bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', icon: 'cancel' },
+  CREATED_FRP:     { label: 'CREATED_FRP', bg: '#f0fdfa', color: '#0f766e', border: '#99f6e4', icon: 'receipt_long' },
 }
 
 function StatusBadge({ status }) {
@@ -642,12 +642,12 @@ export default function StatusRP() {
                       value={filters.status}
                       onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
                       options={[
-                        { value: 'waiting_manager', label: 'Manager Approval' },
-                        { value: 'division_review', label: 'Diproses' },
-                        { value: 'final_review', label: 'Approval Proses' },
-                        { value: 'approved', label: 'Approved' },
-                        { value: 'REJECTED', label: 'Rejected' },
-                        { value: 'CREATED_FRP', label: 'FRP Dibuat' },
+                        { value: 'waiting_manager', label: 'waiting_manager' },
+                        { value: 'division_review', label: 'division_review' },
+                        { value: 'final_review', label: 'final_review' },
+                        { value: 'approved', label: 'approved' },
+                        { value: 'REJECTED', label: 'REJECTED' },
+                        { value: 'CREATED_FRP', label: 'CREATED_FRP' },
                       ]}
                       placeholder="Semua Status"
                       style={filterInput}
@@ -729,14 +729,26 @@ export default function StatusRP() {
                           </div>
                         ))}
                       </div>
-                      <div onClick={(e) => e.stopPropagation()}>
+                      <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: '8px' }}>
                         <button
                           type="button"
                           onClick={() => setDetailRequest(req)}
-                          style={{ width: '100%', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}
+                          style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit' }}
                         >
-                          Lihat Detail
+                          <span className="material-icons-round" style={{ fontSize: '15px' }}>open_in_new</span>
+                          Detail
                         </button>
+                        {req.canRevert && user?.role === 'administrator' && (
+                          <button
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() => setConfirmRevert(req)}
+                            style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#fef9c3', color: '#92400e', border: '1px solid #fde68a', padding: '8px', borderRadius: '8px', cursor: actionLoading ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '13px', fontFamily: 'inherit', opacity: actionLoading ? 0.7 : 1 }}
+                          >
+                            <span className="material-icons-round" style={{ fontSize: '15px' }}>restart_alt</span>
+                            Revert
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
@@ -757,13 +769,13 @@ export default function StatusRP() {
               <div className="frp-items-scrollable" style={{ flex: 1, minHeight: 0, overflowX: 'hidden' }}>
                 <table className="frp-table">
                   <colgroup>
-                    <col style={{ width: '16%' }} />
+                    <col style={{ width: '15%' }} />
+                    <col style={{ width: '11%' }} />
+                    <col style={{ width: '17%' }} />
+                    <col style={{ width: '15%' }} />
+                    <col style={{ width: '13%' }} />
                     <col style={{ width: '12%' }} />
-                    <col style={{ width: '18%' }} />
-                    <col style={{ width: '16%' }} />
-                    <col style={{ width: '14%' }} />
-                    <col style={{ width: '12%' }} />
-                    <col style={{ width: '12%' }} />
+                    <col style={{ width: '17%' }} />
                   </colgroup>
                   <thead>
                     <tr>
@@ -774,12 +786,12 @@ export default function StatusRP() {
                         { label: 'Divisi', key: 'divisi' },
                         { label: 'Total', key: 'total' },
                         { label: 'Status', key: 'status' },
-                        { label: 'Detail', key: null },
+                        { label: 'Aksi', key: null },
                       ].map(({ label, key }) => (
                         <th
                           key={label}
                           className="frp-th"
-                          style={{ cursor: key ? 'pointer' : 'default', textAlign: label === 'Detail' ? 'right' : 'left' }}
+                          style={{ cursor: key ? 'pointer' : 'default', textAlign: label === 'Aksi' ? 'right' : 'left' }}
                           onClick={() => key && toggleSort(key)}
                         >
                           {label}
@@ -814,27 +826,45 @@ export default function StatusRP() {
                           <td className="frp-td" style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: '0.82rem' }}>{formatCurrency(total)}</td>
                           <td className="frp-td"><StatusBadge status={req.status} /></td>
                           <td className="frp-td" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'right' }}>
-                            <button
-                              type="button"
-                              onClick={() => setDetailRequest(req)}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                background: '#eff6ff', color: '#1d4ed8',
-                                border: '1px solid #bfdbfe', padding: '6px 12px',
-                                borderRadius: '8px', cursor: 'pointer',
-                                fontWeight: 600, fontSize: '12px', fontFamily: 'inherit',
-                                transition: 'all 0.2s',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#dbeafe'
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#eff6ff'
-                              }}
-                            >
-                              <span className="material-icons-round" style={{ fontSize: '15px' }}>open_in_new</span>
-                              Detail
-                            </button>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '30px', padding: '3px', gap: '3px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                              <button
+                                type="button"
+                                onClick={() => setDetailRequest(req)}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                  background: '#eff6ff', color: '#1d4ed8',
+                                  border: '1px solid #bfdbfe', padding: '5px 10px',
+                                  borderRadius: '24px', cursor: 'pointer',
+                                  fontWeight: 600, fontSize: '12px', fontFamily: 'inherit',
+                                  transition: 'all 0.2s',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#dbeafe' }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = '#eff6ff' }}
+                              >
+                                <span className="material-icons-round" style={{ fontSize: '14px' }}>open_in_new</span>
+                                Detail
+                              </button>
+                              {req.canRevert && user?.role === 'administrator' && (
+                                <button
+                                  type="button"
+                                  disabled={actionLoading}
+                                  onClick={() => setConfirmRevert(req)}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                    background: '#fef9c3', color: '#92400e',
+                                    border: '1px solid #fde68a', padding: '5px 10px',
+                                    borderRadius: '24px', cursor: actionLoading ? 'not-allowed' : 'pointer',
+                                    fontWeight: 600, fontSize: '12px', fontFamily: 'inherit',
+                                    transition: 'all 0.2s', opacity: actionLoading ? 0.7 : 1,
+                                  }}
+                                  onMouseEnter={(e) => { if (!actionLoading) e.currentTarget.style.background = '#fef08a' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = '#fef9c3' }}
+                                >
+                                  <span className="material-icons-round" style={{ fontSize: '14px' }}>restart_alt</span>
+                                  Revert
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )

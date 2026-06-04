@@ -135,3 +135,4 @@ if (IS_DEV) {
         wsProxy.upgrade(req, socket, head);
     });
 }
+// Restart trigger

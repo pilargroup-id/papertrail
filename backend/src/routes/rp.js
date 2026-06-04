@@ -201,22 +201,18 @@ async function validateRpBudgetAccess(client, user, items) {
 
 router.get('/rp', checkAuth, (req, res) => res.sendSPA());
 
-async function isShortFlowDepartment(client, user) {
+// Short flow = only IT & HCGA: manager-approve goes directly to 'approved'
+// All other departments must go through division_review → final_review → approved
+const SHORT_FLOW_DEPARTMENTS = ['IT', 'HCGA', 'IT & HCGA'];
+
+function isShortFlowDepartment(client, user) {
     const departmentClass = String(
         user.departmentClass || user.selectedDivision || ''
-    ).trim();
+    ).trim().toUpperCase();
 
-    const [rows] = await client.query(`
-        SELECT 1 FROM budget_access_policies
-        WHERE module = 'RP'
-          AND flow = 'CREATE'
-          AND department_class = ?
-          AND can_cross_department_budget = 1
-          AND is_active = 1
-        LIMIT 1
-    `, [departmentClass]);
-
-    return rows.length > 0;
+    return SHORT_FLOW_DEPARTMENTS.some(
+        d => d.toUpperCase() === departmentClass
+    );
 }
 
 async function getRpLookScope(user) {

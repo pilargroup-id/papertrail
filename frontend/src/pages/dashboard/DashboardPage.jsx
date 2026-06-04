@@ -163,8 +163,6 @@ export default function DashboardPage() {
     }
 
     fetchDashboard()
-    const interval = setInterval(fetchDashboard, 30000) // auto-refresh setiap 30 detik
-    return () => clearInterval(interval)
   }, [])
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT

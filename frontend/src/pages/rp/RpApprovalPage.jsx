@@ -18,12 +18,12 @@ const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
 
 const STATUS_META = {
-  waiting_manager: { label: 'Menunggu Manager', background: '#fef3c7', color: '#92400e' },
-  division_review: { label: 'Menunggu Proses', background: '#dbeafe', color: '#1d4ed8' },
-  final_review: { label: 'Approval Proses', background: '#ede9fe', color: '#6d28d9' },
-  approved: { label: 'Approved', background: '#bbf7d0', color: '#166534' },
-  REJECTED: { label: 'Rejected', background: '#fecaca', color: '#991b1b' },
-  CREATED_FRP: { label: 'Created FRP', background: '#cffafe', color: '#0e7490' },
+  waiting_manager: { label: 'waiting_manager', background: '#fef3c7', color: '#92400e' },
+  division_review: { label: 'division_review', background: '#dbeafe', color: '#1d4ed8' },
+  final_review: { label: 'final_review', background: '#ede9fe', color: '#6d28d9' },
+  approved: { label: 'approved', background: '#bbf7d0', color: '#166534' },
+  REJECTED: { label: 'REJECTED', background: '#fecaca', color: '#991b1b' },
+  CREATED_FRP: { label: 'CREATED_FRP', background: '#cffafe', color: '#0e7490' },
 }
 
 const ACTION_META = {
@@ -137,7 +137,7 @@ export default function RpApprovalPage() {
     { key: 'pending', label: 'Manager Approval', icon: 'hourglass_top' },
     { key: 'process', label: 'Proses Divisi', icon: 'engineering' },
     { key: 'process-approval', label: 'Approval Proses', icon: 'verified' },
-    { key: 'approved', label: 'Selesai', icon: 'done_all' },
+    { key: 'approved', label: 'Done', icon: 'done_all' },
   ]
 
   const loadData = (view = tab) => {
@@ -165,8 +165,6 @@ export default function RpApprovalPage() {
 
   useEffect(() => {
     loadData(tab)
-    const interval = setInterval(() => loadData(tab), 30000) // auto-refresh setiap 30 detik
-    return () => clearInterval(interval)
   }, [tab])
 
   useEffect(() => {
@@ -960,6 +958,7 @@ export default function RpApprovalPage() {
           </div>
 
           <DataTableRp
+            tab={tab}
             loading={loading}
             isMobile={isMobile}
             paginated={paginated}

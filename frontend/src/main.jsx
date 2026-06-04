@@ -7,7 +7,7 @@ import './styles/templateComponents.css'
 import './styles/style.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
+  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <App />
   </BrowserRouter>
 )

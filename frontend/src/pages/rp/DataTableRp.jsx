@@ -3,12 +3,12 @@ import ButtonDetailStatusRp from '../../components/button/ButtonDetailStatusRp.j
 
 
 const STATUS_META = {
-  waiting_manager: { label: 'Menunggu Manager', background: '#fef3c7', color: '#92400e' },
-  division_review: { label: 'Menunggu Proses', background: '#dbeafe', color: '#1d4ed8' },
-  final_approved: { label: 'Approval Proses', background: '#ede9fe', color: '#6d28d9' },
-  approved: { label: 'Approved', background: '#bbf7d0', color: '#166534' },
-  REJECTED: { label: 'Rejected', background: '#fecaca', color: '#991b1b' },
-  CREATED_FRP: { label: 'Created FRP', background: '#cffafe', color: '#0e7490' },
+  waiting_manager: { label: 'waiting_manager', background: '#fef3c7', color: '#92400e' },
+  division_review: { label: 'division_review', background: '#dbeafe', color: '#1d4ed8' },
+  final_review: { label: 'final_review', background: '#ede9fe', color: '#6d28d9' },
+  approved: { label: 'approved', background: '#bbf7d0', color: '#166534' },
+  REJECTED: { label: 'REJECTED', background: '#fecaca', color: '#991b1b' },
+  CREATED_FRP: { label: 'CREATED_FRP', background: '#cffafe', color: '#0e7490' },
 }
 
 function parseNumber(value) {
@@ -63,6 +63,7 @@ const desktopHeaders = [
 const desktopColumnWidths = ['15%', '15%', '9%', '11%', '13%', '13%', '18%']
 
 export default function DataTableRp({
+  tab,
   loading,
   isMobile,
   paginated,
@@ -327,7 +328,12 @@ export default function DataTableRp({
                         Detail Item
                       </span>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {renderRowActions(rp, { showDetail: true, showPreview: true, showKeFrp: true, showActions: true })}
+                        {renderRowActions(rp, { 
+                          showDetail: true, 
+                          showPreview: tab === 'approved', 
+                          showKeFrp: tab === 'approved', 
+                          showActions: tab !== 'approved' 
+                        })}
                       </div>
                     </div>
 
@@ -651,11 +657,17 @@ export default function DataTableRp({
                     </td>
                     {/* Action Column */}
                     <td style={{ ...td, borderRight: 'none' }} onClick={(e) => e.stopPropagation()}>
-                      {renderRowActions(rp, { showDetail: false, showPreview: false, showKeFrp: false, showActions: true, showRevert: false })}
+                      {renderRowActions(rp, { 
+                        showDetail: false, 
+                        showPreview: tab === 'approved', 
+                        showKeFrp: tab === 'approved', 
+                        showActions: tab !== 'approved', 
+                        showRevert: false 
+                      })}
                     </td>
                   </tr>
 
-                  {/* Accordion row — tombol aksi & detail items */}
+                  {/* Accordion row — detail items */}
                   {isOpen && (
                     <tr key={`${rp.id}-accordion`}>
                       <td
@@ -683,10 +695,10 @@ export default function DataTableRp({
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                               <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span className="material-icons-round" style={{ fontSize: '16px', color: '#3b82f6' }}>receipt_long</span>
-                                Detail Item & Anggaran
+                                Detail Item &amp; Anggaran
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                {renderRowActions(rp, { showDetail: true, showPreview: true, showKeFrp: true, showActions: false })}
+                                {renderRowActions(rp, { showDetail: true, showPreview: true, showKeFrp: true, showActions: false, showRevert: true })}
                               </div>
                             </div>
                             

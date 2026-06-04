@@ -354,8 +354,6 @@ export default function ApprovalFRP() {
 
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 30000) // auto-refresh setiap 30 detik
-    return () => clearInterval(interval)
   }, [isApprovedView])
 
   useEffect(() => {
