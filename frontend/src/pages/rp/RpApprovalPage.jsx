@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
-import DataTableRp from './DataTableRp'
+import DataTableRp from '../../components/table/DataTableRp'
 import ButtonApprove from '../../components/button/ButtonApprove.jsx'
 import ButtonReject from '../../components/button/ButtonReject.jsx'
 import ButtonRevert from '../../components/button/ButtonRevert.jsx'
@@ -464,11 +464,11 @@ export default function RpApprovalPage() {
             gap: '4px',
             boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
           }}>
-            {showDetailActionPill && (
-              <ButtonDetail variant="approve" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
-            )}
             {showRevertAction && (
               <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
+            )}
+            {showDetailActionPill && (
+              <ButtonDetail variant="approve" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
             )}
           </div>
         )}

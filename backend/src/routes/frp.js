@@ -515,7 +515,14 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
 // FRP CRUD
 // ============================================================
 
-router.post('/api/frp/:id/attachment', checkAuth, upload.single('attachment'), async (req, res) => {
+router.post('/api/frp/:id/attachment', checkAuth, (req, res, next) => {
+    upload.single('attachment')(req, res, function (err) {
+        if (err) {
+            return res.status(400).json({ success: false, error: err.message });
+        }
+        next();
+    });
+}, async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, error: 'File tidak ditemukan' });

@@ -6,6 +6,10 @@ const ALLOWED_MIMETYPES = [
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/jpg',
 ];
 
 const MAX_SIZE_MB = 10;
@@ -17,7 +21,7 @@ const upload = multer({
         if (ALLOWED_MIMETYPES.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error('Format file tidak didukung. Hanya PDF, DOC, DOCX, XLS, XLSX.'));
+            cb(new Error('Format file tidak didukung. Hanya PDF, DOC, DOCX, XLS, XLSX, JPG, JPEG, PNG, WEBP.'));
         }
     },
 });

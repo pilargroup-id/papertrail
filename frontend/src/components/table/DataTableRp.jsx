@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import ButtonDetailStatusRp from '../../components/button/ButtonDetailStatusRp.jsx'
+import ButtonDetailStatusRp from '../button/ButtonDetailStatusRp.jsx'
 
 
 const STATUS_META = {

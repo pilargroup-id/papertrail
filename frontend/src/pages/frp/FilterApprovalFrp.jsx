@@ -144,7 +144,7 @@ export default function FilterMonitorRadius({
                 }}
             >
                 <TextField
-                    label="Cari"
+                    label="Search"
                     placeholder="Sales / customer / plan / result"
                     value={filters.query}
                     onChange={(event) => onQueryChange(event.target.value)}

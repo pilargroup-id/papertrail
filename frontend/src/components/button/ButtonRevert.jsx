@@ -15,10 +15,10 @@ function ButtonRevert({
       className={className}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
-        background: isHovered ? '#ffedd5' : 'white',
-        color: isHovered ? '#c2410c' : '#f97316', 
+        background: isHovered ? '#fee2e2' : 'white',
+        color: isHovered ? '#dc2626' : '#ef4444', 
         border: '1px solid transparent', 
-        borderColor: isHovered ? '#fdba74' : 'transparent',
+        borderColor: isHovered ? '#fca5a5' : 'transparent',
         borderRadius: '24px',
         padding: '4px 10px', 
         fontSize: '11px', 

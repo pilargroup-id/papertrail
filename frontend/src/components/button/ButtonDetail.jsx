@@ -16,7 +16,7 @@ function ButtonDetail({
         className={className}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: '4px',
-          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
           color: 'white', 
           border: 'none', 
           borderRadius: '24px',
@@ -24,7 +24,7 @@ function ButtonDetail({
           fontSize: '11px', 
           fontWeight: 600,
           cursor: 'pointer',
-          boxShadow: isHovered ? '0 4px 10px rgba(59,130,246,0.4)' : '0 2px 6px rgba(59,130,246,0.3)',
+          boxShadow: isHovered ? '0 4px 10px rgba(16,185,129,0.4)' : '0 2px 6px rgba(16,185,129,0.3)',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
         }}
