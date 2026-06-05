@@ -3628,3 +3628,5 @@ select {
   flex-shrink: 0;
   color: var(--secondary-blue);
 }
+
+.sidebar-copyright { flex-shrink: 0; margin: 0 1rem; padding: 0.85rem 0.25rem 1.1rem; border-top: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.62); text-align: center; font-size: 0.68rem; font-weight: 500; line-height: 1.45; } .sidebar-copyright p { margin: 0; } .sidebar-copyright p + p { margin-top: 0.25rem; } .sidebar.collapsed .sidebar-copyright { margin: 0 0.75rem; padding: 0.75rem 0 0.9rem; font-size: 0; } .sidebar.collapsed .sidebar-copyright p { display: none; } .sidebar.collapsed .sidebar-copyright::before { content: '\00a9 2026'; display: inline-flex; align-items: center; justify-content: center; width: 100%; color: rgba(255, 255, 255, 0.62); font-size: 0.68rem; font-weight: 700; line-height: 1; }

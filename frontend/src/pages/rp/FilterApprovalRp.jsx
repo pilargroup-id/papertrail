@@ -68,25 +68,11 @@ function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
 
 function FilterField({ label, icon, children }) {
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
       {label && (
-        <span
-          style={{
-            position: 'absolute',
-            top: '-8px',
-            left: '12px',
-            background: 'white',
-            padding: '0 6px',
-            fontSize: '11px',
-            fontWeight: '700',
-            color: '#64748b',
-            zIndex: 3,
-            pointerEvents: 'none',
-            letterSpacing: '0.02em',
-          }}
-        >
+        <label style={{ fontSize: '12px', fontWeight: '600', color: '#475569', paddingLeft: '4px' }}>
           {label}
-        </span>
+        </label>
       )}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
         {icon && (
@@ -94,8 +80,8 @@ function FilterField({ label, icon, children }) {
             className="material-icons-round"
             style={{
               position: 'absolute',
-              left: '12px',
-              color: '#64748b',
+              left: '14px',
+              color: '#94a3b8',
               fontSize: '18px',
               pointerEvents: 'none',
               zIndex: 3,
@@ -161,7 +147,7 @@ function SearchableSelect({
           alignItems: 'center',
           justifyContent: 'space-between',
           textAlign: 'left',
-          minHeight: style?.minHeight || '42px',
+          minHeight: style?.minHeight || '44px',
           boxShadow: 'none',
         }}
       >
@@ -169,7 +155,7 @@ function SearchableSelect({
           style={{
             display: 'block',
             flex: 1,
-            color: value ? '#1e293b' : '#94a3b8',
+            color: value ? '#0f172a' : '#94a3b8',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -186,28 +172,32 @@ function SearchableSelect({
         <div
           style={{
             position: 'absolute',
-            top: 'calc(100% + 6px)',
+            top: 'calc(100% + 8px)',
             left: 0,
             right: 0,
             background: 'white',
-            border: '1.5px solid #dbe5f0',
+            border: '1px solid #e2e8f0',
             borderRadius: '12px',
-            boxShadow: '0 14px 30px rgba(15, 23, 42, 0.14)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
             zIndex: 200,
             overflow: 'hidden',
+            padding: '6px'
           }}
         >
-          <div style={{ padding: '8px' }}>
-            <input
-              autoFocus
-              type="text"
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              placeholder="Cari..."
-              style={{ ...style, paddingLeft: '10px', fontSize: '0.875rem', padding: '8px 10px', minHeight: 'unset' }}
-            />
+          <div style={{ padding: '4px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <span className="material-icons-round" style={{ position: 'absolute', left: '10px', fontSize: '16px', color: '#94a3b8' }}>search</span>
+              <input
+                autoFocus
+                type="text"
+                value={search}
+                onChange={event => setSearch(event.target.value)}
+                placeholder="Cari..."
+                style={{ ...style, paddingLeft: '32px', fontSize: '0.875rem', padding: '8px 10px 8px 32px', minHeight: '38px', borderRadius: '8px' }}
+              />
+            </div>
           </div>
-          <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ maxHeight: '240px', overflowY: 'auto', marginTop: '4px' }}>
             <button
               type="button"
               onClick={() => {
@@ -222,9 +212,13 @@ function SearchableSelect({
                 padding: '10px 12px',
                 fontFamily: 'inherit',
                 fontSize: '0.875rem',
-                color: '#94a3b8',
+                color: '#64748b',
                 cursor: 'pointer',
+                borderRadius: '8px',
+                transition: 'background 0.2s'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
             >
               {placeholder}
             </button>
@@ -239,18 +233,22 @@ function SearchableSelect({
                 style={{
                   width: '100%',
                   border: 'none',
-                  borderTop: '1px solid #f8fafc',
                   background: option.value === value ? '#eff6ff' : 'white',
-                  color: option.value === value ? '#1f4e8c' : '#1e293b',
+                  color: option.value === value ? '#1f4e8c' : '#334155',
                   textAlign: 'left',
                   padding: '10px 12px',
                   fontFamily: 'inherit',
                   fontSize: '0.875rem',
                   cursor: 'pointer',
-                  fontWeight: option.value === value ? 700 : 500,
+                  fontWeight: option.value === value ? 600 : 400,
                   whiteSpace: 'normal',
                   wordBreak: 'break-word',
+                  borderRadius: '8px',
+                  marginTop: '2px',
+                  transition: 'background 0.2s'
                 }}
+                onMouseEnter={(e) => { if (option.value !== value) e.currentTarget.style.background = '#f8fafc' }}
+                onMouseLeave={(e) => { if (option.value !== value) e.currentTarget.style.background = 'white' }}
               >
                 {option.label}
               </button>
@@ -280,16 +278,17 @@ export default function FilterApprovalRp({
 }) {
   const filterInput = {
     width: '100%',
-    padding: '9px 12px 9px 36px',
+    padding: '10px 14px 10px 40px',
     borderRadius: '12px',
-    border: '1.5px solid #dbe5f0',
+    border: '1px solid #e2e8f0',
     fontSize: '13px',
-    background: 'white',
+    background: '#f8fafc',
     boxSizing: 'border-box',
     fontFamily: 'inherit',
     outline: 'none',
-    color: '#1e293b',
-    minHeight: '42px',
+    color: '#0f172a',
+    minHeight: '44px',
+    transition: 'all 0.2s ease',
   }
 
   const handleReset = () => {
@@ -312,15 +311,17 @@ export default function FilterApprovalRp({
           transition: all 0.2s ease-in-out;
         }
         .filter-input-element:focus, .filter-input-element:hover {
-          border-color: #1e4e8c !important;
-          box-shadow: 0 0 0 3px rgba(30, 78, 140, 0.15) !important;
+          background: white !important;
+          border-color: #1f4e8c !important;
+          box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.15) !important;
         }
         .select-dropdown-btn {
           transition: all 0.2s ease-in-out;
         }
         .select-dropdown-btn:focus, .select-dropdown-btn:hover {
-          border-color: #1e4e8c !important;
-          box-shadow: 0 0 0 3px rgba(30, 78, 140, 0.15) !important;
+          background: white !important;
+          border-color: #1f4e8c !important;
+          box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.15) !important;
         }
       `}</style>
       <div
@@ -331,7 +332,7 @@ export default function FilterApprovalRp({
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+        {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '38px',
@@ -383,7 +384,7 @@ export default function FilterApprovalRp({
               <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div
           style={{
@@ -471,18 +472,31 @@ export default function FilterApprovalRp({
           </div>
 
           {hasActiveFilters && (
-            <button
-              onClick={handleReset}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '4px',
-                padding: '9px 14px', borderRadius: '10px', border: '1.5px solid #e2e8f0',
-                background: 'white', color: '#64748b', fontSize: '13px', fontWeight: 600,
-                cursor: 'pointer', fontFamily: 'inherit', minHeight: '42px',
-              }}
-            >
-              <span className="material-icons-round" style={{ fontSize: '16px' }}>close</span>
-              Reset
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ height: '18px' }} /> {/* Spacer for label alignment */}
+              <button
+                onClick={handleReset}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '0 16px', borderRadius: '12px', border: '1px solid #e2e8f0',
+                  background: 'white', color: '#64748b', fontSize: '13px', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit', height: '44px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f8fafc'
+                  e.currentTarget.style.color = '#0f172a'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white'
+                  e.currentTarget.style.color = '#64748b'
+                }}
+              >
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
+                Reset
+              </button>
+            </div>
           )}
         </div>
       </div>

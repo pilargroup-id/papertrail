@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
-import DataTableRp from '../../components/table/DataTableRp'
+import DataTableRp from '../../components/table/DataTableApprovalRp.jsx'
 import ButtonApprove from '../../components/button/ButtonApprove.jsx'
 import ButtonReject from '../../components/button/ButtonReject.jsx'
 import ButtonRevert from '../../components/button/ButtonRevert.jsx'
@@ -13,6 +13,7 @@ import ButtonPrintPdf from '../../components/button/ButtonPrintPdf.jsx'
 import ButtonCheckData from '../../components/button/ButtonCheckData.jsx'
 import ButtonKeFrp from '../../components/button/ButtonKeFrp.jsx'
 import FilterApprovalRp from './FilterApprovalRp.jsx'
+import TabsFilterApprovalRp from './TabsFilterApprovalRp.jsx'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -132,13 +133,6 @@ export default function RpApprovalPage() {
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
-
-  const tabs = [
-    { key: 'pending', label: 'Manager Approval', icon: 'hourglass_top' },
-    { key: 'process', label: 'Proses Divisi', icon: 'engineering' },
-    { key: 'process-approval', label: 'Approval Proses', icon: 'verified' },
-    { key: 'approved', label: 'Done', icon: 'done_all' },
-  ]
 
   const loadData = (view = tab) => {
     setLoading(true)
@@ -719,7 +713,7 @@ export default function RpApprovalPage() {
                       ))}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#92400e', marginTop: '8px' }}>
-                      Diubah oleh: {selected.processUpdatedBy || '-'} {selected.processUpdatedAt ? `(${formatDate(selected.processUpdatedAt)})` : ''}
+                      Modified by: {selected.processUpdatedBy || '-'} {selected.processUpdatedAt ? `(${formatDate(selected.processUpdatedAt)})` : ''}
                     </div>
                   </div>
                 )}
@@ -862,100 +856,15 @@ export default function RpApprovalPage() {
           />
 
           {/* TABS INSIDE CARD, BELOW FILTER, ABOVE TABLE */}
-          <div style={{ padding: isMobile ? '0 12px 12px 12px' : '0 24px 16px 24px', background: 'white' }}>
-            {isMobile ? (
-              <div ref={tabDropdownRef} style={{ position: 'relative' }}>
-                <button
-                  type="button"
-                  onClick={() => setTabDropdownOpen(v => !v)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '12px', border: '2px solid #1f4e8c', background: '#eff6ff', color: '#1f4e8c', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem' }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="material-icons-round" style={{ fontSize: '18px' }}>{tabs.find(t => t.key === tab)?.icon}</span>
-                    {tabs.find(t => t.key === tab)?.label}
-                    <span style={{ background: '#1f4e8c', color: 'white', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[tab] ?? 0}</span>
-                  </span>
-                  <span className="material-icons-round" style={{ fontSize: '20px' }}>{tabDropdownOpen ? 'expand_less' : 'expand_more'}</span>
-                </button>
-                {tabDropdownOpen && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'white', border: '1.5px solid #dbe5f0', borderRadius: '12px', boxShadow: '0 14px 30px rgba(15,23,42,0.14)', zIndex: 50, overflow: 'hidden' }}>
-                    {tabs.map(item => {
-                      const active = tab === item.key
-                      return (
-                        <button
-                          key={item.key}
-                          type="button"
-                          onClick={() => { setTab(item.key); setTabDropdownOpen(false) }}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '11px 14px', border: 'none', borderTop: '1px solid #f1f5f9', background: active ? '#eff6ff' : 'white', color: active ? '#1f4e8c' : '#334155', fontWeight: active ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.875rem', textAlign: 'left' }}
-                        >
-                          <span className="material-icons-round" style={{ fontSize: '18px', flexShrink: 0 }}>{item.icon}</span>
-                          <span style={{ flex: 1 }}>{item.label}</span>
-                          <span style={{ background: active ? '#1f4e8c' : '#e2e8f0', color: active ? 'white' : '#475569', borderRadius: '999px', fontSize: '11px', fontWeight: 700, padding: '1px 8px', lineHeight: 1.6 }}>{D.counts?.[item.key] ?? 0}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', background: '#f8fafc', padding: '6px', borderRadius: '16px', border: '1px solid #e2e8f0', width: '100%', boxSizing: 'border-box' }}>
-                {tabs.map(item => {
-                  const count = D.counts?.[item.key] ?? 0
-                  const active = tab === item.key
-                  return (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setTab(item.key)}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 16px',
-                        borderRadius: '12px',
-                        border: 'none',
-                        background: active ? 'white' : 'transparent',
-                        color: active ? '#1e40af' : '#64748b',
-                        fontWeight: active ? 700 : 600,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: '0.85rem',
-                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: active ? '0 2px 8px rgba(15, 23, 42, 0.06)' : 'none',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.color = '#334155'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.color = '#64748b'
-                        }
-                      }}
-                    >
-                      <span className="material-icons-round" style={{ fontSize: '18px' }}>{item.icon}</span>
-                      {item.label}
-                      <span style={{
-                        background: active ? '#1e40af' : '#e2e8f0',
-                        color: active ? 'white' : '#64748b',
-                        borderRadius: '20px',
-                        padding: '2px 8px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        marginLeft: '4px',
-                        transition: 'all 0.2s'
-                      }}>
-                        {count}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <TabsFilterApprovalRp
+            isMobile={isMobile}
+            tab={tab}
+            setTab={setTab}
+            counts={D.counts}
+            tabDropdownOpen={tabDropdownOpen}
+            setTabDropdownOpen={setTabDropdownOpen}
+            tabDropdownRef={tabDropdownRef}
+          />
 
           <DataTableRp
             tab={tab}

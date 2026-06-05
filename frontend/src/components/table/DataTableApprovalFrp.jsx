@@ -25,12 +25,12 @@ const statusColors = {
 }
 
 const desktopHeaders = [
-  { label: 'Ringkasan', key: 'date' },
-  { label: 'Pemohon & Vendor', key: 'requester' },
-  { label: 'Divisi', key: 'division' },
+  { label: 'FRP Number', key: 'date' },
+  { label: 'Requested by & Vendor', key: 'requester' },
+  { label: 'Division', key: 'division' },
   { label: 'Total', key: 'total' },
   { label: 'Status', key: 'status' },
-  { label: 'Attach', key: null },
+  { label: 'Attachment', key: null },
   { label: 'Action', key: null },
 ]
 
@@ -208,14 +208,23 @@ export default function DataTableApprovalFrp({
                       rel="noreferrer"
                       style={{
                         width: '100%',
-                        display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
-                        background: '#f8fafc', color: '#475569',
-                        border: '1px solid #cbd5e1', borderRadius: '24px', padding: '5px 10px',
-                        fontSize: '11px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)', boxSizing: 'border-box'
+                        display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '6px',
+                        background: 'white', color: '#3b82f6',
+                        border: '1px solid #bfdbfe', borderRadius: '24px', padding: '8px 12px',
+                        fontSize: '12px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)', boxSizing: 'border-box',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#eff6ff'
+                        e.currentTarget.style.borderColor = '#93c5fd'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white'
+                        e.currentTarget.style.borderColor = '#bfdbfe'
                       }}
                     >
-                      <span className="material-icons-round" style={{ fontSize: '14px' }}>attach_file</span>
+                      <span className="material-icons-round" style={{ fontSize: '16px' }}>description</span>
                       Lihat Dokumen
                     </a>
                   )}
@@ -491,14 +500,26 @@ export default function DataTableApprovalFrp({
                             onClick={(e) => e.stopPropagation()}
                             style={{
                               display: 'inline-flex', alignItems: 'center', gap: '4px',
-                              background: '#f8fafc', color: '#475569',
-                              border: '1px solid #cbd5e1', padding: '4px 8px',
-                              borderRadius: '8px', cursor: 'pointer',
-                              fontWeight: 600, fontSize: '11px', textDecoration: 'none'
+                              background: 'white', color: '#3b82f6',
+                              border: '1px solid #bfdbfe', padding: '6px 10px',
+                              borderRadius: '24px', cursor: 'pointer',
+                              fontWeight: 600, fontSize: '11px', textDecoration: 'none',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#eff6ff'
+                              e.currentTarget.style.borderColor = '#93c5fd'
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(59,130,246,0.1)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'white'
+                              e.currentTarget.style.borderColor = '#bfdbfe'
+                              e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'
                             }}
                           >
-                            <span className="material-icons-round" style={{ fontSize: '14px' }}>attach_file</span>
-                            File
+                            <span className="material-icons-round" style={{ fontSize: '14px' }}>description</span>
+                            Dokumen
                           </a>
                         ) : (
                           <span style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>-</span>
@@ -721,39 +742,6 @@ export default function DataTableApprovalFrp({
                                         </div>
                                       </div>
                                     )}
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); setSelectedRequest(request); }}
-                                        style={{
-                                          display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                          background: 'white',
-                                          color: '#3b82f6', 
-                                          border: '1px solid transparent', 
-                                          borderRadius: '24px',
-                                          padding: '4px 10px', 
-                                          fontSize: '11px', 
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                          e.currentTarget.style.background = '#eff6ff'
-                                          e.currentTarget.style.color = '#2563eb'
-                                          e.currentTarget.style.borderColor = '#93c5fd'
-                                        }}
-                                        onMouseLeave={(e) => {
-                                          e.currentTarget.style.background = 'white'
-                                          e.currentTarget.style.color = '#3b82f6'
-                                          e.currentTarget.style.borderColor = 'transparent'
-                                        }}
-                                      >
-                                        <span className="material-icons-round" style={{ fontSize: '14px' }}>open_in_new</span>
-                                        Detail
-                                      </button>
-                                    </div>
                                   </div>
                                 </div>
                                 <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'rgba(255, 255, 255, 0.6)' }}>

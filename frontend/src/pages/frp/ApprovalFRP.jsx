@@ -647,7 +647,7 @@ export default function ApprovalFRP() {
               flexShrink: 0,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: '38px',
@@ -699,7 +699,7 @@ export default function ApprovalFRP() {
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
                 </button>
               </div>
-            </div>
+            </div> */}
 
             <div
               style={{

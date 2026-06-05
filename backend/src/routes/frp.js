@@ -626,7 +626,14 @@ router.get('/api/frp/:id/attachment', checkAuth, async (req, res) => {
         const [signedUrl] = await bucket.file(attachmentLink).getSignedUrl({
             action: 'read',
             expires: Date.now() + 15 * 60 * 1000, // 15 menit
+            responseDisposition: 'inline',
         });
+
+        const ext = path.extname(attachmentLink).toLowerCase();
+        const officeExts = ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+        if (officeExts.includes(ext)) {
+            return res.redirect(`https://docs.google.com/viewer?url=${encodeURIComponent(signedUrl)}`);
+        }
 
         res.redirect(signedUrl);
     } catch (e) {
