@@ -14,20 +14,18 @@ function ButtonKeFrp({
       type={type}
       className={className}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        background: isHovered ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
-        color: '#2563eb',
-        border: `1.5px solid ${isHovered ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.4)'}`,
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        color: 'white', 
+        border: 'none', 
         borderRadius: '24px',
-        padding: '6px 14px',
-        fontSize: '12px',
-        fontWeight: 700,
+        padding: '4px 12px', 
+        fontSize: '11px', 
+        fontWeight: 600,
         cursor: 'pointer',
-        boxShadow: isHovered ? '0 6px 16px rgba(59,130,246,0.1)' : '0 4px 12px rgba(59,130,246,0.05)',
-        transition: 'all 0.2s',
-        backdropFilter: 'blur(8px)',
+        boxShadow: isHovered ? '0 4px 10px rgba(37,99,235,0.4)' : '0 2px 6px rgba(37,99,235,0.3)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

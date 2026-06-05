@@ -14,20 +14,18 @@ function ButtonPrintPdf({
       type={type}
       className={className}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        background: isHovered ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
-        color: '#059669',
-        border: `1.5px solid ${isHovered ? 'rgba(16, 185, 129, 0.6)' : 'rgba(16, 185, 129, 0.4)'}`,
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        background: isHovered ? '#f8fafc' : 'white',
+        color: isHovered ? '#1e293b' : '#334155', 
+        border: '1px solid transparent', 
+        borderColor: isHovered ? '#cbd5e1' : 'transparent',
         borderRadius: '24px',
-        padding: '6px 14px',
-        fontSize: '12px',
-        fontWeight: 700,
+        padding: '4px 10px', 
+        fontSize: '11px', 
+        fontWeight: 600,
         cursor: 'pointer',
-        boxShadow: isHovered ? '0 6px 16px rgba(16,185,129,0.1)' : '0 4px 12px rgba(16,185,129,0.05)',
-        transition: 'all 0.2s',
-        backdropFilter: 'blur(8px)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import ButtonActionApprovalFrp from '../button/ButtonActionApprovalFrp.jsx'
+import { DataTableIdentity } from '../table/DataTable.jsx'
 
 function parseAmount(amount) {
   return parseInt(String(amount || '0').replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0
@@ -26,7 +28,7 @@ const statusColors = {
 
 const desktopHeaders = [
   { label: 'FRP Number', key: 'date' },
-  { label: 'Requested by & Vendor', key: 'requester' },
+  { label: 'Requestor & Vendor', key: 'requester' },
   { label: 'Division', key: 'division' },
   { label: 'Total', key: 'total' },
   { label: 'Status', key: 'status' },
@@ -193,12 +195,12 @@ export default function DataTableApprovalFrp({
                     <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Total</div>
                     <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#0f172a' }}>{formatCurrency(total)}</div>
                   </div>
-                  {isApprovedView && request.approvedBy && (
+                  {/* {isApprovedView && request.approvedBy && (
                     <div style={{ gridColumn: '1 / -1' }}>
                       <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Approved By</div>
                       <div style={{ fontSize: '13px', color: '#1e293b' }}>{request.approvedBy}</div>
                     </div>
-                  )}
+                  )} */}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {request.attachLink && (
@@ -228,82 +230,15 @@ export default function DataTableApprovalFrp({
                       Lihat Dokumen
                     </a>
                   )}
-                  {canApprove && !isApprovedView && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      background: '#f1f5f9',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '30px',
-                      padding: '4px',
-                      gap: '4px',
-                      width: '100%',
-                    }}>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); requestAction(request, 'approve'); }}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          color: 'white', 
-                          border: 'none', 
-                          borderRadius: '24px',
-                          padding: '5px 10px', 
-                          fontSize: '11px', 
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <span className="material-icons-round" style={{ fontSize: '14px' }}>check</span>
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); requestAction(request, 'reject'); }}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
-                          background: 'white',
-                          color: '#ef4444', 
-                          border: '1px solid transparent', 
-                          borderRadius: '24px',
-                          padding: '5px 10px', 
-                          fontSize: '11px', 
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <span className="material-icons-round" style={{ fontSize: '14px' }}>close</span>
-                        Reject
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedRequest(request); }}
-                        style={{
-                          flex: 1,
-                          display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px',
-                          background: 'white',
-                          color: '#3b82f6', 
-                          border: '1px solid transparent', 
-                          borderRadius: '24px',
-                          padding: '5px 10px', 
-                          fontSize: '11px', 
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                          transition: 'all 0.2s',
-                        }}
-                      >
-                        <span className="material-icons-round" style={{ fontSize: '14px' }}>open_in_new</span>
-                        Detail
-                      </button>
-                    </div>
-                  )}
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+                    <ButtonActionApprovalFrp
+                      request={request}
+                      canApprove={canApprove}
+                      isApprovedView={isApprovedView}
+                      requestAction={requestAction}
+                      setSelectedRequest={setSelectedRequest}
+                    />
+                  </div>
                   </div>
                 </div>
               )
@@ -341,16 +276,20 @@ export default function DataTableApprovalFrp({
                   key={header.label}
                   onClick={() => requestSort(header.key)}
                   style={{
-                    padding: '14px 16px',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 6,
+                    padding: '1rem',
                     textAlign: 'left',
-                    color: '#475569',
-                    fontWeight: 700,
-                    fontSize: '11px',
+                    color: '#7f7f7f',
+                    fontFamily: '"IBM Plex Mono", monospace',
+                    fontWeight: 600,
+                    fontSize: '0.76rem',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
+                    letterSpacing: '0.08em',
                     whiteSpace: 'nowrap',
-                    background: '#f8fafc',
-                    borderBottom: '1.5px solid #e2e8f0',
+                    background: 'rgba(24, 43, 88, 0.04)',
+                    borderBottom: '1px solid rgba(26, 42, 87, 0.08)',
                     cursor: header.key ? 'pointer' : 'default',
                     userSelect: 'none',
                   }}
@@ -460,8 +399,10 @@ export default function DataTableApprovalFrp({
 
                       {/* 2. Pemohon & Vendor */}
                       <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                        <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '2px' }}>{request.dimintaOleh || '-'}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>{request.vendor || '-'}</div>
+                        <DataTableIdentity 
+                          title={request.dimintaOleh || '-'} 
+                          subtitle={request.vendor || '-'} 
+                        />
                       </td>
 
                       {/* 3. Divisi */}
@@ -530,178 +471,13 @@ export default function DataTableApprovalFrp({
                       <td style={{ ...td, borderRight: 'none' }}>
                         {((canApprove && !isApprovedView) || request.canRevert) ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
-                            {canApprove && !isApprovedView && (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                background: '#f1f5f9',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '30px',
-                                padding: '4px',
-                                gap: '4px',
-                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                              }}>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); requestAction(request, 'approve'); }}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                    color: 'white', 
-                                    border: 'none', 
-                                    borderRadius: '24px',
-                                    padding: '4px 12px', 
-                                    fontSize: '11px', 
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
-                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-1px)'
-                                    e.currentTarget.style.boxShadow = '0 4px 10px rgba(16,185,129,0.4)'
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)'
-                                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(16,185,129,0.3)'
-                                  }}
-                                >
-                                  <span className="material-icons-round" style={{ fontSize: '14px' }}>check</span>
-                                  Approve
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); requestAction(request, 'reject'); }}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    background: 'white',
-                                    color: '#ef4444', 
-                                    border: '1px solid transparent', 
-                                    borderRadius: '24px',
-                                    padding: '4px 10px', 
-                                    fontSize: '11px', 
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#fee2e2'
-                                    e.currentTarget.style.color = '#dc2626'
-                                    e.currentTarget.style.borderColor = '#fca5a5'
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'white'
-                                    e.currentTarget.style.color = '#ef4444'
-                                    e.currentTarget.style.borderColor = 'transparent'
-                                  }}
-                                >
-                                  <span className="material-icons-round" style={{ fontSize: '14px' }}>close</span>
-                                  Reject
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); setSelectedRequest(request); }}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    background: 'white',
-                                    color: '#3b82f6', 
-                                    border: '1px solid transparent', 
-                                    borderRadius: '24px',
-                                    padding: '4px 10px', 
-                                    fontSize: '11px', 
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#eff6ff'
-                                    e.currentTarget.style.color = '#2563eb'
-                                    e.currentTarget.style.borderColor = '#93c5fd'
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'white'
-                                    e.currentTarget.style.color = '#3b82f6'
-                                    e.currentTarget.style.borderColor = 'transparent'
-                                  }}
-                                >
-                                  <span className="material-icons-round" style={{ fontSize: '14px' }}>open_in_new</span>
-                                  Detail
-                                </button>
-                              </div>
-                            )}
-                            {request.canRevert && isApprovedView && (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                background: '#f1f5f9',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '30px',
-                                padding: '4px',
-                                gap: '4px',
-                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                              }}>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); requestAction(request, 'revert'); }}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    background: 'white',
-                                    color: '#ef4444', 
-                                    border: '1px solid transparent', 
-                                    borderRadius: '24px',
-                                    padding: '4px 10px', 
-                                    fontSize: '11px', 
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#fee2e2'
-                                    e.currentTarget.style.color = '#dc2626'
-                                    e.currentTarget.style.borderColor = '#fca5a5'
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'white'
-                                    e.currentTarget.style.color = '#ef4444'
-                                    e.currentTarget.style.borderColor = 'transparent'
-                                  }}
-                                >
-                                  <span className="material-icons-round" style={{ fontSize: '14px' }}>restart_alt</span>
-                                  Revert
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); setSelectedRequest(request); }}
-                                  style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                    color: 'white', 
-                                    border: 'none', 
-                                    borderRadius: '24px',
-                                    padding: '4px 12px', 
-                                    fontSize: '11px', 
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 6px rgba(16,185,129,0.3)',
-                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-1px)'
-                                    e.currentTarget.style.boxShadow = '0 4px 10px rgba(16,185,129,0.4)'
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(0)'
-                                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(16,185,129,0.3)'
-                                  }}
-                                >
-                                  <span className="material-icons-round" style={{ fontSize: '14px' }}>open_in_new</span>
-                                  Detail
-                                </button>
-                              </div>
-                            )}
+                            <ButtonActionApprovalFrp
+                              request={request}
+                              canApprove={canApprove}
+                              isApprovedView={isApprovedView}
+                              requestAction={requestAction}
+                              setSelectedRequest={setSelectedRequest}
+                            />
                           </div>
                         ) : (
                           <div style={{ color: '#94a3b8', fontSize: '12px', fontStyle: 'italic' }}>-</div>
@@ -734,14 +510,6 @@ export default function DataTableApprovalFrp({
                                   </div>
 
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                                    {isApprovedView && request.approvedBy && (
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em' }}>Approved By</div>
-                                        <div style={{ display: 'inline-block', padding: '6px 12px', borderRadius: '8px', background: 'rgba(248, 250, 252, 0.7)', border: '1.5px solid rgba(226, 232, 240, 0.6)', fontSize: '12px', fontWeight: 600, color: '#334155' }}>
-                                          {request.approvedBy || '-'}
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
                                 <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'rgba(255, 255, 255, 0.6)' }}>

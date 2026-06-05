@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
 import ButtonDetailStatusRp from '../button/ButtonDetailStatusRp.jsx'
 
+import { DataTableIdentity } from '../table/DataTable.jsx'
+
 
 const STATUS_META = {
-  waiting_manager: { label: 'waiting_manager', background: '#fef3c7', color: '#92400e' },
-  division_review: { label: 'division_review', background: '#dbeafe', color: '#1d4ed8' },
-  final_review: { label: 'final_review', background: '#ede9fe', color: '#6d28d9' },
-  approved: { label: 'approved', background: '#bbf7d0', color: '#166534' },
-  REJECTED: { label: 'REJECTED', background: '#fecaca', color: '#991b1b' },
-  CREATED_FRP: { label: 'CREATED_FRP', background: '#cffafe', color: '#0e7490' },
+  waiting_manager: { label: 'Waiting Manager', background: '#fef3c7', color: '#92400e' },
+  division_review: { label: 'Division Review', background: '#dbeafe', color: '#1d4ed8' },
+  final_review: { label: 'Final Review', background: '#ede9fe', color: '#6d28d9' },
+  approved: { label: 'Approved', background: '#bbf7d0', color: '#166534' },
+  REJECTED: { label: 'Rejected', background: '#fecaca', color: '#991b1b' },
+  CREATED_FRP: { label: 'Created FRP', background: '#cffafe', color: '#0e7490' },
 }
 
 function parseNumber(value) {
@@ -54,13 +56,13 @@ function renderStatus(status) {
 const desktopHeaders = [
   { label: 'FRP Number & Date', key: 'date' },
   { label: 'Requestor & Vendor', key: 'creator' },
-  { label: 'Division & Process', key: 'division' },
+  { label: 'Division', key: 'division' },
   { label: 'Receiver PIC', key: 'receiverPic' },
   { label: 'Total', key: 'total' },
   { label: 'Status', key: 'status' },
   { label: 'Action', key: null },
 ]
-const desktopColumnWidths = ['15%', '15%', '9%', '11%', '13%', '13%', '18%']
+const desktopColumnWidths = ['16%', '18%', '12%', '13%', '11%', '12%', '18%']
 
 export default function DataTableRp({
   tab,
@@ -509,16 +511,20 @@ export default function DataTableRp({
                   key={header.label || `hdr-${header.key}`}
                   onClick={() => requestSort(header.key)}
                   style={{
-                    padding: '14px 16px',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 6,
+                    padding: '1rem',
                     textAlign: 'left',
-                    color: '#475569',
-                    fontWeight: 700,
-                    fontSize: '11px',
+                    color: '#7f7f7f', // var(--neutral-gray)
+                    fontFamily: '"IBM Plex Mono", monospace',
+                    fontWeight: 600, // Matching the general look
+                    fontSize: '0.76rem',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
+                    letterSpacing: '0.08em',
                     whiteSpace: 'nowrap',
-                    background: '#f8fafc',
-                    borderBottom: '1.5px solid #e2e8f0',
+                    background: 'rgba(24, 43, 88, 0.04)',
+                    borderBottom: '1px solid rgba(26, 42, 87, 0.08)',
                     cursor: header.key ? 'pointer' : 'default',
                     userSelect: 'none',
                   }}
@@ -619,10 +625,10 @@ export default function DataTableRp({
                     </td>
                     {/* Pemohon & Vendor */}
                     <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                      <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: '2px' }}>
-                        {rp.dibuatOleh || '-'}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>{rp.vendorSuggestion || '-'}</div>
+                      <DataTableIdentity 
+                        title={rp.dibuatOleh || '-'} 
+                        subtitle={rp.vendorSuggestion || '-'} 
+                      />
                     </td>
                     {/* Divisi & Proses */}
                     <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
@@ -635,7 +641,7 @@ export default function DataTableRp({
                     </td>
                     {/* PIC Penerima */}
                     <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', color: '#334155', fontWeight: 500 }}>
-                      {rp.receiverPic || rp.picPenerima || '-'}
+                      <DataTableIdentity title={rp.receiverPic || rp.picPenerima || '-'} />
                     </td>
                     {/* Total */}
                     <td
@@ -656,13 +662,13 @@ export default function DataTableRp({
                       </div>
                     </td>
                     {/* Action Column */}
-                    <td style={{ ...td, borderRight: 'none' }} onClick={(e) => e.stopPropagation()}>
+                    <td style={{ ...td, borderRight: 'none', overflow: 'visible' }} onClick={(e) => e.stopPropagation()}>
                       {renderRowActions(rp, { 
-                        showDetail: false, 
+                        showDetail: true, 
                         showPreview: tab === 'approved', 
                         showKeFrp: tab === 'approved', 
                         showActions: tab !== 'approved', 
-                        showRevert: false 
+                        showRevert: true 
                       })}
                     </td>
                   </tr>
@@ -696,9 +702,6 @@ export default function DataTableRp({
                               <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: '#475569', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span className="material-icons-round" style={{ fontSize: '16px', color: '#3b82f6' }}>receipt_long</span>
                                 Detail Item &amp; Anggaran
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                {renderRowActions(rp, { showDetail: true, showPreview: true, showKeFrp: true, showActions: false, showRevert: true })}
                               </div>
                             </div>
                             

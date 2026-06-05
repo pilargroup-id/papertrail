@@ -4,14 +4,7 @@ import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
 import DataTableRp from '../../components/table/DataTableApprovalRp.jsx'
-import ButtonApprove from '../../components/button/ButtonApprove.jsx'
-import ButtonReject from '../../components/button/ButtonReject.jsx'
-import ButtonRevert from '../../components/button/ButtonRevert.jsx'
-import ButtonDetail from '../../components/button/ButtonDetail.jsx'
-import ButtonPreview from '../../components/button/ButtonPreview.jsx'
-import ButtonPrintPdf from '../../components/button/ButtonPrintPdf.jsx'
-import ButtonCheckData from '../../components/button/ButtonCheckData.jsx'
-import ButtonKeFrp from '../../components/button/ButtonKeFrp.jsx'
+import ButtonActionApprovalRp from '../../components/button/ButtonActionApprovalRp.jsx'
 import FilterApprovalRp from './FilterApprovalRp.jsx'
 import TabsFilterApprovalRp from './TabsFilterApprovalRp.jsx'
 
@@ -428,99 +421,19 @@ export default function RpApprovalPage() {
   }
 
   const renderRowActions = (rp, options = {}) => {
-    const { showDetail = true, showPreview = true, showKeFrp = true, showActions = true, showRevert = true } = options
-    const canManagerApprove =
-      rp.status === 'waiting_manager' &&
-      (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && userDivision === rp.divisi))
-    const canProcess = rp.status === 'division_review' && (isAdmin || isProcessDivision(rp.diprosesOleh))
-    const canFinalApprove = rp.status === 'final_review' && (isAdmin || isProcessManager(rp.diprosesOleh))
-    const canCreateFrp =
-      rp.status === 'approved' &&
-      (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
-
-    const showDetailActionPill = showDetail && rp.status !== 'waiting_manager'
-    const showRevertAction = showRevert && rp.canRevert
-
     return (
-      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-        {showDetail && rp.status === 'waiting_manager' && (
-          <ButtonDetail variant="approve" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
-        )}
-        
-        {(showDetailActionPill || showRevertAction) && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: '#f1f5f9',
-            border: '1px solid #e2e8f0',
-            borderRadius: '30px',
-            padding: '4px',
-            gap: '4px',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-          }}>
-            {showRevertAction && (
-              <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
-            )}
-            {showDetailActionPill && (
-              <ButtonDetail variant="approve" onClick={() => setSelected(rp)}>Detail</ButtonDetail>
-            )}
-          </div>
-        )}
-        {showPreview && ['approved', 'CREATED_FRP'].includes(rp.status) && (
-          <>
-            <ButtonPreview onClick={() => window.open(`/api/rp/${rp.id}/preview`, '_blank')}>Preview</ButtonPreview>
-            <ButtonPrintPdf onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')}>Print PDF</ButtonPrintPdf>
-          </>
-        )}
-        {showActions && canManagerApprove && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: '#f1f5f9',
-            border: '1px solid #e2e8f0',
-            borderRadius: '30px',
-            padding: '4px',
-            gap: '4px',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-          }}>
-            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'manager-reject')}>Reject</ButtonReject>
-            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')}>Approve</ButtonApprove>
-          </div>
-        )}
-        {showActions && canProcess && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: '#f1f5f9',
-            border: '1px solid #e2e8f0',
-            borderRadius: '30px',
-            padding: '4px',
-            gap: '4px',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-          }}>
-            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')}>Reject</ButtonReject>
-            <ButtonCheckData onClick={() => navigate(`/rp?process=${rp.id}`)}>Check Data</ButtonCheckData>
-          </div>
-        )}
-        {showActions && canFinalApprove && (
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            background: '#f1f5f9',
-            border: '1px solid #e2e8f0',
-            borderRadius: '30px',
-            padding: '4px',
-            gap: '4px',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-          }}>
-            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-reject')}>Reject</ButtonReject>
-            <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Final Approve</ButtonApprove>
-          </div>
-        )}
-        {canCreateFrp && showKeFrp && (
-          <ButtonKeFrp onClick={() => navigate(`/frp?fromRp=${rp.id}`)}>Ke FRP</ButtonKeFrp>
-        )}
-      </div>
+      <ButtonActionApprovalRp
+        rp={rp}
+        user={user}
+        isAdmin={isAdmin}
+        userDivision={userDivision}
+        isProcessDivision={isProcessDivision}
+        isProcessManager={isProcessManager}
+        actionLoading={actionLoading}
+        requestAction={requestAction}
+        setSelected={setSelected}
+        options={options}
+      />
     )
   }
 
