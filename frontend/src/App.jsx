@@ -1,12 +1,10 @@
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import BackgroundMain from './components/template/BackgroundMain'
 import { UserProvider } from './contexts/UserContext'
 import DashboardLayout from './components/template/DashboardLayout'
-import LoginPage from './pages/LoginPage'
 import SelectCompanyPage from './pages/SelectCompanyPage'
 import SelectDivisionPage from './pages/SelectDivisionPage'
-import ChoicePage from './pages/ChoicePage'
 import NewFRP from './pages/frp/NewFRP'
 import ApprovalPage from './pages/frp/ApprovalPage'
 import AdminPage from './pages/AdminPage'
@@ -25,7 +23,7 @@ export default function App() {
       <BackgroundMain />
       <UserProvider>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/frp/:id" element={<FrpDetailPage />} />
           <Route element={<DashboardLayout />}>
             <Route path="/select-company" element={<SelectCompanyPage />} />
