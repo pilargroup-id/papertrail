@@ -5,12 +5,42 @@ import { DataTableIdentity } from '../table/DataTable.jsx'
 
 
 const STATUS_META = {
-  waiting_manager: { label: 'Waiting Manager', background: '#fef3c7', color: '#92400e' },
-  division_review: { label: 'Division Review', background: '#dbeafe', color: '#1d4ed8' },
-  final_review: { label: 'Final Review', background: '#ede9fe', color: '#6d28d9' },
-  approved: { label: 'Approved', background: '#bbf7d0', color: '#166534' },
-  REJECTED: { label: 'Rejected', background: '#fecaca', color: '#991b1b' },
-  CREATED_FRP: { label: 'Created FRP', background: '#cffafe', color: '#0e7490' },
+  waiting_manager: {
+    label: 'Waiting Manager',
+    background: '#fef3c7',
+    color: '#92400e',
+    icon: 'hourglass_top',
+  },
+  division_review: {
+    label: 'Division Review',
+    background: '#dbeafe',
+    color: '#1d4ed8',
+    icon: 'fact_check',
+  },
+  final_review: {
+    label: 'Final Review',
+    background: '#ede9fe',
+    color: '#6d28d9',
+    icon: 'verified',
+  },
+  approved: {
+    label: 'Approved',
+    background: '#bbf7d0',
+    color: '#166534',
+    icon: 'check_circle',
+  },
+  rejected: {
+    label: 'Rejected',
+    background: '#fecaca',
+    color: '#991b1b',
+    icon: 'cancel',
+  },
+  created_frp: {
+    label: 'Created FRP',
+    background: '#cffafe',
+    color: '#0e7490',
+    icon: 'note_add',
+  },
 }
 
 function parseNumber(value) {
@@ -66,13 +96,21 @@ function formatDate(value) {
 }
 
 function renderStatus(status) {
-  const meta = STATUS_META[status] || { label: status || '-', background: '#e2e8f0', color: '#475569' }
+  const normalizedStatus = String(status || '').trim().toLowerCase()
+  const meta =
+    STATUS_META[normalizedStatus] ||
+    STATUS_META[String(status || '').trim()] ||
+    { label: status || '-', background: '#e2e8f0', color: '#475569', icon: 'help_outline' }
+
   return (
     <span
       style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
         alignSelf: 'flex-start',
-        padding: '3px 10px',
-        borderRadius: '20px',
+        padding: '4px 10px',
+        borderRadius: '999px',
         fontSize: '11px',
         fontWeight: 700,
         letterSpacing: '0.03em',
@@ -81,6 +119,9 @@ function renderStatus(status) {
         whiteSpace: 'nowrap',
       }}
     >
+      <span className="material-icons-round" style={{ fontSize: '14px', lineHeight: 1 }}>
+        {meta.icon}
+      </span>
       {meta.label}
     </span>
   )
