@@ -1,16 +1,16 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
-export default function DialogSuccesAction({
+export default function DialogFailAction({
   isOpen = false,
-  title = 'Berhasil!',
+  title = 'Gagal!',
   message,
   subMessage,
   rpNo,
   referenceLabel = 'Nomor Request Purchase',
   onConfirm,
   buttonText = 'Lanjutkan',
-  icon = 'check_circle',
+  icon = 'cancel',
 }) {
   useEffect(() => {
     if (!isOpen) return undefined
@@ -33,11 +33,11 @@ export default function DialogSuccesAction({
   const dialogNode = (
     <div className="dashboard-popup-overlay" role="presentation" onClick={handleOverlayClick}>
       <style>{`
-        @keyframes successPop {
+        @keyframes failPop {
           0% { transform: scale(0.9) translateY(10px); opacity: 0; }
           100% { transform: scale(1) translateY(0); opacity: 1; }
         }
-        @keyframes checkmarkPop {
+        @keyframes iconPop {
           0% { transform: scale(0); opacity: 0; }
           50% { transform: scale(1.2); opacity: 1; }
           100% { transform: scale(1); opacity: 1; }
@@ -47,16 +47,16 @@ export default function DialogSuccesAction({
         className="dashboard-popup"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="success-dialog-title"
+        aria-labelledby="fail-dialog-title"
         onClick={(event) => event.stopPropagation()}
         style={{
-          animation: 'successPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          animation: 'failPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         }}
       >
         <div className="dashboard-popup__header">
           <div>
-            <p className="dashboard-popup__eyebrow">Sukses</p>
-            <h2 className="dashboard-popup__title" id="success-dialog-title">{title}</h2>
+            <p className="dashboard-popup__eyebrow">Ditolak</p>
+            <h2 className="dashboard-popup__title" id="fail-dialog-title">{title}</h2>
           </div>
           <button
             type="button"
@@ -78,12 +78,12 @@ export default function DialogSuccesAction({
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
-                background: '#dcfce7',
-                color: '#15803d',
-                boxShadow: '0 4px 12px rgba(21, 128, 61, 0.15)',
+                background: '#fee2e2',
+                color: '#dc2626',
+                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.15)',
               }}
             >
-              <div style={{ animation: 'checkmarkPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.2s', opacity: 0 }}>
+              <div style={{ animation: 'iconPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.2s', opacity: 0 }}>
                 <span className="material-icons-round" style={{ fontSize: '40px' }}>{icon}</span>
               </div>
             </div>
@@ -112,9 +112,9 @@ export default function DialogSuccesAction({
             onClick={onConfirm}
             style={{
               border: 'none',
-              background: 'linear-gradient(135deg, #1f4e8c 0%, #1e3a8a 100%)',
+              background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
               color: '#fff',
-              boxShadow: '0 10px 24px rgba(31, 78, 140, 0.28)',
+              boxShadow: '0 10px 24px rgba(220, 38, 38, 0.28)',
             }}
           >
             {buttonText}

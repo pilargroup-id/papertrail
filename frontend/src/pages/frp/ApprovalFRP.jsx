@@ -6,6 +6,8 @@ import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import { useUser } from '../../contexts/UserContext'
 import FilterApprovalFrp from './FilterApprovalFrp'
 import DataTableApprovalFrp from '../../components/table/DataTableApprovalFrp'
+import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
+import DialogFailAction from '../../components/Dialog/DialogFailAction'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -313,6 +315,7 @@ export default function ApprovalFRP() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+  const [actionResultDialog, setActionResultDialog] = useState(null)
 
   const requestSort = (key) => {
     if (!key) return
@@ -464,16 +467,45 @@ export default function ApprovalFRP() {
     setConfirmAction({ request, action })
   }
 
-  const doAction = async (id, action) => {
+  const doAction = async (request, action) => {
     setActionLoading(true)
     try {
-      const response = await fetch(`/api/frp/${id}/${action}`, { method: 'POST' })
+      const response = await fetch(`/api/frp/${request.id}/${action}`, { method: 'POST' })
       const result = await response.json()
 
       if (result.success) {
         setConfirmAction(null)
         setSelectedRequest(null)
-        loadData()
+        if (action === 'approve') {
+          setActionResultDialog({
+            action,
+            kind: 'success',
+            title: 'Approve berhasil',
+            message: 'FRP berhasil disetujui.',
+            subMessage: request.frpNo ? `Nomor FRP: ${request.frpNo}` : undefined,
+            rpNo: request.frpNo,
+          })
+        } else if (action === 'reject') {
+          setActionResultDialog({
+            action,
+            kind: 'fail',
+            title: 'Reject berhasil',
+            message: 'FRP berhasil ditolak.',
+            subMessage: request.frpNo ? `Nomor FRP: ${request.frpNo}` : undefined,
+            rpNo: request.frpNo,
+          })
+        } else if (action === 'revert') {
+          setActionResultDialog({
+            action,
+            kind: 'success',
+            title: 'Revert berhasil',
+            message: 'Status FRP berhasil dikembalikan.',
+            subMessage: request.frpNo ? `Nomor FRP: ${request.frpNo}` : undefined,
+            rpNo: request.frpNo,
+          })
+        } else {
+          loadData()
+        }
       } else {
         window.alert(result.error || 'Gagal memproses data')
       }
@@ -835,7 +867,7 @@ export default function ApprovalFRP() {
         tone={confirmAction ? confirmActionMeta[confirmAction.action]?.tone : 'primary'}
         isLoading={actionLoading}
         onClose={() => { if (!actionLoading) setConfirmAction(null) }}
-        onConfirm={() => confirmAction && doAction(confirmAction.request.id, confirmAction.action)}
+        onConfirm={() => confirmAction && doAction(confirmAction.request, confirmAction.action)}
       >
         {confirmAction && (
           <div
@@ -855,6 +887,35 @@ export default function ApprovalFRP() {
           </div>
         )}
       </DialogConfirm>
+
+      <DialogSuccesAction
+        isOpen={actionResultDialog?.kind === 'success'}
+        title={actionResultDialog?.title}
+        message={actionResultDialog?.message}
+        subMessage={actionResultDialog?.subMessage}
+        rpNo={actionResultDialog?.rpNo}
+        referenceLabel="Nomor FRP"
+        icon={actionResultDialog?.action === 'revert' ? 'restart_alt' : 'check_circle'}
+        onConfirm={() => {
+          setActionResultDialog(null)
+          loadData()
+        }}
+        buttonText="Tutup"
+      />
+
+      <DialogFailAction
+        isOpen={actionResultDialog?.kind === 'fail'}
+        title={actionResultDialog?.title}
+        message={actionResultDialog?.message}
+        subMessage={actionResultDialog?.subMessage}
+        rpNo={actionResultDialog?.rpNo}
+        referenceLabel="Nomor FRP"
+        onConfirm={() => {
+          setActionResultDialog(null)
+          loadData()
+        }}
+        buttonText="Tutup"
+      />
     </>
   )
 }

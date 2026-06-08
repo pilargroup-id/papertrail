@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogDetailRP from '../../components/Dialog/DialogDetailRP'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
+import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
+import DialogFailAction from '../../components/Dialog/DialogFailAction'
 import ButtonRevert from '../../components/button/ButtonRevert'
 
 const MOBILE_BREAKPOINT = 768
@@ -332,6 +334,7 @@ export default function StatusRP() {
 
   const [actionLoading, setActionLoading] = useState(false)
   const [confirmRevert, setConfirmRevert] = useState(null)
+  const [actionResultDialog, setActionResultDialog] = useState(null)
 
   const loadData = () => {
     setLoading(true)
@@ -352,13 +355,14 @@ export default function StatusRP() {
   const processRevert = async () => {
     if (!confirmRevert) return
     setActionLoading(true)
+    const currentRevert = confirmRevert
     let url = ''
-    if (confirmRevert.status === 'division_review') {
-      url = `/api/rp/${confirmRevert.id}/process-revert`
-    } else if (confirmRevert.status === 'final_review') {
-      url = `/api/rp/${confirmRevert.id}/process-manager-revert`
+    if (currentRevert.status === 'division_review') {
+      url = `/api/rp/${currentRevert.id}/process-revert`
+    } else if (currentRevert.status === 'final_review') {
+      url = `/api/rp/${currentRevert.id}/process-manager-revert`
     } else {
-      url = `/api/rp/${confirmRevert.id}/revert`
+      url = `/api/rp/${currentRevert.id}/revert`
     }
 
     try {
@@ -370,12 +374,38 @@ export default function StatusRP() {
       if (result.success) {
         setConfirmRevert(null)
         setDetailRequest(null)
-        loadData()
+        setActionResultDialog({
+          kind: 'success',
+          action: 'revert',
+          icon: 'restart_alt',
+          title: 'Revert berhasil',
+          message: 'Status RP berhasil dikembalikan.',
+          subMessage: `Nomor RP: ${currentRevert?.rpNo || currentRevert?.rp?.rpNo || currentRevert?.id || '-'}`,
+          rpNo: currentRevert?.rpNo || currentRevert?.rp?.rpNo,
+        })
       } else {
-        window.alert(result.error || 'Gagal memproses data')
+        setConfirmRevert(null)
+        setActionResultDialog({
+          kind: 'fail',
+          action: 'revert',
+          icon: 'restart_alt',
+          title: 'Gagal memproses data',
+          message: result.error || 'Perubahan data tidak dapat disimpan.',
+          subMessage: `Nomor RP: ${currentRevert?.rpNo || currentRevert?.rp?.rpNo || currentRevert?.id || '-'}`,
+          rpNo: currentRevert?.rpNo || currentRevert?.rp?.rpNo,
+        })
       }
     } catch (error) {
-      window.alert(error.message)
+      setConfirmRevert(null)
+      setActionResultDialog({
+        kind: 'fail',
+        action: 'revert',
+        icon: 'restart_alt',
+        title: 'Gagal memproses data',
+        message: error.message || 'Terjadi kesalahan saat memproses data.',
+        subMessage: `Nomor RP: ${currentRevert?.rpNo || currentRevert?.rp?.rpNo || currentRevert?.id || '-'}`,
+        rpNo: currentRevert?.rpNo || currentRevert?.rp?.rpNo,
+      })
     } finally {
       setActionLoading(false)
     }
@@ -917,6 +947,35 @@ export default function StatusRP() {
         onClose={() => setConfirmRevert(null)}
         onConfirm={processRevert}
         loading={actionLoading}
+      />
+
+      <DialogSuccesAction
+        isOpen={actionResultDialog?.kind === 'success'}
+        title={actionResultDialog?.title}
+        message={actionResultDialog?.message}
+        subMessage={actionResultDialog?.subMessage}
+        rpNo={actionResultDialog?.rpNo}
+        referenceLabel="Nomor RP"
+        icon={actionResultDialog?.icon || 'restart_alt'}
+        onConfirm={() => {
+          setActionResultDialog(null)
+          loadData()
+        }}
+        buttonText="Tutup"
+      />
+
+      <DialogFailAction
+        isOpen={actionResultDialog?.kind === 'fail'}
+        title={actionResultDialog?.title}
+        message={actionResultDialog?.message}
+        subMessage={actionResultDialog?.subMessage}
+        rpNo={actionResultDialog?.rpNo}
+        referenceLabel="Nomor RP"
+        icon={actionResultDialog?.icon || 'restart_alt'}
+        onConfirm={() => {
+          setActionResultDialog(null)
+        }}
+        buttonText="Tutup"
       />
       </main>
     </>

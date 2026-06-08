@@ -21,6 +21,29 @@ function formatCurrency(value) {
   return `IDR ${Math.round(parseNumber(value)).toLocaleString('id-ID')}`
 }
 
+function normalizeExternalUrl(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw
+  if (raw.startsWith('//')) return `https:${raw}`
+  return `https://${raw}`
+}
+
+function renderExternalLink(value) {
+  if (!value) return '-'
+
+  return (
+    <a
+      href={normalizeExternalUrl(value)}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}
+    >
+      Buka Link
+    </a>
+  )
+}
+
 function formatDate(value) {
   if (!value) return '-'
   const date = new Date(value)
@@ -359,12 +382,13 @@ export default function DataTableRp({
                     )}
 
                     <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'white' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', minWidth: '600px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', minWidth: '760px' }}>
                         <thead>
                           <tr style={{ background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid rgba(215, 224, 234, 0.6)' }}>
                             <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '40px' }}>No</th>
                             <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase' }}>Item / Memo</th>
                             <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '50px' }}>Qty</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '140px' }}>Purchase Link</th>
                             <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '120px' }}>Harga Satuan</th>
                             <th style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', width: '120px' }}>Total</th>
                           </tr>
@@ -376,13 +400,16 @@ export default function DataTableRp({
                                 <td style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
                                 <td style={{ padding: '8px 12px', color: '#1e293b', fontWeight: 600, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.memo || item.description || '-'}</td>
                                 <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontWeight: 600 }}>{item.qty || 1}</td>
+                                <td style={{ padding: '8px 12px', color: '#334155', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                  {renderExternalLink(item.linkPembelian)}
+                                </td>
                                 <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 500 }}>{formatCurrency(Number(item.price || item.estimatedValue) || 0)}</td>
                                 <td style={{ padding: '8px 12px', textAlign: 'right', color: '#0f172a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(Number(item.amount || (item.qty * item.estimatedValue)) || 0)}</td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={5} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
+                              <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
                             </tr>
                           )}
                         </tbody>
@@ -736,15 +763,16 @@ export default function DataTableRp({
                             )}
 
                             <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid rgba(215, 224, 234, 0.6)', background: 'rgba(255, 255, 255, 0.6)' }}>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '950px' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '1120px' }}>
                                 <thead>
                                   <tr style={{ background: 'rgba(248, 250, 252, 0.5)', borderBottom: '1px solid rgba(215, 224, 234, 0.6)' }}>
                                     <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '50px', letterSpacing: '0.04em' }}>No</th>
                                     <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Memo / Keterangan</th>
                                     <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '130px', letterSpacing: '0.04em' }}>Budget ID</th>
-                                    <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Nama Project</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Budget Name</th>
+                                    <th style={{ padding: '12px', textAlign: 'left', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '160px', letterSpacing: '0.04em' }}>Purchase Link</th>
                                     <th style={{ padding: '12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '70px', letterSpacing: '0.04em' }}>Qty</th>
-                                    <th style={{ padding: '12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px', letterSpacing: '0.04em' }}>Harga Satuan</th>
+                                    <th style={{ padding: '12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px', letterSpacing: '0.04em' }}>Unit Price</th>
                                     <th style={{ padding: '12px', textAlign: 'right', color: '#64748b', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', width: '220px', letterSpacing: '0.04em' }}>Total</th>
                                   </tr>
                                 </thead>
@@ -756,6 +784,9 @@ export default function DataTableRp({
                                         <td style={{ padding: '12px', color: '#1e293b', fontWeight: 600, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.memo || item.description || '-'}</td>
                                         <td style={{ padding: '12px', color: '#475569', fontWeight: 600, fontFamily: 'IBM Plex Mono, monospace' }}>{item.budgetId || '-'}</td>
                                         <td style={{ padding: '12px', color: '#334155', fontWeight: 600, whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.projectName || '-'}</td>
+                                        <td style={{ padding: '12px', color: '#334155', fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                          {renderExternalLink(item.linkPembelian)}
+                                        </td>
                                         <td style={{ padding: '12px', textAlign: 'right', color: '#334155', fontWeight: 600 }}>{item.qty || 1}</td>
                                         <td style={{ padding: '12px', textAlign: 'right', color: '#334155', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem', fontWeight: 500 }}>{formatCurrency(Number(item.price || item.estimatedValue) || 0)}</td>
                                         <td style={{ padding: '12px', textAlign: 'right', color: '#0f172a', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.85rem' }}>{formatCurrency(Number(item.amount || (item.qty * item.estimatedValue)) || 0)}</td>
@@ -763,7 +794,7 @@ export default function DataTableRp({
                                     ))
                                   ) : (
                                     <tr>
-                                      <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
+                                      <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada item</td>
                                     </tr>
                                   )}
                                 </tbody>

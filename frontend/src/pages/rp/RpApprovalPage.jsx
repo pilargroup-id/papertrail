@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
+import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
+import DialogFailAction from '../../components/Dialog/DialogFailAction'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
 import DataTableRp from '../../components/table/DataTableApprovalRp.jsx'
 import ButtonActionApprovalRp from '../../components/button/ButtonActionApprovalRp.jsx'
@@ -79,6 +81,14 @@ function formatCurrency(value) {
   return `IDR ${Math.round(parseNumber(value)).toLocaleString('id-ID')}`
 }
 
+function normalizeExternalUrl(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw
+  if (raw.startsWith('//')) return `https:${raw}`
+  return `https://${raw}`
+}
+
 function formatDate(value) {
   if (!value) return '-'
   const date = new Date(value)
@@ -96,6 +106,13 @@ const getGridColumns = (desktopColumns, isMobile, isTablet) => {
   return `repeat(${desktopColumns}, minmax(0, 1fr))`
 }
 
+const getActionResultIcon = action => {
+  if (action === 'revert') return 'restart_alt'
+  if (action === 'process-manager-approve' || action === 'manager-approve') return 'check_circle'
+  if (action === 'process-manager-reject' || action === 'manager-reject' || action === 'process-reject') return 'cancel'
+  return action?.includes('approve') ? 'check_circle' : 'cancel'
+}
+
 
 export default function RpApprovalPage() {
   const { pathname } = useLocation()
@@ -107,6 +124,7 @@ export default function RpApprovalPage() {
   const [selected, setSelected] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
+  const [actionResultDialog, setActionResultDialog] = useState(null)
   const [tab, setTab] = useState(isApprovedView ? 'approved' : 'pending')
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -212,13 +230,14 @@ export default function RpApprovalPage() {
 
   const doAction = async (id, action, body = {}) => {
     setActionLoading(true)
+    const currentRp = confirmAction?.rp
     let actualAction = action
-    if (action === 'revert' && confirmAction?.rp) {
-        if (confirmAction.rp.status === 'division_review') {
+    if (action === 'revert' && currentRp) {
+        if (currentRp.status === 'division_review') {
             actualAction = 'process-revert'
-        } else if (confirmAction.rp.status === 'final_review') {
+        } else if (currentRp.status === 'final_review') {
             actualAction = 'process-manager-revert'
-        } else if (confirmAction.rp.status === 'approved') {
+        } else if (currentRp.status === 'approved') {
             actualAction = 'revert-approved'
         }
     }
@@ -232,12 +251,48 @@ export default function RpApprovalPage() {
       if (result.success) {
         setConfirmAction(null)
         setSelected(null)
-        loadData(tab)
+        setActionResultDialog({
+          kind: 'success',
+          action,
+          icon: getActionResultIcon(action),
+          title:
+            action === 'revert'
+              ? 'Revert berhasil'
+              : action.includes('approve')
+                ? 'Approve berhasil'
+                : 'Reject berhasil',
+          message:
+            action === 'revert'
+              ? 'Status Request Purchase berhasil dikembalikan.'
+              : action.includes('approve')
+                ? 'Request Purchase berhasil disetujui.'
+                : 'Request Purchase berhasil ditolak.',
+          subMessage: `Nomor RP: ${currentRp?.rpNo || '-'}`,
+          rpNo: currentRp?.rpNo,
+        })
       } else {
-        window.alert(result.error || 'Gagal memproses data')
+        setConfirmAction(null)
+        setActionResultDialog({
+          kind: 'fail',
+          action,
+          icon: getActionResultIcon(action),
+          title: 'Gagal memproses data',
+          message: result.error || 'Perubahan data tidak dapat disimpan.',
+          subMessage: `Nomor RP: ${currentRp?.rpNo || '-'}`,
+          rpNo: currentRp?.rpNo,
+        })
       }
     } catch (error) {
-      window.alert(error.message)
+      setConfirmAction(null)
+      setActionResultDialog({
+        kind: 'fail',
+        action,
+        icon: getActionResultIcon(action),
+        title: 'Gagal memproses data',
+        message: error.message || 'Terjadi kesalahan saat memproses data.',
+        subMessage: `Nomor RP: ${currentRp?.rpNo || '-'}`,
+        rpNo: currentRp?.rpNo,
+      })
     } finally {
       setActionLoading(false)
     }
@@ -651,7 +706,7 @@ export default function RpApprovalPage() {
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, color: '#334155' }}>{item.budgetId || '-'}</td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.memo || '-'}</td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                                {item.linkPembelian ? <a href={item.linkPembelian} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>Buka Link</a> : '-'}
+                                {item.linkPembelian ? <a href={normalizeExternalUrl(item.linkPembelian)} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>Buka Link</a> : '-'}
                               </td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 600, color: '#334155' }}>{item.qty || '-'}</td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, color: '#475569' }}>{formatCurrency(item.estimatedValue)}</td>
@@ -831,6 +886,35 @@ export default function RpApprovalPage() {
           </div>
         )}
       </DialogConfirm>
+
+      <DialogSuccesAction
+        isOpen={actionResultDialog?.kind === 'success'}
+        title={actionResultDialog?.title}
+        message={actionResultDialog?.message}
+        subMessage={actionResultDialog?.subMessage}
+        rpNo={actionResultDialog?.rpNo}
+        referenceLabel="Nomor RP"
+        icon={actionResultDialog?.icon || getActionResultIcon(actionResultDialog?.action)}
+        onConfirm={() => {
+          setActionResultDialog(null)
+          loadData(tab)
+        }}
+        buttonText="Tutup"
+      />
+
+      <DialogFailAction
+        isOpen={actionResultDialog?.kind === 'fail'}
+        title={actionResultDialog?.title}
+        message={actionResultDialog?.message}
+        subMessage={actionResultDialog?.subMessage}
+        rpNo={actionResultDialog?.rpNo}
+        referenceLabel="Nomor RP"
+        icon={actionResultDialog?.icon || getActionResultIcon(actionResultDialog?.action)}
+        onConfirm={() => {
+          setActionResultDialog(null)
+        }}
+        buttonText="Tutup"
+      />
     </>
   )
 }

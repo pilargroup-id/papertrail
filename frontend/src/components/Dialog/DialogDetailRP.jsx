@@ -6,6 +6,14 @@ import ButtonApprove from '../button/ButtonApprove.jsx'
 
 const normalizeNumber = v => parseInt(String(v || '0').replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0
 
+const normalizeExternalUrl = value => {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  if (/^(https?:|mailto:|tel:)/i.test(raw)) return raw
+  if (raw.startsWith('//')) return `https:${raw}`
+  return `https://${raw}`
+}
+
 const formatDisplayDate = value => {
   if (!value) return ''
   const date = new Date(value)
@@ -327,7 +335,7 @@ function DialogDetailRP({
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}><input readOnly value={item.memo || item.description || ''} style={{ ...fieldStyle, margin: 0 }} className="dialog-input-premium" /></td>
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
                             {item.linkPembelian ? (
-                              <a href={item.linkPembelian} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', display: 'block', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>{item.linkPembelian}</a>
+                              <a href={normalizeExternalUrl(item.linkPembelian)} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', display: 'block', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>{item.linkPembelian}</a>
                             ) : '-'}
                           </td>
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', fontWeight: 600, color: '#334155' }}>{qty}</td>
