@@ -18,7 +18,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Secret files
 credentials/
+backend/credentials/
 
 # Environment variables
 .env
