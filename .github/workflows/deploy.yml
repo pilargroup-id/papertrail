@@ -68,10 +68,12 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
             set -e
             cd /var/www/papertrail
-            echo '>> Git pull'
-            git pull origin main
-          "
 
+            echo '>> Sync latest code'
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd -e backend/.env -e backend/credentials/
+          "
       # -------------------------
       # 7. Upload frontend build to VM
       # -------------------------
