@@ -7,6 +7,7 @@ export default function DialogSuccesAction({
   message,
   subMessage,
   rpNo,
+  referenceLabel = 'Nomor Request Purchase',
   onConfirm,
   buttonText = 'Lanjutkan',
 }) {
@@ -91,7 +92,7 @@ export default function DialogSuccesAction({
               </p>
               {rpNo && (
                 <p className="dashboard-popup__text" style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-                  Nomor Request Purchase: <strong style={{ color: '#334155' }}>{rpNo}</strong>
+                  {referenceLabel}: <strong style={{ color: '#334155' }}>{rpNo}</strong>
                 </p>
               )}
               {subMessage && (

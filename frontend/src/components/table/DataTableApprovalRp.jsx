@@ -497,11 +497,12 @@ export default function DataTableRp({
         }
       `}</style>
 
-      <div className="dashboard-main-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Desktop Headers */}
         <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
           <colgroup>
             {desktopColumnWidths.map((width, i) => (
-              <col key={`desktop-col-${i}`} style={{ width }} />
+              <col key={`desktop-head-col-${i}`} style={{ width }} />
             ))}
           </colgroup>
           <thead>
@@ -537,7 +538,17 @@ export default function DataTableRp({
               ))}
             </tr>
           </thead>
-          <tbody>
+        </table>
+
+        {/* Desktop Body */}
+        <div className="dashboard-main-scrollbar" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+          <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.875rem', tableLayout: 'fixed' }}>
+            <colgroup>
+              {desktopColumnWidths.map((width, i) => (
+                <col key={`desktop-body-col-${i}`} style={{ width }} />
+              ))}
+            </colgroup>
+            <tbody>
             {paginated.map((rp, index) => {
               const isOpen = expandedId === rp.id
               const absoluteIndex = (safeCurrentPage - 1) * rowsPerPage + index
@@ -768,6 +779,7 @@ export default function DataTableRp({
             })}
           </tbody>
         </table>
+      </div>
       </div>
 
       {/* Desktop pagination */}

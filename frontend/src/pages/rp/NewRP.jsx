@@ -612,7 +612,7 @@ export default function NewRP() {
             setSuccessDialog(prev => ({ ...prev, isOpen: false }))
             navigate('/rp-approval')
           }}
-          buttonText="Kembali ke Approval"
+          buttonText="Approval"
         />
       </main>
     </>

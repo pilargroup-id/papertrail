@@ -6,6 +6,7 @@ import DataTableItemsFrp from '../../components/table/DataTableItemsFrp.jsx'
 import ButtonAddItemsFrp from '../../components/button/ButtonAddItemsFrp.jsx'
 import { frpService } from '../../services/frp/new-frp'
 import DialogValidationNewFRP from '../../components/Dialog/DialogValidationNewFRP.jsx'
+import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction.jsx'
 import '../../styles/frp/new-frp.css';
 
 const MOBILE_BREAKPOINT = 768
@@ -246,6 +247,7 @@ export default function NewFRP() {
   const [error, setError] = useState(null)
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
+  const [successDialog, setSuccessDialog] = useState({ isOpen: false, title: '', message: '', subMessage: '', frpNo: '' })
 
   useEffect(() => {
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
@@ -577,6 +579,7 @@ export default function NewFRP() {
   }
 
   const processSubmit = async () => {
+    setIsConfirmOpen(false)
     setSubmitting(true)
     try {
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
@@ -624,7 +627,13 @@ export default function NewFRP() {
             console.error('Failed to upload attachment:', uploadErr)
           }
         }
-        navigate('/approval')
+        setSuccessDialog({
+          isOpen: true,
+          title: 'Berhasil!',
+          message: 'FRP Anda telah berhasil disimpan.',
+          subMessage: 'Anda akan dialihkan kembali ke halaman Approval FRP.',
+          frpNo: d.frpNo || d.data?.frpNo || values.frpNo || d.id || values.id || '',
+        })
       } else {
         setSubmitError(d.error || 'Gagal menyimpan, coba lagi.')
       }
@@ -632,7 +641,6 @@ export default function NewFRP() {
       setSubmitError(err.message || 'Koneksi gagal, coba lagi.')
     } finally {
       setSubmitting(false)
-      setIsConfirmOpen(false)
     }
   }
 
@@ -990,6 +998,19 @@ export default function NewFRP() {
         onConfirm={processSubmit}
         frpNo={values.frpNo || values.id}
         dimintaOleh={values.dimintaOleh || FRP.user?.fullName}
+      />
+      <DialogSuccesAction
+        isOpen={successDialog.isOpen}
+        title={successDialog.title}
+        message={successDialog.message}
+        subMessage={successDialog.subMessage}
+        rpNo={successDialog.frpNo}
+        referenceLabel="Nomor FRP"
+        onConfirm={() => {
+          setSuccessDialog(prev => ({ ...prev, isOpen: false }))
+          navigate('/approval')
+        }}
+        buttonText="Approval"
       />
     </main>
   )

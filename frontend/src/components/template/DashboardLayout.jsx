@@ -33,7 +33,15 @@ export default function DashboardLayout() {
         hideMenu={HIDE_MENU_PATHS.has(pathname)}
       />
       <div className="dashboard-stage">
-        <Header onMenuClick={() => setMobileMenuOpen(true)} />
+        <Header 
+          onMenuClick={() => setMobileMenuOpen(true)}
+          breadcrumb={[
+            { label: 'FRP', href: '#' },
+            { label: pathname === '/' ? 'Dashboard' : pathname.substring(1), href: '#', active: true }
+          ]}
+          notificationProps={{}}
+          onRefresh={() => window.location.reload()}
+        />
         <Outlet />
       </div>
     </div>
