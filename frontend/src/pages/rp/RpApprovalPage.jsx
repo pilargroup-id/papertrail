@@ -706,7 +706,26 @@ export default function RpApprovalPage() {
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, color: '#334155' }}>{item.budgetId || '-'}</td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>{item.memo || '-'}</td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
-                                {item.linkPembelian ? <a href={normalizeExternalUrl(item.linkPembelian)} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>Buka Link</a> : '-'}
+                                {item.linkPembelian ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => window.open(normalizeExternalUrl(item.linkPembelian), '_blank', 'noopener,noreferrer')}
+                                    style={{
+                                      border: '1px solid #bfdbfe',
+                                      background: '#eff6ff',
+                                      color: '#2563eb',
+                                      fontWeight: 700,
+                                      borderRadius: '999px',
+                                      padding: '4px 10px',
+                                      cursor: 'pointer',
+                                      fontFamily: 'inherit',
+                                      fontSize: '12px',
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    Buka Link
+                                  </button>
+                                ) : '-'}
                               </td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 600, color: '#334155' }}>{item.qty || '-'}</td>
                               <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, color: '#475569' }}>{formatCurrency(item.estimatedValue)}</td>

@@ -33,14 +33,24 @@ function renderExternalLink(value) {
   if (!value) return '-'
 
   return (
-    <a
-      href={normalizeExternalUrl(value)}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}
+    <button
+      type="button"
+      onClick={() => window.open(normalizeExternalUrl(value), '_blank', 'noopener,noreferrer')}
+      style={{
+        border: '1px solid #bfdbfe',
+        background: '#eff6ff',
+        color: '#2563eb',
+        fontWeight: 700,
+        borderRadius: '999px',
+        padding: '4px 10px',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: '12px',
+        lineHeight: 1.2,
+      }}
     >
       Buka Link
-    </a>
+    </button>
   )
 }
 

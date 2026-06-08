@@ -335,7 +335,24 @@ function DialogDetailRP({
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}><input readOnly value={item.memo || item.description || ''} style={{ ...fieldStyle, margin: 0 }} className="dialog-input-premium" /></td>
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9' }}>
                             {item.linkPembelian ? (
-                              <a href={normalizeExternalUrl(item.linkPembelian)} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'none', display: 'block', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>{item.linkPembelian}</a>
+                              <button
+                                type="button"
+                                onClick={() => window.open(normalizeExternalUrl(item.linkPembelian), '_blank', 'noopener,noreferrer')}
+                                style={{
+                                  border: '1px solid #bfdbfe',
+                                  background: '#eff6ff',
+                                  color: '#2563eb',
+                                  fontWeight: 700,
+                                  borderRadius: '999px',
+                                  padding: '4px 10px',
+                                  cursor: 'pointer',
+                                  fontFamily: 'inherit',
+                                  fontSize: '12px',
+                                  lineHeight: 1.2,
+                                }}
+                              >
+                                Buka Link
+                              </button>
                             ) : '-'}
                           </td>
                           <td style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', textAlign: 'center', fontWeight: 600, color: '#334155' }}>{qty}</td>
