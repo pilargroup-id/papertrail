@@ -150,7 +150,7 @@ export default function RpApprovalPage() {
     fetch(`/api/data/rp-approval?view=${view}`)
       .then(response => {
         if (!response.ok) {
-          window.location.href = '/login'
+          window.location.href = '/'
           throw new Error('Unauthorized')
         }
         return response.json()

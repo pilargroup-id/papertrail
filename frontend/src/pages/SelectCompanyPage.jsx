@@ -17,7 +17,7 @@ export default function SelectCompanyPage() {
 
   useEffect(() => {
     fetch('/api/data/select-company')
-      .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
+      .then(r => { if (!r.ok) { window.location.href = '/'; throw new Error() } return r.json() })
       .then(d => { setData(d); setUser(d?.user) }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 

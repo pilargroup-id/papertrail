@@ -154,7 +154,7 @@ export default function DashboardPage() {
       fetch('/api/data/dashboard')
         .then(r => {
           if (r.status === 403) { navigate('/'); return null }
-          if (!r.ok) { navigate('/login'); return null }
+          if (!r.ok) { navigate('/'); return null }
           return r.json()
         })
         .then(d => { if (d) { setData(d); setUser(d.user) } })

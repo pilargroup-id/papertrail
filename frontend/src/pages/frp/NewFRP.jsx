@@ -315,7 +315,7 @@ export default function NewFRP() {
       })
       .catch(err => {
         if (err.status === 401 || err.status === 403) {
-          window.location.href = '/login'
+          window.location.href = '/'
         }
         setError(err.message || 'Gagal memuat data')
       })

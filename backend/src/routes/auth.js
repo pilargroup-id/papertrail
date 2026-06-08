@@ -31,7 +31,7 @@ router.post('/login', async (req, res) => {
     } catch (e) {
         console.error('[Login Error]', e.message);
     }
-    res.redirect('/login?error=1');
+    res.redirect('/?error=1');
 });
 
 router.get('/select-company', checkAuth, (req, res) => {
@@ -82,7 +82,7 @@ router.post('/select-division', checkAuth, (req, res) => {
 
 router.get('/logout', (req, res) => {
     req.session.destroy();
-    res.redirect('/login');
+    res.redirect('/');
 });
 
 // ============================================================

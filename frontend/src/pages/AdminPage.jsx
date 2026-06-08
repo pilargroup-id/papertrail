@@ -351,7 +351,7 @@ export default function AdminPage() {
 
   const loadData = useCallback(() => {
     fetch(`/api/data/admin?type=${type}`)
-      .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
+      .then(r => { if (!r.ok) { window.location.href = '/'; throw new Error() } return r.json() })
       .then(d => { setData(d); setUser(d?.user) })
       .catch(() => { })
   }, [type])

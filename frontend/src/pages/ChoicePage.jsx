@@ -9,7 +9,7 @@ export default function ChoicePage() {
 
   useEffect(() => {
     fetch('/api/form-data')
-      .then(r => { if(!r.ok){window.location.href='/login';throw new Error()} return r.json() })
+      .then(r => { if(!r.ok){window.location.href='/';throw new Error()} return r.json() })
       .then(d => { setData(d); setUser(d?.user) })
       .catch(() => {})
   }, [])

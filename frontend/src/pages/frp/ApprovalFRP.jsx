@@ -330,7 +330,7 @@ export default function ApprovalFRP() {
     fetch(`/api/data/approval?view=${isApprovedView ? 'approved' : 'pending'}`)
       .then((response) => {
         if (!response.ok) {
-          window.location.href = '/login'
+          window.location.href = '/'
           throw new Error('Unauthorized')
         }
 

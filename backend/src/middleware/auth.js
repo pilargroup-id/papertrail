@@ -5,9 +5,9 @@
 const checkAuth = (req, res, next) => {
     if (!req.session.user) {
         if (req.path.startsWith('/api/')) {
-            return res.status(401).json({ error: 'Unauthorized', redirect: '/login' });
+            return res.status(401).json({ error: 'Unauthorized', redirect: '/' });
         }
-        return res.redirect('/login');
+        return res.redirect('/');
     }
 
     const u = req.session.user;

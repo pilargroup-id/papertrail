@@ -45,7 +45,7 @@ export default function LaporanPage({ type = 'frp' }) {
     fetch(url)
       .then(r => {
         if (r.status === 403) { navigate('/'); return null }
-        if (!r.ok) { navigate('/login'); return null }
+        if (!r.ok) { navigate('/'); return null }
         return r.json()
       })
       .then(d => {

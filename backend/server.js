@@ -42,6 +42,7 @@ app.use(express.static(path.join(frontendPath, 'dist')));
 app.use(express.static(path.join(frontendPath, 'public')));
 app.use('/pdfs', express.static(pdfPath));
 app.set('view cache', false);
+app.set('trust proxy', 1);
 
 // ============================================================
 // BODY PARSERS
@@ -53,10 +54,16 @@ app.use(express.urlencoded({ extended: true }));
 // SESSION
 // ============================================================
 app.use(session({
-    secret: 'frp-secret-key-2024',
+    secret: process.env.SESSION_SECRET || 'frp-secret-key-2024',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: process.env.SESSION_SAMESITE || (IS_DEV ? 'lax' : 'none'),
+        secure: process.env.SESSION_SECURE
+            ? process.env.SESSION_SECURE === 'true'
+            : !IS_DEV,
+    },
 }));
 
 app.use(devAuth);
@@ -88,6 +95,15 @@ app.use(dashboardRoutes);
 app.use(pdfRoutes);
 app.use(budgetRoutes);
 app.use(documentRoutes);
+if (!IS_DEV) {
+    app.use((req, res, next) => {
+        if (req.method !== 'GET') return next();
+        if (req.path.startsWith('/api/') || req.path.startsWith('/pdfs/')) return next();
+        if (!req.accepts('html')) return next();
+
+        return res.sendFile(path.join(frontendPath, 'dist', 'index.html'));
+    });
+}
 // ============================================================
 // DEV MODE — Proxy ke Vite untuk HMR (Hot Module Replacement)
 // ============================================================

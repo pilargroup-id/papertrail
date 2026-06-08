@@ -178,7 +178,7 @@ export default function NewRP() {
   useEffect(() => {
     const q = searchParams.toString() ? `?${searchParams.toString()}` : ''
     fetch(`/api/rp/form-data${q}`)
-      .then(r => { if (!r.ok) { window.location.href = '/login'; throw new Error() } return r.json() })
+      .then(r => { if (!r.ok) { window.location.href = '/'; throw new Error() } return r.json() })
       .then(d => {
         setData(d)
         setUser(d?.user)

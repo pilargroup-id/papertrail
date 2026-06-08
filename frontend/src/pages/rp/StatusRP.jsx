@@ -340,7 +340,7 @@ export default function StatusRP() {
     setLoading(true)
     fetch('/api/data/rp-approval?view=all')
       .then(res => {
-        if (!res.ok) { window.location.href = '/login'; throw new Error('Unauthorized') }
+        if (!res.ok) { window.location.href = '/'; throw new Error('Unauthorized') }
         return res.json()
       })
       .then(d => { setData(d); setUser(d?.user) })

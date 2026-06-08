@@ -414,7 +414,7 @@ export default function FormPage() {
     fetch(`/api/form-data${query}`)
       .then(r => {
         if (!r.ok) {
-          window.location.href = '/login'
+          window.location.href = '/'
           throw new Error(`HTTP ${r.status}`)
         }
         return r.json()

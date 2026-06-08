@@ -1,3 +1,5 @@
+import { resolveApiUrl } from './network';
+
 /**
  * Custom Error class for API errors
  */
@@ -15,7 +17,10 @@ export class ApiError extends Error {
  */
 async function fetchWithConfig(url, config = {}) {
   try {
-    const response = await fetch(url, config);
+    const response = await fetch(resolveApiUrl(url), {
+      credentials: 'include',
+      ...config,
+    });
     
     // Check if the response is JSON
     const contentType = response.headers.get('content-type');
