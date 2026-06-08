@@ -92,6 +92,16 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
             set -e
+
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"
+            nvm use 18.18.0
+
+            echo '>> Check node'
+            node -v
+            npm -v
+            pm2 -v
+
             cd /var/www/papertrail/backend
 
             echo '>> Install backend dependencies'
