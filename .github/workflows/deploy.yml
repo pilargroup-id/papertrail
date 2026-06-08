@@ -1,0 +1,120 @@
+name: Deploy papertrail.pilargroup.id
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy to GCP
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------
+      # 1. Checkout
+      # -------------------------
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 2. Setup Node.js
+      # -------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # -------------------------
+      # 3. Install dependencies & build frontend
+      # -------------------------
+      - name: Install dependencies & build frontend
+        working-directory: frontend
+        run: |
+          npm install
+          npm run build
+
+      # -------------------------
+      # 4. Setup SSH key
+      # -------------------------
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GCP_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
+
+      # -------------------------
+      # 5. Debug SSH connection
+      # -------------------------
+      - name: Debug SSH connection
+        run: |
+          echo ">> Check DNS"
+          nslookup ${{ secrets.GCP_HOST }}
+
+          echo ">> Check generated public key from GitHub secret"
+          ssh-keygen -y -f ~/.ssh/deploy_key
+
+          echo ">> Test SSH verbose"
+          ssh -vvv -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "whoami && hostname"
+
+      # -------------------------
+      # 6. Pull latest code on VM
+      # -------------------------
+      - name: Pull latest code on VM
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
+            set -e
+            cd /var/www/papertrail
+            echo '>> Git pull'
+            git pull origin main
+          "
+
+      # -------------------------
+      # 7. Upload frontend build to VM
+      # -------------------------
+      - name: Upload frontend build to VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
+            mkdir -p /var/www/papertrail/frontend/dist
+          "
+
+          rsync -az --delete -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            frontend/dist/ \
+            ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:/var/www/papertrail/frontend/dist/
+
+      # -------------------------
+      # 8. Finalize backend deploy on VM
+      # -------------------------
+      - name: Finalize backend deploy on VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} "
+            set -e
+
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"
+            nvm use 18.18.0
+
+            echo '>> Check node'
+            node -v
+            npm -v
+            pm2 -v
+
+            cd /var/www/papertrail/backend
+
+            echo '>> Install backend dependencies'
+            npm install
+
+            echo '>> Restart PM2 app'
+            pm2 restart papertrail-api || pm2 start npm --name papertrail-api -- run start
+
+            echo '>> Save PM2 process list'
+            pm2 save
+
+            echo '>> Reload nginx'
+            sudo systemctl reload nginx
+
+            echo '>> Deploy selesai'
+          "
