@@ -35,61 +35,122 @@ function dbRowsToEmployees(rows) {
 
     rows.forEach(row => {
         if (!grouped.has(row.id)) {
-            grouped.set(row.id, { row, assignments: [], assignmentMap: new Map(), isAdmin: false });
+            grouped.set(row.id, {
+                row,
+                assignments: [],
+                assignmentMap: new Map(),
+                isAdmin: false,
+            });
         }
 
         const entry = grouped.get(row.id);
-        const deptDisplayName = row.dept_name || '';
-        const deptClass = row.dept_class || '';
-        const jobLevel = mapJobLevel(row.job_level_name);
+
+        const companyId = row.company_id || '';
+        const companyCode = normalizeCompanyCode(row.company_code || row.company_name);
         const companyName = normalizeCompanyName(row.company_code, row.company_name);
 
-        // Mark as admin if in IT department
-        if (row.department_id === 8 || deptClass.toUpperCase() === 'IT' || deptDisplayName.toUpperCase() === 'IT') {
+        const departmentId = row.department_id || null;
+        const departmentName = row.dept_name || '';
+        const departmentClass = row.dept_class || '';
+        const departmentCode = row.dept_code || '';
+
+        const jobLevelName = mapJobLevel(row.job_level_name);
+        const jobLevelRank = row.job_level_rank ?? null;
+
+        if (
+            departmentId === 8 ||
+            departmentClass.toUpperCase() === 'IT' ||
+            departmentName.toUpperCase() === 'IT'
+        ) {
             entry.isAdmin = true;
         }
 
-        if (deptDisplayName || deptClass || row.company_code || row.company_name) {
-            // Group by company + dept name → enables multi-class per dept
-            const groupKey = `${companyName}|${deptDisplayName || deptClass}|${jobLevel}`;
+        if (companyId || companyCode || companyName || departmentName || departmentClass) {
+            const groupKey = `${companyId}|${departmentId}|${departmentClass}|${jobLevelName}|${jobLevelRank}`;
+
             if (!entry.assignmentMap.has(groupKey)) {
-                const asgn = {
-                    id: row.company_id || '',
-                    companyId: row.company_id || '',
-                    code: normalizeCompanyCode(row.company_code || row.company_name),
-                    companyCode: normalizeCompanyCode(row.company_code || row.company_name),
+                const assignment = {
+                    id: companyId,
+                    code: companyCode,
                     name: companyName,
-                    deptName: deptDisplayName,
-                    class: deptClass,
-                    classes: deptClass ? [deptClass] : [],
-                    jobLevel,
+                    class: departmentClass,
+                    department_id: departmentId,
+                    dept_name: departmentName,
+                    dept_class: departmentClass,
+                    dept_code: departmentCode,
+                    job_level_name: jobLevelName,
+                    job_level_rank: jobLevelRank,
+                    classes: departmentClass ? [departmentClass] : [],
                 };
-                entry.assignmentMap.set(groupKey, asgn);
-                entry.assignments.push(asgn);
+
+                entry.assignmentMap.set(groupKey, assignment);
+                entry.assignments.push(assignment);
             } else {
-                // Accumulate additional classes for the same dept group
                 const existing = entry.assignmentMap.get(groupKey);
-                if (deptClass && !existing.classes.includes(deptClass)) {
-                    existing.classes.push(deptClass);
+
+                if (departmentClass && !existing.classes.includes(departmentClass)) {
+                    existing.classes.push(departmentClass);
                 }
             }
         }
     });
 
     return [...grouped.values()].map(({ row, assignments, isAdmin }) => {
-        const jobLevel = mapJobLevel(row.job_level_name);
-        const fallbackAssignments = assignments.length
+        const primaryAssignment = assignments[0] || {};
+
+        const companyId = primaryAssignment.id || row.company_id || '';
+        const companyCode = primaryAssignment.code || normalizeCompanyCode(row.company_code || row.company_name);
+        const companyName = primaryAssignment.name || normalizeCompanyName(row.company_code, row.company_name);
+
+        const departmentId = primaryAssignment.department_id || row.department_id || null;
+        const departmentCode = primaryAssignment.dept_code || row.dept_code || '';
+        const departmentName = primaryAssignment.dept_name || row.dept_name || '';
+        const departmentClass = primaryAssignment.dept_class || row.dept_class || '';
+
+        const jobLevelName = primaryAssignment.job_level_name || mapJobLevel(row.job_level_name);
+        const jobLevelRank = primaryAssignment.job_level_rank ?? row.job_level_rank ?? null;
+
+        const finalAssignments = assignments.length
             ? assignments
-            : [{ name: COMPANY_MAP.PNM, deptName: '', class: '', classes: [], jobLevel }];
+            : [
+                {
+                    id: companyId || '',
+                    code: companyCode || '',
+                    name: companyName || COMPANY_MAP.PNM,
+                    class: departmentClass || '',
+                    department_id: departmentId,
+                    dept_name: departmentName || '',
+                    dept_class: departmentClass || '',
+                    dept_code: departmentCode || '',
+                    job_level_name: jobLevelName,
+                    job_level_rank: jobLevelRank,
+                    classes: departmentClass ? [departmentClass] : [],
+                },
+            ];
 
         return {
             id: row.id,
-            fullName: row.name,
-            email: row.email || '',
             username: row.username,
-            role: isAdmin ? 'administrator' : 'user',
-            companies: fallbackAssignments,
-            originalIndex: row.id,
+            email: row.email || null,
+            fullName: row.name,
+            name: row.name,
+
+            companyId,
+            companyCode,
+            companyName,
+            selectedCompany: companyName,
+
+            departmentId,
+            departmentCode,
+            departmentName,
+            departmentClass,
+            selectedDivision: departmentClass || departmentName,
+
+            jobLevelName,
+            jobLevelRank,
+            selectedJobLevel: jobLevelName,
+
+            allAssignments: finalAssignments,
         };
     });
 }
