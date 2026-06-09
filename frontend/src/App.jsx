@@ -77,6 +77,15 @@ function AuthBootstrap({ children }) {
   return children
 }
 
+function RpApprovalRedirect() {
+  const { user } = useUser()
+  const userJobLevelRank = Number(user?.jobLevelRank || user?.job_level_rank || 0)
+  const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
+  const isStaff = userJobLevelRank <= 1 || /\bstaff\b/.test(userJobLevelName)
+
+  return <Navigate to={isStaff ? '/rp-approval/staff' : '/rp-approval/manager'} replace />
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -94,7 +103,10 @@ function AppRoutes() {
         <Route path="/laporan-rp" element={<ReportPage type="rp" />} />
         <Route path="/admin/:type" element={<AdminPage />} />
         <Route path="/rp" element={<NewRP />} />
-        <Route path="/rp-approval" element={<RpApprovalPage />} />
+        <Route path="/rp-approval" element={<RpApprovalRedirect />} />
+        <Route path="/rp-approval/manager" element={<RpApprovalPage />} />
+        <Route path="/rp-approval/staff" element={<RpApprovalPage />} />
+        <Route path="/rp-approval/*" element={<RpApprovalRedirect />} />
         <Route path="/rp-approved" element={<RpApprovalPage />} />
         <Route path="/status_frp" element={<StatusFRP />} />
         <Route path="/status_rp" element={<StatusRP />} />

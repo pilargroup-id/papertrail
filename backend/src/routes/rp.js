@@ -761,8 +761,7 @@ router.get('/api/data/rp-approval', checkAuth, async (req, res) => {
         );
     }
 
-    const canApprove = u.role === 'administrator' ||
-        ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
+    const canApprove = isManagerLevel(u);
 
     res.json({
         requests: reqs.map(r => enrichRpWithRevert(r, u)),
@@ -794,7 +793,7 @@ router.get('/api/rp/:id', checkAuth, async (req, res) => {
         if (!data) return res.status(404).json({ error: 'Not found' });
         const user = req.session.user;
         const isAdmin = user.role === 'administrator';
-        const canApprove = isAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
+        const canApprove = isManagerLevel(user);
         const isProcessDivision = isAdmin || user.selectedDivision === data.diprosesOleh;
         const employees = await getAllEmployees();
         const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
@@ -923,7 +922,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         }
 
         // Step 2: manager department requester approval
-        if (['manager-approve', 'manager-reject'].includes(action) && !isAdmin) {
+        if (['manager-approve', 'manager-reject'].includes(action)) {
             if (!isManagerLevel(u)) {
                 await client.rollback();
                 return res.status(403).json({
@@ -961,7 +960,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         }
 
         // Step 4: processor manager final approval/revert/reject
-        if (['process-manager-approve', 'process-manager-reject'].includes(action) && !isAdmin) {
+        if (['process-manager-approve', 'process-manager-reject'].includes(action)) {
             if (!isManagerLevel(u)) {
                 await client.rollback();
                 return res.status(403).json({
@@ -1215,23 +1214,42 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                 return res.status(403).json({ success: false, error: 'Tidak ada akses untuk revert RP yang sudah approved' });
             }
 
-            await client.query(`
-                UPDATE rp_request
-                SET
-                    status = 'waiting_manager',
-                    manager_approved_by = NULL,
-                    manager_approved_at = NULL,
-                    process_manager_approved_by = NULL,
-                    process_manager_approved_at = NULL,
-                    process_changes = ?,
-                    process_updated_by = ?,
-                    process_updated_at = NOW()
-                WHERE id = ?
-            `, [
-                JSON.stringify({ note: req.body.reason || 'Reverted from approved', revertedBy: u.fullName, revertedFrom: 'approved' }),
-                u.fullName,
-                rp.id,
-            ]);
+            // Short flow: waiting_manager → approved (skip division_review & final_review)
+            // Normal flow: ... → final_review → approved
+            // Revert one step back accordingly
+            if (shortFlow) {
+                await client.query(`
+                    UPDATE rp_request
+                    SET
+                        status = 'waiting_manager',
+                        manager_approved_by = NULL,
+                        manager_approved_at = NULL,
+                        process_changes = ?,
+                        process_updated_by = ?,
+                        process_updated_at = NOW()
+                    WHERE id = ?
+                `, [
+                    JSON.stringify({ note: req.body.reason || 'Reverted from approved to manager review', revertedBy: u.fullName, revertedFrom: 'approved' }),
+                    u.fullName,
+                    rp.id,
+                ]);
+            } else {
+                await client.query(`
+                    UPDATE rp_request
+                    SET
+                        status = 'final_review',
+                        process_manager_approved_by = NULL,
+                        process_manager_approved_at = NULL,
+                        process_changes = ?,
+                        process_updated_by = ?,
+                        process_updated_at = NOW()
+                    WHERE id = ?
+                `, [
+                    JSON.stringify({ note: req.body.reason || 'Reverted from approved to final review', revertedBy: u.fullName, revertedFrom: 'approved' }),
+                    u.fullName,
+                    rp.id,
+                ]);
+            }
 
         } else if (action === 'delete') {
             if (!isAdmin) {

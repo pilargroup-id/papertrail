@@ -8,6 +8,8 @@ import DialogCheckData from '../../components/Dialog/DialogCheckData'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
 import DataTableRp from '../../components/table/DataTableApprovalRp.jsx'
 import ButtonActionApprovalRp from '../../components/button/ButtonActionApprovalRp.jsx'
+import ButtonAccessManagerRp from '../../components/button/ButtonAccessManagerRp.jsx'
+import ButtonAccessStaffRp from '../../components/button/ButtonAccessStaffRp.jsx'
 import FilterApprovalRp from './FilterApprovalRp.jsx'
 import TabsFilterApprovalRp from './TabsFilterApprovalRp.jsx'
 
@@ -67,7 +69,7 @@ const ACTION_META = {
   revert: {
     eyebrow: 'Konfirmasi Revert',
     title: 'Revert Request Purchase?',
-    message: 'Status RP akan dikembalikan ke pending manager.',
+    message: 'Status RP akan dikembalikan satu langkah ke belakang.',
     confirmLabel: 'Ya, Revert',
     icon: 'restart_alt',
     tone: 'warning',
@@ -124,6 +126,7 @@ export default function RpApprovalPage() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const isApprovedView = pathname === '/rp-approved'
+  const approvalMode = pathname.startsWith('/rp-approval/staff') ? 'staff' : 'manager'
   const { setUser } = useUser()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -495,6 +498,7 @@ export default function RpApprovalPage() {
         requestAction={requestAction}
         setSelected={setSelected}
         onCheckData={openCheckData}
+        mode={approvalMode}
         options={options}
       />
     )
@@ -506,15 +510,9 @@ export default function RpApprovalPage() {
     const total = calcTotal(selected)
 
     // Determine what actions should be rendered in the footer
-    const canManagerApprove =
-      selected.status === 'waiting_manager' &&
-      canTakeApprovalAction
     const canProcess =
       selected.status === 'division_review' &&
       (isAdmin || isProcessDivision(selected.diprosesOleh))
-    const canFinalApprove =
-      selected.status === 'final_review' &&
-      canTakeApprovalAction
     const canCreateFrp =
       selected.status === 'approved' &&
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
@@ -774,17 +772,29 @@ export default function RpApprovalPage() {
               </>
             )}
 
-            {canManagerApprove && (
-              <>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'manager-approve')} className="btn-dialog btn-dialog-approve">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
-                  Approve
-                </button>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'manager-reject')} className="btn-dialog btn-dialog-reject">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
-                  Reject
-                </button>
-              </>
+            {approvalMode === 'manager' ? (
+              <ButtonAccessManagerRp
+                rp={selected}
+                user={user}
+                userJobLevelRank={userJobLevelRank}
+                canTakeApprovalAction={canTakeApprovalAction}
+                actionLoading={actionLoading}
+                requestAction={requestAction}
+                setSelected={setSelected}
+                showActions={true}
+              />
+            ) : (
+              <ButtonAccessStaffRp
+                rp={selected}
+                actionLoading={actionLoading}
+                requestAction={requestAction}
+                onCheckData={openCheckData}
+                setSelected={setSelected}
+                showActions={true}
+                showDetail={true}
+                showRevert={true}
+                isStaff={userJobLevelRank === 1}
+              />
             )}
 
             {canProcess && (
@@ -794,19 +804,6 @@ export default function RpApprovalPage() {
                   Check Data
                 </button>
                 <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-reject')} className="btn-dialog btn-dialog-reject">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
-                  Reject
-                </button>
-              </>
-            )}
-
-            {canFinalApprove && (
-              <>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-manager-approve')} className="btn-dialog btn-dialog-approve">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
-                  Final Approve
-                </button>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-manager-reject')} className="btn-dialog btn-dialog-reject">
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
                   Reject
                 </button>

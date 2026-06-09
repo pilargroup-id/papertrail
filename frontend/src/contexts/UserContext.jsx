@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 const UserContext = createContext(null)
 const AUTH_USER_KEY = 'authUser'
@@ -15,8 +15,14 @@ function readStoredUser() {
 export function UserProvider({ children }) {
   const [user, setUserState] = useState(readStoredUser)
 
-  const setUser = (nextUser) => {
-    setUserState(nextUser)
+  const setUser = useCallback((nextUser) => {
+    setUserState((currentUser) => {
+      if (JSON.stringify(currentUser) === JSON.stringify(nextUser)) {
+        return currentUser
+      }
+
+      return nextUser
+    })
 
     try {
       if (nextUser) {
@@ -25,7 +31,7 @@ export function UserProvider({ children }) {
         localStorage.removeItem(AUTH_USER_KEY)
       }
     } catch (_) {}
-  }
+  }, [])
 
   useEffect(() => {
     const sync = (event) => {
@@ -38,11 +44,9 @@ export function UserProvider({ children }) {
     return () => window.removeEventListener('storage', sync)
   }, [])
 
-  return (
-    <UserContext.Provider value={{ user, setUser }}>
-      {children}
-    </UserContext.Provider>
-  )
+  const value = useMemo(() => ({ user, setUser }), [user, setUser])
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>
 }
 
 export const useUser = () => useContext(UserContext)
