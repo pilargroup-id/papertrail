@@ -3,7 +3,15 @@ import SearchableSelect from '../template/SearchableSelect.jsx'
 
 const normalizeNumber = v => { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return Number.isNaN(n) ? 0 : n }
 const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
-const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
+const formatDecimalInput = v => {
+  if (v === undefined || v === null || v === '') return ''
+  const clean = String(v).replace(/[^0-9.]/g, '')
+  if (!clean) return ''
+  const [intPart, ...decimalParts] = clean.split('.')
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  if (decimalParts.length === 0) return formattedInt
+  return `${formattedInt}.${decimalParts.join('').replace(/\./g, '')}`
+}
 
 const S = {
   sectionTitle: { display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 1.25rem', fontSize: '0.95rem', fontWeight: 700, color: '#1e293b' },
@@ -30,6 +38,7 @@ const S = {
 export default function DataTableItemsRp({
   items,
   isMobile,
+  embedded = false,
   budgetSelectOpts,
   updateItem,
   removeRow,
@@ -67,7 +76,7 @@ export default function DataTableItemsRp({
                     <input name={`items[${idx}][memo]`} style={S.input} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi item..." />
                   </div>
                   <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
-                    <label style={S.label}>Link Pembelian</label>
+                    <label style={S.label}>Purchase Link</label>
                     <input name={`items[${idx}][linkPembelian]`} style={S.input} value={item.linkPembelian} onChange={e => updateItem(idx, 'linkPembelian', e.target.value)} placeholder="https://..." />
                   </div>
                   <div style={S.formGroup}>
@@ -76,7 +85,7 @@ export default function DataTableItemsRp({
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Estimated Value</label>
-                    <input type="text" name={`items[${idx}][estimatedValue]`} style={S.input} value={formatNumberInput(item.estimatedValue)} onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))} />
+                    <input type="text" name={`items[${idx}][estimatedValue]`} style={S.input} value={formatDecimalInput(item.estimatedValue)} onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/[^0-9.]/g, ''))} />
                   </div>
                 </div>
                 <div style={{ ...S.itemCardAmount, display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
@@ -94,17 +103,17 @@ export default function DataTableItemsRp({
           })}
         </div>
       ) : (
-        <div className="no-scrollbar" style={{ overflowX: 'auto' }}>
+        <div className="no-scrollbar" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: embedded ? '235px' : 'none' }}>
           <table style={S.table}>
             <thead>
               <tr>
                 <th style={{ ...S.th, width: '22%', borderLeft: '1px solid #e2e8f0', borderTopLeftRadius: '8px' }}>Item</th>
                 <th style={{ ...S.th, width: '18%' }}>Memo</th>
-                <th style={{ ...S.th, width: '22%' }}>Link Pembelian</th>
-                <th style={{ ...S.th, width: '6%', textAlign: 'center' }}>Qty</th>
-                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Sisa Budget</th>
-                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Harga Satuan</th>
-                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Amount (IDR)</th>
+                <th style={{ ...S.th, width: '22%' }}>Purchase Link</th>
+                <th style={{ ...S.th, width: '8%', textAlign: 'center' }}>Qty</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Budget Remaining</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Unit Price (IDR)</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Total (IDR)</th>
                 <th style={{ ...S.th, width: '3%', borderTopRightRadius: '8px' }} />
               </tr>
             </thead>
@@ -133,7 +142,7 @@ export default function DataTableItemsRp({
                         style={{ ...S.tdInput, height: '34px', padding: '6px 10px', fontSize: '0.85rem' }}
                         value={item.memo}
                         onChange={e => updateItem(idx, 'memo', e.target.value)}
-                        placeholder="Deskripsi item..."
+                        placeholder="Description Item..."
                       />
                     </td>
                     <td style={S.td}>
@@ -149,7 +158,7 @@ export default function DataTableItemsRp({
                       <input
                         type="number"
                         name={`items[${idx}][qty]`}
-                        style={{ ...S.tdInput, height: '34px', padding: '6px 8px', fontSize: '0.85rem', textAlign: 'center' }}
+                        style={{ ...S.tdInput, height: '34px', padding: '6px 8px', fontSize: '0.95rem', textAlign: 'center', fontWeight: 700, color: '#0f172a' }}
                         value={item.qty}
                         onChange={e => updateItem(idx, 'qty', e.target.value)}
                       />
@@ -183,8 +192,8 @@ export default function DataTableItemsRp({
                             textAlign: 'right',
                             fontSize: '0.85rem'
                           }}
-                          value={formatNumberInput(item.estimatedValue)}
-                          onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))}
+                          value={formatDecimalInput(item.estimatedValue)}
+                          onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/[^0-9.]/g, ''))}
                         />
                       </div>
                     </td>

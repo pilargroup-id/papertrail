@@ -478,9 +478,10 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
 
     let reqs = await fetchAllFrpRequests();
 
-    const pendingCount = reqs.filter(r => r.status === 'PENDING' && isRequestInUserScope(r, u)).length;
+    const pendingCount = reqs.filter(r => r.status === 'PENDING' && (hasLookAccess || isRequestInUserScope(r, u))).length;
     const approvedCount = reqs.filter(r =>
-        (r.status === 'APPROVED' || r.status === 'REJECTED') && isRequestInUserScope(r, u)
+        (r.status === 'APPROVED' || r.status === 'REJECTED') &&
+        (hasLookAccess || isRequestInUserScope(r, u))
     ).length;
 
     if (!isAllView) {
@@ -494,6 +495,7 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
     }
 
     const canApprove = u.role === 'administrator' ||
+        Number(u.jobLevelRank || 0) >= 4 ||
         ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
 
     res.json({
@@ -744,6 +746,7 @@ async function adjustBudgetUsage(client, items, direction = 'deduct') {
 // Cek apakah user boleh lihat semua FRP lintas divisi
 async function canLookAllFrp(user) {
     if (user.role === 'administrator') return true;
+    if (Number(user.jobLevelRank || 0) >= 4) return true;
 
     const departmentClass = String(
         user.departmentClass ||

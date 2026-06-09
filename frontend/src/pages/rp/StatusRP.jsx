@@ -6,6 +6,7 @@ import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import DialogFailAction from '../../components/Dialog/DialogFailAction'
 import ButtonRevert from '../../components/button/ButtonRevert'
+import Filteryear from '../../components/dropdown/filter/Year.jsx'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -321,7 +322,7 @@ export default function StatusRP() {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
-  const [filters, setFilters] = useState({ search: '', status: '', date: '', division: '' })
+  const [filters, setFilters] = useState({ search: '', status: '', date: '', year: '', division: '' })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -445,11 +446,13 @@ export default function StatusRP() {
         
         const reqDate = req.createdAt ? new Date(req.createdAt).toISOString().split('T')[0] : ''
         const matchDate = !filters.date || reqDate === filters.date
-        
+        const reqYear = req.createdAt ? String(new Date(req.createdAt).getFullYear()) : ''
+        const matchYear = !filters.year || reqYear === filters.year
+
         const reqDiv = req.departmentName || req.departmentClass || '-'
         const matchDivision = !filters.division || reqDiv === filters.division
         
-        return matchSearch && matchStatus && matchDate && matchDivision
+        return matchSearch && matchStatus && matchDate && matchYear && matchDivision
       })
       .sort((a, b) => {
         if (sortConfig.key === 'date') {
@@ -640,7 +643,7 @@ export default function StatusRP() {
                     display: 'grid',
                     gridTemplateColumns: isMobile
                       ? '1fr'
-                      : `repeat(4, minmax(140px, 1fr))`,
+                      : `repeat(5, minmax(140px, 1fr))`,
                     gap: '12px',
                     flex: 1,
                     minWidth: isMobile ? '100%' : '600px',
@@ -663,6 +666,12 @@ export default function StatusRP() {
                       value={filters.date}
                       onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
                       style={filterInput}
+                    />
+                  </FilterField>
+                  <FilterField label="Tahun" icon="calendar_month">
+                    <Filteryear
+                      value={filters.year}
+                      onChange={(value) => setFilters((c) => ({ ...c, year: value }))}
                     />
                   </FilterField>
 
@@ -698,7 +707,7 @@ export default function StatusRP() {
 
                 {Object.values(filters).some(Boolean) && (
                   <button
-                    onClick={() => setFilters({ search: '', status: '', date: '', division: '' })}
+                    onClick={() => setFilters({ search: '', status: '', date: '', year: '', division: '' })}
                     style={{
                       display: 'inline-flex', alignItems: 'center', gap: '4px',
                       padding: '9px 14px', borderRadius: '10px', border: '1.5px solid #e2e8f0',

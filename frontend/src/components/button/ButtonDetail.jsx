@@ -46,17 +46,17 @@ function ButtonDetail({
       className={className}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: '4px',
-        background: isHovered ? '#eff6ff' : 'white',
-        color: isHovered ? '#1d4ed8' : '#3b82f6', 
-        border: '1px solid transparent', 
-        borderColor: isHovered ? '#bfdbfe' : 'transparent',
+        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        color: 'white', 
+        border: 'none', 
         borderRadius: '24px',
-        padding: '4px 10px', 
+        padding: '4px 12px', 
         fontSize: '11px', 
         fontWeight: 600,
         cursor: 'pointer',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        boxShadow: isHovered ? '0 4px 10px rgba(59,130,246,0.4)' : '0 2px 6px rgba(59,130,246,0.3)',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: isHovered ? 'translateY(-1px)' : 'translateY(0)',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

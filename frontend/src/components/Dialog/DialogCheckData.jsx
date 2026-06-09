@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import BackgroundDialog from '../template/BackgroundDialog'
+import NewRP from '../../pages/rp/NewRP.jsx'
 
 import { XClose } from '../template/TemplateIcons.jsx'
 
@@ -41,7 +42,16 @@ function DialogFrpDetail({
                 aria-modal="true"
                 aria-labelledby="dialog-frp-detail-title"
                 onClick={(event) => event.stopPropagation()}
-                style={{ position: 'relative', overflow: 'hidden', background: '#ffffff', borderRadius: '24px' }}
+                style={{
+                    position: 'relative',
+                    overflow: 'hidden',
+                    background: '#ffffff',
+                    borderRadius: '24px',
+                    height: 'auto',
+                    maxHeight: 'calc(120vh - 70px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}
             >
                 <BackgroundDialog />
                 <div className="dashboard-popup__header">
@@ -63,15 +73,31 @@ function DialogFrpDetail({
                     </div>
                 </div>
 
-                <div className="dashboard-popup__body dashboard-popup__body--frp-detail">
-                    <div className="frp-detail-frame-shell">
-                        <div className="frp-detail-frame">
-                            <iframe
-                                src={`/frp/${request.id}?embedded=approval`}
-                                title={`Detail ${request.frpNo || 'FRP'}`}
-                                className="frp-detail-frame__iframe"
-                            />
-                        </div>
+                <div
+                    className="dashboard-popup__body dashboard-popup__body--frp-detail"
+                    style={{
+                        flex: '1 1 auto',
+                        minHeight: 0,
+                        overflowY: 'auto',
+                        padding: '16px',
+                        background: '#eef4fb',
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: '14px',
+                            overflow: 'visible',
+                            background: '#f8fafc',
+                            border: '1px solid #dbe4ef',
+                            borderRadius: '18px',
+                            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+                        }}
+                    >
+                        <NewRP
+                            embedded
+                            embeddedProcessId={request.id}
+                            onCloseEmbedded={onClose}
+                        />
                     </div>
                 </div>
             </div>

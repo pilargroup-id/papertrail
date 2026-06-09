@@ -2,8 +2,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../../db');
 const { checkAuth } = require('../middleware/auth');
+const { rowsToSessionUser } = require('../middleware/devAuth');
 const { LOGIN_SQL } = require('../config/constants');
-const { userFromLoginRows } = require('../services/dbService');
 
 const router = express.Router();
 
@@ -23,8 +23,7 @@ router.post('/login', async (req, res) => {
         if (rows.length) {
             const match = await bcrypt.compare(password, rows[0].password || '');
             if (match) {
-                const emp = userFromLoginRows(rows);
-                req.session.user = { fullName: emp.fullName, role: emp.role, allAssignments: emp.companies };
+                req.session.user = rowsToSessionUser(rows);
                 return res.redirect('/select-company');
             }
         }
@@ -59,10 +58,15 @@ router.get('/select-division', checkAuth, (req, res) => {
     const user = req.session.user;
     const divisions = user.allAssignments
         .filter(a => a.name === user.selectedCompany)
-        .map(a => ({ class: a.class, jobLevel: a.jobLevel }));
+        .map(a => ({
+            class: a.class || a.dept_class || a.departmentClass || '',
+            jobLevel: a.jobLevel || a.job_level_name || '',
+            jobLevelRank: a.jobLevelRank || a.job_level_rank || null,
+        }));
     if (divisions.length === 1) {
         req.session.user.selectedDivision = divisions[0].class;
         req.session.user.selectedJobLevel = divisions[0].jobLevel;
+        req.session.user.jobLevelRank = divisions[0].jobLevelRank || req.session.user.jobLevelRank || null;
         return res.redirect('/');
     }
     res.sendSPA();
@@ -74,8 +78,9 @@ router.post('/select-division', checkAuth, (req, res) => {
         a => a.name === user.selectedCompany && a.class === req.body.division
     );
     if (assignment) {
-        req.session.user.selectedDivision = assignment.class;
-        req.session.user.selectedJobLevel = assignment.jobLevel;
+        req.session.user.selectedDivision = assignment.class || assignment.dept_class || req.body.division;
+        req.session.user.selectedJobLevel = assignment.jobLevel || assignment.job_level_name || '';
+        req.session.user.jobLevelRank = assignment.jobLevelRank || assignment.job_level_rank || req.session.user.jobLevelRank || null;
     }
     res.redirect('/');
 });
@@ -96,8 +101,7 @@ router.post('/api/auth/login', async (req, res) => {
         if (rows.length) {
             const match = await bcrypt.compare(password, rows[0].password || '');
             if (match) {
-                const emp = userFromLoginRows(rows);
-                req.session.user = { fullName: emp.fullName, role: emp.role, allAssignments: emp.companies };
+                req.session.user = rowsToSessionUser(rows);
                 return res.json({ success: true, redirect: '/select-company' });
             }
         }
@@ -136,6 +140,7 @@ router.get('/api/data/select-company', checkAuth, (req, res) => {
             selectedCompanyCode: user.selectedCompanyCode || '',
             selectedDivision: user.selectedDivision || '',
             selectedJobLevel: user.selectedJobLevel || '',
+            jobLevelRank: user.jobLevelRank || null,
             allAssignments: user.allAssignments || [],
         },
     });
@@ -154,8 +159,13 @@ router.get('/api/data/select-division', checkAuth, (req, res) => {
     const divisions = user.allAssignments
         .filter(a => a.name === user.selectedCompany)
         .flatMap(a => {
-            const classes = a.classes && a.classes.length > 0 ? a.classes : [a.class].filter(Boolean);
-            return classes.map(cls => ({ class: cls, deptName: a.deptName || cls, jobLevel: a.jobLevel }));
+            const classes = a.classes && a.classes.length > 0 ? a.classes : [a.class || a.dept_class].filter(Boolean);
+            return classes.map(cls => ({
+                class: cls,
+                deptName: a.deptName || a.dept_name || cls,
+                jobLevel: a.jobLevel || a.job_level_name || '',
+                jobLevelRank: a.jobLevelRank || a.job_level_rank || null,
+            }));
         });
     res.json({
         divisions,
@@ -170,6 +180,7 @@ router.get('/api/data/select-division', checkAuth, (req, res) => {
             selectedCompanyCode: user.selectedCompanyCode || '',
             selectedDivision: user.selectedDivision || '',
             selectedJobLevel: user.selectedJobLevel || '',
+            jobLevelRank: user.jobLevelRank || null,
             allAssignments: user.allAssignments || [],
         },
     });
@@ -184,7 +195,8 @@ router.post('/api/auth/select-division', checkAuth, (req, res) => {
     );
     if (assignment) {
         req.session.user.selectedDivision = div;
-        req.session.user.selectedJobLevel = assignment.jobLevel;
+        req.session.user.selectedJobLevel = assignment.jobLevel || assignment.job_level_name || '';
+        req.session.user.jobLevelRank = assignment.jobLevelRank || assignment.job_level_rank || req.session.user.jobLevelRank || null;
     }
     res.json({ success: true, redirect: '/' });
 });

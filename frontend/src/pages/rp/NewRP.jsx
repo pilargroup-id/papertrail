@@ -160,7 +160,11 @@ const buildInitialRp = data => {
   }
 }
 
-export default function NewRP() {
+export default function NewRP({
+  embedded = false,
+  embeddedProcessId = null,
+  onCloseEmbedded = null,
+} = {}) {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
@@ -176,7 +180,11 @@ export default function NewRP() {
   const [vw, setVw] = useState(typeof window === 'undefined' ? 1280 : window.innerWidth)
 
   useEffect(() => {
-    const q = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    const params = new URLSearchParams(searchParams)
+    if (embeddedProcessId) {
+      params.set('process', embeddedProcessId)
+    }
+    const q = params.toString() ? `?${params.toString()}` : ''
     fetch(`/api/rp/form-data${q}`)
       .then(r => { if (!r.ok) { window.location.href = '/'; throw new Error() } return r.json() })
       .then(d => {
@@ -294,6 +302,13 @@ export default function NewRP() {
   const budgetSelectOpts = useMemo(() => budgetOptions.map(b => ({ value: b.id, label: `${b.id} - ${b.description}`, keywords: `${b.id} ${b.description}` })), [budgetOptions])
 
   const totalAmount = useMemo(() => values.items.reduce((s, it) => s + normalizeNumber(it.qty) * normalizeNumber(it.estimatedValue), 0), [values.items])
+  const processId = embeddedProcessId || searchParams.get('process')
+  const sectionSurfaceStyle = embedded
+    ? { padding: 0, background: 'transparent', border: 'none', boxShadow: 'none' }
+    : undefined
+  const sectionHeaderStyle = embedded
+    ? { flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }
+    : { flexWrap: 'wrap', gap: '10px' }
 
   const getBudgetRemaining = (budgetId) => {
     const b = (D.budgets || []).find(x => x.id === budgetId)
@@ -346,8 +361,6 @@ export default function NewRP() {
     setShowConfirm(false)
     setSubmitting(true); setSubmitError(null)
     try {
-      const processId = searchParams.get('process')
-      
       let payload = { 
         ...values,
         purchaseCategory: values.kategoriPembelian,
@@ -403,7 +416,17 @@ export default function NewRP() {
 
   return (
     <>
-      <main className="dashboard-main" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: '16px' }}>
+      <main
+        className="dashboard-main"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: embedded ? 'auto' : '100%',
+          overflow: embedded ? 'visible' : 'hidden',
+          padding: embedded ? '0' : '16px',
+          background: 'transparent',
+        }}
+      >
         {loading && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#64748b' }}>
             Memuat data...
@@ -415,12 +438,17 @@ export default function NewRP() {
           </div>
         )}
         {!loading && !error && (
-          <form id="rpForm" onSubmit={handleSubmit} className="frp-shell">
+          <form
+            id="rpForm"
+            onSubmit={handleSubmit}
+            className={embedded ? 'frp-shell frp-shell--embedded' : 'frp-shell'}
+            style={embedded ? { height: 'auto', minHeight: 0 } : undefined}
+          >
             {values.id && <input type="hidden" name="rpId" value={values.id} />}
 
             <div className="frp-top-panel">
               {/* Informasi Request Purchase */}
-              <div className="frp-card">
+              <div className={embedded ? '' : 'frp-card'} style={sectionSurfaceStyle}>
                 <h3 className="frp-section-title" style={{ marginBottom: '20px' }}>
                   <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>info</span>
                   Informasi Request Purchase
@@ -478,7 +506,7 @@ export default function NewRP() {
               </div>
 
               {/* Vendor & Proses */}
-              <div className="frp-card">
+              <div className={embedded ? '' : 'frp-card'} style={sectionSurfaceStyle}>
                 <h3 className="frp-section-title" style={{ marginBottom: '20px' }}>
                   <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>store</span>
                   Vendor &amp; Proses
@@ -490,9 +518,12 @@ export default function NewRP() {
                       value={values.vendorSuggestion}
                       onChange={v => updateField('vendorSuggestion', v)}
                       options={vendorOptions}
-                      placeholder="Pilih Vendor"
+                      placeholder="Pilih vendor atau ketik sendiri"
                       className="frp-select"
                       menuPosition="fixed"
+                      allowCustomInput
+                      customInputLabel="Vendor Manual"
+                      customInputButtonLabel="Pakai nama ini"
                     />
                   </FloatingGroup>
                 </div>
@@ -533,8 +564,8 @@ export default function NewRP() {
             </div>
 
             <div className="frp-bottom-panel">
-              <div className="frp-card frp-card--scroll">
-                <div className="frp-card-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
+              <div className={embedded ? 'frp-card--scroll' : 'frp-card frp-card--scroll'} style={sectionSurfaceStyle}>
+                <div className="frp-card-header" style={sectionHeaderStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <h3 className="frp-section-title">
                       <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>list_alt</span>
@@ -550,6 +581,7 @@ export default function NewRP() {
                   <DataTableItemsRp
                     items={values.items}
                     isMobile={isMobile}
+                    embedded={embedded}
                     budgetSelectOpts={budgetSelectOpts}
                     updateItem={updateItem}
                     removeRow={removeRow}
@@ -578,7 +610,7 @@ export default function NewRP() {
                     </button>
                     <button type="submit" className="frp-btn-primary" disabled={submitting} style={isMobile ? { width: '100%' } : {}}>
                       <span className="material-icons-round" style={{ fontSize: '16px' }}>{submitting ? 'hourglass_empty' : 'send'}</span>
-                      {submitting ? 'Menyimpan...' : (searchParams.get('process') ? 'Update & Submit' : 'Submit Request Purchase')}
+                      {submitting ? 'Menyimpan...' : (processId ? 'Update & Submit' : 'Submit Request Purchase')}
                     </button>
                   </div>
                 </div>
@@ -591,7 +623,7 @@ export default function NewRP() {
           eyebrow="Konfirmasi Submit"
           title="Kirim Request Purchase?"
           message={
-            !!searchParams.get('process')
+            processId
               ? 'Apakah Anda yakin ingin mengupdate dan mengirimkan data Request Purchase ini?'
               : 'Apakah Anda yakin ingin mengirimkan Request Purchase ini?'
           }
@@ -610,9 +642,13 @@ export default function NewRP() {
           rpNo={successDialog.rpNo}
           onConfirm={() => {
             setSuccessDialog(prev => ({ ...prev, isOpen: false }))
-            navigate('/rp-approval')
+            if (embedded) {
+              onCloseEmbedded?.()
+            } else {
+              navigate('/rp-approval')
+            }
           }}
-          buttonText="Approval"
+          buttonText={embedded ? 'Tutup' : 'Approval'}
         />
       </main>
     </>

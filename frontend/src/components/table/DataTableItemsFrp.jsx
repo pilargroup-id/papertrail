@@ -8,11 +8,14 @@ const normalizeNumber = v => {
 
 const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
 
-const formatNumberInput = v => {
+const formatDecimalInput = v => {
   if (v === undefined || v === null || v === '') return ''
-  const clean = String(v).replace(/\D/g, '')
+  const clean = String(v).replace(/[^0-9.]/g, '')
   if (!clean) return ''
-  return new Intl.NumberFormat('en-US').format(parseInt(clean, 10))
+  const [intPart, ...decimalParts] = clean.split('.')
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  if (decimalParts.length === 0) return formattedInt
+  return `${formattedInt}.${decimalParts.join('').replace(/\./g, '')}`
 }
 
 export default function DataTableItemsFrp({
@@ -73,7 +76,7 @@ export default function DataTableItemsFrp({
               <div className="frp-grid-2">
                 <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="frp-label">Memo</label>
-                  <input name={`items[${idx}][memo]`} className="frp-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
+                  <input name={`items[${idx}][memo]`} className="frp-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Description..." />
                 </div>
                 <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="frp-label">Budget</label>
@@ -97,8 +100,8 @@ export default function DataTableItemsFrp({
                     name={`items[${idx}][hargaSatuan]`}
                     className={`frp-input ${isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? 'frp-input-error' : ''}`}
                     style={isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? { borderColor: '#ef4444', backgroundColor: '#fef2f2' } : {}}
-                    value={formatNumberInput(item.hargaSatuan)}
-                    onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))}
+                    value={formatDecimalInput(item.hargaSatuan)}
+                    onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/[^0-9.]/g, ''))}
                   />
                   {isHargaSatuanExceeded(item) && (
                     <span style={{ color: '#ef4444', fontSize: '10px', marginTop: '4px', fontWeight: 500 }}>
@@ -158,7 +161,7 @@ export default function DataTableItemsFrp({
                       className="frp-td-input"
                       value={item.memo}
                       onChange={e => updateItem(idx, 'memo', e.target.value)}
-                      placeholder="Deskripsi..."
+                      placeholder="Description..."
                       style={{ fontSize: '0.85rem' }}
                     />
                   </td>
@@ -213,8 +216,8 @@ export default function DataTableItemsFrp({
                           fontSize: '0.85rem',
                           ...(isHargaSatuanExceeded(item) || isTotalAmountExceeded(item) ? { borderColor: '#ef4444', backgroundColor: '#fef2f2', outline: 'none' } : {})
                         }}
-                        value={formatNumberInput(item.hargaSatuan)}
-                        onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/\D/g, ''))}
+                        value={formatDecimalInput(item.hargaSatuan)}
+                        onChange={e => updateItem(idx, 'hargaSatuan', e.target.value.replace(/[^0-9.]/g, ''))}
                       />
                     </div>
                     {isHargaSatuanExceeded(item) && (

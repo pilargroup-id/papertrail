@@ -4,9 +4,12 @@ import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import DialogFailAction from '../../components/Dialog/DialogFailAction'
+import DialogCheckData from '../../components/Dialog/DialogCheckData'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
 import DataTableRp from '../../components/table/DataTableApprovalRp.jsx'
 import ButtonActionApprovalRp from '../../components/button/ButtonActionApprovalRp.jsx'
+import ButtonAccessManagerRp from '../../components/button/ButtonAccessManagerRp.jsx'
+import ButtonAccessStaffRp from '../../components/button/ButtonAccessStaffRp.jsx'
 import FilterApprovalRp from './FilterApprovalRp.jsx'
 import TabsFilterApprovalRp from './TabsFilterApprovalRp.jsx'
 
@@ -66,7 +69,7 @@ const ACTION_META = {
   revert: {
     eyebrow: 'Konfirmasi Revert',
     title: 'Revert Request Purchase?',
-    message: 'Status RP akan dikembalikan ke pending manager.',
+    message: 'Status RP akan dikembalikan satu langkah ke belakang.',
     confirmLabel: 'Ya, Revert',
     icon: 'restart_alt',
     tone: 'warning',
@@ -113,11 +116,17 @@ const getActionResultIcon = action => {
   return action?.includes('approve') ? 'check_circle' : 'cancel'
 }
 
+const printRpPreview = rpId => {
+  if (!rpId || typeof window === 'undefined') return
+  window.open(`/api/rp/${rpId}/preview`, '_blank')
+}
+
 
 export default function RpApprovalPage() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const isApprovedView = pathname === '/rp-approved'
+  const approvalMode = pathname.startsWith('/rp-approval/staff') ? 'staff' : 'manager'
   const { setUser } = useUser()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -125,6 +134,7 @@ export default function RpApprovalPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [actionResultDialog, setActionResultDialog] = useState(null)
+  const [checkDataRequest, setCheckDataRequest] = useState(null)
   const [tab, setTab] = useState(isApprovedView ? 'approved' : 'pending')
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -228,6 +238,10 @@ export default function RpApprovalPage() {
     setConfirmAction({ rp, action, body })
   }
 
+  const openCheckData = rp => {
+    setCheckDataRequest(rp)
+  }
+
   const doAction = async (id, action, body = {}) => {
     setActionLoading(true)
     const currentRp = confirmAction?.rp
@@ -301,13 +315,11 @@ export default function RpApprovalPage() {
   const D = data || {}
   const requests = D.requests || []
   const user = D.user || {}
-  const isAdmin = user.role === 'administrator'
+  const userJobLevelRank = Number(user?.jobLevelRank || user?.job_level_rank || 0)
+  const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
   const userDivision = user.selectedDivision || ''
+  const canTakeApprovalAction = userJobLevelRank >= 2 && !/\bstaff\b/.test(userJobLevelName)
   const isProcessDivision = division => ['IT', 'HCGA', 'Product'].includes(userDivision) && userDivision === division
-  const isProcessManager = division =>
-    ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) &&
-    ['IT', 'HCGA', 'Product'].includes(userDivision) &&
-    userDivision === division
 
   const divisions = useMemo(
     () => [...new Set(requests.map(request => request.divisi).filter(Boolean))].sort(),
@@ -480,13 +492,13 @@ export default function RpApprovalPage() {
       <ButtonActionApprovalRp
         rp={rp}
         user={user}
-        isAdmin={isAdmin}
         userDivision={userDivision}
         isProcessDivision={isProcessDivision}
-        isProcessManager={isProcessManager}
         actionLoading={actionLoading}
         requestAction={requestAction}
         setSelected={setSelected}
+        onCheckData={openCheckData}
+        mode={approvalMode}
         options={options}
       />
     )
@@ -498,11 +510,9 @@ export default function RpApprovalPage() {
     const total = calcTotal(selected)
 
     // Determine what actions should be rendered in the footer
-    const canManagerApprove =
-      selected.status === 'waiting_manager' &&
-      (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && userDivision === selected.divisi))
-    const canProcess = selected.status === 'division_review' && (isAdmin || isProcessDivision(selected.diprosesOleh))
-    const canFinalApprove = selected.status === 'final_review' && (isAdmin || isProcessManager(selected.diprosesOleh))
+    const canProcess =
+      selected.status === 'division_review' &&
+      (isAdmin || isProcessDivision(selected.diprosesOleh))
     const canCreateFrp =
       selected.status === 'approved' &&
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
@@ -755,29 +765,41 @@ export default function RpApprovalPage() {
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>visibility</span>
                   Preview
                 </button>
-                <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} className="btn-dialog btn-dialog-neutral">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>download</span>
+                <button type="button" onClick={() => printRpPreview(selected.id)} className="btn-dialog btn-dialog-neutral">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>print</span>
                   Print PDF
                 </button>
               </>
             )}
 
-            {canManagerApprove && (
-              <>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'manager-approve')} className="btn-dialog btn-dialog-approve">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
-                  Approve
-                </button>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'manager-reject')} className="btn-dialog btn-dialog-reject">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
-                  Reject
-                </button>
-              </>
+            {approvalMode === 'manager' ? (
+              <ButtonAccessManagerRp
+                rp={selected}
+                user={user}
+                userJobLevelRank={userJobLevelRank}
+                canTakeApprovalAction={canTakeApprovalAction}
+                actionLoading={actionLoading}
+                requestAction={requestAction}
+                setSelected={setSelected}
+                showActions={true}
+              />
+            ) : (
+              <ButtonAccessStaffRp
+                rp={selected}
+                actionLoading={actionLoading}
+                requestAction={requestAction}
+                onCheckData={openCheckData}
+                setSelected={setSelected}
+                showActions={true}
+                showDetail={true}
+                showRevert={true}
+                isStaff={userJobLevelRank === 1}
+              />
             )}
 
             {canProcess && (
               <>
-                <button type="button" onClick={() => navigate(`/rp?process=${selected.id}`)} className="btn-dialog btn-dialog-warning">
+                <button type="button" onClick={() => openCheckData(selected)} className="btn-dialog btn-dialog-warning">
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>fact_check</span>
                   Check Data
                 </button>
@@ -788,17 +810,11 @@ export default function RpApprovalPage() {
               </>
             )}
 
-            {canFinalApprove && (
-              <>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-manager-approve')} className="btn-dialog btn-dialog-approve">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>check_circle</span>
-                  Final Approve
-                </button>
-                <button type="button" disabled={actionLoading} onClick={() => requestAction(selected, 'process-manager-reject')} className="btn-dialog btn-dialog-reject">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>cancel</span>
-                  Reject
-                </button>
-              </>
+            {!canTakeApprovalAction && userJobLevelRank > 1 && (selected.status === 'waiting_manager' || selected.status === 'final_review') && (
+              <button type="button" onClick={() => openCheckData(selected)} className="btn-dialog btn-dialog-warning">
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>fact_check</span>
+                Check Data
+              </button>
             )}
 
             {canCreateFrp && (
@@ -855,6 +871,7 @@ export default function RpApprovalPage() {
 
           <DataTableRp
             tab={tab}
+            approvalMode={approvalMode}
             loading={loading}
             isMobile={isMobile}
             paginated={paginated}
@@ -875,6 +892,11 @@ export default function RpApprovalPage() {
         </div>
       </main>
       {renderDetail()}
+      <DialogCheckData
+        isOpen={!!checkDataRequest}
+        request={checkDataRequest}
+        onClose={() => setCheckDataRequest(null)}
+      />
       <DialogConfirm
         isOpen={!!confirmAction}
         eyebrow={confirmAction ? (ACTION_META[confirmAction.action]?.eyebrow || 'Konfirmasi') : ''}

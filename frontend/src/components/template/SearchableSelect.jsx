@@ -13,6 +13,9 @@ export default function SearchableSelect({
   disabled = false,
   menuPosition = 'absolute', // kept for API compat, portal is always used
   searchable = true,
+  allowCustomInput = false,
+  customInputLabel = 'Isi manual',
+  customInputButtonLabel = 'Gunakan teks ini',
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -96,6 +99,17 @@ export default function SearchableSelect({
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') {
+                setOpen(false)
+                return
+              }
+              if (allowCustomInput && e.key === 'Enter' && search.trim()) {
+                e.preventDefault()
+                onChange(search.trim())
+                setOpen(false)
+              }
+            }}
             placeholder="Cari..."
             style={{
               width: '100%',
@@ -110,6 +124,43 @@ export default function SearchableSelect({
               color: '#1e293b',
             }}
           />
+          {allowCustomInput && (
+            <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b' }}>
+                {customInputLabel}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>
+                {search.trim()
+                  ? 'Tekan Enter atau klik tombol di bawah untuk memakai teks ini sebagai vendor manual.'
+                  : 'Cari vendor dari master data, atau ketik nama vendor sendiri.'}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const customValue = search.trim()
+                  if (!customValue) return
+                  onChange(customValue)
+                  setOpen(false)
+                }}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '10px',
+                  background: '#1f4e8c',
+                  color: 'white',
+                  padding: '9px 12px',
+                  fontFamily: 'inherit',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  cursor: search.trim() ? 'pointer' : 'not-allowed',
+                  opacity: search.trim() ? 1 : 0.55,
+                }}
+                disabled={!search.trim()}
+              >
+                {customInputButtonLabel}
+              </button>
+            </div>
+          )}
         </div>
       )}
       <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: searchable ? '1px solid #f1f5f9' : 'none' }}>
@@ -195,7 +246,7 @@ export default function SearchableSelect({
             paddingRight: '12px',
           }}
         >
-          {selectedOption?.label || placeholder}
+          {selectedOption?.label || value || placeholder}
         </span>
         <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', flexShrink: 0 }}>
           {open ? 'expand_less' : 'expand_more'}

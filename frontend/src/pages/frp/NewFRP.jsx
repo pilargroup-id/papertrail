@@ -20,11 +20,14 @@ const normalizeNumber = v => {
 
 const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
 
-const formatNumberInput = v => {
+const formatDecimalInput = v => {
   if (v === undefined || v === null || v === '') return ''
-  const clean = String(v).replace(/\D/g, '')
+  const clean = String(v).replace(/[^0-9.]/g, '')
   if (!clean) return ''
-  return new Intl.NumberFormat('en-US').format(parseInt(clean, 10))
+  const [intPart, ...decimalParts] = clean.split('.')
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  if (decimalParts.length === 0) return formattedInt
+  return `${formattedInt}.${decimalParts.join('').replace(/\./g, '')}`
 }
 
 const normalizeCompany = v => String(v || '').trim().toUpperCase()
@@ -264,6 +267,8 @@ export default function NewFRP() {
             const rpJson = await frpService.getRpData(fromRpId)
             if (rpJson && rpJson.data) {
               const rp = rpJson.data
+              const rpDescription = rp.description || rp.deskripsi || ''
+              const rpTarget = rp.vendorSuggestion || rp.vendor || rp.ke || ''
 
               // Map items from RP to FRP format
               const mappedItems = Array.isArray(rp.items) ? rp.items.map(it => {
@@ -273,7 +278,7 @@ export default function NewFRP() {
                   memo: it.memo || '',
                   budgetId: it.budgetId || '',
                   qty: String(qtyVal),
-                  hargaSatuan: formatNumberInput(estVal),
+                  hargaSatuan: formatDecimalInput(estVal),
                   amount: qtyVal * estVal,
                 }
               }) : getDefaultItems()
@@ -296,8 +301,8 @@ export default function NewFRP() {
                 companyName: rp.companyName || initial.companyName,
                 divisi: editDiv,
                 dimintaOleh: rp.dibuatOleh || initial.dimintaOleh,
-                keteranganFrp: rp.deskripsi || '',
-                vendor: rp.vendorSuggestion || '',
+                keteranganFrp: rpDescription,
+                vendor: rpTarget,
                 paymentDate: rp.tanggalDibutuhkan || today,
                 attachLink: rpAttachLink || '',
                 rpReference: rp.rpNo || '',
@@ -727,8 +732,8 @@ export default function NewFRP() {
                       className="frp-input"
                       placeholder="0"
                       style={{ width: '100%', background: values.currency === 'IDR' ? '#f8fafc' : undefined, color: values.currency === 'IDR' ? '#94a3b8' : undefined }}
-                      value={values.kurs}
-                      onChange={e => updateField('kurs', e.target.value)}
+                      value={formatDecimalInput(values.kurs)}
+                      onChange={e => updateField('kurs', e.target.value.replace(/[^0-9.]/g, ''))}
                       readOnly={values.currency === 'IDR'}
                     />
                   </FloatingGroup>
