@@ -871,6 +871,7 @@ export default function RpApprovalPage() {
 
           <DataTableRp
             tab={tab}
+            approvalMode={approvalMode}
             loading={loading}
             isMobile={isMobile}
             paginated={paginated}

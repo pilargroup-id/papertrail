@@ -139,6 +139,7 @@ const desktopColumnWidths = ['16%', '18%', '12%', '13%', '11%', '12%', '18%']
 
 export default function DataTableRp({
   tab,
+  approvalMode = 'manager',
   loading,
   isMobile,
   paginated,
@@ -158,6 +159,8 @@ export default function DataTableRp({
 }) {
   const [expandedId, setExpandedId] = useState(null)
   const [copiedId, setCopiedId] = useState(null)
+  const showStaffActionsInDone = approvalMode === 'staff'
+  const showRowActions = tab !== 'approved' || showStaffActionsInDone
 
   const copyRpNo = async (id, rpNo) => {
     if (!rpNo) return
@@ -409,7 +412,7 @@ export default function DataTableRp({
                           showDetail: true, 
                           showPreview: tab === 'approved', 
                           showKeFrp: tab === 'approved', 
-                          showActions: tab !== 'approved' 
+                          showActions: showRowActions 
                         })}
                       </div>
                     </div>
@@ -757,7 +760,7 @@ export default function DataTableRp({
                         showDetail: true, 
                         showPreview: tab === 'approved', 
                         showKeFrp: tab === 'approved', 
-                        showActions: tab !== 'approved', 
+                        showActions: showRowActions, 
                         showRevert: true 
                       })}
                     </td>

@@ -46,6 +46,7 @@ export default function ButtonAccessStaffRp({
   if (!showActions || !rp) return null
 
   const isDivisionProcess = rp.status === 'division_review'
+  const isStaffFinalStage = isStaff && (rp.status === 'final_review' || rp.status === 'approved')
   const showDivisionProcessActions = isDivisionProcess && typeof onCheckData === 'function'
   const showRevertAction = showRevert && rp.canRevert
 
@@ -61,11 +62,14 @@ export default function ButtonAccessStaffRp({
     (isStaff && rp.status === 'approved')
   )
 
-  const showDropdownDetail = showDetail && (!extractDetail || isDivisionProcess)
-  const showDropdownRevert = showRevertAction && (!extractRevert || isDivisionProcess)
+  const showDropdownActions = isDivisionProcess || isStaffFinalStage
+  const showDropdownDetail = showDetail && (showDropdownActions || !extractDetail)
+  const showDropdownRevert = showRevertAction && (showDropdownActions || !extractRevert)
   const showDropdown = showDropdownDetail || showDropdownRevert
 
-  if (!showDivisionProcessActions && !extractDetail && !extractRevert && !showDropdown) return null
+  const showInlineDetailRevert = !showDropdownActions && (extractDetail || extractRevert)
+
+  if (!showDivisionProcessActions && !showInlineDetailRevert && !showDropdown) return null
 
   return (
     <>
@@ -89,7 +93,7 @@ export default function ButtonAccessStaffRp({
         </div>
       )}
 
-      {(extractDetail || extractRevert) && (
+      {showInlineDetailRevert && (
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
