@@ -67,6 +67,11 @@ const iconStyle = { fontSize: '16px', color: '#1e3a8a' }
 const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '6px' }
 const grid3 = { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '6px' }
 
+const printRpPreview = rpId => {
+  if (!rpId || typeof window === 'undefined') return
+  window.open(`/api/rp/${rpId}/preview`, '_blank')
+}
+
 function DialogDetailRP({
   isOpen = false,
   request = null,
@@ -405,9 +410,9 @@ function DialogDetailRP({
               <button
                 type="button"
                 className="dashboard-popup__button btn-dialog btn-dialog-print"
-                onClick={() => window.open(`/api/rp/${request.id}/pdf`, '_blank')}
+                onClick={() => printRpPreview(request.id)}
               >
-                <span className="material-icons-round" style={{ fontSize: '18px' }}>download</span>
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>print</span>
                 Print PDF
               </button>
             </>

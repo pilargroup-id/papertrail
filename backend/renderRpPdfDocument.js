@@ -141,6 +141,26 @@ function renderRpPdfDocument(formData = {}, preview = false) {
     }
   `
 
+  const autoPrintScript = preview ? `
+    <script>
+      (function () {
+        let printed = false;
+        function triggerPrint() {
+          if (printed) return;
+          printed = true;
+          window.focus();
+          window.print();
+        }
+        window.addEventListener('load', function () {
+          setTimeout(triggerPrint, 300);
+        });
+        window.addEventListener('afterprint', function () {
+          window.close();
+        });
+      })();
+    </script>
+  ` : ''
+
   return `
 <!DOCTYPE html>
 <html lang="id">
@@ -150,6 +170,7 @@ function renderRpPdfDocument(formData = {}, preview = false) {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
   <style>${css}</style>
+  ${autoPrintScript}
 </head>
 <body>
   <div class="toolbar">
@@ -160,9 +181,6 @@ function renderRpPdfDocument(formData = {}, preview = false) {
       </button>
       <button class="toolbar-btn" onclick="window.print()">
         <span class="material-icons-round" style="font-size:16px;">print</span> Cetak
-      </button>
-      <button class="toolbar-btn" onclick="window.location.href='/api/rp/${formData.id}/pdf'" style="background: #10b981; border-color: #10b981;">
-        <span class="material-icons-round" style="font-size:16px;">download</span> Download PDF
       </button>
     </div>
   </div>

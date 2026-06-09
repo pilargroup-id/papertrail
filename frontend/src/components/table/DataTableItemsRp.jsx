@@ -30,6 +30,7 @@ const S = {
 export default function DataTableItemsRp({
   items,
   isMobile,
+  embedded = false,
   budgetSelectOpts,
   updateItem,
   removeRow,
@@ -67,7 +68,7 @@ export default function DataTableItemsRp({
                     <input name={`items[${idx}][memo]`} style={S.input} value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi item..." />
                   </div>
                   <div style={{ ...S.formGroup, gridColumn: '1 / -1' }}>
-                    <label style={S.label}>Link Pembelian</label>
+                    <label style={S.label}>Purchase Link</label>
                     <input name={`items[${idx}][linkPembelian]`} style={S.input} value={item.linkPembelian} onChange={e => updateItem(idx, 'linkPembelian', e.target.value)} placeholder="https://..." />
                   </div>
                   <div style={S.formGroup}>
@@ -94,17 +95,17 @@ export default function DataTableItemsRp({
           })}
         </div>
       ) : (
-        <div className="no-scrollbar" style={{ overflowX: 'auto' }}>
+        <div className="no-scrollbar" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: embedded ? '235px' : 'none' }}>
           <table style={S.table}>
             <thead>
               <tr>
                 <th style={{ ...S.th, width: '22%', borderLeft: '1px solid #e2e8f0', borderTopLeftRadius: '8px' }}>Item</th>
                 <th style={{ ...S.th, width: '18%' }}>Memo</th>
-                <th style={{ ...S.th, width: '22%' }}>Link Pembelian</th>
+                <th style={{ ...S.th, width: '22%' }}>Purchase Link</th>
                 <th style={{ ...S.th, width: '6%', textAlign: 'center' }}>Qty</th>
-                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Sisa Budget</th>
-                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Harga Satuan</th>
-                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Amount (IDR)</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Budget Remaining</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Unit Price (IDR)</th>
+                <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Total (IDR)</th>
                 <th style={{ ...S.th, width: '3%', borderTopRightRadius: '8px' }} />
               </tr>
             </thead>
@@ -133,7 +134,7 @@ export default function DataTableItemsRp({
                         style={{ ...S.tdInput, height: '34px', padding: '6px 10px', fontSize: '0.85rem' }}
                         value={item.memo}
                         onChange={e => updateItem(idx, 'memo', e.target.value)}
-                        placeholder="Deskripsi item..."
+                        placeholder="Description Item..."
                       />
                     </td>
                     <td style={S.td}>

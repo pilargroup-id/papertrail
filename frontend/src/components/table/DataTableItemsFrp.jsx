@@ -73,7 +73,7 @@ export default function DataTableItemsFrp({
               <div className="frp-grid-2">
                 <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="frp-label">Memo</label>
-                  <input name={`items[${idx}][memo]`} className="frp-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Deskripsi..." />
+                  <input name={`items[${idx}][memo]`} className="frp-input" value={item.memo} onChange={e => updateItem(idx, 'memo', e.target.value)} placeholder="Description..." />
                 </div>
                 <div className="frp-form-group" style={{ gridColumn: "1 / -1" }}>
                   <label className="frp-label">Budget</label>
@@ -158,7 +158,7 @@ export default function DataTableItemsFrp({
                       className="frp-td-input"
                       value={item.memo}
                       onChange={e => updateItem(idx, 'memo', e.target.value)}
-                      placeholder="Deskripsi..."
+                      placeholder="Description..."
                       style={{ fontSize: '0.85rem' }}
                     />
                   </td>

@@ -8,6 +8,11 @@ import ButtonPrintPdf from './ButtonPrintPdf.jsx'
 import ButtonCheckData from './ButtonCheckData.jsx'
 import ButtonKeFrp from './ButtonKeFrp.jsx'
 
+function printRpPreview(rpId) {
+  if (!rpId || typeof window === 'undefined') return
+  window.open(`/api/rp/${rpId}/preview`, '_blank')
+}
+
 export default function ButtonActionApprovalRp({
   rp,
   user,
@@ -18,6 +23,7 @@ export default function ButtonActionApprovalRp({
   actionLoading,
   requestAction,
   setSelected,
+  onCheckData,
   options = {}
 }) {
   const navigate = useNavigate()
@@ -77,7 +83,7 @@ export default function ButtonActionApprovalRp({
           boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
         }}>
           {showPreview && ['approved', 'CREATED_FRP'].includes(rp.status) && (
-            <ButtonPrintPdf onClick={() => window.open(`/api/rp/${rp.id}/pdf`, '_blank')}>Print PDF</ButtonPrintPdf>
+            <ButtonPrintPdf onClick={() => printRpPreview(rp.id)}>Print PDF</ButtonPrintPdf>
           )}
           {canCreateFrp && showKeFrp && (
             <ButtonKeFrp onClick={() => navigate(`/frp?fromRp=${rp.id}`)}>FRP</ButtonKeFrp>
@@ -99,7 +105,7 @@ export default function ButtonActionApprovalRp({
           <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')}>Approve</ButtonApprove>
         </div>
       )}
-      {showActions && canProcess && (
+          {showActions && canProcess && (
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -109,9 +115,9 @@ export default function ButtonActionApprovalRp({
           padding: '4px',
           gap: '4px',
           boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-        }}>
+          }}>
           <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')}>Reject</ButtonReject>
-          <ButtonCheckData onClick={() => navigate(`/rp?process=${rp.id}`)}>Check Data</ButtonCheckData>
+          <ButtonCheckData onClick={() => (onCheckData ? onCheckData(rp) : navigate(`/rp?process=${rp.id}`))}>Check Data</ButtonCheckData>
         </div>
       )}
       {showActions && canFinalApprove && (

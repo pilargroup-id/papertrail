@@ -4,6 +4,7 @@ import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import DialogFailAction from '../../components/Dialog/DialogFailAction'
+import DialogCheckData from '../../components/Dialog/DialogCheckData'
 import BackgroundDialog from '../../components/template/BackgroundDialog'
 import DataTableRp from '../../components/table/DataTableApprovalRp.jsx'
 import ButtonActionApprovalRp from '../../components/button/ButtonActionApprovalRp.jsx'
@@ -113,6 +114,11 @@ const getActionResultIcon = action => {
   return action?.includes('approve') ? 'check_circle' : 'cancel'
 }
 
+const printRpPreview = rpId => {
+  if (!rpId || typeof window === 'undefined') return
+  window.open(`/api/rp/${rpId}/preview`, '_blank')
+}
+
 
 export default function RpApprovalPage() {
   const { pathname } = useLocation()
@@ -125,6 +131,7 @@ export default function RpApprovalPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [actionResultDialog, setActionResultDialog] = useState(null)
+  const [checkDataRequest, setCheckDataRequest] = useState(null)
   const [tab, setTab] = useState(isApprovedView ? 'approved' : 'pending')
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -226,6 +233,10 @@ export default function RpApprovalPage() {
 
   const requestAction = (rp, action, body = {}) => {
     setConfirmAction({ rp, action, body })
+  }
+
+  const openCheckData = rp => {
+    setCheckDataRequest(rp)
   }
 
   const doAction = async (id, action, body = {}) => {
@@ -487,6 +498,7 @@ export default function RpApprovalPage() {
         actionLoading={actionLoading}
         requestAction={requestAction}
         setSelected={setSelected}
+        onCheckData={openCheckData}
         options={options}
       />
     )
@@ -755,8 +767,8 @@ export default function RpApprovalPage() {
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>visibility</span>
                   Preview
                 </button>
-                <button type="button" onClick={() => window.open(`/api/rp/${selected.id}/pdf`, '_blank')} className="btn-dialog btn-dialog-neutral">
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>download</span>
+                <button type="button" onClick={() => printRpPreview(selected.id)} className="btn-dialog btn-dialog-neutral">
+                  <span className="material-icons-round" style={{ fontSize: '18px' }}>print</span>
                   Print PDF
                 </button>
               </>
@@ -777,7 +789,7 @@ export default function RpApprovalPage() {
 
             {canProcess && (
               <>
-                <button type="button" onClick={() => navigate(`/rp?process=${selected.id}`)} className="btn-dialog btn-dialog-warning">
+                <button type="button" onClick={() => openCheckData(selected)} className="btn-dialog btn-dialog-warning">
                   <span className="material-icons-round" style={{ fontSize: '18px' }}>fact_check</span>
                   Check Data
                 </button>
@@ -875,6 +887,11 @@ export default function RpApprovalPage() {
         </div>
       </main>
       {renderDetail()}
+      <DialogCheckData
+        isOpen={!!checkDataRequest}
+        request={checkDataRequest}
+        onClose={() => setCheckDataRequest(null)}
+      />
       <DialogConfirm
         isOpen={!!confirmAction}
         eyebrow={confirmAction ? (ACTION_META[confirmAction.action]?.eyebrow || 'Konfirmasi') : ''}

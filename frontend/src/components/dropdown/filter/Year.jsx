@@ -8,6 +8,7 @@ import { Calendar01 } from '../../template/TemplateIcons.jsx';
 
 export default function YearPrjPerform({ value, onChange }) {
   const id = React.useId();
+  const placeholder = 'Semua Tahun';
 
   const handleChange = (event) => {
     onChange?.(event.target.value);
@@ -17,7 +18,7 @@ export default function YearPrjPerform({ value, onChange }) {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
   return (
-    <FormControl sx={{ minWidth: 140 }} size="small">
+    <FormControl fullWidth sx={{ minWidth: 140 }} size="small">
       <InputLabel 
         id={`${id}-label`}
         sx={{ 
@@ -29,14 +30,20 @@ export default function YearPrjPerform({ value, onChange }) {
           '&.Mui-focused': { color: '#10b981' }
         }}
       >
-        Year
+        Tahun
       </InputLabel>
       <Select
         labelId={`${id}-label`}
         id={id}
         value={value ?? ''}
-        label="Year"
+        label="Tahun"
         onChange={handleChange}
+        displayEmpty
+        renderValue={(selected) => (
+          <span style={{ color: selected ? '#1e293b' : '#94a3b8' }}>
+            {selected || placeholder}
+          </span>
+        )}
         startAdornment={
           <InputAdornment position="start" sx={{ ml: 1, mr: 0.5 }}>
             <Calendar01 size={16} color="#94a3b8" />
@@ -106,6 +113,9 @@ export default function YearPrjPerform({ value, onChange }) {
           },
         }}
       >
+        <MenuItem value="">
+          {placeholder}
+        </MenuItem>
         {years.map((year) => (
           <MenuItem key={year} value={year.toString()}>
             {year}

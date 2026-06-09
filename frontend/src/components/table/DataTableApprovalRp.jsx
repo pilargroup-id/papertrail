@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import ButtonDetailStatusRp from '../button/ButtonDetailStatusRp.jsx'
-
 import { DataTableIdentity } from '../table/DataTable.jsx'
 
 
@@ -220,7 +219,9 @@ export default function DataTableRp({
     )
   }
 
-  if (filtered.length === 0) {
+  const isEmpty = filtered.length === 0
+
+  if (isEmpty && isMobile) {
     return (
       <div
         style={{
@@ -627,7 +628,7 @@ export default function DataTableRp({
               ))}
             </colgroup>
             <tbody>
-            {paginated.map((rp, index) => {
+            {paginated.length > 0 ? paginated.map((rp, index) => {
               const isOpen = expandedId === rp.id
               const absoluteIndex = (safeCurrentPage - 1) * rowsPerPage + index
               const rowBg = absoluteIndex % 2 === 0 ? 'white' : '#fafbfc'
@@ -858,10 +859,26 @@ export default function DataTableRp({
                   )}
                 </React.Fragment>
               )
-            })}
-          </tbody>
-        </table>
-      </div>
+            }) : (
+              <tr>
+                <td
+                  colSpan={desktopHeaders.length}
+                  style={{
+                    padding: '28px 16px',
+                    textAlign: 'center',
+                    color: '#94a3b8',
+                    fontStyle: 'italic',
+                    background: 'white',
+                    borderBottom: '1px solid #e8edf4',
+                  }}
+                >
+                  Belum ada data
+                </td>
+              </tr>
+            )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Desktop pagination */}

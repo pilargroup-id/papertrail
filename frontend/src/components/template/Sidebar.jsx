@@ -208,10 +208,8 @@ function Sidebar({
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
     { label: 'FRP', icon: 'receipt_long', children: [
       { label: 'New FRP', href: '/frp', icon: 'note_add' },
-      ...(userIsAdmin || ['Manager', 'Direktur', 'Komisaris'].includes(userJobLevel) ? [
-        { label: 'Approval FRP', href: '/approval', icon: 'fact_check' }
-      ] : []),
-      { label: 'FRP Approved', href: '/approved', icon: 'task_alt' },
+      { label: 'Approval FRP', href: '/approval', icon: 'fact_check' },
+      { label: 'Status FRP', href: '/approved', icon: 'task_alt' },
     ]},
     { label: 'RP', icon: 'shopping_bag', children: [
       { label: 'New RP', href: '/rp', icon: 'note_add' },

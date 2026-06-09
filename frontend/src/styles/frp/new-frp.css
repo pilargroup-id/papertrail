@@ -11,6 +11,35 @@
   overflow: hidden;
 }
 
+.frp-shell--embedded {
+  height: auto;
+  overflow: visible;
+  gap: 12px;
+}
+
+.frp-shell--embedded .frp-top-panel {
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.frp-shell--embedded .frp-card {
+  padding: 18px 20px;
+}
+
+.frp-shell--embedded .frp-card--scroll {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.frp-shell--embedded .frp-items-scrollable {
+  max-height: 235px;
+}
+
+.frp-shell--embedded .frp-footer {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
 /* ── RP reference banner ─────────────────────────────── */
 .frp-ref-banner {
   display: flex;

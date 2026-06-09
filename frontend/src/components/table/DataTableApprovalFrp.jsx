@@ -145,7 +145,9 @@ export default function DataTableApprovalFrp({
     return pages
   }
 
-  if (filtered.length === 0) {
+  const isEmpty = filtered.length === 0
+
+  if (isEmpty && isMobile) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#94a3b8', padding: '4rem 2rem' }}>
         <span className="material-icons-round" style={{ fontSize: '48px', marginBottom: '1rem', opacity: 0.5 }}>task</span>
@@ -311,7 +313,7 @@ export default function DataTableApprovalFrp({
               {desktopColumnWidths.map((width, index) => <col key={`desktop-body-col-${index}`} style={{ width }} />)}
             </colgroup>
             <tbody>
-              {paginated.map((request, idx) => {
+              {paginated.length > 0 ? paginated.map((request, idx) => {
                 const total = calcTotal(request)
                 const statusStyle = statusColors[request.status] || {}
                 const absoluteIndex = (safeCurrentPage - 1) * rowsPerPage + idx
@@ -554,7 +556,23 @@ export default function DataTableApprovalFrp({
                     )}
                   </React.Fragment>
                 )
-              })}
+              }) : (
+                <tr>
+                  <td
+                    colSpan={desktopHeaders.length}
+                    style={{
+                      padding: '28px 16px',
+                      textAlign: 'center',
+                      color: '#94a3b8',
+                      fontStyle: 'italic',
+                      background: 'white',
+                      borderBottom: '1px solid #e8edf4',
+                    }}
+                  >
+                    Belum ada data
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
