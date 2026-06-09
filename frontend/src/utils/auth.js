@@ -1,0 +1,80 @@
+const TOKEN_KEY = 'token'
+const AUTH_USER_KEY = 'authUser'
+
+export function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch (_) {
+    return null
+  }
+}
+
+export function getAuthUser() {
+  try {
+    const raw = localStorage.getItem(AUTH_USER_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch (_) {
+    return null
+  }
+}
+
+export function isAuthenticated() {
+  return Boolean(getToken() || getAuthUser())
+}
+
+export function clearAuth() {
+  try {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(AUTH_USER_KEY)
+  } catch (_) {}
+}
+
+function cleanUrlAuthParams() {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('token')
+  url.searchParams.delete('source')
+  url.searchParams.delete('project')
+
+  const cleanUrl = `${url.pathname}${url.search}${url.hash}`
+  window.history.replaceState({}, document.title, cleanUrl || '/')
+}
+
+export async function consumeTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search)
+  const token = params.get('token')
+
+  if (!token) {
+    return getAuthUser()
+  }
+
+  localStorage.setItem(TOKEN_KEY, token)
+
+  const response = await fetch(`/api/auth/me?token=${encodeURIComponent(token)}`, {
+    credentials: 'include',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    clearAuth()
+    throw new Error('Unauthorized')
+  }
+
+  const data = await response.json()
+  const user = data.user || null
+
+  if (user) {
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
+  }
+
+  cleanUrlAuthParams()
+
+  return user
+}
+
+export function redirectToPilargroupLogin() {
+  const returnUrl = encodeURIComponent(window.location.href)
+  window.location.href = `https://pilargroup.id/login?return_url=${returnUrl}`
+}

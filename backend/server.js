@@ -70,7 +70,9 @@ app.use(session({
 app.use(devAuth);
 
 app.use((req, res, next) => {
-    const token = req.query.token;
+    const authHeader = req.headers.authorization || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = req.query.token || bearerToken;
 
     if (!token || req.session.user) {
         return next();

@@ -24,9 +24,15 @@ export function configureNetworkClient() {
 
   window.fetch = (input, init = {}) => {
     const nextInput = resolveApiUrl(input)
+    const token = localStorage.getItem('token')
+
     const nextInit = {
       credentials: init.credentials || 'include',
       ...init,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init.headers || {}),
+      },
     }
 
     return nativeFetch(nextInput, nextInit)

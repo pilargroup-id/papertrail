@@ -107,6 +107,13 @@ router.post('/api/auth/login', async (req, res) => {
     res.json({ success: false, error: 'Username atau Password salah' });
 });
 
+router.get('/api/auth/me', checkAuth, (req, res) => {
+    res.json({
+        success: true,
+        user: req.session.user,
+    });
+});
+
 router.get('/api/data/select-company', checkAuth, (req, res) => {
     const user = req.session.user;
     const companies = [...new Set(user.allAssignments.map(a => a.name))];
