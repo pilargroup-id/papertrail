@@ -34,6 +34,9 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 const pdfPath      = path.join(__dirname, 'generated-pdfs');
+const { centralDb } = require('./db');
+const { LOGIN_SQL } = require('./src/config/constants');
+const { userFromLoginRows } = require('./src/services/dbService');
 const jwt = require('jsonwebtoken');
 
 // ============================================================
@@ -69,62 +72,87 @@ app.use(session({
 
 app.use(devAuth);
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
     const authHeader = req.headers.authorization || '';
     const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
     const token = req.query.token || bearerToken;
 
-    if (!token || req.session.user) {
+    if (!token) {
         return next();
     }
 
     try {
-        const decoded = jwt.decode(token);
-
-        if (!decoded) {
-            return next();
-        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const allowedApps = Array.isArray(decoded.apps) ? decoded.apps : [];
         if (!allowedApps.includes('papertrail')) {
             return res.status(403).json({ error: 'Forbidden: papertrail access denied' });
         }
 
+        // Kalau session sudah ada, tetap cek token_version supaya logout pusat kebaca
+        if (req.session.user) {
+            const [versionRows] = await centralDb.query(
+                'SELECT token_version FROM central_users WHERE id = ? AND is_active = 1 LIMIT 1',
+                [decoded.sub]
+            );
+
+            const currentVersion = Number(versionRows?.[0]?.token_version ?? -1);
+            const tokenVersion = Number(decoded.cv ?? -2);
+
+            if (currentVersion !== tokenVersion) {
+                req.session.destroy(() => {});
+                return res.status(401).json({ error: 'Token expired' });
+            }
+
+            return next();
+        }
+
+        const username = decoded.username;
+        if (!username) {
+            return res.status(401).json({ error: 'Invalid token payload' });
+        }
+
+        const [rows] = await centralDb.query(LOGIN_SQL, [username]);
+
+        if (!rows.length) {
+            return res.status(401).json({ error: 'User not found in central database' });
+        }
+
+        const currentVersion = Number(rows[0].token_version ?? -1);
+        const tokenVersion = Number(decoded.cv ?? -2);
+
+        if (currentVersion !== tokenVersion) {
+            return res.status(401).json({ error: 'Token expired' });
+        }
+
+        const user = userFromLoginRows(rows);
+
+        if (!user) {
+            return res.status(401).json({ error: 'Failed to build user session' });
+        }
+
         req.session.user = {
-            id: decoded.internal_id || decoded.sub || null,
-            username: decoded.username || '',
-            fullName: decoded.name || decoded.username || '',
-            name: decoded.name || decoded.username || '',
-            email: decoded.email || '',
-            phone: decoded.phone || '',
-            jobPosition: decoded.job_position || '',
-            role: decoded.department === 'IT' ? 'administrator' : 'user',
-
-            selectedCompany: decoded.company || '',
-            selectedCompanyId: decoded.company_id || '',
-            selectedCompanyCode: decoded.company_id || '',
-            selectedDivision: decoded.department || '',
-            selectedJobLevel: decoded.job_position || '',
-
-            allAssignments: [
-                {
-                    id: decoded.company_id || '',
-                    companyId: decoded.company_id || '',
-                    companyCode: decoded.company_id || '',
-                    name: decoded.company || '',
-                    class: decoded.department || '',
-                    jobLevel: decoded.job_position || '',
-                },
-            ],
-
+            ...user,
             sso: true,
             apps: allowedApps,
         };
 
-        req.session.save(() => next());
-    } catch (err) {
-        console.error('[SSO Token Error]', err.message);
-        next();
+        req.session.save((err) => {
+            if (err) {
+                console.error('Failed to save SSO session:', err);
+                return res.status(500).json({ error: 'Failed to save session' });
+            }
+
+            return next();
+        });
+    } catch (error) {
+        console.error('SSO token error:', error.message);
+
+        if (req.path.startsWith('/api/')) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        return res.redirect('/');
     }
 });
 

@@ -76,6 +76,7 @@ WHERE cu.is_active = 1
 
 const LOGIN_SQL = `
     SELECT cu.id, cu.name, cu.email, cu.username, cu.password, cu.job_position,
+           cu.token_version,
            cud.department_id,
            md.name AS dept_name, md.class AS dept_class, md.code AS dept_code,
            COALESCE(mc.id, uc.id) AS company_id,
