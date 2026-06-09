@@ -3,7 +3,15 @@ import SearchableSelect from '../template/SearchableSelect.jsx'
 
 const normalizeNumber = v => { const n = Number(String(v).replace(/[^0-9.-]/g, '')); return Number.isNaN(n) ? 0 : n }
 const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumber(v))
-const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
+const formatDecimalInput = v => {
+  if (v === undefined || v === null || v === '') return ''
+  const clean = String(v).replace(/[^0-9.]/g, '')
+  if (!clean) return ''
+  const [intPart, ...decimalParts] = clean.split('.')
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  if (decimalParts.length === 0) return formattedInt
+  return `${formattedInt}.${decimalParts.join('').replace(/\./g, '')}`
+}
 
 const S = {
   sectionTitle: { display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 1.25rem', fontSize: '0.95rem', fontWeight: 700, color: '#1e293b' },
@@ -77,7 +85,7 @@ export default function DataTableItemsRp({
                   </div>
                   <div style={S.formGroup}>
                     <label style={S.label}>Estimated Value</label>
-                    <input type="text" name={`items[${idx}][estimatedValue]`} style={S.input} value={formatNumberInput(item.estimatedValue)} onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))} />
+                    <input type="text" name={`items[${idx}][estimatedValue]`} style={S.input} value={formatDecimalInput(item.estimatedValue)} onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/[^0-9.]/g, ''))} />
                   </div>
                 </div>
                 <div style={{ ...S.itemCardAmount, display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
@@ -184,8 +192,8 @@ export default function DataTableItemsRp({
                             textAlign: 'right',
                             fontSize: '0.85rem'
                           }}
-                          value={formatNumberInput(item.estimatedValue)}
-                          onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/\D/g, ''))}
+                          value={formatDecimalInput(item.estimatedValue)}
+                          onChange={e => updateItem(idx, 'estimatedValue', e.target.value.replace(/[^0-9.]/g, ''))}
                         />
                       </div>
                     </td>

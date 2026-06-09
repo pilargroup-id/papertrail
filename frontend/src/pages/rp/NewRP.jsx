@@ -518,9 +518,12 @@ export default function NewRP({
                       value={values.vendorSuggestion}
                       onChange={v => updateField('vendorSuggestion', v)}
                       options={vendorOptions}
-                      placeholder="Pilih Vendor"
+                      placeholder="Pilih vendor atau ketik sendiri"
                       className="frp-select"
                       menuPosition="fixed"
+                      allowCustomInput
+                      customInputLabel="Vendor Manual"
+                      customInputButtonLabel="Pakai nama ini"
                     />
                   </FloatingGroup>
                 </div>

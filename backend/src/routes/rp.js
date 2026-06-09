@@ -346,8 +346,8 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
             if (r.status === 'approved' && r.items) {
                 r.items.forEach(item => {
                     const bId = item.budgetId;
-                    const amt = parseInt(String(item.estimatedValue || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                    usedBudgets[bId] = (usedBudgets[bId] || 0) + (amt * (parseInt(item.qty) || 1));
+                    const amt = parseFloat(String(item.estimatedValue || '0').replace(/[^0-9.-]/g, '')) || 0;
+                    usedBudgets[bId] = (usedBudgets[bId] || 0) + (amt * (parseFloat(item.qty) || 1));
                 });
             }
         });
