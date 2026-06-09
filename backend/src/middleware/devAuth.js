@@ -35,7 +35,6 @@ function rowsToSessionUser(rows) {
         email: base.email,
         fullName: base.name,
         name: base.name,
-        role: isIT ? 'administrator' : 'user',
 
         companyId: primaryAssignment.id || null,
         companyCode: primaryAssignment.code || null,
