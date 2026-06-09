@@ -44,8 +44,7 @@ export default function ButtonAccessManagerRp({
 
   if (!showActions || !rp) return null
 
-  const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').trim()
-  const canTakeManagerAction = userJobLevelRank >= 4 || ['Manager', 'Direktur', 'Komisaris'].includes(userJobLevelName)
+  const canTakeManagerAction = userJobLevelRank >= 2
 
   const canManagerApprove = rp.status === 'waiting_manager' && canTakeManagerAction
   const canDivisionProcess = rp.status === 'division_review' && userJobLevelRank > 1
@@ -105,7 +104,7 @@ export default function ButtonAccessManagerRp({
           boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
         }}>
           <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-reject')}>Reject</ButtonReject>
-          <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Final Approve</ButtonApprove>
+          <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Approve</ButtonApprove>
         </div>
       )}
 

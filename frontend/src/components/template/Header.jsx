@@ -16,15 +16,13 @@ const ROUTE_TITLES = {
   '/select-division': 'Pilih Divisi',
   '/rp': 'Request Purchase (RP)',
   '/rp-approval': 'Approval RP',
-  '/rp-approval/manager': 'Approval RP Manager',
-  '/rp-approval/staff': 'Approval RP Staff',
   '/status_rp': 'Status RP',
 }
 
 function getTitleFromPath(pathname) {
   if (pathname.startsWith('/admin')) return 'Master Data'
   if (pathname.startsWith('/frp/')) return 'Detail FRP'
-  if (pathname.startsWith('/rp-approval/')) return pathname.endsWith('/staff') ? 'Approval RP Staff' : 'Approval RP Manager'
+  if (pathname.startsWith('/rp-approval')) return 'Approval RP'
   return ROUTE_TITLES[pathname] ?? 'Form Request Payment'
 }
 

@@ -11,6 +11,15 @@ export default function DashboardLayout() {
   const { sidebarCollapsed, setSidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useSidebarState()
   const { user } = useUser()
   const u = user || {}
+  const breadcrumbLabelMap = {
+    '/': 'Dashboard',
+    '/frp': 'New FRP',
+    '/approval': 'Approval FRP',
+    '/approved': 'Approved FRP',
+    '/rp': 'New RP',
+    '/rp-approval': 'Approval RP',
+    '/rp-approved': 'Approved RP',
+  }
 
   const handleSidebarToggle = () => {
     if (window.innerWidth <= 1024) { setMobileMenuOpen(c => !c); return }
@@ -37,7 +46,11 @@ export default function DashboardLayout() {
           onMenuClick={() => setMobileMenuOpen(true)}
           breadcrumb={[
             { label: 'FRP', href: '#' },
-            { label: pathname === '/' ? 'Dashboard' : pathname.substring(1), href: '#', active: true }
+            {
+              label: breadcrumbLabelMap[pathname] ?? pathname.substring(1),
+              href: '#',
+              active: true,
+            }
           ]}
           notificationProps={{}}
           onRefresh={() => window.location.reload()}

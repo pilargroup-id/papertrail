@@ -12,6 +12,7 @@ import ButtonAccessManagerRp from '../../components/button/ButtonAccessManagerRp
 import ButtonAccessStaffRp from '../../components/button/ButtonAccessStaffRp.jsx'
 import FilterApprovalRp from './FilterApprovalRp.jsx'
 import TabsFilterApprovalRp from './TabsFilterApprovalRp.jsx'
+import { getRpApprovalMode } from '../../utils/rpApproval'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -126,7 +127,6 @@ export default function RpApprovalPage() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const isApprovedView = pathname === '/rp-approved'
-  const approvalMode = pathname.startsWith('/rp-approval/staff') ? 'staff' : 'manager'
   const { setUser } = useUser()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -151,6 +151,8 @@ export default function RpApprovalPage() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [tabDropdownOpen, setTabDropdownOpen] = useState(false)
   const tabDropdownRef = useRef(null)
+  const currentUser = data?.user || null
+  const approvalMode = getRpApprovalMode(currentUser)
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
@@ -181,6 +183,13 @@ export default function RpApprovalPage() {
   useEffect(() => {
     loadData(tab)
   }, [tab])
+
+  useEffect(() => {
+    if (pathname === '/rp-approval') return
+    if (pathname.startsWith('/rp-approval/')) {
+      navigate('/rp-approval', { replace: true })
+    }
+  }, [navigate, pathname])
 
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth)
@@ -314,9 +323,10 @@ export default function RpApprovalPage() {
 
   const D = data || {}
   const requests = D.requests || []
-  const user = D.user || {}
+  const user = currentUser || {}
   const userJobLevelRank = Number(user?.jobLevelRank || user?.job_level_rank || 0)
   const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
+  const isAdmin = user?.role === 'administrator'
   const userDivision = user.selectedDivision || ''
   const canTakeApprovalAction = userJobLevelRank >= 2 && !/\bstaff\b/.test(userJobLevelName)
   const isProcessDivision = division => ['IT', 'HCGA', 'Product'].includes(userDivision) && userDivision === division
@@ -773,14 +783,14 @@ export default function RpApprovalPage() {
             )}
 
             {approvalMode === 'manager' ? (
-              <ButtonAccessManagerRp
-                rp={selected}
+            <ButtonAccessManagerRp
+              rp={selected}
                 user={user}
-                userJobLevelRank={userJobLevelRank}
-                canTakeApprovalAction={canTakeApprovalAction}
-                actionLoading={actionLoading}
-                requestAction={requestAction}
-                setSelected={setSelected}
+              userJobLevelRank={userJobLevelRank}
+              canTakeApprovalAction={canTakeApprovalAction}
+              actionLoading={actionLoading}
+              requestAction={requestAction}
+              setSelected={setSelected}
                 showActions={true}
               />
             ) : (

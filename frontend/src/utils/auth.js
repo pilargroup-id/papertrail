@@ -18,6 +18,24 @@ export function getAuthUser() {
   }
 }
 
+export async function fetchAuthUserFromSession() {
+  try {
+    const response = await fetch('/api/auth/me', {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      return null
+    }
+
+    const data = await response.json()
+    return data.user || null
+  } catch (_) {
+    return null
+  }
+}
+
 export function isAuthenticated() {
   return Boolean(getToken() || getAuthUser())
 }

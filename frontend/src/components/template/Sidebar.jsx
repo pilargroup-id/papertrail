@@ -28,14 +28,6 @@ function isItemActive(item, currentPath) {
   return item.children?.some((child) => isItemActive(child, currentPath)) ?? false
 }
 
-function getRpApprovalPath({ userJobLevel, userRole }) {
-  const normalizedJobLevel = String(userJobLevel || '').trim().toLowerCase()
-  const normalizedRole = String(userRole || '').trim().toLowerCase()
-  const isStaff = normalizedRole === 'staff' || normalizedJobLevel === 'staff'
-
-  return isStaff ? '/rp-approval/staff' : '/rp-approval/manager'
-}
-
 function getInitiallyExpandedGroups(items, currentPath) {
   return items.reduce((expandedGroups, item) => {
     if (item.children?.length && isItemActive(item, currentPath)) {
@@ -53,7 +45,7 @@ function getInitiallyExpandedGroups(items, currentPath) {
 function getInitialExpandedByPathname(pathname) {
   const map = {
     'group:FRP': ['/', '/frp', '/approval', '/approved', '/status_frp'],
-    'group:RP': ['/rp', '/rp-approval', '/rp-approval/manager', '/rp-approval/staff', '/status_rp'],
+    'group:RP': ['/rp', '/rp-approval', '/status_rp'],
     'group:Document': ['/document/generate', '/document/riwayat', '/document/template'],
     'group:Report': ['/laporan-frp', '/laporan-rp'],
     'group:Master Data': null,
@@ -211,7 +203,7 @@ function Sidebar({
   const uniqueCompanies = [...new Set((allAssignments || []).map(a => a.name))]
   const showBack = (allAssignments || []).length > 1
   const backUrl = uniqueCompanies.length > 1 ? '/select-company' : '/select-division'
-  const rpApprovalHref = getRpApprovalPath({ userJobLevel, userRole })
+  const rpApprovalHref = '/rp-approval'
 
   const primaryItems = hideMenu ? [] : [
     ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),

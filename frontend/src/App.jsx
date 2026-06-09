@@ -18,6 +18,7 @@ import StatusRP from './pages/rp/StatusRP'
 import DocumentPage from './pages/document/DocumentPage'
 import {
   consumeTokenFromUrl,
+  fetchAuthUserFromSession,
   getAuthUser,
   isAuthenticated,
   redirectToPilargroupLogin,
@@ -39,9 +40,14 @@ function AuthBootstrap({ children }) {
         }
 
         if (!cancelled && !user) {
-          const storedUser = getAuthUser()
-          if (storedUser) {
-            setUser(storedUser)
+          const sessionUser = await fetchAuthUserFromSession()
+          if (!cancelled && sessionUser) {
+            setUser(sessionUser)
+          } else {
+            const storedUser = getAuthUser()
+            if (!cancelled && storedUser) {
+              setUser(storedUser)
+            }
           }
         }
       } catch (error) {
@@ -78,12 +84,7 @@ function AuthBootstrap({ children }) {
 }
 
 function RpApprovalRedirect() {
-  const { user } = useUser()
-  const userJobLevelRank = Number(user?.jobLevelRank || user?.job_level_rank || 0)
-  const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
-  const isStaff = userJobLevelRank <= 1 || /\bstaff\b/.test(userJobLevelName)
-
-  return <Navigate to={isStaff ? '/rp-approval/staff' : '/rp-approval/manager'} replace />
+  return <Navigate to="/rp-approval" replace />
 }
 
 function AppRoutes() {
@@ -103,9 +104,9 @@ function AppRoutes() {
         <Route path="/laporan-rp" element={<ReportPage type="rp" />} />
         <Route path="/admin/:type" element={<AdminPage />} />
         <Route path="/rp" element={<NewRP />} />
-        <Route path="/rp-approval" element={<RpApprovalRedirect />} />
-        <Route path="/rp-approval/manager" element={<RpApprovalPage />} />
-        <Route path="/rp-approval/staff" element={<RpApprovalPage />} />
+        <Route path="/rp-approval" element={<RpApprovalPage />} />
+        <Route path="/rp-approval/manager" element={<RpApprovalRedirect />} />
+        <Route path="/rp-approval/staff" element={<RpApprovalRedirect />} />
         <Route path="/rp-approval/*" element={<RpApprovalRedirect />} />
         <Route path="/rp-approved" element={<RpApprovalPage />} />
         <Route path="/status_frp" element={<StatusFRP />} />
