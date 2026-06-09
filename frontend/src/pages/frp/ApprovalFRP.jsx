@@ -517,7 +517,8 @@ export default function ApprovalFRP() {
   }
 
   const user = data?.user || {}
-  const canApprove = data?.canApprove
+  const userJobLevelRank = Number(user?.jobLevelRank || 0)
+  const canApprove = Boolean(data?.canApprove) && userJobLevelRank > 1
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
@@ -849,7 +850,7 @@ export default function ApprovalFRP() {
         isOpen={!!selectedRequest}
         request={selectedRequest}
         onClose={() => setSelectedRequest(null)}
-        canApprove={data?.canApprove}
+        canApprove={canApprove}
         isApprovedView={isApprovedView}
         userRole={user.role}
         onApprove={(req) => setConfirmAction({ request: req, action: 'approve' })}

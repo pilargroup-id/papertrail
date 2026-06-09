@@ -242,23 +242,23 @@ function enrichRpWithRevert(r, u) {
     // Revert dari waiting_manager → tidak ada (manager approve/reject langsung)
     
     // Revert dari division_review → waiting_manager
-    // oleh: admin, atau rank >= 3 dari processor department
+    // oleh: admin, atau rank >= 1 dari processor department
     const canRevertDivisionReview =
         r.status === 'division_review' &&
-        (isAdmin || (rank >= 3 && u.selectedDivision === r.diprosesOleh));
+        (isAdmin || (rank >= 1 && u.selectedDivision === r.diprosesOleh));
 
     // Revert dari final_review → division_review  
-    // oleh: admin, atau rank >= 3 dari processor department
+    // oleh: admin, atau rank >= 1 dari processor department
     const canRevertFinalReview =
         r.status === 'final_review' &&
-        (isAdmin || (rank >= 3 && u.selectedDivision === r.diprosesOleh));
+        (isAdmin || (rank >= 1 && u.selectedDivision === r.diprosesOleh));
 
     // Revert dari approved → waiting_manager
-    // oleh: admin, atau rank >= 3 dari department terkait (IT/HCGA short flow: dept requester, 4-step: processor dept)
+    // oleh: admin, atau rank >= 1 dari department terkait (IT/HCGA short flow: dept requester, 4-step: processor dept)
     const canRevertApproved =
         r.status === 'approved' &&
         (isAdmin || (
-            rank >= 3 &&
+            rank >= 1 &&
             (u.selectedDivision === r.diprosesOleh || u.selectedDivision === r.divisi)
         ));
 
@@ -961,7 +961,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
         }
 
         // Step 4: processor manager final approval/revert/reject
-        if (['process-manager-approve', 'process-manager-revert', 'process-manager-reject'].includes(action) && !isAdmin) {
+        if (['process-manager-approve', 'process-manager-reject'].includes(action) && !isAdmin) {
             if (!isManagerLevel(u)) {
                 await client.rollback();
                 return res.status(403).json({
@@ -1208,7 +1208,7 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
 
             const canRevertApproved =
                 isAdmin ||
-                (Number(u.jobLevelRank || 0) >= 3 && isOwnManagerDept);
+                (Number(u.jobLevelRank || 0) >= 1 && isOwnManagerDept);
 
             if (!canRevertApproved) {
                 await client.rollback();

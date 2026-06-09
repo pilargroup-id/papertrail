@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ButtonApprove from './ButtonApprove.jsx'
 import ButtonReject from './ButtonReject.jsx'
-import ButtonRevert from './ButtonRevert.jsx'
-import ButtonDetail from './ButtonDetail.jsx'
 import ButtonPrintPdf from './ButtonPrintPdf.jsx'
 import ButtonCheckData from './ButtonCheckData.jsx'
 import ButtonKeFrp from './ButtonKeFrp.jsx'
+import ButtonDetail from './ButtonDetail.jsx'
+import ButtonRevert from './ButtonRevert.jsx'
 
 function printRpPreview(rpId) {
   if (!rpId || typeof window === 'undefined') return
@@ -16,10 +16,8 @@ function printRpPreview(rpId) {
 export default function ButtonActionApprovalRp({
   rp,
   user,
-  isAdmin,
   userDivision,
   isProcessDivision,
-  isProcessManager,
   actionLoading,
   requestAction,
   setSelected,
@@ -55,19 +53,45 @@ export default function ButtonActionApprovalRp({
     }
   }, [dropdownOpen])
 
+  const userJobLevelRank = Number(user?.jobLevelRank || user?.job_level_rank || 0)
+  const isAdmin = user?.role === 'administrator'
+  const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
+  const canTakeApprovalAction = userJobLevelRank >= 2 && !/\bstaff\b/.test(userJobLevelName)
+
   const canManagerApprove =
     rp.status === 'waiting_manager' &&
-    (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user?.selectedJobLevel) && userDivision === rp.divisi))
-  
+    canTakeApprovalAction
+
   const canProcess = rp.status === 'division_review' && (isAdmin || isProcessDivision(rp.diprosesOleh))
-  
-  const canFinalApprove = rp.status === 'final_review' && (isAdmin || isProcessManager(rp.diprosesOleh))
-  
+
+  const canFinalApprove =
+    rp.status === 'final_review' &&
+    canTakeApprovalAction
+
   const canCreateFrp =
     rp.status === 'approved' &&
     (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
 
   const showRevertAction = showRevert && rp.canRevert
+
+  const isStaff = userJobLevelRank === 1
+
+  // At waiting_manager & final_review: always show Detail & Revert directly (no dropdown) for all users
+  // At division_review & approved: only staff gets direct buttons; others use dropdown
+  const extractDetail = showDetail && (
+    rp.status === 'waiting_manager' ||
+    rp.status === 'final_review' ||
+    (isStaff && (rp.status === 'division_review' || rp.status === 'approved'))
+  )
+  const extractRevert = showRevertAction && (
+    rp.status === 'waiting_manager' ||
+    rp.status === 'final_review' ||
+    isStaff
+  )
+
+  const showDropdownDetail = showDetail && !extractDetail
+  const showDropdownRevert = showRevertAction && !extractRevert
+  const showDropdown = showDropdownDetail || showDropdownRevert
 
   return (
     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -90,6 +114,7 @@ export default function ButtonActionApprovalRp({
           )}
         </div>
       )}
+
       {showActions && canManagerApprove && (
         <div style={{
           display: 'inline-flex',
@@ -105,7 +130,7 @@ export default function ButtonActionApprovalRp({
           <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'manager-approve')}>Approve</ButtonApprove>
         </div>
       )}
-          {showActions && canProcess && (
+      {showActions && canProcess && (
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -116,8 +141,8 @@ export default function ButtonActionApprovalRp({
           gap: '4px',
           boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
           }}>
-          <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')}>Reject</ButtonReject>
-          <ButtonCheckData onClick={() => (onCheckData ? onCheckData(rp) : navigate(`/rp?process=${rp.id}`))}>Check Data</ButtonCheckData>
+            <ButtonReject disabled={actionLoading} onClick={() => requestAction(rp, 'process-reject')}>Reject</ButtonReject>
+            <ButtonCheckData onClick={() => (onCheckData ? onCheckData(rp) : navigate(`/rp?process=${rp.id}`))}>Check Data</ButtonCheckData>
         </div>
       )}
       {showActions && canFinalApprove && (
@@ -135,8 +160,42 @@ export default function ButtonActionApprovalRp({
           <ButtonApprove disabled={actionLoading} onClick={() => requestAction(rp, 'process-manager-approve')}>Final Approve</ButtonApprove>
         </div>
       )}
+      {showActions && !canTakeApprovalAction && userJobLevelRank > 1 && (rp.status === 'waiting_manager' || rp.status === 'final_review') && (
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          background: '#f1f5f9',
+          border: '1px solid #e2e8f0',
+          borderRadius: '30px',
+          padding: '4px',
+          gap: '4px',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+        }}>
+          <ButtonCheckData onClick={() => (onCheckData ? onCheckData(rp) : navigate(`/rp?process=${rp.id}`))}>Check Data</ButtonCheckData>
+        </div>
+      )}
+
+      {(extractDetail || extractRevert) && (
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          background: '#f1f5f9',
+          border: '1px solid #e2e8f0',
+          borderRadius: '30px',
+          padding: '4px',
+          gap: '4px',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+        }}>
+          {extractRevert && (
+            <ButtonRevert disabled={actionLoading} onClick={() => requestAction(rp, 'revert')}>Revert</ButtonRevert>
+          )}
+          {extractDetail && (
+            <ButtonDetail onClick={() => setSelected(rp)}>Detail</ButtonDetail>
+          )}
+        </div>
+      )}
       
-      {(showDetail || showRevertAction) && (
+      {showDropdown && (
         <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button
             onClick={(e) => { 
@@ -176,33 +235,7 @@ export default function ButtonActionApprovalRp({
               zIndex: 9999,
               padding: '4px'
             }}>
-              {showRevertAction && (
-                <button
-                  disabled={actionLoading}
-                  onClick={(e) => { e.stopPropagation(); setDropdownOpen(false); requestAction(rp, 'revert'); }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    width: '100%',
-                    padding: '8px 12px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: actionLoading ? 'not-allowed' : 'pointer',
-                    color: '#ef4444',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => { if(!actionLoading) e.currentTarget.style.background = '#fef2f2' }}
-                  onMouseLeave={(e) => { if(!actionLoading) e.currentTarget.style.background = 'transparent' }}
-                >
-                  <span className="material-icons-round" style={{ fontSize: '16px' }}>history</span>
-                  Revert
-                </button>
-              )}
-              {showDetail && (
+              {showDropdownDetail && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setDropdownOpen(false); setSelected(rp); }}
                   style={{
@@ -225,6 +258,31 @@ export default function ButtonActionApprovalRp({
                 >
                   <span className="material-icons-round" style={{ fontSize: '16px' }}>info</span>
                   Detail
+                </button>
+              )}
+              {showDropdownRevert && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDropdownOpen(false); requestAction(rp, 'revert'); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    color: '#f59e0b',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#fef3c7'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <span className="material-icons-round" style={{ fontSize: '16px' }}>restart_alt</span>
+                  Revert
                 </button>
               )}
             </div>

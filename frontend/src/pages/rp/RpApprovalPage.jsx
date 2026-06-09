@@ -312,13 +312,11 @@ export default function RpApprovalPage() {
   const D = data || {}
   const requests = D.requests || []
   const user = D.user || {}
-  const isAdmin = user.role === 'administrator'
+  const userJobLevelRank = Number(user?.jobLevelRank || user?.job_level_rank || 0)
+  const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
   const userDivision = user.selectedDivision || ''
+  const canTakeApprovalAction = userJobLevelRank >= 2 && !/\bstaff\b/.test(userJobLevelName)
   const isProcessDivision = division => ['IT', 'HCGA', 'Product'].includes(userDivision) && userDivision === division
-  const isProcessManager = division =>
-    ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) &&
-    ['IT', 'HCGA', 'Product'].includes(userDivision) &&
-    userDivision === division
 
   const divisions = useMemo(
     () => [...new Set(requests.map(request => request.divisi).filter(Boolean))].sort(),
@@ -491,10 +489,8 @@ export default function RpApprovalPage() {
       <ButtonActionApprovalRp
         rp={rp}
         user={user}
-        isAdmin={isAdmin}
         userDivision={userDivision}
         isProcessDivision={isProcessDivision}
-        isProcessManager={isProcessManager}
         actionLoading={actionLoading}
         requestAction={requestAction}
         setSelected={setSelected}
@@ -512,9 +508,13 @@ export default function RpApprovalPage() {
     // Determine what actions should be rendered in the footer
     const canManagerApprove =
       selected.status === 'waiting_manager' &&
-      (isAdmin || (['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel) && userDivision === selected.divisi))
-    const canProcess = selected.status === 'division_review' && (isAdmin || isProcessDivision(selected.diprosesOleh))
-    const canFinalApprove = selected.status === 'final_review' && (isAdmin || isProcessManager(selected.diprosesOleh))
+      canTakeApprovalAction
+    const canProcess =
+      selected.status === 'division_review' &&
+      (isAdmin || isProcessDivision(selected.diprosesOleh))
+    const canFinalApprove =
+      selected.status === 'final_review' &&
+      canTakeApprovalAction
     const canCreateFrp =
       selected.status === 'approved' &&
       (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
@@ -811,6 +811,13 @@ export default function RpApprovalPage() {
                   Reject
                 </button>
               </>
+            )}
+
+            {!canTakeApprovalAction && userJobLevelRank > 1 && (selected.status === 'waiting_manager' || selected.status === 'final_review') && (
+              <button type="button" onClick={() => openCheckData(selected)} className="btn-dialog btn-dialog-warning">
+                <span className="material-icons-round" style={{ fontSize: '18px' }}>fact_check</span>
+                Check Data
+              </button>
             )}
 
             {canCreateFrp && (

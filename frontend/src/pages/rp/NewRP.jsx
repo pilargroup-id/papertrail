@@ -180,7 +180,11 @@ export default function NewRP({
   const [vw, setVw] = useState(typeof window === 'undefined' ? 1280 : window.innerWidth)
 
   useEffect(() => {
-    const q = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    const params = new URLSearchParams(searchParams)
+    if (embeddedProcessId) {
+      params.set('process', embeddedProcessId)
+    }
+    const q = params.toString() ? `?${params.toString()}` : ''
     fetch(`/api/rp/form-data${q}`)
       .then(r => { if (!r.ok) { window.location.href = '/'; throw new Error() } return r.json() })
       .then(d => {
@@ -299,6 +303,12 @@ export default function NewRP({
 
   const totalAmount = useMemo(() => values.items.reduce((s, it) => s + normalizeNumber(it.qty) * normalizeNumber(it.estimatedValue), 0), [values.items])
   const processId = embeddedProcessId || searchParams.get('process')
+  const sectionSurfaceStyle = embedded
+    ? { padding: 0, background: 'transparent', border: 'none', boxShadow: 'none' }
+    : undefined
+  const sectionHeaderStyle = embedded
+    ? { flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }
+    : { flexWrap: 'wrap', gap: '10px' }
 
   const getBudgetRemaining = (budgetId) => {
     const b = (D.budgets || []).find(x => x.id === budgetId)
@@ -438,7 +448,7 @@ export default function NewRP({
 
             <div className="frp-top-panel">
               {/* Informasi Request Purchase */}
-              <div className="frp-card">
+              <div className={embedded ? '' : 'frp-card'} style={sectionSurfaceStyle}>
                 <h3 className="frp-section-title" style={{ marginBottom: '20px' }}>
                   <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>info</span>
                   Informasi Request Purchase
@@ -496,7 +506,7 @@ export default function NewRP({
               </div>
 
               {/* Vendor & Proses */}
-              <div className="frp-card">
+              <div className={embedded ? '' : 'frp-card'} style={sectionSurfaceStyle}>
                 <h3 className="frp-section-title" style={{ marginBottom: '20px' }}>
                   <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>store</span>
                   Vendor &amp; Proses
@@ -551,8 +561,8 @@ export default function NewRP({
             </div>
 
             <div className="frp-bottom-panel">
-              <div className="frp-card frp-card--scroll">
-                <div className="frp-card-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
+              <div className={embedded ? 'frp-card--scroll' : 'frp-card frp-card--scroll'} style={sectionSurfaceStyle}>
+                <div className="frp-card-header" style={sectionHeaderStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <h3 className="frp-section-title">
                       <span className="material-icons-round" style={{ color: '#1f4e8c', fontSize: '18px' }}>list_alt</span>

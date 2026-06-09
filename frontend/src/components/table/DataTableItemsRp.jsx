@@ -102,7 +102,7 @@ export default function DataTableItemsRp({
                 <th style={{ ...S.th, width: '22%', borderLeft: '1px solid #e2e8f0', borderTopLeftRadius: '8px' }}>Item</th>
                 <th style={{ ...S.th, width: '18%' }}>Memo</th>
                 <th style={{ ...S.th, width: '22%' }}>Purchase Link</th>
-                <th style={{ ...S.th, width: '6%', textAlign: 'center' }}>Qty</th>
+                <th style={{ ...S.th, width: '8%', textAlign: 'center' }}>Qty</th>
                 <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Budget Remaining</th>
                 <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Unit Price (IDR)</th>
                 <th style={{ ...S.th, width: '13%', textAlign: 'right' }}>Total (IDR)</th>
@@ -150,7 +150,7 @@ export default function DataTableItemsRp({
                       <input
                         type="number"
                         name={`items[${idx}][qty]`}
-                        style={{ ...S.tdInput, height: '34px', padding: '6px 8px', fontSize: '0.85rem', textAlign: 'center' }}
+                        style={{ ...S.tdInput, height: '34px', padding: '6px 8px', fontSize: '0.95rem', textAlign: 'center', fontWeight: 700, color: '#0f172a' }}
                         value={item.qty}
                         onChange={e => updateItem(idx, 'qty', e.target.value)}
                       />
