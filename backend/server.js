@@ -34,6 +34,7 @@ const IS_DEV = process.env.NODE_ENV !== 'production';
 
 const frontendPath = path.join(__dirname, '..', 'frontend');
 const pdfPath      = path.join(__dirname, 'generated-pdfs');
+const jwt = require('jsonwebtoken');
 
 // ============================================================
 // STATIC FILES
@@ -67,6 +68,65 @@ app.use(session({
 }));
 
 app.use(devAuth);
+
+app.use((req, res, next) => {
+    const authHeader = req.headers.authorization || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = req.query.token || bearerToken;
+
+    if (!token || req.session.user) {
+        return next();
+    }
+
+    try {
+        const decoded = jwt.decode(token);
+
+        if (!decoded) {
+            return next();
+        }
+
+        const allowedApps = Array.isArray(decoded.apps) ? decoded.apps : [];
+        if (!allowedApps.includes('papertrail')) {
+            return res.status(403).json({ error: 'Forbidden: papertrail access denied' });
+        }
+
+        req.session.user = {
+            id: decoded.internal_id || decoded.sub || null,
+            username: decoded.username || '',
+            fullName: decoded.name || decoded.username || '',
+            name: decoded.name || decoded.username || '',
+            email: decoded.email || '',
+            phone: decoded.phone || '',
+            jobPosition: decoded.job_position || '',
+            role: decoded.department === 'IT' ? 'administrator' : 'user',
+
+            selectedCompany: decoded.company || '',
+            selectedCompanyId: decoded.company_id || '',
+            selectedCompanyCode: decoded.company_id || '',
+            selectedDivision: decoded.department || '',
+            selectedJobLevel: decoded.job_position || '',
+
+            allAssignments: [
+                {
+                    id: decoded.company_id || '',
+                    companyId: decoded.company_id || '',
+                    companyCode: decoded.company_id || '',
+                    name: decoded.company || '',
+                    class: decoded.department || '',
+                    jobLevel: decoded.job_position || '',
+                },
+            ],
+
+            sso: true,
+            apps: allowedApps,
+        };
+
+        req.session.save(() => next());
+    } catch (err) {
+        console.error('[SSO Token Error]', err.message);
+        next();
+    }
+});
 
 app.get('/api/dev/auth-user', (req, res) => {
     res.json({

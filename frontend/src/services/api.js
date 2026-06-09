@@ -17,11 +17,19 @@ export class ApiError extends Error {
  */
 async function fetchWithConfig(url, config = {}) {
   try {
+    const token = localStorage.getItem('token')
+
+    const headers = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(config.headers || {}),
+    }
+
     const response = await fetch(resolveApiUrl(url), {
       credentials: 'include',
       ...config,
+      headers,
     });
-    
+        
     // Check if the response is JSON
     const contentType = response.headers.get('content-type');
     const isJson = contentType && contentType.includes('application/json');
