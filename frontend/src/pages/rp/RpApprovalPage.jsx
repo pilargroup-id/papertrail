@@ -122,6 +122,11 @@ const printRpPreview = rpId => {
   window.open(`/api/rp/${rpId}/preview`, '_blank')
 }
 
+const getUserJobLevelRank = user => {
+  const assignmentRank = Number(user?.allAssignments?.[0]?.job_level_rank || 0)
+  return Number(user?.jobLevelRank || user?.job_level_rank || assignmentRank || 0)
+}
+
 
 export default function RpApprovalPage() {
   const { pathname } = useLocation()
@@ -153,6 +158,11 @@ export default function RpApprovalPage() {
   const tabDropdownRef = useRef(null)
   const currentUser = data?.user || null
   const approvalMode = getRpApprovalMode(currentUser)
+  const currentUserJobLevelRank = getUserJobLevelRank(currentUser)
+  console.log('=== DEBUG RP APPROVAL ===')
+  console.log('currentUser:', currentUser)
+  console.log('approvalMode:', approvalMode)
+  console.log('userJobLevelRank:', currentUserJobLevelRank)
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
@@ -324,7 +334,7 @@ export default function RpApprovalPage() {
   const D = data || {}
   const requests = D.requests || []
   const user = currentUser || {}
-  const userJobLevelRank = Number(user?.jobLevelRank || user?.job_level_rank || 0)
+  const userJobLevelRank = getUserJobLevelRank(user)
   const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
   const isAdmin = user?.role === 'administrator'
   const userDivision = user.selectedDivision || ''

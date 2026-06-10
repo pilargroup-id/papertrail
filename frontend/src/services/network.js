@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getToken } from '../utils/auth'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 const API_PATH_PREFIXES = ['/api/', '/logout', '/generate-pdf', '/preview', '/pdfs']
@@ -24,7 +25,7 @@ export function configureNetworkClient() {
 
   window.fetch = (input, init = {}) => {
     const nextInput = resolveApiUrl(input)
-    const token = localStorage.getItem('token')
+    const token = getToken()
 
     const nextInit = {
       credentials: init.credentials || 'include',

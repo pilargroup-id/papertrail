@@ -1,9 +1,25 @@
 const TOKEN_KEY = 'token'
 const AUTH_USER_KEY = 'authUser'
 
+export function isJwtLike(token) {
+  if (typeof token !== 'string') return false
+
+  const parts = token.split('.')
+  return parts.length === 3 && parts.every(Boolean)
+}
+
 export function getToken() {
   try {
-    return localStorage.getItem(TOKEN_KEY)
+    const token = localStorage.getItem(TOKEN_KEY)
+
+    if (!token || !isJwtLike(token)) {
+      if (token) {
+        localStorage.removeItem(TOKEN_KEY)
+      }
+      return null
+    }
+
+    return token
   } catch (_) {
     return null
   }
@@ -65,6 +81,14 @@ export async function consumeTokenFromUrl() {
     return getAuthUser()
   }
 
+  if (!isJwtLike(token)) {
+    try {
+      localStorage.removeItem(TOKEN_KEY)
+    } catch (_) {}
+    cleanUrlAuthParams()
+    return getAuthUser()
+  }
+
   localStorage.setItem(TOKEN_KEY, token)
 
   const response = await fetch(`/api/auth/me?token=${encodeURIComponent(token)}`, {
@@ -76,7 +100,10 @@ export async function consumeTokenFromUrl() {
   })
 
   if (!response.ok) {
-    clearAuth()
+    try {
+      localStorage.removeItem(TOKEN_KEY)
+    } catch (_) {}
+    cleanUrlAuthParams()
     throw new Error('Unauthorized')
   }
 

@@ -19,7 +19,7 @@ export default function ButtonActionApprovalRp({
   requestAction,
   setSelected,
   onCheckData,
-  mode = 'both',
+  mode = 'staff', // ✅ UBAH: default 'both' → 'staff' (fallback aman)
   options = {}
 }) {
   const navigate = useNavigate()
@@ -34,8 +34,16 @@ export default function ButtonActionApprovalRp({
   const canCreateFrp =
     rp.status === 'approved' &&
     (isAdmin || (userDivision && ['it', 'product', 'produk'].includes(userDivision.toLowerCase())))
-  const showManagerActions = mode !== 'staff'
-  const showStaffActions = mode !== 'manager'
+
+  // ✅ UBAH: dari mode !== 'staff' / mode !== 'manager'
+  // menjadi perbandingan eksplisit agar mode='both' tidak merender keduanya
+  const showManagerActions = mode === 'manager'
+  const showStaffActions = mode === 'staff'
+
+  console.log('=== ButtonActionApprovalRp Debug ===')
+  console.log('User Job Level Rank:', userJobLevelRank)
+  console.log('User Job Level Name:', userJobLevelName)
+
   return (
     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
       {((showPreview && ['approved', 'CREATED_FRP'].includes(rp.status)) || (canCreateFrp && showKeFrp)) && (

@@ -44,7 +44,9 @@ export default function ButtonAccessManagerRp({
 
   if (!showActions || !rp) return null
 
-  const canTakeManagerAction = userJobLevelRank >= 2
+  const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
+  const isManagerJobLevel = /\bmanager\b/.test(userJobLevelName)
+  const canTakeManagerAction = canTakeApprovalAction || userJobLevelRank >= 2 || isManagerJobLevel
 
   const canManagerApprove = rp.status === 'waiting_manager' && canTakeManagerAction
   const canDivisionProcess = rp.status === 'division_review' && userJobLevelRank > 1
@@ -52,7 +54,7 @@ export default function ButtonAccessManagerRp({
   const showRevertAction = rp.canRevert
   const showReadOnlyDropdown =
     !canTakeManagerAction &&
-    userJobLevelRank > 1 &&
+    (userJobLevelRank > 1 || isManagerJobLevel) &&
     (rp.status === 'waiting_manager' || rp.status === 'final_review')
   const showDropdownDetail = rp.status === 'waiting_manager' || rp.status === 'final_review' || showReadOnlyDropdown
   const showDropdownRevert = rp.status === 'final_review' && showRevertAction && !showReadOnlyDropdown

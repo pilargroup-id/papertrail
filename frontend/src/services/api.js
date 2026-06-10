@@ -1,4 +1,5 @@
 import { resolveApiUrl } from './network';
+import { getToken } from '../utils/auth';
 
 /**
  * Custom Error class for API errors
@@ -17,7 +18,7 @@ export class ApiError extends Error {
  */
 async function fetchWithConfig(url, config = {}) {
   try {
-    const token = localStorage.getItem('token')
+    const token = getToken()
 
     const headers = {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -39,6 +39,12 @@ const { LOGIN_SQL } = require('./src/config/constants');
 const { userFromLoginRows } = require('./src/services/dbService');
 const jwt = require('jsonwebtoken');
 
+function isJwtLike(token) {
+    if (typeof token !== 'string') return false;
+    const parts = token.split('.');
+    return parts.length === 3 && parts.every(Boolean);
+}
+
 // ============================================================
 // STATIC FILES
 // ============================================================
@@ -75,9 +81,14 @@ app.use(devAuth);
 app.use(async (req, res, next) => {
     const authHeader = req.headers.authorization || '';
     const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-    const token = req.query.token || bearerToken;
+    const rawToken = req.query.token || bearerToken;
+    const token = typeof rawToken === 'string' ? rawToken.trim() : '';
 
     if (!token) {
+        return next();
+    }
+
+    if (!isJwtLike(token)) {
         return next();
     }
 
