@@ -24,6 +24,64 @@ const path = require('path');
 
 const router = express.Router();
 
+function normalizeAssignmentList(u, departmentEmployees = []) {
+    const sessionAssignments = Array.isArray(u?.allAssignments) ? u.allAssignments : [];
+    const fallbackAssignments = Array.isArray(departmentEmployees)
+        ? departmentEmployees.flatMap(emp => Array.isArray(emp?.allAssignments) ? emp.allAssignments : [])
+        : [];
+
+    const source = sessionAssignments.length > 0 ? sessionAssignments : fallbackAssignments;
+    const seen = new Set();
+
+    return source.filter(a => {
+        if (!a) return false;
+        const key = [
+            a.id || '',
+            a.code || '',
+            a.name || '',
+            a.department_id || a.departmentId || '',
+            a.dept_code || '',
+            a.dept_name || '',
+            a.dept_class || a.class || '',
+        ].join('|');
+
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+function resolveSelectedScope(u, allAssignments = []) {
+    const currentCompany = u?.selectedCompany || '';
+    const currentDivision = u?.selectedDivision || '';
+
+    const companyMatch = currentCompany
+        ? allAssignments.find(a => a.name === currentCompany)
+        : allAssignments[0];
+
+    const scopedAssignments = companyMatch
+        ? allAssignments.filter(a => a.name === companyMatch.name)
+        : allAssignments;
+
+    const divisionMatch = currentDivision
+        ? scopedAssignments.find(a =>
+            a.class === currentDivision ||
+            a.dept_class === currentDivision ||
+            a.dept_name === currentDivision
+        )
+        : scopedAssignments[0];
+
+    return {
+        selectedCompany: companyMatch?.name || currentCompany || '',
+        selectedDivision: divisionMatch?.class || divisionMatch?.dept_class || divisionMatch?.dept_name || currentDivision || '',
+        selectedJobLevel: divisionMatch?.job_level_name || u?.selectedJobLevel || '',
+        selectedCompanyId: companyMatch?.id || u?.selectedCompanyId || '',
+        selectedCompanyCode: companyMatch?.code || u?.selectedCompanyCode || '',
+        selectedDivisionId: divisionMatch?.department_id || divisionMatch?.departmentId || u?.selectedDivisionId || '',
+        allAssignments,
+    };
+}
+
 // ============================================================
 // MAIN APP PAGES
 // ============================================================
@@ -101,6 +159,8 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
             editData = requests.find(r => r.id === req.query.revisi);
         }
 
+        const allAssignments = normalizeAssignmentList(u, departmentEmployees);
+        const scope = resolveSelectedScope(u, allAssignments);
         const divisionList = [...new Set(departments.map(r => r.name))].sort();
 
         res.json({
@@ -114,13 +174,14 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
             editData,
             user: {
                 ...u,
-                selectedCompany: u.selectedCompany || '',
-                selectedDivision: u.selectedDivision || '',
-                selectedJobLevel: u.selectedJobLevel || '',
+                ...scope,
+                selectedCompany: scope.selectedCompany,
+                selectedDivision: scope.selectedDivision,
+                selectedJobLevel: scope.selectedJobLevel,
             },
-            selectedCompany: u.selectedCompany || '',
-            selectedDivision: u.selectedDivision || '',
-            selectedJobLevel: u.selectedJobLevel || '',
+            selectedCompany: scope.selectedCompany,
+            selectedDivision: scope.selectedDivision,
+            selectedJobLevel: scope.selectedJobLevel,
         });
     } catch (e) {
         res.status(500).json({ error: e.message });
