@@ -150,6 +150,25 @@ const buildInitialForm = (data, isDuplicate = false) => {
   }
 }
 
+const resolveDepartmentValue = (departments, currentValue) => {
+  if (!Array.isArray(departments) || departments.length === 0) {
+    return currentValue || ''
+  }
+
+  const normalizedValue = normalizeCompany(currentValue)
+  const matched = departments.find(d =>
+    String(d.originalIndex) === String(currentValue) ||
+    normalizeCompany(d.name) === normalizedValue ||
+    normalizeCompany(d.class) === normalizedValue
+  )
+
+  if (!matched) {
+    return currentValue || ''
+  }
+
+  return matched.originalIndex !== undefined ? matched.originalIndex : (matched.id ?? currentValue ?? '')
+}
+
 const getGridColumns = (desktopColumns, isMobile, isTablet) => {
   if (isMobile) return '1fr'
   if (isTablet && desktopColumns >= 3) return '1fr 1fr'
@@ -343,6 +362,24 @@ export default function NewFRP() {
       : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName)).map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))),
     [FRP.departments, FRP.divisionList, FRP.employees, values.companyName],
   )
+
+  useEffect(() => {
+    if (departments.length === 0) return
+
+    setValues(prev => {
+      const nextDivisi = resolveDepartmentValue(departments, prev.divisi)
+      return nextDivisi === prev.divisi ? prev : { ...prev, divisi: nextDivisi }
+    })
+  }, [departments])
+
+  const getDefaultDivisionForCompany = (companyName) => {
+    const sourceDepartments = FRP.departments?.length
+      ? buildDepartmentsFromMaster(FRP.departments, companyName)
+      : (FRP.divisionList || buildDepartments(FRP.employees || [], companyName))
+        .map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
+
+    return resolveDepartmentValue(sourceDepartments, sourceDepartments[0]?.originalIndex ?? '')
+  }
 
   const divisionSelectOptions = useMemo(
     () => departments.map(d => ({ value: d.originalIndex, label: d.label })),
@@ -685,7 +722,10 @@ export default function NewFRP() {
                     <SearchableSelect
                       name="companyName"
                       value={values.companyName}
-                      onChange={selectedValue => updateField('companyName', selectedValue)}
+                      onChange={selectedValue => {
+                        updateField('companyName', selectedValue)
+                        updateField('divisi', getDefaultDivisionForCompany(selectedValue))
+                      }}
                       options={companySelectOptions}
                       placeholder="Select company..."
                       className="frp-select"

@@ -160,6 +160,25 @@ const buildInitialRp = data => {
   }
 }
 
+const resolveDivisionValue = (departments, currentValue) => {
+  if (!Array.isArray(departments) || departments.length === 0) {
+    return currentValue || ''
+  }
+
+  const normalizedValue = normalizeCompany(currentValue)
+  const matched = departments.find(d =>
+    String(d.originalIndex) === String(currentValue) ||
+    normalizeCompany(d.name) === normalizedValue ||
+    normalizeCompany(d.class) === normalizedValue
+  )
+
+  if (!matched) {
+    return currentValue || ''
+  }
+
+  return matched.originalIndex !== undefined ? matched.originalIndex : (matched.id ?? currentValue ?? '')
+}
+
 export default function NewRP({
   embedded = false,
   embeddedProcessId = null,
@@ -239,6 +258,46 @@ export default function NewRP({
     }
     return sourceDivs.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
   }, [D.departments, D.processDivisions, D.employees, values.companyName])
+
+  useEffect(() => {
+    if (departments.length === 0) return
+
+    setValues(prev => {
+      const nextDivisi = resolveDivisionValue(departments, prev.divisi)
+      if (nextDivisi === prev.divisi) return prev
+
+      const matchedDept = departments.find(d => String(d.originalIndex) === String(nextDivisi))
+      return {
+        ...prev,
+        divisi: nextDivisi,
+        class: matchedDept?.class || matchedDept?.name || prev.class || '',
+      }
+    })
+  }, [departments])
+
+  const getDefaultDivisionForCompany = (companyName) => {
+    const sourceDepartments = D.departments && D.departments.length > 0
+      ? (D.departments || [])
+          .filter(d => !companyName || normalizeCompany(d.company) === normalizeCompany(companyName))
+          .map((d, i) => ({
+            originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
+            name: d.name || '',
+            class: d.class || '',
+            label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+            company: d.company || '',
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label))
+      : (D.processDivisions && D.processDivisions.length > 0
+          ? D.processDivisions.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
+          : [...new Set((D.employees || [])
+              .flatMap(e => (e.companies || [])
+                .filter(a => !companyName || normalizeCompany(a.name) === normalizeCompany(companyName))
+                .map(a => a.class))
+              .filter(Boolean))].sort().map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
+        )
+
+    return resolveDivisionValue(sourceDepartments, sourceDepartments[0]?.originalIndex ?? '')
+  }
 
   const budgetOptions = useMemo(() => {
     const budgets = D.budgets || []
@@ -459,7 +518,12 @@ export default function NewRP({
                       <SearchableSelect
                         name="companyName"
                         value={values.companyName}
-                        onChange={selectedValue => setValues(prev => ({ ...prev, companyName: selectedValue, divisi: '', class: '' }))}
+                        onChange={selectedValue => setValues(prev => ({
+                          ...prev,
+                          companyName: selectedValue,
+                          divisi: getDefaultDivisionForCompany(selectedValue),
+                          class: '',
+                        }))}
                         options={companyOptions}
                         placeholder="Select company..."
                         className="frp-select"
