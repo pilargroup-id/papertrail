@@ -74,6 +74,121 @@ async function replaceRpItems(client, rpRequestId, items) {
     }
 }
 
+function normText(value) {
+    return String(value || '').trim().toUpperCase();
+}
+
+function getUserDepartmentScopes(user) {
+    const scopes = [];
+
+    // root / selected department
+    scopes.push({
+        id: user.departmentId,
+        name: user.departmentName,
+        class: user.departmentClass || user.selectedDivision,
+        code: user.departmentCode,
+    });
+
+    // all assignments / multi department
+    (user.allAssignments || []).forEach(a => {
+        scopes.push({
+            id: a.department_id || a.departmentId || a.dept_id || a.id,
+            name: a.dept_name || a.departmentName || a.department_name || a.name,
+            class: a.dept_class || a.departmentClass || a.department_class || a.class,
+            code: a.dept_code || a.departmentCode || a.department_code || a.code,
+        });
+
+        // kalau classes array ada, masukkan juga
+        (a.classes || []).forEach(cls => {
+            scopes.push({
+                id: a.department_id || a.departmentId || a.dept_id,
+                name: a.dept_name || a.departmentName || a.department_name,
+                class: cls,
+                code: a.dept_code || a.departmentCode || a.department_code,
+            });
+        });
+    });
+
+    return scopes.filter(s =>
+        s.id || s.name || s.class || s.code
+    );
+}
+
+function isBudgetInUserDepartments(budget, user) {
+    const scopes = getUserDepartmentScopes(user);
+
+    const bId = String(budget.department_id || '');
+    const bName = normText(budget.department_name);
+    const bClass = normText(budget.department_class);
+    const bCode = normText(budget.department_code);
+
+    return scopes.some(scope => {
+        const sId = String(scope.id || '');
+        const sName = normText(scope.name);
+        const sClass = normText(scope.class);
+        const sCode = normText(scope.code);
+
+        if (sId && bId && sId === bId) return true;
+        if (sClass && (sClass === bClass || sClass === bName)) return true;
+        if (sName && (sName === bName || sName === bClass)) return true;
+        if (sCode && bCode && sCode === bCode) return true;
+
+        return false;
+    });
+}
+
+async function userHasCrossBudgetPolicy(client, moduleName, user) {
+    if (user.role === 'administrator') return true;
+
+    const scopes = getUserDepartmentScopes(user);
+    const departmentClasses = [...new Set(
+        scopes
+            .map(s => s.class)
+            .filter(Boolean)
+    )];
+
+    if (!departmentClasses.length) return false;
+
+    const [rows] = await client.query(`
+        SELECT 1
+        FROM budget_access_policies
+        WHERE module = ?
+          AND flow = 'CREATE'
+          AND department_class IN (?)
+          AND can_cross_department_budget = 1
+          AND is_active = 1
+        LIMIT 1
+    `, [moduleName, departmentClasses]);
+
+    return rows.length > 0;
+}
+
+async function userRequiresBudgetCheck(client, moduleName, user) {
+    const scopes = getUserDepartmentScopes(user);
+    const departmentClasses = [...new Set(
+        scopes
+            .map(s => s.class)
+            .filter(Boolean)
+    )];
+
+    if (!departmentClasses.length) return true;
+
+    const [rows] = await client.query(`
+        SELECT requires_budget_check
+        FROM budget_access_policies
+        WHERE module = ?
+          AND flow = 'CREATE'
+          AND department_class IN (?)
+          AND is_active = 1
+    `, [moduleName, departmentClasses]);
+
+    // default aman: kalau tidak ada policy, tetap check budget
+    if (!rows.length) return true;
+
+    // kalau ada salah satu policy requires check, tetap check
+    return rows.some(r => Number(r.requires_budget_check) === 1);
+}
+
 async function getBudgetAccessPolicy(client, moduleName, user) {
     const departmentClass = String(
         user.departmentClass ||
@@ -108,9 +223,10 @@ async function getBudgetAccessPolicy(client, moduleName, user) {
 }
 
 async function validateRpBudgetAccess(client, user, items) {
-    const policy = await getBudgetAccessPolicy(client, 'RP', user);
+    const requiresBudgetCheck = await userRequiresBudgetCheck(client, 'RP', user);
+    const canCrossDepartmentBudget = await userHasCrossBudgetPolicy(client, 'RP', user);
 
-    if (!policy.requiresBudgetCheck) return;
+    if (!requiresBudgetCheck) return;
 
     const budgetIds = [...new Set(items.map(item => item.budgetId).filter(Boolean))];
 
@@ -146,22 +262,8 @@ async function validateRpBudgetAccess(client, user, items) {
         throw error;
     }
 
-    if (!policy.canCrossDepartmentBudget && user.role !== 'administrator') {
-        const uClass = String(user.departmentClass || user.selectedDivision || '').trim().toUpperCase();
-        const uName = String(user.departmentName || '').trim().toUpperCase();
-        const uId = String(user.departmentId || '');
-
-        const invalidBudgets = budgets.filter(b => {
-            const bClass = String(b.department_class || '').trim().toUpperCase();
-            const bName = String(b.department_name || '').trim().toUpperCase();
-            const bId = String(b.department_id || '');
-
-            if (uClass && (bClass === uClass || bName === uClass)) return false;
-            if (uName && (bClass === uName || bName === uName)) return false;
-            if (uId && bId && uId === bId) return false;
-            
-            return true;
-        });
+    if (!canCrossDepartmentBudget && user.role !== 'administrator') {
+        const invalidBudgets = budgets.filter(b => !isBudgetInUserDepartments(b, user));
 
         if (invalidBudgets.length) {
             const error = new Error(

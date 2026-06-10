@@ -515,6 +515,64 @@ export default function NewFRP() {
     });
   }, [values.companyName, values.divisi, departments, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
 
+  function normalizeText(value) {
+    return String(value || '').trim().toUpperCase()
+  }
+
+  function getUserBudgetScopes(user) {
+    const scopes = []
+
+    scopes.push({
+      id: user?.departmentId,
+      name: user?.departmentName,
+      class: user?.departmentClass || user?.selectedDivision,
+      code: user?.departmentCode,
+    })
+
+    ;(user?.allAssignments || []).forEach(a => {
+      scopes.push({
+        id: a.department_id || a.departmentId || a.dept_id,
+        name: a.dept_name || a.departmentName || a.department_name,
+        class: a.dept_class || a.departmentClass || a.department_class || a.class,
+        code: a.dept_code || a.departmentCode || a.department_code,
+      })
+
+      ;(a.classes || []).forEach(cls => {
+        scopes.push({
+          id: a.department_id || a.departmentId || a.dept_id,
+          name: a.dept_name || a.departmentName || a.department_name,
+          class: cls,
+          code: a.dept_code || a.departmentCode || a.department_code,
+        })
+      })
+    })
+
+    return scopes.filter(s => s.id || s.name || s.class || s.code)
+  }
+
+  function isBudgetInUserScopes(budget, user) {
+    const scopes = getUserBudgetScopes(user)
+
+    const bId = String(budget.department_id ?? budget.departmentId ?? '')
+    const bName = normalizeText(budget.department || budget.department_name)
+    const bClass = normalizeText(budget.class || budget.department_class)
+    const bCode = normalizeText(budget.department_code || budget.departmentCode)
+
+    return scopes.some(scope => {
+      const sId = String(scope.id || '')
+      const sName = normalizeText(scope.name)
+      const sClass = normalizeText(scope.class)
+      const sCode = normalizeText(scope.code)
+
+      if (sId && bId && sId === bId) return true
+      if (sClass && (sClass === bClass || sClass === bName)) return true
+      if (sName && (sName === bName || sName === bClass)) return true
+      if (sCode && bCode && sCode === bCode) return true
+
+      return false
+    })
+  }
+
   const budgetOptions = useMemo(
     () => {
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
@@ -527,6 +585,9 @@ export default function NewFRP() {
         const matchCompany = !sc || tc === sc
 
         if (!matchCompany) return false
+        if (isBudgetInUserScopes(b, FRP.user)) {
+          return true
+        }
 
         // Divisi tertentu (HCGA, IT, Marketing, Product) memiliki akses ke seluruh budget
         const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
