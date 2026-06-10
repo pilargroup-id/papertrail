@@ -58,6 +58,55 @@ const buildDepartmentsFromMaster = (departments, companyName) =>
     }))
     .sort((a, b) => a.label.localeCompare(b.label))
 
+const buildAssignableDepartments = (departments, assignments, companyName) => {
+  const normalizedCompany = normalizeCompany(companyName)
+  const scopedAssignments = (assignments || []).filter(a => !normalizedCompany || normalizeCompany(a.name) === normalizedCompany)
+
+  if (scopedAssignments.length > 0) {
+    const allowedDeptIds = new Set(
+      scopedAssignments
+        .map(a => String(a.department_id ?? a.departmentId ?? a.id ?? ''))
+        .filter(Boolean),
+    )
+    const allowedNames = new Set(
+      scopedAssignments
+        .flatMap(a => [a.dept_name, a.dept_class, a.class, a.departmentName, a.departmentClass].filter(Boolean))
+        .map(normalizeCompany)
+        .filter(Boolean),
+    )
+
+    const filtered = (departments || [])
+      .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
+      .filter(d => {
+        const deptId = String(d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : ''))
+        const name = normalizeCompany(d.name)
+        const className = normalizeCompany(d.class)
+        return allowedDeptIds.has(deptId) || allowedNames.has(name) || allowedNames.has(className)
+      })
+      .map((d, i) => ({
+        originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
+        name: d.name || '',
+        class: d.class || '',
+        label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+        company: d.company || '',
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+    if (filtered.length > 0) return filtered
+  }
+
+  return (departments || [])
+    .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
+    .map((d, i) => ({
+      originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
+      name: d.name || '',
+      class: d.class || '',
+      label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+      company: d.company || ''
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
 const getDefaultItems = () => [{ memo: '', budgetId: '', qty: '1', hargaSatuan: '0' }]
 
 const blankForm = {
@@ -359,10 +408,21 @@ export default function NewFRP() {
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
   const departments = useMemo(
-    () => (FRP.departments?.length
-      ? buildDepartmentsFromMaster(FRP.departments, values.companyName)
-      : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName)).map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))),
-    [FRP.departments, FRP.divisionList, FRP.employees, values.companyName],
+    () => {
+      if (FRP.user?.role === 'administrator') {
+        return (FRP.departments?.length
+          ? buildDepartmentsFromMaster(FRP.departments, values.companyName)
+          : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName)).map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' })))
+      }
+
+      const userAssignments = FRP.user?.allAssignments || []
+      const masterDepartments = FRP.departments?.length
+        ? buildDepartmentsFromMaster(FRP.departments, values.companyName)
+        : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName)).map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
+
+      return buildAssignableDepartments(masterDepartments, userAssignments, values.companyName)
+    },
+    [FRP.departments, FRP.divisionList, FRP.employees, FRP.user?.allAssignments, FRP.user?.role, values.companyName],
   )
 
   const previousCompanyRef = useRef(values.companyName)
@@ -394,10 +454,19 @@ export default function NewFRP() {
   }, [values.companyName, departments])
 
   const getDefaultDivisionForCompany = (companyName) => {
-    const sourceDepartments = FRP.departments?.length
-      ? buildDepartmentsFromMaster(FRP.departments, companyName)
-      : (FRP.divisionList || buildDepartments(FRP.employees || [], companyName))
-        .map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
+    const sourceDepartments = FRP.user?.role === 'administrator'
+      ? (FRP.departments?.length
+        ? buildDepartmentsFromMaster(FRP.departments, companyName)
+        : (FRP.divisionList || buildDepartments(FRP.employees || [], companyName))
+          .map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' })))
+      : buildAssignableDepartments(
+          FRP.departments?.length
+            ? buildDepartmentsFromMaster(FRP.departments, companyName)
+            : (FRP.divisionList || buildDepartments(FRP.employees || [], companyName))
+              .map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' })),
+          FRP.user?.allAssignments || [],
+          companyName,
+        )
 
     return resolveDepartmentValue(sourceDepartments, sourceDepartments[0]?.originalIndex ?? '')
   }
@@ -406,6 +475,7 @@ export default function NewFRP() {
     () => departments.map(d => ({ value: d.originalIndex, label: d.label })),
     [departments],
   )
+  const canChangeDivision = FRP.user?.role === 'administrator' || divisionSelectOptions.length > 1
 
   const filteredEmployees = useMemo(() => {
     let sourceEmployees = FRP.user?.role === 'administrator' ? FRP.employees : FRP.departmentEmployees;
@@ -802,7 +872,7 @@ export default function NewFRP() {
               </div>
               <div className="frp-grid-3" style={{ marginTop: "20px", gridTemplateColumns: (!isMobile && !isTablet) ? 'minmax(0, 1.8fr) minmax(0, 1.2fr) 170px' : undefined }}>
                 <FloatingGroup label="Division & Class">
-                  {FRP.user?.role === 'administrator' ? (
+                  {canChangeDivision ? (
                     <SearchableSelect
                       name="divisi"
                       value={values.divisi}

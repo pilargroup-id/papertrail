@@ -15,6 +15,55 @@ const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumbe
 const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
 const normalizeCompany = v => String(v || '').trim().toUpperCase()
 
+const buildAssignableDepartments = (departments, assignments, companyName) => {
+  const normalizedCompany = normalizeCompany(companyName)
+  const scopedAssignments = (assignments || []).filter(a => !normalizedCompany || normalizeCompany(a.name) === normalizedCompany)
+
+  if (scopedAssignments.length > 0) {
+    const allowedDeptIds = new Set(
+      scopedAssignments
+        .map(a => String(a.department_id ?? a.departmentId ?? a.id ?? ''))
+        .filter(Boolean),
+    )
+    const allowedNames = new Set(
+      scopedAssignments
+        .flatMap(a => [a.dept_name, a.dept_class, a.class, a.departmentName, a.departmentClass].filter(Boolean))
+        .map(normalizeCompany)
+        .filter(Boolean),
+    )
+
+    const filtered = (departments || [])
+      .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
+      .filter(d => {
+        const deptId = String(d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : ''))
+        const name = normalizeCompany(d.name)
+        const className = normalizeCompany(d.class)
+        return allowedDeptIds.has(deptId) || allowedNames.has(name) || allowedNames.has(className)
+      })
+      .map((d, i) => ({
+        originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
+        name: d.name || '',
+        class: d.class || '',
+        label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+        company: d.company || '',
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+    if (filtered.length > 0) return filtered
+  }
+
+  return (departments || [])
+    .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
+    .map((d, i) => ({
+      originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
+      name: d.name || '',
+      class: d.class || '',
+      label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+      company: d.company || ''
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
 function FloatingGroup({ label, children, style, className }) {
   return (
     <div
@@ -241,28 +290,32 @@ export default function NewRP({
   const companySyncInitializedRef = useRef(false)
 
   const departments = useMemo(() => {
-    if (D.departments && D.departments.length > 0) {
-      return (D.departments || [])
-        .filter(d => !values.companyName || normalizeCompany(d.company) === normalizeCompany(values.companyName))
-        .map((d, i) => ({
-          originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-          name: d.name || '',
-          class: d.class || '',
-          label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-          company: d.company || ''
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label))
-    }
-    
-    let sourceDivs = []
-    if (D.processDivisions && D.processDivisions.length > 0) {
-      sourceDivs = D.processDivisions
-    } else {
-      const emps = D.employees || []
-      sourceDivs = [...new Set(emps.flatMap(e => (e.companies || []).filter(a => !values.companyName || normalizeCompany(a.name) === normalizeCompany(values.companyName)).map(a => a.class)).filter(Boolean))].sort()
-    }
-    return sourceDivs.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
-  }, [D.departments, D.processDivisions, D.employees, values.companyName])
+    const masterDepartments = D.departments && D.departments.length > 0
+      ? (D.departments || [])
+          .filter(d => !values.companyName || normalizeCompany(d.company) === normalizeCompany(values.companyName))
+          .map((d, i) => ({
+            originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
+            name: d.name || '',
+            class: d.class || '',
+            label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+            company: d.company || ''
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label))
+      : (() => {
+          let sourceDivs = []
+          if (D.processDivisions && D.processDivisions.length > 0) {
+            sourceDivs = D.processDivisions
+          } else {
+            const emps = D.employees || []
+            sourceDivs = [...new Set(emps.flatMap(e => (e.companies || []).filter(a => !values.companyName || normalizeCompany(a.name) === normalizeCompany(values.companyName)).map(a => a.class)).filter(Boolean))].sort()
+          }
+          return sourceDivs.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
+        })()
+
+    if (isAdmin) return masterDepartments
+
+    return buildAssignableDepartments(masterDepartments, D.user?.allAssignments || [], values.companyName)
+  }, [D.departments, D.processDivisions, D.employees, D.user?.allAssignments, isAdmin, values.companyName])
 
   useEffect(() => {
     const previousCompany = previousCompanyRef.current
@@ -304,7 +357,7 @@ export default function NewRP({
   }, [departments])
 
   const getDefaultDivisionForCompany = (companyName) => {
-    const sourceDepartments = D.departments && D.departments.length > 0
+    const baseDepartments = D.departments && D.departments.length > 0
       ? (D.departments || [])
           .filter(d => !companyName || normalizeCompany(d.company) === normalizeCompany(companyName))
           .map((d, i) => ({
@@ -323,6 +376,10 @@ export default function NewRP({
                 .map(a => a.class))
               .filter(Boolean))].sort().map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
         )
+
+    const sourceDepartments = isAdmin
+      ? baseDepartments
+      : buildAssignableDepartments(baseDepartments, D.user?.allAssignments || [], companyName)
 
     return resolveDivisionValue(sourceDepartments, sourceDepartments[0]?.originalIndex ?? '')
   }
@@ -384,6 +441,7 @@ export default function NewRP({
   }, [D.companies, D.user?.allAssignments, D.budgets])
   
   const divisionOptions = useMemo(() => departments.map(d => ({ value: d.originalIndex, label: d.label })), [departments])
+  const canChangeDivision = isAdmin || divisionOptions.length > 1
   const vendorOptions = useMemo(() => (D.vendors || []).map(v => ({ value: v.name, label: v.name })), [D.vendors])
   const kategoriOptions = ['Pengadaan Barang Baru', 'Pergantian Barang', 'Penambahan Barang'].map(k => ({ value: k, label: k }))
   const budgetSelectOpts = useMemo(() => budgetOptions.map(b => ({ value: b.id, label: `${b.id} - ${b.description}`, keywords: `${b.id} ${b.description}` })), [budgetOptions])
@@ -567,7 +625,7 @@ export default function NewRP({
                 </div>
                 <div className="frp-grid-2" style={{ marginTop: "20px" }}>
                   <FloatingGroup label="Division & Class">
-                    {isAdmin ? (
+                    {canChangeDivision ? (
                       <SearchableSelect
                         name="divisi"
                         value={values.divisi}
