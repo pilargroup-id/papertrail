@@ -1,5 +1,6 @@
 const TOKEN_KEY = 'token'
 const AUTH_USER_KEY = 'authUser'
+export const POST_LOGIN_ACCESS_DIALOG_KEY = 'frp:post-login-access-dialog'
 
 export function isJwtLike(token) {
   if (typeof token !== 'string') return false
@@ -60,6 +61,7 @@ export function clearAuth() {
   try {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(AUTH_USER_KEY)
+    sessionStorage.removeItem(POST_LOGIN_ACCESS_DIALOG_KEY)
   } catch (_) {}
 }
 

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import BackgroundDialog from '../template/BackgroundDialog'
 
 export default function DialogConfirm({
   isOpen = false,
@@ -81,50 +82,121 @@ export default function DialogConfirm({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         onClick={(event) => event.stopPropagation()}
+        style={{
+          width: 'min(560px, calc(100vw - 32px))',
+          maxHeight: '90vh',
+          margin: 'auto',
+          borderRadius: '28px',
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 32px 96px rgba(15, 23, 42, 0.28)',
+        }}
       >
-        <div className="dashboard-popup__header">
-          <div>
-            <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-            <h2 className="dashboard-popup__title" id="confirm-dialog-title">{title}</h2>
+        <BackgroundDialog />
+
+        <div
+          className="dashboard-popup__header"
+          style={{
+            padding: '16px 18px',
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <p className="dashboard-popup__eyebrow" style={{ marginBottom: '4px' }}>{eyebrow}</p>
+            <h2 className="dashboard-popup__title" id="confirm-dialog-title" style={{ margin: 0 }}>
+              {title}
+            </h2>
           </div>
           <button
             type="button"
             className="dashboard-popup__close"
             aria-label="Tutup dialog"
             onClick={handleOverlayClick}
+            style={{
+              flexShrink: 0,
+              backdropFilter: 'blur(10px)',
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(148, 163, 184, 0.2)',
+            }}
           >
             <span className="material-icons-round" style={{ fontSize: '18px' }}>close</span>
           </button>
         </div>
 
-        <div className="dashboard-popup__body">
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+        <div
+          className="dashboard-popup__body"
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            padding: '0 18px 18px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              padding: '16px',
+              borderRadius: '22px',
+              background: 'rgba(255,255,255,0.72)',
+              border: '1px solid rgba(226, 232, 240, 0.9)',
+              boxShadow: '0 10px 28px rgba(15, 23, 42, 0.06)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
             <div
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '14px',
+                width: '46px',
+                height: '46px',
+                borderRadius: '16px',
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0,
                 ...iconStyles,
+                boxShadow: '0 10px 20px rgba(15, 23, 42, 0.08)',
               }}
             >
-              <span className="material-icons-round" style={{ fontSize: '22px' }}>{icon}</span>
+              <span className="material-icons-round" style={{ fontSize: '24px' }}>{icon}</span>
             </div>
-            <div style={{ display: 'grid', gap: '0.65rem', minWidth: 0 }}>
-              <p className="dashboard-popup__text">{message}</p>
+            <div style={{ display: 'grid', gap: '0.8rem', minWidth: 0 }}>
+              <p className="dashboard-popup__text" style={{ margin: 0, lineHeight: 1.7 }}>
+                {message}
+              </p>
               {children}
             </div>
           </div>
         </div>
 
-        <div className="dashboard-popup__actions">
+        <div
+          className="dashboard-popup__actions"
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            padding: '16px 18px 18px',
+            background: 'linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(241, 245, 249, 0.96) 100%)',
+            borderTop: '1px solid rgba(226, 232, 240, 0.9)',
+            gap: '10px',
+          }}
+        >
           <button
             type="button"
             className="dashboard-popup__button dashboard-popup__button--secondary"
             onClick={handleOverlayClick}
             disabled={isLoading}
+            style={{
+              borderRadius: '10px',
+              paddingInline: '18px',
+              boxShadow: 'none',
+              border: '1px solid #cbd5e1',
+              background: '#fff',
+            }}
           >
             Batal
           </button>

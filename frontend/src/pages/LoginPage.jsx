@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { POST_LOGIN_ACCESS_DIALOG_KEY } from '../utils/auth'
 
 const S = {
   body: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' },
@@ -28,7 +29,13 @@ export default function LoginPage() {
     try {
       const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) })
       const data = await res.json()
-      if (data.success) window.location.href = data.redirect
+      if (data.success) {
+        try {
+          sessionStorage.setItem(POST_LOGIN_ACCESS_DIALOG_KEY, '1')
+        } catch (_) {}
+
+        window.location.href = data.redirect
+      }
       else setError(data.error || 'Login gagal')
     } catch { setError('Gagal terhubung ke server') }
     finally { setLoading(false) }

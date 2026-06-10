@@ -1,8 +1,11 @@
 import { useLocation, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import { useSidebarState } from '../../hooks/useSidebarState'
 import { useUser } from '../../contexts/UserContext'
+import SelectDivisionPage from '../../pages/SelectDivisionPage'
+import { POST_LOGIN_ACCESS_DIALOG_KEY } from '../../utils/auth'
 
 const HIDE_MENU_PATHS = new Set(['/select-company', '/select-division'])
 
@@ -10,6 +13,7 @@ export default function DashboardLayout() {
   const { pathname } = useLocation()
   const { sidebarCollapsed, setSidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useSidebarState()
   const { user } = useUser()
+  const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false)
   const u = user || {}
   const breadcrumbLabelMap = {
     '/': 'Dashboard',
@@ -26,6 +30,23 @@ export default function DashboardLayout() {
     setSidebarCollapsed(c => !c)
   }
 
+  useEffect(() => {
+    if (HIDE_MENU_PATHS.has(pathname)) {
+      return
+    }
+
+    try {
+      const shouldOpenAccessDialog = sessionStorage.getItem(POST_LOGIN_ACCESS_DIALOG_KEY) === '1'
+
+      if (!shouldOpenAccessDialog) {
+        return
+      }
+
+      sessionStorage.removeItem(POST_LOGIN_ACCESS_DIALOG_KEY)
+      setIsAccessDialogOpen(true)
+    } catch (_) {}
+  }, [pathname])
+
   return (
     <div className={`dashboard-shell${sidebarCollapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
       <Sidebar
@@ -39,6 +60,7 @@ export default function DashboardLayout() {
         allAssignments={u.allAssignments || []}
         onToggleCollapse={handleSidebarToggle}
         onCloseMobile={() => setMobileMenuOpen(false)}
+        onChangeAccess={() => setIsAccessDialogOpen(true)}
         hideMenu={HIDE_MENU_PATHS.has(pathname)}
       />
       <div className="dashboard-stage">
@@ -57,6 +79,15 @@ export default function DashboardLayout() {
         />
         <Outlet />
       </div>
+
+      <SelectDivisionPage
+        isOpen={isAccessDialogOpen}
+        onClose={() => setIsAccessDialogOpen(false)}
+        onSuccess={() => {
+          setIsAccessDialogOpen(false)
+          window.location.reload()
+        }}
+      />
     </div>
   )
 }

@@ -195,6 +195,7 @@ function Sidebar({
   allAssignments = [],
   onToggleCollapse,
   onCloseMobile,
+  onChangeAccess,
   hideMenu = false
 }) {
   const { pathname } = useLocation()
@@ -236,7 +237,7 @@ function Sidebar({
   ]
 
   const secondaryItems = [
-    ...(showBack && !hideMenu ? [{ label: 'Ganti Akses', href: backUrl, icon: 'switch_account' }] : []),
+    ...(showBack && !hideMenu ? [{ label: 'Change Access', href: backUrl, icon: 'switch_account' }] : []),
     { label: 'Back Pilargroup', href: 'https://pilargroup.id/dashboard', icon: 'logout', danger: true, external: true, flipIcon: true },
   ]
 
@@ -256,6 +257,14 @@ function Sidebar({
   )
 
   const handleSelect = async (item) => {
+    if (item.href === '/select-company' || item.href === '/select-division') {
+      onChangeAccess?.(item.href)
+      if (mobileOpen) {
+        onCloseMobile?.()
+      }
+      return
+    }
+
     if (item.href === '/logout') { 
         if (mobileOpen) { onCloseMobile?.() }
         window.location.href = '/logout'
