@@ -868,6 +868,14 @@ function sameText(a, b) {
     return String(a || '').trim().toUpperCase() === String(b || '').trim().toUpperCase();
 }
 
+function canAccessRpFinalApproval(user, rp) {
+    const userJobLevelRank = Number(user.jobLevelRank || 0);
+    const userDepartmentClass = getUserDepartmentClass(user);
+    const processDepartmentClass = String(rp?.processedByDepartment || '').trim();
+
+    return userJobLevelRank >= 2 && sameText(userDepartmentClass, processDepartmentClass);
+}
+
 async function getAllowedRpProcessorDepartments(client) {
     const [rows] = await client.query(`
         SELECT department_class
@@ -1145,6 +1153,14 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
                 return res.status(400).json({ success: false, error: 'Invalid status for this action' });
             }
 
+            if (!canAccessRpFinalApproval(u, rp)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: `Anda hanya dapat final approve RP untuk department ${rp.processedByDepartment}`,
+                });
+            }
+
             await client.query(`
                 UPDATE rp_request
                 SET
@@ -1158,6 +1174,14 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
             if (rp.status !== 'final_review') {
                 await client.rollback();
                 return res.status(400).json({ success: false, error: 'Invalid status for this action' });
+            }
+
+            if (!canAccessRpFinalApproval(u, rp)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: `Anda hanya dapat final approval RP untuk department ${rp.processedByDepartment}`,
+                });
             }
 
             await client.query(`
@@ -1180,6 +1204,14 @@ router.post('/api/rp/:id/:action', checkAuth, async (req, res) => {
             if (rp.status !== 'final_review') {
                 await client.rollback();
                 return res.status(400).json({ success: false, error: 'Invalid status for this action' });
+            }
+
+            if (!canAccessRpFinalApproval(u, rp)) {
+                await client.rollback();
+                return res.status(403).json({
+                    success: false,
+                    error: `Anda hanya dapat final approval RP untuk department ${rp.processedByDepartment}`,
+                });
             }
 
             await client.query(`

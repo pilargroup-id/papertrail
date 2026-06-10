@@ -328,7 +328,7 @@ export default function NewRP({
 
     setValues(prev => {
       const nextDivisi = currentCompany ? getDefaultDivisionForCompany(currentCompany) : ''
-      const nextClass = currentCompany ? '' : ''
+      const nextClass = prev.class || ''
 
       if (prev.divisi === nextDivisi && prev.class === nextClass) return prev
 
@@ -351,7 +351,7 @@ export default function NewRP({
       return {
         ...prev,
         divisi: nextDivisi,
-        class: matchedDept?.class || matchedDept?.name || prev.class || '',
+        class: prev.class || matchedDept?.class || matchedDept?.name || '',
       }
     })
   }, [departments])
@@ -394,8 +394,10 @@ export default function NewRP({
 
       const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      const currentDivisi = selectedDept ? selectedDept.name.trim().toUpperCase() : (values.divisi || '').trim().toUpperCase();
-      const currentClass = selectedDept ? selectedDept.class.trim().toUpperCase() : '';
+      const currentDivisi = selectedDept
+        ? String(selectedDept.name || '').trim().toUpperCase()
+        : String(values.divisi || '').trim().toUpperCase();
+      const currentClass = selectedDept ? String(selectedDept.class || '').trim().toUpperCase() : '';
 
       if (fullAccessDivisions.includes(currentDivisi) || fullAccessDivisions.includes(currentClass)) {
         return true
@@ -403,8 +405,8 @@ export default function NewRP({
 
       if (currentDivisi || currentClass) {
         const matchedDepts = (D.departments || []).filter(d => {
-          const matchName = (d.name || '').trim().toUpperCase() === currentDivisi || (d.class || '').trim().toUpperCase() === currentDivisi;
-          const matchClass = !currentClass || (d.class || '').trim().toUpperCase() === currentClass;
+          const matchName = String(d.name || '').trim().toUpperCase() === currentDivisi || String(d.class || '').trim().toUpperCase() === currentDivisi;
+          const matchClass = !currentClass || String(d.class || '').trim().toUpperCase() === currentClass;
           const matchDeptCompany = !sc || normalizeCompany(d.company) === sc;
           return matchName && matchClass && matchDeptCompany;
         });
@@ -414,8 +416,8 @@ export default function NewRP({
           const bDeptId = String(b.department_id !== undefined ? b.department_id : (b.departmentId || ''));
           return deptIds.includes(bDeptId);
         } else {
-          const bDeptName = (b.department || '').trim().toUpperCase();
-          const bClass = (b.class || '').trim().toUpperCase();
+          const bDeptName = String(b.department || '').trim().toUpperCase();
+          const bClass = String(b.class || '').trim().toUpperCase();
           return bDeptName === currentDivisi || bClass === currentDivisi || (currentClass && (bDeptName === currentClass || bClass === currentClass));
         }
       }
@@ -493,7 +495,7 @@ export default function NewRP({
     }
 
     const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-    const deptClass = selectedDept ? selectedDept.class : values.class;
+    const deptClass = values.class || selectedDept?.class || selectedDept?.name;
     
     if (!deptClass) {
       setSubmitError('Kolom Class wajib diisi. Silakan pilih Divisi & Class yang valid.')
@@ -517,7 +519,7 @@ export default function NewRP({
       }
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
       payload.divisi = selectedDept ? selectedDept.name : values.divisi;
-      payload.class = selectedDept ? selectedDept.class : '';
+      payload.class = values.class || selectedDept?.class || selectedDept?.name || '';
 
       if (processId) {
         const res = await fetch(`/api/rp/${processId}/process-update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })

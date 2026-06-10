@@ -44,13 +44,17 @@ export default function ButtonAccessManagerRp({
 
   if (!showActions || !rp) return null
 
+  const normalizeDivision = value => String(value || '').trim().toUpperCase()
   const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
   const isManagerJobLevel = /\bmanager\b/.test(userJobLevelName)
   const canTakeManagerAction = canTakeApprovalAction || userJobLevelRank >= 2 || isManagerJobLevel
+  const userDivision = normalizeDivision(user?.departmentClass || user?.selectedDivision || user?.departmentName)
+  const processDivision = normalizeDivision(rp.processedByDepartment || rp.diprosesOleh)
+  const canFinalApproveByDivision = !!userDivision && !!processDivision && userDivision === processDivision
 
   const canManagerApprove = rp.status === 'waiting_manager' && canTakeManagerAction
   const canDivisionProcess = rp.status === 'division_review' && userJobLevelRank > 1
-  const canFinalApprove = rp.status === 'final_review' && canTakeManagerAction
+  const canFinalApprove = rp.status === 'final_review' && canTakeManagerAction && canFinalApproveByDivision
   const showRevertAction = rp.canRevert
   const showReadOnlyDropdown =
     !canTakeManagerAction &&
