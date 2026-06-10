@@ -24,7 +24,7 @@ router.post('/login', async (req, res) => {
             const match = await bcrypt.compare(password, rows[0].password || '');
             if (match) {
                 req.session.user = rowsToSessionUser(rows);
-                return res.redirect('/select-company');
+                return res.redirect('/');
             }
         }
     } catch (e) {
@@ -102,7 +102,7 @@ router.post('/api/auth/login', async (req, res) => {
             const match = await bcrypt.compare(password, rows[0].password || '');
             if (match) {
                 req.session.user = rowsToSessionUser(rows);
-                return res.json({ success: true, redirect: '/select-company' });
+                return res.json({ success: true, redirect: '/' });
             }
         }
     } catch (e) {
