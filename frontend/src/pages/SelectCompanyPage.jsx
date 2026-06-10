@@ -23,6 +23,15 @@ export default function SelectCompanyPage() {
 
   const handleSelect = async (company) => {
     await fetch('/api/auth/select-company', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company }) })
+
+    try {
+      const meResponse = await fetch('/api/auth/me')
+      if (meResponse.ok) {
+        const meData = await meResponse.json()
+        setUser(meData?.user || null)
+      }
+    } catch (_) {}
+
     window.location.href = '/select-division'
   }
 

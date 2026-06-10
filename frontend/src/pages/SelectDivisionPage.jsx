@@ -79,6 +79,14 @@ export default function SelectDivisionPage({
         throw new Error('Gagal menyimpan divisi.')
       }
 
+      try {
+        const meResponse = await fetch('/api/auth/me')
+        if (meResponse.ok) {
+          const meData = await meResponse.json()
+          setUser(meData?.user || null)
+        }
+      } catch (_) {}
+
       if (typeof onSuccess === 'function') {
         onSuccess()
         return
