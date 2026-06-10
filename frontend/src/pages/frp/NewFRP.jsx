@@ -279,6 +279,8 @@ export default function NewFRP() {
       setUser(data?.user)
         const isDuplicate = searchParams.get('duplicate') === '1' || searchParams.get('duplicate') === 'true'
         const initial = buildInitialForm(data, isDuplicate)
+        previousCompanyRef.current = initial.companyName || ''
+        companySyncInitializedRef.current = true
 
         const fromRpId = searchParams.get('fromRp')
         if (fromRpId) {
@@ -363,6 +365,9 @@ export default function NewFRP() {
     [FRP.departments, FRP.divisionList, FRP.employees, values.companyName],
   )
 
+  const previousCompanyRef = useRef(values.companyName)
+  const companySyncInitializedRef = useRef(false)
+
   useEffect(() => {
     if (departments.length === 0) return
 
@@ -371,6 +376,22 @@ export default function NewFRP() {
       return nextDivisi === prev.divisi ? prev : { ...prev, divisi: nextDivisi }
     })
   }, [departments])
+
+  useEffect(() => {
+    const previousCompany = previousCompanyRef.current
+    const currentCompany = values.companyName || ''
+
+    if (!companySyncInitializedRef.current) return
+
+    if (previousCompany === currentCompany) return
+
+    previousCompanyRef.current = currentCompany
+
+    setValues(prev => {
+      const nextDivisi = currentCompany ? getDefaultDivisionForCompany(currentCompany) : ''
+      return prev.divisi === nextDivisi ? prev : { ...prev, divisi: nextDivisi }
+    })
+  }, [values.companyName, departments])
 
   const getDefaultDivisionForCompany = (companyName) => {
     const sourceDepartments = FRP.departments?.length

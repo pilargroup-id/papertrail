@@ -209,7 +209,10 @@ export default function NewRP({
       .then(d => {
         setData(d)
         setUser(d?.user)
-        setValues(buildInitialRp(d))
+        const initial = buildInitialRp(d)
+        setValues(initial)
+        previousCompanyRef.current = initial.companyName || ''
+        companySyncInitializedRef.current = true
 
          fetch('/api/rp/processor-departments')
           .then(r => r.json())
@@ -234,6 +237,8 @@ export default function NewRP({
   const addRow = () => setValues(p => ({ ...p, items: [...p.items, ...getDefaultRpItems()] }))
   const removeRow = i => setValues(p => ({ ...p, items: p.items.filter((_, idx) => idx !== i) }))
   const resetValues = () => setValues(buildInitialRp(D))
+  const previousCompanyRef = useRef(values.companyName)
+  const companySyncInitializedRef = useRef(false)
 
   const departments = useMemo(() => {
     if (D.departments && D.departments.length > 0) {
@@ -258,6 +263,29 @@ export default function NewRP({
     }
     return sourceDivs.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
   }, [D.departments, D.processDivisions, D.employees, values.companyName])
+
+  useEffect(() => {
+    const previousCompany = previousCompanyRef.current
+    const currentCompany = values.companyName || ''
+
+    if (!companySyncInitializedRef.current) return
+    if (previousCompany === currentCompany) return
+
+    previousCompanyRef.current = currentCompany
+
+    setValues(prev => {
+      const nextDivisi = currentCompany ? getDefaultDivisionForCompany(currentCompany) : ''
+      const nextClass = currentCompany ? '' : ''
+
+      if (prev.divisi === nextDivisi && prev.class === nextClass) return prev
+
+      return {
+        ...prev,
+        divisi: nextDivisi,
+        class: nextClass,
+      }
+    })
+  }, [values.companyName, departments])
 
   useEffect(() => {
     if (departments.length === 0) return
