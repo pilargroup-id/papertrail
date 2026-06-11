@@ -91,6 +91,9 @@ export default function SearchableSelect({
         position: 'fixed',
         left: rect.left,
         width: rect.width,
+        minWidth: rect.width,
+        maxWidth: rect.width,
+        boxSizing: 'border-box',
         ...(renderUpward
           ? { bottom: window.innerHeight - rect.top + 4 }
           : { top: rect.bottom + 4 }),

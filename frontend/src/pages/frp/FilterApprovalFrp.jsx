@@ -1,295 +1,355 @@
-import * as React from 'react'
-import Autocomplete from '@mui/material/Autocomplete'
-import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
-import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded'
-import FilterAltRoundedIcon from '@mui/icons-material/FilterAltRounded'
-import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded'
-import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded'
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded'
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import MenuItem from '@mui/material/MenuItem'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
+import React, { useRef } from 'react'
 
-const roundedFieldSx = {
-    minWidth: 180,
-    '& .MuiInputLabel-root.Mui-focused': {
-        color: 'var(--accent-teal-dark)',
-    },
-    '& .MuiOutlinedInput-root': {
-        borderRadius: 3,
-        backgroundColor: 'common.white',
-        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'var(--accent-teal-dark)',
-        },
-        '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'rgba(35, 133, 122, 0.35)',
-        },
-    },
+import SearchableSelect from '../../components/template/SearchableSelect'
+
+function formatDate(value) {
+  return value
+    ? new Intl.DateTimeFormat('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(value))
+    : '-'
 }
 
-export default function FilterMonitorRadius({
-    filters,
-    dateRangeLabel,
-    salesOptions,
-    stateOptions,
-    radiusOptions,
-    isLoading,
-    filteredCount,
-    onQueryChange,
-    onSalesChange,
-    onWilayahChange,
-    onRadiusChange,
-    onOpenRangePicker,
-    onRefresh,
-    onExport,
-}) {
-    const salesItems = React.useMemo(
-        () => [
-            { label: 'Semua', value: 'ALL' },
-            ...salesOptions.map((option) => ({ label: option, value: option })),
-        ],
-        [salesOptions],
-    )
+function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
+  const inputRef = useRef(null)
 
-    const wilayahItems = React.useMemo(
-        () => [
-            { label: 'Semua', value: 'ALL' },
-            ...stateOptions.map((option) => ({ label: option, value: option })),
-        ],
-        [stateOptions],
-    )
+  const openPicker = () => {
+    if (!inputRef.current) return
 
-    const selectedSales =
-        salesItems.find((option) => option.value === filters.sales) ?? salesItems[0] ?? null
-    const selectedWilayah =
-        wilayahItems.find((option) => option.value === filters.wilayah) ?? wilayahItems[0] ?? null
+    try {
+      if (typeof inputRef.current.showPicker === 'function') {
+        inputRef.current.showPicker()
+        return
+      }
+    } catch (_) {
+      // Fall back to the native input click below.
+    }
 
-    return (
-        <Box
-            sx={{
-                p: { xs: 1.25, md: 1.5 },
-                borderRadius: 4,
-                border: '1px solid',
-                borderColor: 'rgba(35, 133, 122, 0.12)',
-                backgroundColor: 'transparent',
-            }}
+    inputRef.current.focus()
+    inputRef.current.click()
+  }
+
+  return (
+    <div
+      style={{ position: 'relative', width: '100%' }}
+      onClick={openPicker}
+    >
+      <input
+        ref={inputRef}
+        type="date"
+        value={value}
+        onChange={onChange}
+        aria-label={placeholder}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0,
+          cursor: 'pointer',
+          width: '100%',
+          height: '100%',
+          zIndex: 2,
+        }}
+      />
+      <div
+        className="filter-input-element"
+        style={{
+          ...style,
+          display: 'flex',
+          alignItems: 'center',
+          color: value ? '#1e293b' : '#94a3b8',
+          cursor: 'pointer',
+          position: 'relative',
+        }}
+      >
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {value ? formatDate(value) : placeholder}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function FilterField({ label, icon, children }) {
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      {label && (
+        <span
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            left: '12px',
+            background: 'white',
+            padding: '0 6px',
+            fontSize: '11px',
+            fontWeight: '700',
+            color: '#64748b',
+            zIndex: 3,
+            pointerEvents: 'none',
+            letterSpacing: '0.02em',
+          }}
         >
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 1,
-                    mb: 1,
-                }}
-            >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box
-                        sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 2.5,
-                            display: 'grid',
-                            placeItems: 'center',
-                            color: 'var(--accent-teal-dark)',
-                            backgroundColor: 'rgba(35, 133, 122, 0.12)',
-                        }}
-                    >
-                        <FilterAltRoundedIcon fontSize="small" />
-                    </Box>
-                    <Box>
-                        <Typography sx={{ fontWeight: 700, lineHeight: 1.2 }}>Filter Monitor Radius</Typography>
-                        <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
-                            {filteredCount} data sesuai filter aktif
-                        </Typography>
-                    </Box>
-                </Box>
+          {label}
+        </span>
+      )}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+        {icon && (
+          <span
+            className="material-icons-round"
+            style={{
+              position: 'absolute',
+              left: '12px',
+              color: '#64748b',
+              fontSize: '18px',
+              pointerEvents: 'none',
+              zIndex: 3,
+            }}
+          >
+            {icon}
+          </span>
+        )}
+        {children}
+      </div>
+    </div>
+  )
+}
 
-                <IconButton
-                    onClick={onRefresh}
-                    disabled={isLoading}
-                    aria-label="Refresh data"
-                    sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 999,
-                        border: '1px solid rgba(35, 133, 122, 0.2)',
-                        backgroundColor: 'rgba(35, 133, 122, 0.08)',
-                        color: 'var(--accent-teal-dark)',
-                        '&:hover': {
-                            backgroundColor: 'rgba(35, 133, 122, 0.14)',
-                        },
-                    }}
-                >
-                    <RefreshRoundedIcon fontSize="small" />
-                </IconButton>
-            </Box>
+// Column width definitions — single source of truth.
+// Change a value here and it applies to both the wrapper and any inner sizing.
+const FIELD_WIDTHS = {
+  search:     280,
+  date:       160,
+  requester:  220,
+  budget:     220,
+  attachment: 200,
+  status:     200,
+  division:   220,
+}
 
-            <Box
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: 'repeat(2, minmax(0, 1fr))',
-                        xl: 'minmax(240px, 1.4fr) minmax(240px, 1.1fr) repeat(3, minmax(150px, 1fr)) auto',
-                    },
-                    gap: 1.25,
-                    alignItems: 'start',
-                }}
-            >
-                <TextField
-                    label="Search"
-                    placeholder="Sales / customer / plan / result"
-                    value={filters.query}
-                    onChange={(event) => onQueryChange(event.target.value)}
-                    size="small"
-                    sx={{ ...roundedFieldSx, minWidth: 220 }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchRoundedIcon fontSize="small" color="action" />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
+export default function FilterApprovalFrp({
+  isApprovedView,
+  isMobile,
+  filteredCount,
+  filters,
+  setFilters,
+  requesterOptions,
+  budgetOptions,
+  divisionOptions,
+  statusOptions,
+  filterInput,
+  onRefresh,
+}) {
+  const attachmentOptions = [
+    { value: 'all',     label: 'Semua Attachment' },
+    { value: 'with',    label: 'Ada Attachment'   },
+    { value: 'without', label: 'Tanpa Attachment'  },
+  ]
 
-                <Button
-                    variant="outlined"
-                    onClick={onOpenRangePicker}
-                    startIcon={<CalendarMonthRoundedIcon fontSize="small" />}
-                    sx={{
-                        minWidth: 180,
-                        borderRadius: 3,
-                        minHeight: 40,
-                        justifyContent: 'flex-start',
-                        px: 1.5,
-                        backgroundColor: 'common.white',
-                        color: 'text.primary',
-                        textTransform: 'none',
-                        fontWeight: 400,
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        textOverflow: 'ellipsis',
-                        borderColor: 'rgba(0, 0, 0, 0.23)',
-                        '&:hover': {
-                            borderColor: 'rgba(35, 133, 122, 0.35)',
-                            backgroundColor: 'common.white',
-                        },
-                        '&:focus-visible': {
-                            borderColor: 'var(--accent-teal-dark)',
-                        },
-                    }}
-                >
-                    {dateRangeLabel}
-                </Button>
+  /**
+   * Merges the parent filterInput style with mandatory sizing rules.
+   * width + box-sizing MUST come last so they can never be overridden
+   * by whatever the parent passes in.
+   */
+  const inputStyle = {
+    ...filterInput,
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
+  }
 
-                <Autocomplete
-                    options={salesItems}
-                    value={selectedSales}
-                    onChange={(_, value) => onSalesChange(value?.value ?? 'ALL')}
-                    getOptionLabel={(option) => option?.label ?? ''}
-                    isOptionEqualToValue={(option, value) => option.value === value.value}
-                    size="small"
-                    sx={roundedFieldSx}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Sales"
-                            placeholder="Cari sales"
-                            InputProps={{
-                                ...params.InputProps,
-                                startAdornment: (
-                                    <>
-                                        <InputAdornment position="start">
-                                            <GroupsRoundedIcon fontSize="small" color="action" />
-                                        </InputAdornment>
-                                        {params.InputProps.startAdornment}
-                                    </>
-                                ),
-                            }}
-                        />
-                    )}
-                />
+  /**
+   * Returns a wrapper style that:
+   * - On mobile  → full width, no fixed sizing
+   * - On desktop → exact fixed width so columns never shrink / grow
+   */
+  const col = (key) =>
+    isMobile
+      ? { width: '100%' }
+      : {
+          width:    `${FIELD_WIDTHS[key]}px`,
+          minWidth: `${FIELD_WIDTHS[key]}px`,
+          maxWidth: `${FIELD_WIDTHS[key]}px`,
+          flexShrink: 0,
+          flexGrow:   0,
+          boxSizing:  'border-box',
+        }
 
-                <Autocomplete
-                    options={wilayahItems}
-                    value={selectedWilayah}
-                    onChange={(_, value) => onWilayahChange(value?.value ?? 'ALL')}
-                    getOptionLabel={(option) => option?.label ?? ''}
-                    isOptionEqualToValue={(option, value) => option.value === value.value}
-                    size="small"
-                    sx={roundedFieldSx}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            label="Wilayah"
-                            placeholder="Cari wilayah"
-                            InputProps={{
-                                ...params.InputProps,
-                                startAdornment: (
-                                    <>
-                                        <InputAdornment position="start">
-                                            <PlaceRoundedIcon fontSize="small" color="action" />
-                                        </InputAdornment>
-                                        {params.InputProps.startAdornment}
-                                    </>
-                                ),
-                            }}
-                        />
-                    )}
-                />
+  return (
+    <div
+      style={{
+        background: 'white',
+        padding: isMobile ? '16px 12px' : '20px 24px',
+        borderBottom: '1.5px solid #e8edf4',
+        flexShrink: 0,
+      }}
+    >
+      {/* ── Header row ─────────────────────────────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              background: '#e6f2f0',
+              display: 'grid',
+              placeItems: 'center',
+              color: '#1e5e4d',
+              flexShrink: 0,
+            }}
+          >
+            <span className="material-icons-round" style={{ fontSize: '20px' }}>filter_alt</span>
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>
+              Approval FRP
+            </h2>
+            <p style={{ margin: '1px 0 0', fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+              {filteredCount} data sesuai filter aktif
+            </p>
+          </div>
+        </div>
 
-                <TextField
-                    select
-                    label="Radius"
-                    value={filters.radius}
-                    onChange={(event) => onRadiusChange(event.target.value)}
-                    size="small"
-                    sx={roundedFieldSx}
-                >
-                    {radiusOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                        </MenuItem>
-                    ))}
-                </TextField>
+        <button
+          type="button"
+          onClick={onRefresh}
+          title="Segarkan data"
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            border: '1.5px solid #dbe5f0',
+            background: 'white',
+            color: '#475569',
+            display: 'grid',
+            placeItems: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#f8fafc'
+            e.currentTarget.style.borderColor = '#cbd5e1'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'white'
+            e.currentTarget.style.borderColor = '#dbe5f0'
+          }}
+        >
+          <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
+        </button>
+      </div>
 
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 1,
-                        justifyContent: { xs: 'stretch', xl: 'flex-end' },
-                        alignItems: 'center',
-                    }}
-                >
-                    <Button
-                        variant="contained"
-                        onClick={onExport}
-                        disabled={isLoading || filteredCount === 0}
-                        startIcon={<DownloadRoundedIcon />}
-                        sx={{
-                            borderRadius: 999,
-                            minHeight: 40,
-                            px: 2,
-                            backgroundColor: 'var(--accent-teal-dark)',
-                            boxShadow: '0 10px 24px rgba(35, 133, 122, 0.22)',
-                            '&:hover': {
-                                backgroundColor: 'var(--accent-teal-dark)',
-                                boxShadow: '0 14px 28px rgba(35, 133, 122, 0.3)',
-                            },
-                        }}
-                    >
-                        Export XLSX
-                    </Button>
-                </Box>
-            </Box>
-        </Box>
-    )
+      {/* ── Filter fields ───────────────────────────────────────── */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '16px',           // uniform gap — horizontal & vertical
+          alignItems: 'flex-start',
+        }}
+      >
+        {/* Search */}
+        <div style={col('search')}>
+          <FilterField label="Search" icon="search">
+            <input
+              className="filter-input-element"
+              style={inputStyle}
+              placeholder="No FRP / Vendor..."
+              value={filters.search}
+              onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
+            />
+          </FilterField>
+        </div>
+
+        {/* Date */}
+        <div style={col('date')}>
+          <FilterField label="Date" icon="calendar_month">
+            <DateField
+              value={filters.date}
+              onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
+              style={inputStyle}
+            />
+          </FilterField>
+        </div>
+
+        {/* Request By */}
+        <div style={col('requester')}>
+          <FilterField label="Request By" icon="person">
+            <SearchableSelect
+              value={filters.requester}
+              onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
+              options={requesterOptions}
+              placeholder="Semua Pemohon"
+              style={inputStyle}
+            />
+          </FilterField>
+        </div>
+
+        {/* Budget */}
+        <div style={col('budget')}>
+          <FilterField label="Budget" icon="account_balance_wallet">
+            <SearchableSelect
+              value={filters.budgetId}
+              onChange={(v) => setFilters((c) => ({ ...c, budgetId: v }))}
+              options={budgetOptions}
+              placeholder="Budget ID"
+              style={inputStyle}
+            />
+          </FilterField>
+        </div>
+
+        {/* Attachment */}
+        <div style={col('attachment')}>
+          <FilterField label="Attachment" icon="attachment">
+            <SearchableSelect
+              value={filters.attachment}
+              onChange={(v) => setFilters((c) => ({ ...c, attachment: v }))}
+              options={attachmentOptions}
+              placeholder="Semua Attachment"
+              style={inputStyle}
+            />
+          </FilterField>
+        </div>
+
+        {/* Status — only on approved view */}
+        {isApprovedView && (
+          <div style={col('status')}>
+            <FilterField label="Status" icon="rule">
+              <SearchableSelect
+                value={filters.status}
+                onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
+                options={statusOptions}
+                placeholder="Semua Status"
+                style={inputStyle}
+              />
+            </FilterField>
+          </div>
+        )}
+
+        {/* Division */}
+        <div style={col('division')}>
+          <FilterField label="Division" icon="business">
+            <SearchableSelect
+              value={filters.division}
+              onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
+              options={divisionOptions}
+              placeholder="Semua Divisi"
+              style={inputStyle}
+            />
+          </FilterField>
+        </div>
+      </div>
+    </div>
+  )
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState, Fragment } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import DialogFrpDetail from '../../components/Dialog/DialogDetailFrp'
@@ -10,7 +10,6 @@ import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import DialogFailAction from '../../components/Dialog/DialogFailAction'
 
 const MOBILE_BREAKPOINT = 768
-const TABLET_BREAKPOINT = 1100
 
 function parseAmount(amount) {
   return parseInt(String(amount || '0').replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0
@@ -24,273 +23,6 @@ function formatDate(value) {
       year: 'numeric',
     }).format(new Date(value))
     : '-'
-}
-
-function formatCurrency(value) {
-  return `IDR ${value.toLocaleString('id-ID')}`
-}
-
-const getGridColumns = (desktopColumns, isMobile, isTablet) => {
-  if (isMobile) return '1fr'
-  if (isTablet && desktopColumns >= 3) return '1fr 1fr'
-  return `repeat(${desktopColumns}, minmax(0, 1fr))`
-}
-
-function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
-  const inputRef = useRef(null)
-
-  const openPicker = () => {
-    if (!inputRef.current) return
-    try {
-      if (typeof inputRef.current.showPicker === 'function') {
-        inputRef.current.showPicker()
-        return
-      }
-    } catch (_) { }
-    inputRef.current.focus()
-    inputRef.current.click()
-  }
-
-  return (
-    <div
-      style={{ position: 'relative', width: '100%' }}
-      onClick={openPicker}
-    >
-      <input
-        ref={inputRef}
-        type="date"
-        value={value}
-        onChange={onChange}
-        aria-label={placeholder}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0,
-          cursor: 'pointer',
-          width: '100%',
-          height: '100%',
-          zIndex: 2,
-        }}
-      />
-      <div
-        className="filter-input-element"
-        style={{
-          ...style,
-          display: 'flex',
-          alignItems: 'center',
-          color: value ? '#1e293b' : '#94a3b8',
-          cursor: 'pointer',
-          position: 'relative',
-        }}
-      >
-        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {value ? formatDate(value) : placeholder}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-function FilterField({ label, icon, children }) {
-  return (
-    <div style={{ position: 'relative', width: '100%' }}>
-      {label && (
-        <span
-          style={{
-            position: 'absolute',
-            top: '-8px',
-            left: '12px',
-            background: 'white',
-            padding: '0 6px',
-            fontSize: '11px',
-            fontWeight: '700',
-            color: '#64748b',
-            zIndex: 3,
-            pointerEvents: 'none',
-            letterSpacing: '0.02em',
-          }}
-        >
-          {label}
-        </span>
-      )}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
-        {icon && (
-          <span
-            className="material-icons-round"
-            style={{
-              position: 'absolute',
-              left: '12px',
-              color: '#64748b',
-              fontSize: '18px',
-              pointerEvents: 'none',
-              zIndex: 3,
-            }}
-          >
-            {icon}
-          </span>
-        )}
-        {children}
-      </div>
-    </div>
-  )
-}
-
-
-function SearchableSelect({
-  value,
-  onChange,
-  options,
-  placeholder = 'Pilih...',
-  style,
-}) {
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const ref = useRef(null)
-
-  const normalizedOptions = options.map(option =>
-    typeof option === 'string'
-      ? { value: option, label: option, keywords: option }
-      : {
-        value: option.value,
-        label: option.label,
-        keywords: option.keywords || option.label || option.value,
-      },
-  )
-
-  const selectedOption = normalizedOptions.find(option => option.value === value)
-  const filteredOptions = normalizedOptions.filter(option =>
-    String(option.keywords || '').toLowerCase().includes(search.toLowerCase()),
-  )
-
-  useEffect(() => {
-    if (!open) setSearch('')
-  }, [open])
-
-  useEffect(() => {
-    const handleOutside = event => {
-      if (ref.current && !ref.current.contains(event.target)) setOpen(false)
-    }
-
-    document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
-  }, [])
-
-  return (
-    <div ref={ref} style={{ position: 'relative', zIndex: open ? 20 : 1, width: '100%' }}>
-      <button
-        type="button"
-        className="select-dropdown-btn"
-        onClick={() => setOpen(current => !current)}
-        style={{
-          ...style,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          textAlign: 'left',
-          minHeight: style?.minHeight || '42px',
-          boxShadow: 'none',
-        }}
-      >
-        <span
-          style={{
-            display: 'block',
-            flex: 1,
-            color: value ? '#1e293b' : '#94a3b8',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            paddingRight: '12px',
-          }}
-        >
-          {selectedOption?.label || placeholder}
-        </span>
-        <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', flexShrink: 0 }}>
-          {open ? 'expand_less' : 'expand_more'}
-        </span>
-      </button>
-      {open && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            background: 'white',
-            border: '1.5px solid #dbe5f0',
-            borderRadius: '12px',
-            boxShadow: '0 14px 30px rgba(15, 23, 42, 0.14)',
-            zIndex: 200,
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ padding: '8px' }}>
-            <input
-              autoFocus
-              type="text"
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-              placeholder="Cari..."
-              style={{ ...style, paddingLeft: '10px', fontSize: '0.875rem', padding: '8px 10px', minHeight: 'unset' }}
-            />
-          </div>
-          <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: '1px solid #f1f5f9' }}>
-            <button
-              type="button"
-              onClick={() => {
-                onChange('')
-                setOpen(false)
-              }}
-              style={{
-                width: '100%',
-                border: 'none',
-                background: 'white',
-                textAlign: 'left',
-                padding: '10px 12px',
-                fontFamily: 'inherit',
-                fontSize: '0.875rem',
-                color: '#94a3b8',
-                cursor: 'pointer',
-              }}
-            >
-              {placeholder}
-            </button>
-            {filteredOptions.map(option => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value)
-                  setOpen(false)
-                }}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderTop: '1px solid #f8fafc',
-                  background: option.value === value ? '#eff6ff' : 'white',
-                  color: option.value === value ? '#1f4e8c' : '#1e293b',
-                  textAlign: 'left',
-                  padding: '10px 12px',
-                  fontFamily: 'inherit',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  fontWeight: option.value === value ? 700 : 500,
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-            {filteredOptions.length === 0 && (
-              <div style={{ padding: '12px', color: '#94a3b8', fontSize: '0.875rem', textAlign: 'center' }}>
-                Tidak ditemukan
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 export default function ApprovalFRP() {
@@ -309,10 +41,11 @@ export default function ApprovalFRP() {
     requester: '',
     status: '',
     division: '',
+    budgetId: '',
+    attachment: 'all',
   })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
 
-  const [filtersOpen, setFiltersOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionResultDialog, setActionResultDialog] = useState(null)
@@ -405,8 +138,14 @@ export default function ApprovalFRP() {
         (request.dimintaOleh || '').toLowerCase().includes(filters.requester.toLowerCase())
       const matchStatus = !filters.status || request.status === filters.status
       const matchDivision = !filters.division || request.divisi === filters.division
+      const matchBudget = !filters.budgetId || (request.items || []).some(item => item?.budgetId === filters.budgetId)
+      const hasAttachment = Boolean(request.attachLink || request.attachmentLink)
+      const matchAttachment =
+        filters.attachment === 'all' ||
+        (filters.attachment === 'with' && hasAttachment) ||
+        (filters.attachment === 'without' && !hasAttachment)
 
-      return matchSearch && matchDate && matchRequester && matchStatus && matchDivision
+      return matchSearch && matchDate && matchRequester && matchStatus && matchDivision && matchBudget && matchAttachment
     })
 
     return filteredList.sort((a, b) => {
@@ -520,8 +259,6 @@ export default function ApprovalFRP() {
   const userJobLevelRank = Number(user?.jobLevelRank || 0)
   const canApprove = Boolean(data?.canApprove) && userJobLevelRank > 1
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
-  const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
-
   const filterInput = {
     width: '100%',
     padding: '9px 12px 9px 36px',
@@ -536,27 +273,32 @@ export default function ApprovalFRP() {
     minHeight: '42px',
   }
 
-  const detailValueBox = {
-    padding: '10px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #d7e0ea',
-    background: '#f8fafc',
-    color: '#334155',
-    lineHeight: 1.5,
-    minHeight: '42px',
-    boxSizing: 'border-box',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
-    transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
-  }
-
   const requesters = useMemo(
     () => (data?.requests ? [...new Set(data.requests.map((request) => request.dimintaOleh).filter(Boolean))].sort() : []),
     [data],
   )
 
+  const budgetIds = useMemo(() => {
+    if (!data?.requests) return []
+
+    const collected = new Set()
+    data.requests.forEach((request) => {
+      (request.items || []).forEach((item) => {
+        if (item?.budgetId) collected.add(item.budgetId)
+      })
+    })
+
+    return [...collected].sort()
+  }, [data])
+
   const requesterOptions = useMemo(
     () => requesters.map(requester => ({ value: requester, label: requester })),
     [requesters],
+  )
+
+  const budgetOptions = useMemo(
+    () => budgetIds.map((budgetId) => ({ value: budgetId, label: budgetId })),
+    [budgetIds],
   )
 
   const divisionOptions = useMemo(
@@ -671,147 +413,19 @@ export default function ApprovalFRP() {
             overflow: 'hidden',
           }}
         >
-          {/* Top Filter Area (Integrated inside the card) */}
-          <div
-            style={{
-              background: 'white',
-              padding: isMobile ? '16px 12px' : '20px 24px',
-              borderBottom: '1.5px solid #e8edf4',
-              flexShrink: 0,
-            }}
-          >
-            {/* <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: '#e6f2f0',
-                  display: 'grid',
-                  placeItems: 'center',
-                  color: '#1e5e4d',
-                }}>
-                  <span className="material-icons-round" style={{ fontSize: '20px' }}>filter_alt</span>
-                </div>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#1e293b' }}>
-                    Approval FRP
-                  </h2>
-                  <p style={{ margin: '1px 0 0', fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
-                    {filtered.length} data sesuai filter aktif
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={loadData}
-                  title="Segarkan data"
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    border: '1.5px solid #dbe5f0',
-                    background: 'white',
-                    color: '#475569',
-                    display: 'grid',
-                    placeItems: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#f8fafc'
-                    e.currentTarget.style.borderColor = '#cbd5e1'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'white'
-                    e.currentTarget.style.borderColor = '#dbe5f0'
-                  }}
-                >
-                  <span className="material-icons-round" style={{ fontSize: '18px' }}>refresh</span>
-                </button>
-              </div>
-            </div> */}
-
-            <div
-              style={{
-                display: 'flex',
-                gap: '12px',
-                flexWrap: 'wrap',
-                width: '100%',
-                alignItems: 'center',
-              }}
-            >
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile
-                    ? '1fr'
-                    : `repeat(${isApprovedView ? 5 : 4}, minmax(140px, 1fr))`,
-                  gap: '12px',
-                  flex: 1,
-                  minWidth: isMobile ? '100%' : '600px',
-                }}
-              >
-                {/* Search */}
-                <FilterField label="Search" icon="search">
-                  <input
-                    className="filter-input-element"
-                    style={filterInput}
-                    placeholder="No FRP / Vendor..."
-                    value={filters.search}
-                    onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
-                  />
-                </FilterField>
-
-                {/* Tanggal */}
-                <FilterField label="Date" icon="calendar_month">
-                  <DateField
-                    value={filters.date}
-                    onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
-                    style={filterInput}
-                  />
-                </FilterField>
-
-                {/* Pemohon */}
-                <FilterField label="Request By" icon="person">
-                  <SearchableSelect
-                    value={filters.requester}
-                    onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
-                    options={requesterOptions}
-                    placeholder="Semua Pemohon"
-                    style={filterInput}
-                  />
-                </FilterField>
-
-                {/* Status (only if approved view) */}
-                {isApprovedView && (
-                  <FilterField label="Status" icon="rule">
-                    <SearchableSelect
-                      value={filters.status}
-                      onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
-                      options={statusOptions}
-                      placeholder="Semua Status"
-                      style={filterInput}
-                    />
-                  </FilterField>
-                )}
-
-                {/* Divisi */}
-                <FilterField label="Division" icon="business">
-                  <SearchableSelect
-                    value={filters.division}
-                    onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
-                    options={divisionOptions}
-                    placeholder="Semua Divisi"
-                    style={filterInput}
-                  />
-                </FilterField>
-              </div>
-
-            </div>
-          </div>
+          <FilterApprovalFrp
+            isApprovedView={isApprovedView}
+            isMobile={isMobile}
+            filteredCount={filtered.length}
+            filters={filters}
+            setFilters={setFilters}
+            requesterOptions={requesterOptions}
+            budgetOptions={budgetOptions}
+            divisionOptions={divisionOptions}
+            statusOptions={statusOptions}
+            filterInput={filterInput}
+            onRefresh={loadData}
+          />
           {/* Table Container */}
           <div
             style={{
