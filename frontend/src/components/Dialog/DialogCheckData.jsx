@@ -11,6 +11,7 @@ function DialogFrpDetail({
     title = 'Detail FRP',
     eyebrow = 'Request Detail',
     onClose,
+    onSaved,
 }) {
     useEffect(() => {
         if (!isOpen) {
@@ -96,6 +97,8 @@ function DialogFrpDetail({
                         <NewRP
                             embedded
                             embeddedProcessId={request.id}
+                            embeddedRequest={request}
+                            onEmbeddedSuccess={onSaved}
                             onCloseEmbedded={onClose}
                         />
                     </div>

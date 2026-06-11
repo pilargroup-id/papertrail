@@ -166,32 +166,56 @@ const buildInitialRp = data => {
   }
 
   let initialDivisi = '';
+  let initialClass = '';
   if (data?.departments && data.departments.length > 0) {
     const userDiv = normalizeCompany(data.selectedDivision || '');
     const matched = data.departments.find(d => normalizeCompany(d.class) === userDiv || normalizeCompany(d.name) === userDiv);
     if (matched) initialDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+    if (matched) initialClass = matched.class || matched.name || '';
   } else {
     initialDivisi = data?.selectedDivision || '';
+    initialClass = data?.selectedDivision || '';
   }
   base.divisi = initialDivisi;
+  base.class = initialClass;
 
   if (!data?.editData) return base
 
   let editDivisi = base.divisi;
+  let editClass = base.class;
   if (data?.departments && data.departments.length > 0) {
     const dName = normalizeCompany(data.editData.departmentName || data.editData.divisi || '');
     const dClass = normalizeCompany(data.editData.departmentClass || data.editData.class || '');
     const matched = data.departments.find(d => normalizeCompany(d.name) === dName && (!dClass || normalizeCompany(d.class) === dClass));
     if (matched) editDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
-    else if (data.editData.departmentId) editDivisi = data.editData.departmentId;
+    else if (data.editData.departmentId || data.editData.department_id) editDivisi = data.editData.departmentId || data.editData.department_id;
+
+    editClass =
+      data.editData.class ||
+      data.editData.classClass ||
+      data.editData.departmentClass ||
+      data.editData.department_class ||
+      matched?.class ||
+      matched?.name ||
+      base.class ||
+      '';
   } else {
     editDivisi = data.editData.departmentName || data.editData.divisi || base.divisi;
+    editClass =
+      data.editData.class ||
+      data.editData.classClass ||
+      data.editData.departmentClass ||
+      data.editData.department_class ||
+      data.editData.className ||
+      base.class ||
+      '';
   }
 
   return {
     ...base,
     ...data.editData,
     divisi: editDivisi,
+    class: editClass,
     tanggalDibutuhkan: data.editData.tanggalDibutuhkan || data.editData.requiredDate || today,
     deskripsi: data.editData.deskripsi || data.editData.description || '',
     picPenerima: data.editData.picPenerima || data.editData.receiverPic || '',
@@ -228,10 +252,40 @@ const resolveDivisionValue = (departments, currentValue) => {
   return matched.originalIndex !== undefined ? matched.originalIndex : (matched.id ?? currentValue ?? '')
 }
 
+const getDivisionDisplayValue = (departments, currentValue, source = {}) => {
+  const sourceName =
+    source.departmentName ||
+    source.department_name ||
+    source.divisi ||
+    source.name ||
+    ''
+  const sourceClass =
+    source.departmentClass ||
+    source.department_class ||
+    source.classClass ||
+    source.class ||
+    ''
+
+  if (sourceName || sourceClass) {
+    if (sourceName && sourceClass && normalizeCompany(sourceName) !== normalizeCompany(sourceClass)) {
+      return `${sourceName} - ${sourceClass}`
+    }
+    return sourceName || sourceClass
+  }
+
+  const matched = Array.isArray(departments)
+    ? departments.find(d => String(d.originalIndex) === String(currentValue))
+    : null
+
+  return matched?.label || currentValue || ''
+}
+
 export default function NewRP({
   embedded = false,
   embeddedProcessId = null,
+  embeddedRequest = null,
   onCloseEmbedded = null,
+  onEmbeddedSuccess = null,
 } = {}) {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -511,6 +565,7 @@ export default function NewRP({
 
   const totalAmount = useMemo(() => values.items.reduce((s, it) => s + normalizeNumber(it.qty) * normalizeNumber(it.estimatedValue), 0), [values.items])
   const processId = embeddedProcessId || searchParams.get('process')
+  const embeddedDivisionSource = embeddedRequest || D.editData || {}
   const sectionSurfaceStyle = embedded
     ? { padding: 0, background: 'transparent', border: 'none', boxShadow: 'none' }
     : undefined
@@ -586,6 +641,7 @@ export default function NewRP({
         const res = await fetch(`/api/rp/${processId}/process-update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         const result = await res.json()
         if (result.success) {
+          onEmbeddedSuccess?.()
           setSuccessDialog({
             isOpen: true,
             title: 'Update Berhasil!',
@@ -699,7 +755,11 @@ export default function NewRP({
                         menuPosition="fixed"
                       />
                     ) : (
-                      <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
+                      <input
+                        className="frp-input-readonly"
+                        value={getDivisionDisplayValue(departments, values.divisi, embeddedDivisionSource)}
+                        readOnly
+                      />
                     )}
                   </FloatingGroup>
                   <FloatingGroup label="Request By">

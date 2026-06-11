@@ -40,9 +40,9 @@ export default function ButtonActionApprovalRp({
   const showManagerActions = mode === 'manager'
   const showStaffActions = mode === 'staff'
 
-  console.log('=== ButtonActionApprovalRp Debug ===')
-  console.log('User Job Level Rank:', userJobLevelRank)
-  console.log('User Job Level Name:', userJobLevelName)
+  // console.log('=== ButtonActionApprovalRp Debug ===')
+  // console.log('User Job Level Rank:', userJobLevelRank)
+  // console.log('User Job Level Name:', userJobLevelName)
 
   return (
     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>

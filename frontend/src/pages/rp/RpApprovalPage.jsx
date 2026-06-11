@@ -117,6 +117,68 @@ const getActionResultIcon = action => {
   return action?.includes('approve') ? 'check_circle' : 'cancel'
 }
 
+const getCountBucket = status => {
+  const normalized = String(status || '').toLowerCase()
+  if (normalized === 'waiting_manager') return 'pending'
+  if (normalized === 'division_review') return 'process'
+  if (normalized === 'final_review') return 'process-approval'
+  if (['approved', 'rejected', 'created_frp'].includes(normalized)) return 'approved'
+  return null
+}
+
+const getNextRpStatus = (currentRp, action, actualAction) => {
+  const currentStatus = String(currentRp?.status || '').toLowerCase()
+  const normalizedStatus = String(currentStatus || '').toLowerCase()
+  const normalizedAction = String(actualAction || action || '').toLowerCase()
+  const departmentClass = String(currentRp?.departmentClass || currentRp?.divisi || '').trim().toUpperCase()
+  const shortFlowDepartments = new Set(['IT', 'HCGA', 'IT & HCGA'])
+
+  if (normalizedAction === 'manager-approve') {
+    if (normalizedStatus !== 'waiting_manager') return null
+    return shortFlowDepartments.has(departmentClass) ? 'approved' : 'division_review'
+  }
+  if (normalizedAction === 'manager-reject') {
+    return normalizedStatus === 'waiting_manager' ? 'REJECTED' : null
+  }
+  if (normalizedAction === 'process-update' || normalizedAction === 'process-direct') {
+    return normalizedStatus === 'division_review' ? 'final_review' : null
+  }
+  if (normalizedAction === 'process-revert') {
+    return normalizedStatus === 'division_review' ? 'waiting_manager' : null
+  }
+  if (normalizedAction === 'process-reject') {
+    return normalizedStatus === 'division_review' ? 'REJECTED' : null
+  }
+  if (normalizedAction === 'process-manager-approve') {
+    return normalizedStatus === 'final_review' ? 'approved' : null
+  }
+  if (normalizedAction === 'process-manager-reject') {
+    return normalizedStatus === 'final_review' ? 'REJECTED' : null
+  }
+  if (normalizedAction === 'process-manager-revert') {
+    return normalizedStatus === 'final_review' ? 'division_review' : null
+  }
+  if (normalizedAction === 'revert-approved') {
+    if (normalizedStatus !== 'approved') return null
+    return currentRp?.canRevertTo || null
+  }
+  return null
+}
+
+const adjustCounts = (counts = {}, fromStatus, toStatus) => {
+  const fromBucket = getCountBucket(fromStatus)
+  const toBucket = getCountBucket(toStatus)
+  if (!fromBucket || !toBucket || fromBucket === toBucket) {
+    return counts
+  }
+
+  return {
+    ...counts,
+    [fromBucket]: Math.max(0, Number(counts[fromBucket] || 0) - 1),
+    [toBucket]: Number(counts[toBucket] || 0) + 1,
+  }
+}
+
 const printRpPreview = rpId => {
   if (!rpId || typeof window === 'undefined') return
   window.open(`/api/rp/${rpId}/preview`, '_blank')
@@ -134,6 +196,7 @@ export default function RpApprovalPage() {
   const isApprovedView = pathname === '/rp-approved'
   const { setUser } = useUser()
   const [data, setData] = useState(null)
+  const [counts, setCounts] = useState({})
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -159,16 +222,21 @@ export default function RpApprovalPage() {
   const currentUser = data?.user || null
   const approvalMode = getRpApprovalMode(currentUser)
   const currentUserJobLevelRank = getUserJobLevelRank(currentUser)
-  console.log('=== DEBUG RP APPROVAL ===')
-  console.log('currentUser:', currentUser)
-  console.log('approvalMode:', approvalMode)
-  console.log('userJobLevelRank:', currentUserJobLevelRank)
+  // console.log('=== DEBUG RP APPROVAL ===')
+  // console.log('currentUser:', currentUser)
+  // console.log('approvalMode:', approvalMode)
+  // console.log('userJobLevelRank:', currentUserJobLevelRank)
 
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
-  const loadData = (view = tab) => {
-    setLoading(true)
+  const loadData = (view = tab, options = {}) => {
+    const { silent = false } = options
+
+    if (!silent) {
+      setLoading(true)
+    }
+
     fetch(`/api/data/rp-approval?view=${view}`)
       .then(response => {
         if (!response.ok) {
@@ -179,10 +247,24 @@ export default function RpApprovalPage() {
       })
       .then(d => {
         setData(d)
+        setCounts(d?.counts || {})
         setUser(d?.user)
+        setSelected(currentSelected => {
+          if (!currentSelected) return currentSelected
+
+          const nextSelected = (d?.requests || []).find(
+            request => String(request.id) === String(currentSelected.id),
+          )
+
+          return nextSelected || null
+        })
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) {
+          setLoading(false)
+        }
+      })
   }
 
   useEffect(() => {
@@ -282,8 +364,13 @@ export default function RpApprovalPage() {
       })
       const result = await response.json()
       if (result.success) {
+        const nextStatus = getNextRpStatus(currentRp, action, actualAction)
+        if (nextStatus) {
+          setCounts(prevCounts => adjustCounts(prevCounts || {}, currentRp?.status, nextStatus))
+        }
         setConfirmAction(null)
         setSelected(null)
+        loadData(tab, { silent: true })
         setActionResultDialog({
           kind: 'success',
           action,
@@ -883,7 +970,7 @@ export default function RpApprovalPage() {
             isMobile={isMobile}
             tab={tab}
             setTab={setTab}
-            counts={D.counts}
+            counts={counts || D.counts || {}}
             tabDropdownOpen={tabDropdownOpen}
             setTabDropdownOpen={setTabDropdownOpen}
             tabDropdownRef={tabDropdownRef}
@@ -916,6 +1003,9 @@ export default function RpApprovalPage() {
         isOpen={!!checkDataRequest}
         request={checkDataRequest}
         onClose={() => setCheckDataRequest(null)}
+        onSaved={() => {
+          loadData(tab, { silent: true })
+        }}
       />
       <DialogConfirm
         isOpen={!!confirmAction}
@@ -958,7 +1048,6 @@ export default function RpApprovalPage() {
         icon={actionResultDialog?.icon || getActionResultIcon(actionResultDialog?.action)}
         onConfirm={() => {
           setActionResultDialog(null)
-          loadData(tab)
         }}
         buttonText="Tutup"
       />

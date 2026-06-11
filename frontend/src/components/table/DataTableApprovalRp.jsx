@@ -127,7 +127,7 @@ function renderStatus(status) {
 }
 
 const desktopHeaders = [
-  { label: 'FRP Number & Date', key: 'date' },
+  { label: 'FRP Number', key: 'date' },
   { label: 'Requestor & Vendor', key: 'creator' },
   { label: 'Division', key: 'division' },
   { label: 'Receiver PIC', key: 'receiverPic' },
