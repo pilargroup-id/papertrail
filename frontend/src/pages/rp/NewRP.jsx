@@ -103,6 +103,19 @@ const today = new Date().toISOString().slice(0, 10)
 const getDefaultRpItems = () => [{ budgetId: '', memo: '', linkPembelian: '', qty: '1', estimatedValue: '0' }]
 const blankRp = { companyName: '', divisi: '', class: '', dibuatOleh: '', kategoriPembelian: '', deskripsi: '', diprosesOleh: '', tanggalDibutuhkan: today, vendorSuggestion: '', picPenerima: '', items: getDefaultRpItems() }
 
+const getDepartmentValue = dept => String(dept?.originalIndex ?? dept?.id ?? '')
+
+const findDepartmentByValue = (departments, currentValue) => {
+  if (!Array.isArray(departments) || departments.length === 0) return null
+
+  const normalizedValue = normalizeCompany(currentValue)
+  return departments.find(d =>
+    getDepartmentValue(d) === String(currentValue) ||
+    normalizeCompany(d.name) === normalizedValue ||
+    normalizeCompany(d.class) === normalizedValue
+  ) || null
+}
+
 const buildInitialRp = data => {
   let initialCompany = data?.selectedCompany || data?.user?.selectedCompany || data?.user?.companyName || data?.user?.company || '';
   if (data?.companies && initialCompany) {
@@ -119,23 +132,32 @@ const buildInitialRp = data => {
   }
 
   let initialDivisi = '';
+  let initialClass = '';
   if (data?.departments && data.departments.length > 0) {
     const userDiv = normalizeCompany(data.selectedDivision || '');
     const matched = data.departments.find(d => normalizeCompany(d.class) === userDiv || normalizeCompany(d.name) === userDiv);
-    if (matched) initialDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+    if (matched) {
+      initialDivisi = getDepartmentValue(matched);
+      initialClass = matched.class || '';
+    }
   } else {
     initialDivisi = data?.selectedDivision || '';
   }
   base.divisi = initialDivisi;
+  base.class = initialClass;
 
   if (!data?.editData) return base
 
   let editDivisi = base.divisi;
+  let editClass = base.class;
   if (data?.departments && data.departments.length > 0) {
     const dName = normalizeCompany(data.editData.departmentName || data.editData.divisi || '');
     const dClass = normalizeCompany(data.editData.departmentClass || data.editData.class || '');
     const matched = data.departments.find(d => normalizeCompany(d.name) === dName && (!dClass || normalizeCompany(d.class) === dClass));
-    if (matched) editDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+    if (matched) {
+      editDivisi = getDepartmentValue(matched);
+      editClass = matched.class || '';
+    }
     else if (data.editData.departmentId) editDivisi = data.editData.departmentId;
   } else {
     editDivisi = data.editData.departmentName || data.editData.divisi || base.divisi;
@@ -145,6 +167,7 @@ const buildInitialRp = data => {
     ...base,
     ...data.editData,
     divisi: editDivisi,
+    class: editClass || data.editData.class || data.editData.departmentClass || data.editData.department_class || '',
     tanggalDibutuhkan: data.editData.tanggalDibutuhkan || data.editData.requiredDate || today,
     deskripsi: data.editData.deskripsi || data.editData.description || '',
     picPenerima: data.editData.picPenerima || data.editData.receiverPic || '',
@@ -254,9 +277,9 @@ export default function NewRP({
     previousCompanyRef.current = currentCompany
 
     setValues(prev => {
-      const nextDivisi = currentCompany ? getDefaultDivisionForCompany(currentCompany) : ''
-      const nextClass = prev.class || ''
-
+      const nextDept = currentCompany ? getDefaultDepartmentForCompany(currentCompany) : null
+      const nextDivisi = nextDept ? getDepartmentValue(nextDept) : ''
+      const nextClass = nextDept?.class || ''
       if (prev.divisi === nextDivisi && prev.class === nextClass) return prev
 
       return {
@@ -272,22 +295,21 @@ export default function NewRP({
 
     setValues(prev => {
       const nextDivisi = resolveDivisionValue(departments, prev.divisi)
-      if (nextDivisi === prev.divisi) return prev
-
-      const matchedDept = departments.find(d => String(d.originalIndex) === String(nextDivisi))
+      const matchedDept = findDepartmentByValue(departments, nextDivisi)
+      const nextClass = matchedDept?.class || prev.class || ''
+      if (nextDivisi === prev.divisi && nextClass === prev.class) return prev
       return {
         ...prev,
         divisi: nextDivisi,
-        class: prev.class || matchedDept?.class || matchedDept?.name || '',
+        class: nextClass,
       }
     })
   }, [departments])
 
-  const getDefaultDivisionForCompany = useCallback((companyName) => {
-    const filtered = (D.departments || []).filter(
+  const getDefaultDepartmentForCompany = useCallback((companyName) => {
+    return (D.departments || []).find(
       d => !companyName || normalizeCompany(d.company) === normalizeCompany(companyName)
-    )
-    return filtered[0]?.originalIndex ?? ''
+    ) || null
   }, [D.departments])
 
   // Backend returns only budgets accessible to this user.
@@ -307,7 +329,7 @@ export default function NewRP({
 
   // Companies and divisions — backend already shaped and scoped
   const companyOptions  = D.companies  || []
-  const divisionOptions = departments.map(d => ({ value: d.originalIndex, label: d.label }))
+  const divisionOptions = departments.map(d => ({ value: getDepartmentValue(d), label: d.label }))
   const processDivOptions = (D.processorDepts || []).map(d => ({ value: d, label: d }))
   const canChangeDivision = isAdmin || divisionOptions.length > 1
   const vendorOptions = useMemo(() => (D.vendors || []).map(v => ({ value: v.name, label: v.name })), [D.vendors])
@@ -457,12 +479,15 @@ export default function NewRP({
                       <SearchableSelect
                         name="companyName"
                         value={values.companyName}
-                        onChange={selectedValue => setValues(prev => ({
-                          ...prev,
-                          companyName: selectedValue,
-                          divisi: getDefaultDivisionForCompany(selectedValue),
-                          class: '',
-                        }))}
+                        onChange={selectedValue => {
+                          const nextDept = getDefaultDepartmentForCompany(selectedValue)
+                          setValues(prev => ({
+                            ...prev,
+                            companyName: selectedValue,
+                            divisi: nextDept ? getDepartmentValue(nextDept) : '',
+                            class: nextDept?.class || '',
+                          }))
+                        }}
                         options={companyOptions}
                         placeholder="Select company..."
                         className="frp-select"
@@ -482,14 +507,21 @@ export default function NewRP({
                       <SearchableSelect
                         name="divisi"
                         value={values.divisi}
-                        onChange={selectedValue => updateField('divisi', selectedValue)}
+                        onChange={selectedValue => {
+                          const selectedDept = findDepartmentByValue(departments, selectedValue)
+                          setValues(prev => ({
+                            ...prev,
+                            divisi: selectedValue,
+                            class: selectedDept?.class || '',
+                          }))
+                        }}
                         options={divisionOptions}
                         placeholder="Select divisi..."
                         className="frp-select"
                         menuPosition="fixed"
-                      />
-                    ) : (
-                      <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
+                    />
+                  ) : (
+                      <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.class || values.divisi} readOnly />
                     )}
                   </FloatingGroup>
                   <FloatingGroup label="Request By">

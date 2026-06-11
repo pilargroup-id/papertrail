@@ -44,6 +44,7 @@ const blankForm = {
   companyName: '',
   tanggalFrp: today,
   divisi: '',
+  kelas: '',
   dimintaOleh: '',
   currency: 'IDR',
   kurs: '1',
@@ -63,6 +64,19 @@ const blankForm = {
   fromRpId: '',
 }
 
+const getDepartmentValue = dept => String(dept?.originalIndex ?? dept?.id ?? '')
+
+const findDepartmentByValue = (departments, currentValue) => {
+  if (!Array.isArray(departments) || departments.length === 0) return null
+
+  const normalizedValue = normalizeCompany(currentValue)
+  return departments.find(d =>
+    getDepartmentValue(d) === String(currentValue) ||
+    normalizeCompany(d.name) === normalizedValue ||
+    normalizeCompany(d.class) === normalizedValue
+  ) || null
+}
+
 const buildInitialForm = (data, isDuplicate = false) => {
   let initialCompany = data.selectedCompany || data.user?.selectedCompany || data.user?.companyName || data.user?.company || '';
   if (data.companies && initialCompany) {
@@ -79,23 +93,32 @@ const buildInitialForm = (data, isDuplicate = false) => {
   }
 
   let initialDivisi = '';
+  let initialKelas = '';
   if (data.departments && data.departments.length > 0) {
     const userDiv = normalizeCompany(data.selectedDivision || '');
     const matched = data.departments.find(d => normalizeCompany(d.class) === userDiv || normalizeCompany(d.name) === userDiv);
-    if (matched) initialDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+    if (matched) {
+      initialDivisi = getDepartmentValue(matched);
+      initialKelas = matched.class || '';
+    }
   } else {
     initialDivisi = data.selectedDivision || '';
   }
   base.divisi = initialDivisi;
+  base.kelas = initialKelas;
 
   if (!data.editData) return base
 
   let editDivisi = base.divisi;
+  let editKelas = base.kelas;
   if (data.departments && data.departments.length > 0) {
     const dName = normalizeCompany(data.editData.departmentName || data.editData.department_name || '');
     const dClass = normalizeCompany(data.editData.departmentClass || data.editData.department_class || '');
     const matched = data.departments.find(d => normalizeCompany(d.name) === dName && (!dClass || normalizeCompany(d.class) === dClass));
-    if (matched) editDivisi = matched.originalIndex !== undefined ? matched.originalIndex : matched.id;
+    if (matched) {
+      editDivisi = getDepartmentValue(matched);
+      editKelas = matched.class || '';
+    }
     else if (data.editData.department_id) editDivisi = data.editData.department_id;
   } else {
     editDivisi = data.editData.departmentName || data.editData.department_name || base.divisi;
@@ -105,6 +128,7 @@ const buildInitialForm = (data, isDuplicate = false) => {
     ...base,
     ...data.editData,
     divisi: editDivisi,
+    kelas: editKelas || data.editData.kelas || data.editData.departmentClass || data.editData.department_class || '',
     tanggalFrp: isDuplicate ? today : (data.editData.tanggalFrp || data.editData.frpDate || today),
     id: isDuplicate ? '' : (data.editData.id || ''),
     rpReference: isDuplicate ? '' : (data.editData.rpReference || ''),
@@ -347,7 +371,10 @@ export default function NewFRP() {
 
     setValues(prev => {
       const nextDivisi = resolveDepartmentValue(departments, prev.divisi)
-      return nextDivisi === prev.divisi ? prev : { ...prev, divisi: nextDivisi }
+      const matchedDept = findDepartmentByValue(departments, nextDivisi)
+      const nextKelas = matchedDept?.class || prev.kelas || ''
+      if (nextDivisi === prev.divisi && nextKelas === prev.kelas) return prev
+      return { ...prev, divisi: nextDivisi, kelas: nextKelas }
     })
   }, [departments])
 
@@ -362,19 +389,21 @@ export default function NewFRP() {
     previousCompanyRef.current = currentCompany
 
     setValues(prev => {
-      const nextDivisi = currentCompany ? getDefaultDivisionForCompany(currentCompany) : ''
-      return prev.divisi === nextDivisi ? prev : { ...prev, divisi: nextDivisi }
+      const nextDept = currentCompany ? getDefaultDepartmentForCompany(currentCompany) : null
+      const nextDivisi = nextDept ? getDepartmentValue(nextDept) : ''
+      const nextKelas = nextDept?.class || ''
+      if (prev.divisi === nextDivisi && prev.kelas === nextKelas) return prev
+      return { ...prev, divisi: nextDivisi, kelas: nextKelas }
     })
   }, [values.companyName, departments])
 
-  const getDefaultDivisionForCompany = (companyName) => {
+  const getDefaultDepartmentForCompany = (companyName) => {
     const target = normalizeCompany(companyName)
-    const depts = (FRP.departments || []).filter(d => !target || normalizeCompany(d.company) === target)
-    return String(depts[0]?.originalIndex ?? depts[0]?.id ?? '')
+    return (FRP.departments || []).find(d => !target || normalizeCompany(d.company) === target) || null
   }
 
   const divisionSelectOptions = useMemo(
-    () => departments.map(d => ({ value: d.originalIndex, label: d.label })),
+    () => departments.map(d => ({ value: getDepartmentValue(d), label: d.label })),
     [departments],
   )
   const canChangeDivision = FRP.user?.role === 'administrator' || divisionSelectOptions.length > 1
@@ -570,6 +599,7 @@ export default function NewFRP() {
     setSubmitting(true)
     try {
       const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
+      const selectedClass = values.kelas || selectedDept?.class || '';
 
       const payload = {
         frpId: values.id || undefined,
@@ -577,7 +607,7 @@ export default function NewFRP() {
         
         companyName: values.companyName,
         divisi: selectedDept ? selectedDept.name : values.divisi,
-        kelas: selectedDept ? selectedDept.class : '',
+        kelas: selectedClass,
         dimintaOleh: values.dimintaOleh,
         rpReference: values.rpReference,
         attachLink: values.attachLink,
@@ -668,8 +698,13 @@ export default function NewFRP() {
                       name="companyName"
                       value={values.companyName}
                       onChange={selectedValue => {
-                        updateField('companyName', selectedValue)
-                        updateField('divisi', getDefaultDivisionForCompany(selectedValue))
+                        const nextDept = getDefaultDepartmentForCompany(selectedValue)
+                        setValues(prev => ({
+                          ...prev,
+                          companyName: selectedValue,
+                          divisi: nextDept ? getDepartmentValue(nextDept) : '',
+                          kelas: nextDept?.class || '',
+                        }))
                       }}
                       options={companySelectOptions}
                       placeholder="Select company..."
@@ -726,7 +761,7 @@ export default function NewFRP() {
               </div>
               <div className="frp-grid-3" style={{ marginTop: "20px", gridTemplateColumns: (!isMobile && !isTablet) ? 'minmax(0, 1.8fr) minmax(0, 1.2fr) 170px' : undefined }}>
                 <FloatingGroup label="Division & Class">
-                  <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
+                  <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.kelas || values.divisi} readOnly />
                 </FloatingGroup>
                 <FloatingGroup label="Request by">
                   <input className="frp-input-readonly" value={values.dimintaOleh} readOnly />
