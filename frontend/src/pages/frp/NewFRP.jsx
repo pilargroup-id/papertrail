@@ -1028,8 +1028,8 @@ export default function NewFRP() {
                 <FloatingGroup label="destination bank">
                   <input name="bankTujuan" className="frp-input" placeholder="Bank Name..." value={values.bankTujuan || ''} onChange={e => updateField('bankTujuan', e.target.value)} />
                 </FloatingGroup>
-                <FloatingGroup label="Rekening Bank Tujuan">
-                  <input name="rekBankTujuan" className="frp-input" placeholder="account number..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
+                <FloatingGroup label="destination bank account">
+                  <input name="rekBankTujuan" className="frp-input" placeholder="Account number..." value={values.rekBankTujuan || ''} onChange={e => updateField('rekBankTujuan', e.target.value)} />
                 </FloatingGroup>
               </div>
               <div style={{ marginTop: '16px' }}>
@@ -1093,9 +1093,9 @@ export default function NewFRP() {
                       <span className="material-icons-round" style={{ fontSize: '28px', color: '#94a3b8' }}>cloud_upload</span>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                         <span style={{ fontSize: '0.85rem', color: '#475569' }}>
-                          <span style={{ color: '#2563eb', fontWeight: '600' }}>Klik untuk upload</span> atau drag & drop
+                          <span style={{ color: '#2563eb', fontWeight: '600' }}>Click for upload</span> or drag & drop
                         </span>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Maks. 10MB (Dokumen/Gambar)</span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Max. 10MB (Documents/Images)</span>
                       </div>
                     </div>
                   )}

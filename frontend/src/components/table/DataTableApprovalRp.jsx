@@ -131,7 +131,7 @@ const desktopHeaders = [
   { label: 'Requestor & Vendor', key: 'creator' },
   { label: 'Division', key: 'division' },
   { label: 'Receiver PIC', key: 'receiverPic' },
-  { label: 'Total', key: 'total' },
+  { label: 'Total Amount', key: 'total' },
   { label: 'Status', key: 'status' },
   { label: 'Action', key: null },
 ]
