@@ -23,7 +23,7 @@ export default function SelectDivisionPage({
 
     let cancelled = false
 
-    fetch('/api/data/select-division')
+    fetch('api/departments')
       .then((response) => {
         if (!response.ok) {
           window.location.href = '/'
