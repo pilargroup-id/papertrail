@@ -494,7 +494,7 @@ export default function NewRP({
 
       return false
     })
-  }
+  } 
 
   const budgetOptions = useMemo(() => {
     const budgets = D.budgets || []
