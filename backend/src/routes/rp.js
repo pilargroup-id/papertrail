@@ -850,13 +850,14 @@ router.get('/api/data/rp-approval', checkAuth, async (req, res) => {
     }
 
     const lookScope = await getRpLookScope(u);
+    const isPendingView = view === 'pending';
 
     if (lookScope === 'own') {
         reqs = reqs.filter(r =>
             sameCompanyName(r.companyName, u.selectedCompany) &&
             r.divisi === u.selectedDivision
         );
-    } else if (lookScope === 'processor') {
+    } else if (lookScope === 'processor' && !isPendingView) {
         reqs = reqs.filter(r =>
             sameCompanyName(r.companyName, u.selectedCompany) &&
             r.diprosesOleh === u.selectedDivision

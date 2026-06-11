@@ -16,6 +16,7 @@ export default function SearchableSelect({
   allowCustomInput = false,
   customInputLabel = 'Isi manual',
   customInputButtonLabel = 'Gunakan teks ini',
+  multiple = false,
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -33,10 +34,23 @@ export default function SearchableSelect({
         },
   )
 
+  const selectedValues = multiple
+    ? (Array.isArray(value) ? value : (value ? [value] : []))
+    : [value]
   const selectedOption = normalizedOptions.find(option => option.value === value)
+  const selectedOptions = normalizedOptions.filter(option => selectedValues.includes(option.value))
   const filteredOptions = normalizedOptions.filter(option =>
     String(option.keywords || '').toLowerCase().includes(search.toLowerCase()),
   )
+  const selectedSet = new Set(selectedValues.map(v => String(v)))
+
+  const toggleMultipleValue = optionValue => {
+    const normalizedValue = String(optionValue)
+    const current = new Set(selectedSet)
+    if (current.has(normalizedValue)) current.delete(normalizedValue)
+    else current.add(normalizedValue)
+    onChange(Array.from(current))
+  }
 
   // Calculate position of the trigger button
   const updateRect = useCallback(() => {
@@ -92,7 +106,7 @@ export default function SearchableSelect({
 
   const dropdown = (
     <div ref={dropdownRef} style={dropdownPortalStyle}>
-      {searchable && (
+        {searchable && (
         <div style={{ padding: '8px' }}>
           <input
             autoFocus
@@ -166,7 +180,10 @@ export default function SearchableSelect({
       <div style={{ maxHeight: '240px', overflowY: 'auto', borderTop: searchable ? '1px solid #f1f5f9' : 'none' }}>
         <button
           type="button"
-          onClick={() => { onChange(''); setOpen(false) }}
+          onClick={() => {
+            onChange(multiple ? [] : '')
+            setOpen(false)
+          }}
           style={{
             width: '100%',
             border: 'none',
@@ -185,24 +202,38 @@ export default function SearchableSelect({
           <button
             key={option.value}
             type="button"
-            onClick={() => { onChange(option.value); setOpen(false) }}
+            onClick={() => {
+              if (multiple) {
+                toggleMultipleValue(option.value)
+                return
+              }
+              onChange(option.value)
+              setOpen(false)
+            }}
             style={{
               width: '100%',
               border: 'none',
               borderTop: '1px solid #f8fafc',
-              background: option.value === value ? '#eff6ff' : 'white',
-              color: option.value === value ? '#1f4e8c' : '#1e293b',
+              background: (multiple ? selectedSet.has(String(option.value)) : option.value === value) ? '#eff6ff' : 'white',
+              color: (multiple ? selectedSet.has(String(option.value)) : option.value === value) ? '#1f4e8c' : '#1e293b',
               textAlign: 'left',
               padding: '10px 12px',
               fontFamily: 'inherit',
               fontSize: '0.875rem',
               cursor: 'pointer',
-              fontWeight: option.value === value ? 700 : 500,
+              fontWeight: (multiple ? selectedSet.has(String(option.value)) : option.value === value) ? 700 : 500,
               whiteSpace: 'normal',
               wordBreak: 'break-word',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
             }}
           >
-            {option.label}
+            <span>{option.label}</span>
+            {multiple && selectedSet.has(String(option.value)) && (
+              <span className="material-icons-round" style={{ fontSize: '16px', flexShrink: 0 }}>check</span>
+            )}
           </button>
         ))}
         {filteredOptions.length === 0 && (
@@ -235,19 +266,79 @@ export default function SearchableSelect({
         }}
         disabled={disabled}
       >
-        <span
-          style={{
-            display: 'block',
-            flex: 1,
-            color: value ? '#1e293b' : '#94a3b8',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            paddingRight: '12px',
-          }}
-        >
-          {selectedOption?.label || value || placeholder}
-        </span>
+        {multiple ? (
+          <span
+            style={{
+              display: 'flex',
+              flex: 1,
+              flexWrap: 'nowrap',
+              gap: '8px',
+              alignItems: 'center',
+              color: selectedOptions.length ? '#1e293b' : '#94a3b8',
+              paddingRight: '12px',
+              minWidth: 0,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {selectedOptions.length ? (
+              <>
+                {selectedOptions.slice(0, 1).map(option => (
+                  <span
+                    key={option.value}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      maxWidth: '100%',
+                      padding: '4px 10px',
+                      borderRadius: '999px',
+                      background: '#eaf2ff',
+                      color: '#1f4e8c',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      flexShrink: 1,
+                    }}
+                  >
+                    {option.label}
+                  </span>
+                ))}
+                {selectedOptions.length > 1 && (
+                  <span
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: '#64748b',
+                      flexShrink: 0,
+                    }}
+                  >
+                    +{selectedOptions.length - 1} lagi
+                  </span>
+                )}
+              </>
+            ) : (
+              <span style={{ display: 'block', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {placeholder}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span
+            style={{
+              display: 'block',
+              flex: 1,
+              color: value ? '#1e293b' : '#94a3b8',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              paddingRight: '12px',
+            }}
+          >
+            {selectedOption?.label || value || placeholder}
+          </span>
+        )}
         <span className="material-icons-round" style={{ fontSize: '18px', color: '#94a3b8', flexShrink: 0 }}>
           {open ? 'expand_less' : 'expand_more'}
         </span>
@@ -255,7 +346,7 @@ export default function SearchableSelect({
 
       {open && createPortal(dropdown, document.body)}
 
-      <input type="hidden" name={name} value={value} />
+      <input type="hidden" name={name} value={multiple ? selectedValues.join(', ') : value} />
     </div>
   )
 }

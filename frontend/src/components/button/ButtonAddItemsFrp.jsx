@@ -8,12 +8,28 @@ function ButtonCreateBudgets({
   children,
   className = '',
   type = 'button',
+  compact = false,
+  style,
   ...buttonProps
 }) {
   return (
     <button
       type={type}
       className={`frp-btn-primary ${className}`.trim()}
+      style={{
+        ...(compact
+          ? {
+              width: '52px',
+              minWidth: '52px',
+              height: '46px',
+              padding: 0,
+              borderRadius: '12px',
+              gap: 0,
+              flexShrink: 0,
+            }
+          : {}),
+        ...style,
+      }}
       {...buttonProps}
     >
       {icon || (
@@ -21,7 +37,7 @@ function ButtonCreateBudgets({
           add
         </span>
       )}
-      {value || children || 'Add Items'}
+      {!compact && (value || children || 'Add Items')}
     </button>
   )
 }
