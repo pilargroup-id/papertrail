@@ -238,14 +238,35 @@ router.get('/api/managers/:department', checkAuth, async (req, res) => {
     }
 });
 
+function toPilargroupUserInfo(user) {
+    return {
+        id: user.id,
+        internal_id: user.internal_id ?? null,
+        username: user.username,
+        name: user.name || user.fullName || user.username,
+        email: user.email ?? null,
+        phone: user.phone ?? null,
+
+        departments: user.departments || [],
+        companies: user.companies || [],
+
+        department_id: user.department_id ?? user.departmentId ?? null,
+        department: user.department || user.departmentName || user.selectedDivision || '',
+
+        company_id: user.company_id || user.companyId || '',
+        company: user.company || user.companyName || user.selectedCompany || '',
+
+        job_position: user.job_position || user.jobPosition || '',
+        job_level: user.job_level || user.jobLevelName || user.selectedJobLevel || '',
+        job_level_value: user.job_level_value ?? user.jobLevelRank ?? null,
+
+        apps: user.apps || [],
+        cv: user.cv ?? null,
+    };
+}
+
 router.get('/api/user/info', checkAuth, (req, res) => {
-    const u = req.session.user;
-    res.json({
-        ...u,
-        selectedCompany: u.selectedCompany || '',
-        selectedDivision: u.selectedDivision || '',
-        selectedJobLevel: u.selectedJobLevel || '',
-    });
+    res.json(toPilargroupUserInfo(req.session.user));
 });
 
 router.get('/api/user/departement', checkAuth, async (req, res) => {

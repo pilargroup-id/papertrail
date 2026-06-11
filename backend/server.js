@@ -151,8 +151,9 @@ app.use(async (req, res, next) => {
             ...user,
             sso: true,
             apps: allowedApps,
+            cv: user.cv ?? decoded.cv ?? null,
         };
-
+        
         req.session.save((err) => {
             if (err) {
                 console.error('Failed to save SSO session:', err);

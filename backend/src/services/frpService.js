@@ -10,12 +10,43 @@ const { normalizeCompanyCode } = require('../utils/company');
 // ============================================================
 
 function normalizeAssignmentList(u, departmentEmployees = []) {
+    const company =
+        (Array.isArray(u?.companies) && (
+            u.companies.find(c => Number(c.is_primary) === 1) || u.companies[0]
+        )) || {
+            id: u?.company_id || u?.companyId || '',
+            code: u?.companyCode || '',
+            name: u?.company || u?.companyName || u?.selectedCompany || '',
+        };
+
+    const departmentAssignments = Array.isArray(u?.departments)
+        ? u.departments.map(d => ({
+            id: company.id || '',
+            code: company.code || '',
+            name: company.name || '',
+            class: d.class || '',
+            department_id: d.id || null,
+            dept_name: d.name || '',
+            dept_class: d.class || '',
+            dept_code: d.code || '',
+            job_level_name: u?.job_level || u?.jobLevelName || u?.selectedJobLevel || '',
+            job_level_rank: u?.job_level_value ?? u?.jobLevelRank ?? null,
+            classes: d.class ? [d.class] : [],
+        }))
+        : [];
+
     const sessionAssignments = Array.isArray(u?.allAssignments) ? u.allAssignments : [];
     const fallbackAssignments = Array.isArray(departmentEmployees)
         ? departmentEmployees.flatMap(emp => Array.isArray(emp?.allAssignments) ? emp.allAssignments : [])
         : [];
 
-    const source = sessionAssignments.length > 0 ? sessionAssignments : fallbackAssignments;
+    const source =
+        sessionAssignments.length > 0
+            ? sessionAssignments
+            : departmentAssignments.length > 0
+                ? departmentAssignments
+                : fallbackAssignments;
+
     const seen = new Set();
 
     return source.filter(a => {
@@ -69,18 +100,18 @@ function resolveSelectedScope(u, allAssignments = []) {
 
 function getFrpSnapshotFromUser(user) {
     return {
-        companyId: user.companyId || null,
+        companyId: user.companyId || user.company_id || null,
         companyCode: user.companyCode || '',
-        companyName: user.companyName || user.selectedCompany || '',
+        companyName: user.companyName || user.company || user.selectedCompany || '',
 
-        departmentId: user.departmentId || null,
-        departmentName: user.departmentName || '',
-        departmentClass: user.departmentClass || user.selectedDivision || '',
+        departmentId: user.departmentId || user.department_id || null,
+        departmentName: user.departmentName || user.department || '',
+        departmentClass: user.departmentClass || user.department || user.selectedDivision || '',
         departmentCode: user.departmentCode || '',
 
         jobLevelId: user.jobLevelId || null,
-        jobLevelName: user.jobLevelName || user.selectedJobLevel || '',
-        jobLevelRank: user.jobLevelRank || null,
+        jobLevelName: user.jobLevelName || user.job_level || user.selectedJobLevel || '',
+        jobLevelRank: user.jobLevelRank ?? user.job_level_value ?? null,
 
         createdByUserId: user.id || null,
         createdByUserName: user.fullName || user.name || user.username || '',

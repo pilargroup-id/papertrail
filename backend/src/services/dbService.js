@@ -37,9 +37,10 @@ function dbRowsToEmployees(rows) {
         if (!grouped.has(row.id)) {
             grouped.set(row.id, {
                 row,
-                assignments: [],
-                assignmentMap: new Map(),
-                isAdmin: false,
+                departments: [],
+                companies: [],
+                departmentMap: new Map(),
+                companyMap: new Map(),
             });
         }
 
@@ -54,103 +55,116 @@ function dbRowsToEmployees(rows) {
         const departmentClass = row.dept_class || '';
         const departmentCode = row.dept_code || '';
 
-        const jobLevelName = mapJobLevel(row.job_level_name);
-        const jobLevelRank = row.job_level_rank ?? null;
+        if (departmentId || departmentName || departmentClass || departmentCode) {
+            const departmentKey = String(departmentId || `${departmentName}|${departmentClass}|${departmentCode}`);
 
-        if (
-            departmentId === 8 ||
-            departmentClass.toUpperCase() === 'IT' ||
-            departmentName.toUpperCase() === 'IT'
-        ) {
-            entry.isAdmin = true;
+            if (!entry.departmentMap.has(departmentKey)) {
+                const department = {
+                    id: departmentId,
+                    name: departmentName,
+                    class: departmentClass,
+                    code: departmentCode,
+                    is_primary: Number(row.department_is_primary || 0),
+                };
+
+                entry.departmentMap.set(departmentKey, department);
+                entry.departments.push(department);
+            }
         }
 
-        if (companyId || companyCode || companyName || departmentName || departmentClass) {
-            const groupKey = `${companyId}|${departmentId}|${departmentClass}|${jobLevelName}|${jobLevelRank}`;
+        if (companyId || companyCode || companyName) {
+            const companyKey = String(companyId || companyCode || companyName);
 
-            if (!entry.assignmentMap.has(groupKey)) {
-                const assignment = {
+            if (!entry.companyMap.has(companyKey)) {
+                const company = {
                     id: companyId,
                     code: companyCode,
                     name: companyName,
-                    class: departmentClass,
-                    department_id: departmentId,
-                    dept_name: departmentName,
-                    dept_class: departmentClass,
-                    dept_code: departmentCode,
-                    job_level_name: jobLevelName,
-                    job_level_rank: jobLevelRank,
-                    classes: departmentClass ? [departmentClass] : [],
+                    is_primary: Number(row.company_is_primary || 0),
                 };
 
-                entry.assignmentMap.set(groupKey, assignment);
-                entry.assignments.push(assignment);
-            } else {
-                const existing = entry.assignmentMap.get(groupKey);
-
-                if (departmentClass && !existing.classes.includes(departmentClass)) {
-                    existing.classes.push(departmentClass);
-                }
+                entry.companyMap.set(companyKey, company);
+                entry.companies.push(company);
             }
         }
     });
 
-    return [...grouped.values()].map(({ row, assignments, isAdmin }) => {
-        const primaryAssignment = assignments[0] || {};
+    return [...grouped.values()].map(({ row, departments, companies }) => {
+        const primaryDepartment =
+            departments.find(d => Number(d.is_primary) === 1) ||
+            departments[0] ||
+            {};
 
-        const companyId = primaryAssignment.id || row.company_id || '';
-        const companyCode = primaryAssignment.code || normalizeCompanyCode(row.company_code || row.company_name);
-        const companyName = primaryAssignment.name || normalizeCompanyName(row.company_code, row.company_name);
+        const primaryCompany =
+            companies.find(c => Number(c.is_primary) === 1) ||
+            companies[0] ||
+            {};
 
-        const departmentId = primaryAssignment.department_id || row.department_id || null;
-        const departmentCode = primaryAssignment.dept_code || row.dept_code || '';
-        const departmentName = primaryAssignment.dept_name || row.dept_name || '';
-        const departmentClass = primaryAssignment.dept_class || row.dept_class || '';
-
-        const jobLevelName = primaryAssignment.job_level_name || mapJobLevel(row.job_level_name);
-        const jobLevelRank = primaryAssignment.job_level_rank ?? row.job_level_rank ?? null;
-
-        const finalAssignments = assignments.length
-            ? assignments
-            : [
-                {
-                    id: companyId || '',
-                    code: companyCode || '',
-                    name: companyName || COMPANY_MAP.PNM,
-                    class: departmentClass || '',
-                    department_id: departmentId,
-                    dept_name: departmentName || '',
-                    dept_class: departmentClass || '',
-                    dept_code: departmentCode || '',
-                    job_level_name: jobLevelName,
-                    job_level_rank: jobLevelRank,
-                    classes: departmentClass ? [departmentClass] : [],
-                },
-            ];
+        const jobLevelName = mapJobLevel(row.job_level_name);
+        const jobLevelRank = row.job_level_rank ?? null;
 
         return {
             id: row.id,
+            internal_id: row.internal_id ?? null,
             username: row.username,
-            email: row.email || null,
-            fullName: row.name,
             name: row.name,
+            email: row.email || null,
+            phone: row.phone || null,
 
-            companyId,
-            companyCode,
-            companyName,
-            selectedCompany: companyName,
+            departments,
+            companies,
 
-            departmentId,
-            departmentCode,
-            departmentName,
-            departmentClass,
-            selectedDivision: departmentClass || departmentName,
+            department_id: primaryDepartment.id || null,
+            department: primaryDepartment.name || '',
+
+            company_id: primaryCompany.id || '',
+            company: primaryCompany.name || '',
+
+            job_position: row.job_position || '',
+            job_level: jobLevelName,
+            job_level_value: jobLevelRank,
+
+            cv: row.token_version ?? null,
+
+            // Compatibility fields for Papertrail internal logic
+            fullName: row.name,
+            role:
+                departments.some(d =>
+                    Number(d.id) === 8 ||
+                    String(d.class || '').toUpperCase() === 'IT' ||
+                    String(d.name || '').toUpperCase() === 'IT'
+                )
+                    ? 'administrator'
+                    : 'user',
+
+            companyId: primaryCompany.id || '',
+            companyCode: primaryCompany.code || '',
+            companyName: primaryCompany.name || '',
+            selectedCompany: primaryCompany.name || '',
+
+            departmentId: primaryDepartment.id || null,
+            departmentCode: primaryDepartment.code || '',
+            departmentName: primaryDepartment.name || '',
+            departmentClass: primaryDepartment.class || '',
+            selectedDivision: primaryDepartment.class || primaryDepartment.name || '',
 
             jobLevelName,
             jobLevelRank,
             selectedJobLevel: jobLevelName,
 
-            allAssignments: finalAssignments,
+            allAssignments: departments.map(d => ({
+                id: primaryCompany.id || '',
+                code: primaryCompany.code || '',
+                name: primaryCompany.name || '',
+                class: d.class || '',
+                department_id: d.id || null,
+                dept_name: d.name || '',
+                dept_class: d.class || '',
+                dept_code: d.code || '',
+                job_level_name: jobLevelName,
+                job_level_rank: jobLevelRank,
+                classes: d.class ? [d.class] : [],
+            })),
         };
     });
 }
