@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import SearchableSelect from '../../components/SearchableSelect.jsx'
+import { frpService } from '../../services/frp/new-frp'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -411,14 +412,7 @@ export default function FormPage() {
 
   useEffect(() => {
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-    fetch(`/api/form-data${query}`)
-      .then(r => {
-        if (!r.ok) {
-          window.location.href = '/'
-          throw new Error(`HTTP ${r.status}`)
-        }
-        return r.json()
-      })
+    frpService.getFormData(query)
       .then(async data => {
         setFrpData(data)
         setUser(data?.user)
@@ -428,8 +422,7 @@ export default function FormPage() {
         const fromRpId = searchParams.get('fromRp')
         if (fromRpId) {
           try {
-            const rpRes = await fetch(`/api/rp/${fromRpId}`)
-            const rpJson = await rpRes.json()
+            const rpJson = await frpService.getRpData(fromRpId)
             if (rpJson && rpJson.data) {
               const rp = rpJson.data
 
@@ -759,12 +752,11 @@ export default function FormPage() {
                         } else {
                           updateField('kurs', 'Memuat...')
                           try {
-                            const res = await fetch(`/api/kurs/${selectedValue}`)
-                            const data = await res.json()
+                            const data = await frpService.getKurs(selectedValue)
                             if (data.success && data.rate) {
                               updateField('kurs', String(data.rate))
                             } else {
-                              updateField('kurs', '1') // fallback
+                              updateField('kurs', '1')
                               console.error('API Error:', data.error)
                             }
                           } catch (e) {

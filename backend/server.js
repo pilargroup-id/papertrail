@@ -92,6 +92,11 @@ app.use(async (req, res, next) => {
         return next();
     }
 
+    // Di dev mode tanpa JWT_SECRET, abaikan token (devAuth sudah handle session)
+    if (!process.env.JWT_SECRET) {
+        return next();
+    }
+
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 

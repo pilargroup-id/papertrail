@@ -39,9 +39,8 @@ const desktopHeaders = [
 const desktopColumnWidths = ['14%', '15%', '7%', '7%', '9%', '8%', '14%']
 
 export default function DataTableApprovalFrp({
-  paginated,
-  filtered,
-  calcTotal,
+  requests,
+  total,
   isApprovedView,
   canApprove,
   requestAction,
@@ -145,7 +144,7 @@ export default function DataTableApprovalFrp({
     return pages
   }
 
-  const isEmpty = filtered.length === 0
+  const isEmpty = total === 0
 
   if (isEmpty && isMobile) {
     return (
@@ -160,8 +159,7 @@ export default function DataTableApprovalFrp({
     return (
       <>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {paginated.map((request) => {
-            const total = calcTotal(request)
+          {requests.map((request) => {
             const statusStyle = statusColors[request.status] || {}
             return (
               <div
@@ -195,7 +193,7 @@ export default function DataTableApprovalFrp({
                   ))}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Total</div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#0f172a' }}>{formatCurrency(total)}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#0f172a' }}>{formatCurrency(request.total || 0)}</div>
                   </div>
                   {/* {isApprovedView && request.approvedBy && (
                     <div style={{ gridColumn: '1 / -1' }}>
@@ -249,7 +247,7 @@ export default function DataTableApprovalFrp({
 
         {/* Pagination Mobile */}
         <div style={{ flexShrink: 0, borderTop: '1px solid #e2e8f0', padding: '12px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', borderRadius: '0 0 16px 16px' }}>
-          <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {filtered.length}</div>
+          <div style={{ fontSize: '12px', color: '#64748b' }}>{rangeStart}-{rangeEnd} dari {total}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>
             <select value={rowsPerPage} onChange={(e) => setRowsPerPage(Number(e.target.value))} style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px' }}>
@@ -313,8 +311,7 @@ export default function DataTableApprovalFrp({
               {desktopColumnWidths.map((width, index) => <col key={`desktop-body-col-${index}`} style={{ width }} />)}
             </colgroup>
             <tbody>
-              {paginated.length > 0 ? paginated.map((request, idx) => {
-                const total = calcTotal(request)
+              {requests.length > 0 ? requests.map((request, idx) => {
                 const statusStyle = statusColors[request.status] || {}
                 const absoluteIndex = (safeCurrentPage - 1) * rowsPerPage + idx
                 const rowBg = absoluteIndex % 2 === 0 ? 'white' : '#fafbfc'
@@ -416,7 +413,7 @@ export default function DataTableApprovalFrp({
 
                       {/* 4. Total */}
                       <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>
-                        {formatCurrency(total)}
+                        {formatCurrency(request.total || 0)}
                       </td>
 
                       {/* 5. Status */}
@@ -619,7 +616,7 @@ export default function DataTableApprovalFrp({
             </select>
           </div>
           <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
-            Menampilkan {rangeStart}-{rangeEnd} dari {filtered.length} data
+            Menampilkan {rangeStart}-{rangeEnd} dari {total} data
           </span>
         </div>
 
