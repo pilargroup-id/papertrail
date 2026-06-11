@@ -1,20 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState, Fragment } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import DialogFrpDetail from '../../components/Dialog/DialogDetailFrp'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
 import { useUser } from '../../contexts/UserContext'
-import FilterApprovalFrp from './FilterApprovalFrp'
 import DataTableApprovalFrp from '../../components/table/DataTableApprovalFrp'
 import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import DialogFailAction from '../../components/Dialog/DialogFailAction'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
-
-function parseAmount(amount) {
-  return parseInt(String(amount || '0').replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0
-}
 
 function formatDate(value) {
   return value
@@ -24,10 +19,6 @@ function formatDate(value) {
       year: 'numeric',
     }).format(new Date(value))
     : '-'
-}
-
-function formatCurrency(value) {
-  return `IDR ${value.toLocaleString('id-ID')}`
 }
 
 const getGridColumns = (desktopColumns, isMobile, isTablet) => {
@@ -312,129 +303,67 @@ export default function ApprovalFRP() {
   })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
 
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [confirmAction, setConfirmAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionResultDialog, setActionResultDialog] = useState(null)
 
   const requestSort = (key) => {
     if (!key) return
-    let direction = 'asc'
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc'
-    }
-    setSortConfig({ key, direction })
+    setSortConfig(c => ({ key, direction: c.key === key && c.direction === 'asc' ? 'desc' : 'asc' }))
+    setCurrentPage(1)
   }
 
-  const loadData = () => {
-    fetch(`/api/data/approval?view=${isApprovedView ? 'approved' : 'pending'}`)
-      .then((response) => {
-        if (!response.ok) {
-          window.location.href = '/'
-          throw new Error('Unauthorized')
-        }
+  const setFilter = (key, value) => {
+    setCurrentPage(1)
+    setFilters(c => ({ ...c, [key]: value }))
+  }
 
-        return response.json()
+  const handleRowsPerPage = (value) => {
+    setRowsPerPage(value)
+    setCurrentPage(1)
+  }
+
+  useEffect(() => {
+    const ctrl = new AbortController()
+    setLoading(true)
+    const params = new URLSearchParams()
+    params.set('view', isApprovedView ? 'approved' : 'pending')
+    params.set('page', currentPage)
+    params.set('limit', rowsPerPage)
+    params.set('sortBy', sortConfig.key)
+    params.set('sortDir', sortConfig.direction)
+    if (filters.search)    params.set('search',    filters.search)
+    if (filters.date)      params.set('date',      filters.date)
+    if (filters.requester) params.set('requester', filters.requester)
+    if (filters.status)    params.set('status',    filters.status)
+    if (filters.division)  params.set('division',  filters.division)
+    fetch(`/api/data/frp-approval?${params}`, { signal: ctrl.signal })
+      .then(r => {
+        if (!r.ok) { window.location.href = '/'; throw new Error('Unauthorized') }
+        return r.json()
       })
-      .then(d => {
-        setData(d)
-        setUser(d?.user)
+      .then(nextData => {
+        setData(nextData)
+        setUser(nextData?.meta?.user)
       })
-      .catch(() => { })
+      .catch(e => { if (e.name !== 'AbortError') console.error(e) })
       .finally(() => setLoading(false))
-  }
+    return () => ctrl.abort()
+  }, [isApprovedView, currentPage, rowsPerPage, sortConfig.key, sortConfig.direction,
+    filters.search, filters.date, filters.requester, filters.status, filters.division, refreshKey])
 
   useEffect(() => {
-    loadData()
-  }, [isApprovedView])
-
-  useEffect(() => {
-    const handler = (event) => {
-      if (event.data === 'refresh') {
-        loadData()
-      }
-    }
-
+    const handler = e => { if (e.data === 'refresh') setRefreshKey(k => k + 1) }
     window.addEventListener('message', handler)
-
     return () => window.removeEventListener('message', handler)
-  }, [isApprovedView])
+  }, [])
 
   useEffect(() => {
     const handleResize = () => setViewportWidth(window.innerWidth)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
-
-  const calcTotal = (request) => {
-    if (!request.items) {
-      return 0
-    }
-
-    return request.items.reduce((sum, item) => sum + parseAmount(item.amount), 0)
-  }
-
-  const divisions = useMemo(
-    () => (data?.requests ? [...new Set(data.requests.map((request) => request.divisi))].sort() : []),
-    [data],
-  )
-
-  const filtered = useMemo(() => {
-    if (!data?.requests) {
-      return []
-    }
-
-    const filteredList = data.requests.filter((request) => {
-      const searchLower = (filters.search || '').toLowerCase()
-      const matchSearch =
-        !searchLower ||
-        (request.frpNo || '').toLowerCase().includes(searchLower) ||
-        (request.vendor || '').toLowerCase().includes(searchLower) ||
-        (request.dimintaOleh || '').toLowerCase().includes(searchLower) ||
-        (request.divisi || '').toLowerCase().includes(searchLower) ||
-        (request.status || '').toLowerCase().includes(searchLower) ||
-        (request.approvedBy || '').toLowerCase().includes(searchLower) ||
-        (request.items || []).some(item => 
-          (item.memo || '').toLowerCase().includes(searchLower) ||
-          (item.budgetId || '').toLowerCase().includes(searchLower) ||
-          (item.projectName || '').toLowerCase().includes(searchLower)
-        )
-      const matchDate = !filters.date || request.tanggalFrp === filters.date
-      const matchRequester =
-        !filters.requester ||
-        (request.dimintaOleh || '').toLowerCase().includes(filters.requester.toLowerCase())
-      const matchStatus = !filters.status || request.status === filters.status
-      const matchDivision = !filters.division || request.divisi === filters.division
-
-      return matchSearch && matchDate && matchRequester && matchStatus && matchDivision
-    })
-
-    return filteredList.sort((a, b) => {
-      let valA, valB;
-      if (sortConfig.key === 'date') {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (parseInt(a.id) || 0);
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (parseInt(b.id) || 0);
-        return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
-      } else if (sortConfig.key === 'requester') {
-        valA = (a.dimintaOleh || '').toLowerCase();
-        valB = (b.dimintaOleh || '').toLowerCase();
-      } else if (sortConfig.key === 'division') {
-        valA = (a.divisi || '').toLowerCase();
-        valB = (b.divisi || '').toLowerCase();
-      } else if (sortConfig.key === 'status') {
-        valA = (a.status || '').toLowerCase();
-        valB = (b.status || '').toLowerCase();
-      } else if (sortConfig.key === 'total') {
-        valA = calcTotal(a);
-        valB = calcTotal(b);
-        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-      }
-
-      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [data, filters, sortConfig])
 
   const confirmActionMeta = {
     approve: {
@@ -504,7 +433,7 @@ export default function ApprovalFRP() {
             rpNo: request.frpNo,
           })
         } else {
-          loadData()
+          setRefreshKey(k => k + 1)
         }
       } else {
         window.alert(result.error || 'Gagal memproses data')
@@ -516,11 +445,16 @@ export default function ApprovalFRP() {
     }
   }
 
-  const user = data?.user || {}
-  const userJobLevelRank = Number(user?.jobLevelRank || 0)
-  const canApprove = Boolean(data?.canApprove) && userJobLevelRank > 1
-  const isMobile = viewportWidth < MOBILE_BREAKPOINT
-  const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
+  const user       = data?.meta?.user || {}
+  const canApprove = Boolean(data?.canApprove) && Number(user?.jobLevelRank || 0) > 1
+  const isMobile   = viewportWidth < MOBILE_BREAKPOINT
+  const isTablet   = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
+
+  const total           = data?.pagination?.total      ?? 0
+  const totalPages      = data?.pagination?.totalPages ?? 1
+  const safeCurrentPage = data?.pagination?.page       ?? 1
+  const rangeStart      = total === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
+  const rangeEnd        = Math.min(total, safeCurrentPage * rowsPerPage)
 
   const filterInput = {
     width: '100%',
@@ -536,84 +470,10 @@ export default function ApprovalFRP() {
     minHeight: '42px',
   }
 
-  const detailValueBox = {
-    padding: '10px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #d7e0ea',
-    background: '#f8fafc',
-    color: '#334155',
-    lineHeight: 1.5,
-    minHeight: '42px',
-    boxSizing: 'border-box',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
-    transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
-  }
-
-  const requesters = useMemo(
-    () => (data?.requests ? [...new Set(data.requests.map((request) => request.dimintaOleh).filter(Boolean))].sort() : []),
-    [data],
-  )
-
-  const requesterOptions = useMemo(
-    () => requesters.map(requester => ({ value: requester, label: requester })),
-    [requesters],
-  )
-
-  const divisionOptions = useMemo(
-    () => divisions.map(division => ({ value: division, label: division })),
-    [divisions],
-  )
-
-  const statusOptions = useMemo(
-    () => [
-      { value: 'APPROVED', label: 'APPROVED' },
-      { value: 'REJECTED', label: 'REJECTED' },
-    ],
-    [],
-  )
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [filters, isApprovedView, rowsPerPage])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
-  const safeCurrentPage = Math.min(currentPage, totalPages)
-
-  const paginated = useMemo(() => {
-    const start = (safeCurrentPage - 1) * rowsPerPage
-    return filtered.slice(start, start + rowsPerPage)
-  }, [filtered, rowsPerPage, safeCurrentPage])
-
-  const rangeStart = filtered.length === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
-  const rangeEnd = Math.min(filtered.length, safeCurrentPage * rowsPerPage)
-
-  const exportToCSV = () => {
-    if (!filtered || filtered.length === 0) return
-    const headers = ['No FRP', 'Tanggal FRP', 'Pemohon', 'Vendor', 'Divisi', 'Total', 'Status']
-    const rows = filtered.map(req => [
-      req.frpNo || '',
-      formatDate(req.tanggalFrp),
-      req.dimintaOleh || '',
-      req.vendor || '',
-      req.divisi || '',
-      calcTotal(req),
-      req.status || ''
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.setAttribute('href', url)
-    link.setAttribute('download', `FRP_${isApprovedView ? 'History' : 'Pending'}_Export_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+  const requesterOptions = (data?.filters?.requesters || []).map(r => ({ value: r, label: r }))
+  const divisionOptions  = (data?.filters?.divisions  || []).map(d => ({ value: d, label: d }))
+  const statusOptions    = [{ value: 'APPROVED', label: 'APPROVED' }, { value: 'REJECTED', label: 'REJECTED' }]
+  const currentRows      = data?.data || []
 
   return (
     <>
@@ -761,7 +621,7 @@ export default function ApprovalFRP() {
                     style={filterInput}
                     placeholder="No FRP / Vendor..."
                     value={filters.search}
-                    onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
+                    onChange={(e) => setFilter('search', e.target.value)}
                   />
                 </FilterField>
 
@@ -769,7 +629,7 @@ export default function ApprovalFRP() {
                 <FilterField label="Date" icon="calendar_month">
                   <DateField
                     value={filters.date}
-                    onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
+                    onChange={(e) => setFilter('date', e.target.value)}
                     style={filterInput}
                   />
                 </FilterField>
@@ -778,7 +638,7 @@ export default function ApprovalFRP() {
                 <FilterField label="Request By" icon="person">
                   <SearchableSelect
                     value={filters.requester}
-                    onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
+                    onChange={(v) => setFilter('requester', v)}
                     options={requesterOptions}
                     placeholder="Semua Pemohon"
                     style={filterInput}
@@ -790,7 +650,7 @@ export default function ApprovalFRP() {
                   <FilterField label="Status" icon="rule">
                     <SearchableSelect
                       value={filters.status}
-                      onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
+                      onChange={(v) => setFilter('status', v)}
                       options={statusOptions}
                       placeholder="Semua Status"
                       style={filterInput}
@@ -802,7 +662,7 @@ export default function ApprovalFRP() {
                 <FilterField label="Division" icon="business">
                   <SearchableSelect
                     value={filters.division}
-                    onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
+                    onChange={(v) => setFilter('division', v)}
                     options={divisionOptions}
                     placeholder="Semua Divisi"
                     style={filterInput}
@@ -824,9 +684,8 @@ export default function ApprovalFRP() {
             }}
           >
             <DataTableApprovalFrp
-              paginated={paginated}
-              filtered={filtered}
-              calcTotal={calcTotal}
+              requests={currentRows}
+              total={total}
               isApprovedView={isApprovedView}
               canApprove={canApprove}
               requestAction={requestAction}
@@ -835,7 +694,7 @@ export default function ApprovalFRP() {
               sortConfig={sortConfig}
               safeCurrentPage={safeCurrentPage}
               rowsPerPage={rowsPerPage}
-              setRowsPerPage={setRowsPerPage}
+              setRowsPerPage={handleRowsPerPage}
               setCurrentPage={setCurrentPage}
               totalPages={totalPages}
               rangeStart={rangeStart}
@@ -884,7 +743,7 @@ export default function ApprovalFRP() {
           >
             <strong style={{ color: '#1e293b' }}>{confirmAction.request.frpNo || 'Draft FRP'}</strong>
             <span style={{ color: '#64748b' }}> dari </span>
-            <strong style={{ color: '#1e293b' }}>{confirmAction.request.dimintaOleh || '-'}</strong>
+            <strong style={{ color: '#1e293b' }}>{confirmAction.request.requesterName || '-'}</strong>
           </div>
         )}
       </DialogConfirm>
@@ -899,7 +758,7 @@ export default function ApprovalFRP() {
         icon={actionResultDialog?.action === 'revert' ? 'restart_alt' : 'check_circle'}
         onConfirm={() => {
           setActionResultDialog(null)
-          loadData()
+          setRefreshKey(k => k + 1)
         }}
         buttonText="Tutup"
       />
@@ -913,7 +772,7 @@ export default function ApprovalFRP() {
         referenceLabel="Nomor FRP"
         onConfirm={() => {
           setActionResultDialog(null)
-          loadData()
+          setRefreshKey(k => k + 1)
         }}
         buttonText="Tutup"
       />

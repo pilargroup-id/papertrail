@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import SearchableSelect from '../../components/SearchableSelect.jsx'
+import { frpService } from '../../services/frp/new-frp'
 
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1100
@@ -25,7 +26,9 @@ const normalizeCompany = v => String(v || '').trim().toUpperCase()
 
 const getEmployeeAssignments = e => {
   if (Array.isArray(e?.companies) && e.companies.length > 0) return e.companies
+  if (Array.isArray(e?.allAssignments) && e.allAssignments.length > 0) return e.allAssignments
   if (e?.class) return [{ name: e.company || '', class: e.class, jobLevel: e.jobLevel || '' }]
+  if (e?.departmentClass || e?.companyName) return [{ name: e.companyName || e.company || '', class: e.departmentClass || e.class || '' }]
   return []
 }
 
@@ -411,14 +414,7 @@ export default function FormPage() {
 
   useEffect(() => {
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-    fetch(`/api/form-data${query}`)
-      .then(r => {
-        if (!r.ok) {
-          window.location.href = '/'
-          throw new Error(`HTTP ${r.status}`)
-        }
-        return r.json()
-      })
+    frpService.getFormData(query)
       .then(async data => {
         setFrpData(data)
         setUser(data?.user)
@@ -428,8 +424,7 @@ export default function FormPage() {
         const fromRpId = searchParams.get('fromRp')
         if (fromRpId) {
           try {
-            const rpRes = await fetch(`/api/rp/${fromRpId}`)
-            const rpJson = await rpRes.json()
+            const rpJson = await frpService.getRpData(fromRpId)
             if (rpJson && rpJson.data) {
               const rp = rpJson.data
 
@@ -492,38 +487,34 @@ export default function FormPage() {
   )
 
   const filteredEmployees = useMemo(() => {
-    let sourceEmployees = FRP.user?.role === 'administrator' ? FRP.employees : FRP.departmentEmployees;
+    // Backend sudah filter by divisi (non-IT) atau semua (IT/admin)
+    // Frontend hanya filter by company jika ada multiple company
+    const sourceEmployees = FRP.employees;
     if (!sourceEmployees || sourceEmployees.length === 0) {
-      sourceEmployees = [{
+      return [{
         fullName: FRP.user?.fullName || '',
-        companies: [{
+        allAssignments: [{
           name: FRP.user?.selectedCompany || '',
           code: FRP.user?.selectedCompany || '',
           class: FRP.user?.selectedDivision || '',
-          deptName: FRP.user?.selectedDivision || '',
         }]
       }];
     }
     const targetCompany = normalizeCompany(values.companyName);
-    const targetDivision = normalizeCompany(values.divisi);
+    if (!targetCompany) return sourceEmployees;
 
     return sourceEmployees.filter(e => {
       const assignments = getEmployeeAssignments(e);
-      if (!targetCompany && !targetDivision) return true;
-      return assignments.some(a => {
-        const matchCompany = !targetCompany ||
-          normalizeCompany(a.name) === targetCompany ||
-          normalizeCompany(a.code) === targetCompany ||
-          normalizeCompany(a.companyCode) === targetCompany;
-
-        const matchDivision = !targetDivision ||
-          normalizeCompany(a.class) === targetDivision ||
-          normalizeCompany(a.deptName) === targetDivision;
-
-        return matchCompany && matchDivision;
-      });
+      if (!assignments.length) {
+        return normalizeCompany(e.companyName || e.company || '') === targetCompany;
+      }
+      return assignments.some(a =>
+        normalizeCompany(a.name) === targetCompany ||
+        normalizeCompany(a.code) === targetCompany ||
+        normalizeCompany(a.companyCode) === targetCompany
+      );
     });
-  }, [values.companyName, values.divisi, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
+  }, [values.companyName, FRP.employees, FRP.user?.fullName, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
 
   const budgetOptions = useMemo(
     () =>
@@ -759,12 +750,11 @@ export default function FormPage() {
                         } else {
                           updateField('kurs', 'Memuat...')
                           try {
-                            const res = await fetch(`/api/kurs/${selectedValue}`)
-                            const data = await res.json()
+                            const data = await frpService.getKurs(selectedValue)
                             if (data.success && data.rate) {
                               updateField('kurs', String(data.rate))
                             } else {
-                              updateField('kurs', '1') // fallback
+                              updateField('kurs', '1')
                               console.error('API Error:', data.error)
                             }
                           } catch (e) {

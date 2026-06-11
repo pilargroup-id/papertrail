@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
@@ -6,6 +6,7 @@ import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import SearchableSelect from '../../components/template/SearchableSelect.jsx'
 import DataTableItemsRp from '../../components/table/DataTableItemsRp.jsx'
 import ButtonAddItemsFrp from '../../components/button/ButtonAddItemsFrp.jsx'
+import { rpService } from '../../services/rp/new-rp'
 import '../../styles/frp/new-frp.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -15,54 +16,6 @@ const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumbe
 const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
 const normalizeCompany = v => String(v || '').trim().toUpperCase()
 
-const buildAssignableDepartments = (departments, assignments, companyName) => {
-  const normalizedCompany = normalizeCompany(companyName)
-  const scopedAssignments = (assignments || []).filter(a => !normalizedCompany || normalizeCompany(a.name) === normalizedCompany)
-
-  if (scopedAssignments.length > 0) {
-    const allowedDeptIds = new Set(
-      scopedAssignments
-        .map(a => String(a.department_id ?? a.departmentId ?? a.id ?? ''))
-        .filter(Boolean),
-    )
-    const allowedNames = new Set(
-      scopedAssignments
-        .flatMap(a => [a.dept_name, a.dept_class, a.class, a.departmentName, a.departmentClass].filter(Boolean))
-        .map(normalizeCompany)
-        .filter(Boolean),
-    )
-
-    const filtered = (departments || [])
-      .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
-      .filter(d => {
-        const deptId = String(d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : ''))
-        const name = normalizeCompany(d.name)
-        const className = normalizeCompany(d.class)
-        return allowedDeptIds.has(deptId) || allowedNames.has(name) || allowedNames.has(className)
-      })
-      .map((d, i) => ({
-        originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-        name: d.name || '',
-        class: d.class || '',
-        label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-        company: d.company || '',
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-
-    if (filtered.length > 0) return filtered
-  }
-
-  return (departments || [])
-    .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
-    .map((d, i) => ({
-      originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-      name: d.name || '',
-      class: d.class || '',
-      label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-      company: d.company || ''
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
-}
 
 function FloatingGroup({ label, children, style, className }) {
   return (
@@ -244,17 +197,14 @@ export default function NewRP({
   const [error, setError] = useState(null)
   const [showConfirm, setShowConfirm] = useState(false)
   const [successDialog, setSuccessDialog] = useState({ isOpen: false, title: '', message: '', subMessage: '', rpNo: '' })
-  const [processorDepts, setProcessorDepts] = useState([])
   const [vw, setVw] = useState(typeof window === 'undefined' ? 1280 : window.innerWidth)
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams)
-    if (embeddedProcessId) {
-      params.set('process', embeddedProcessId)
-    }
+    if (embeddedProcessId) params.set('process', embeddedProcessId)
     const q = params.toString() ? `?${params.toString()}` : ''
-    fetch(`/api/rp/form-data${q}`)
-      .then(r => { if (!r.ok) { window.location.href = '/'; throw new Error() } return r.json() })
+
+    rpService.getFormData(q)
       .then(d => {
         setData(d)
         setUser(d?.user)
@@ -262,13 +212,11 @@ export default function NewRP({
         setValues(initial)
         previousCompanyRef.current = initial.companyName || ''
         companySyncInitializedRef.current = true
-
-         fetch('/api/rp/processor-departments')
-          .then(r => r.json())
-          .then(depts => setProcessorDepts(depts))
-          .catch(() => {})
       })
-      .catch(e => setError(e.message || 'Gagal memuat'))
+      .catch(e => {
+        if (e?.response?.status === 401 || e?.status === 401) window.location.href = '/'
+        setError(e.message || 'Gagal memuat')
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -289,33 +237,12 @@ export default function NewRP({
   const previousCompanyRef = useRef(values.companyName)
   const companySyncInitializedRef = useRef(false)
 
+  // Backend already returns departments filtered to user's scope — just filter by selected company
   const departments = useMemo(() => {
-    const masterDepartments = D.departments && D.departments.length > 0
-      ? (D.departments || [])
-          .filter(d => !values.companyName || normalizeCompany(d.company) === normalizeCompany(values.companyName))
-          .map((d, i) => ({
-            originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-            name: d.name || '',
-            class: d.class || '',
-            label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-            company: d.company || ''
-          }))
-          .sort((a, b) => a.label.localeCompare(b.label))
-      : (() => {
-          let sourceDivs = []
-          if (D.processDivisions && D.processDivisions.length > 0) {
-            sourceDivs = D.processDivisions
-          } else {
-            const emps = D.employees || []
-            sourceDivs = [...new Set(emps.flatMap(e => (e.companies || []).filter(a => !values.companyName || normalizeCompany(a.name) === normalizeCompany(values.companyName)).map(a => a.class)).filter(Boolean))].sort()
-          }
-          return sourceDivs.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
-        })()
-
-    if (isAdmin) return masterDepartments
-
-    return buildAssignableDepartments(masterDepartments, D.user?.allAssignments || [], values.companyName)
-  }, [D.departments, D.processDivisions, D.employees, D.user?.allAssignments, isAdmin, values.companyName])
+    return (D.departments || []).filter(
+      d => !values.companyName || normalizeCompany(d.company) === normalizeCompany(values.companyName)
+    )
+  }, [D.departments, values.companyName])
 
   useEffect(() => {
     const previousCompany = previousCompanyRef.current
@@ -356,93 +283,32 @@ export default function NewRP({
     })
   }, [departments])
 
-  const getDefaultDivisionForCompany = (companyName) => {
-    const baseDepartments = D.departments && D.departments.length > 0
-      ? (D.departments || [])
-          .filter(d => !companyName || normalizeCompany(d.company) === normalizeCompany(companyName))
-          .map((d, i) => ({
-            originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-            name: d.name || '',
-            class: d.class || '',
-            label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-            company: d.company || '',
-          }))
-          .sort((a, b) => a.label.localeCompare(b.label))
-      : (D.processDivisions && D.processDivisions.length > 0
-          ? D.processDivisions.map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
-          : [...new Set((D.employees || [])
-              .flatMap(e => (e.companies || [])
-                .filter(a => !companyName || normalizeCompany(a.name) === normalizeCompany(companyName))
-                .map(a => a.class))
-              .filter(Boolean))].sort().map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
-        )
+  const getDefaultDivisionForCompany = useCallback((companyName) => {
+    const filtered = (D.departments || []).filter(
+      d => !companyName || normalizeCompany(d.company) === normalizeCompany(companyName)
+    )
+    return filtered[0]?.originalIndex ?? ''
+  }, [D.departments])
 
-    const sourceDepartments = isAdmin
-      ? baseDepartments
-      : buildAssignableDepartments(baseDepartments, D.user?.allAssignments || [], companyName)
-
-    return resolveDivisionValue(sourceDepartments, sourceDepartments[0]?.originalIndex ?? '')
-  }
-
+  // Backend returns only budgets accessible to this user.
+  // Frontend filters to selected company, then to selected division (unless that division has cross-budget access).
   const budgetOptions = useMemo(() => {
-    const budgets = D.budgets || []
-    return budgets.filter(b => {
-      const tc = (b.company || 'PT PILAR NIAGA MAKMUR').trim().toUpperCase()
-      const sc = (values.companyName || '').trim().toUpperCase()
-      const matchCompany = !sc || tc === sc
-      if (!matchCompany) return false
-
-      const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
-      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      const currentDivisi = selectedDept
-        ? String(selectedDept.name || '').trim().toUpperCase()
-        : String(values.divisi || '').trim().toUpperCase();
-      const currentClass = selectedDept ? String(selectedDept.class || '').trim().toUpperCase() : '';
-
-      if (fullAccessDivisions.includes(currentDivisi) || fullAccessDivisions.includes(currentClass)) {
-        return true
-      }
-
-      if (currentDivisi || currentClass) {
-        const matchedDepts = (D.departments || []).filter(d => {
-          const matchName = String(d.name || '').trim().toUpperCase() === currentDivisi || String(d.class || '').trim().toUpperCase() === currentDivisi;
-          const matchClass = !currentClass || String(d.class || '').trim().toUpperCase() === currentClass;
-          const matchDeptCompany = !sc || normalizeCompany(d.company) === sc;
-          return matchName && matchClass && matchDeptCompany;
-        });
-
-        if (matchedDepts.length > 0) {
-          const deptIds = matchedDepts.map(d => String(d.id));
-          const bDeptId = String(b.department_id !== undefined ? b.department_id : (b.departmentId || ''));
-          return deptIds.includes(bDeptId);
-        } else {
-          const bDeptName = String(b.department || '').trim().toUpperCase();
-          const bClass = String(b.class || '').trim().toUpperCase();
-          return bDeptName === currentDivisi || bClass === currentDivisi || (currentClass && (bDeptName === currentClass || bClass === currentClass));
-        }
-      }
-
-      return true
+    const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi))
+    return (D.budgets || []).filter(b => {
+      if (values.companyName && normalizeCompany(b.company) !== normalizeCompany(values.companyName)) return false
+      if (selectedDept?.canCrossBudget) return true   // HCGA/IT/etc. can use any budget
+      if (!selectedDept) return true                  // no division selected yet — show all accessible
+      const bClass = (b.class      || '').trim().toUpperCase()
+      const bDept  = (b.department || '').trim().toUpperCase()
+      const selCls = (selectedDept.class || '').trim().toUpperCase()
+      return bClass === selCls || bDept === selCls
     })
-  }, [D.budgets, values.divisi, values.companyName, departments, D.departments])
+  }, [D.budgets, departments, values.divisi, values.companyName])
 
-  const processDivOptions = useMemo(() => {
-      if (processorDepts.length > 0) {
-          return processorDepts.map(d => ({ value: d, label: d }))
-      }
-      return ['IT', 'HCGA'].map(d => ({ value: d, label: d }))
-  }, [processorDepts])
-  
-  const companyOptions = useMemo(() => {
-    const names = [
-      ...(D.companies || []).map(company => company.name || company),
-      ...(D.user?.allAssignments || []).map(assignment => assignment.name),
-      ...(D.budgets || []).map(budget => budget.company),
-    ].filter(Boolean)
-    return [...new Set(names)].sort().map(name => ({ value: name, label: name }))
-  }, [D.companies, D.user?.allAssignments, D.budgets])
-  
-  const divisionOptions = useMemo(() => departments.map(d => ({ value: d.originalIndex, label: d.label })), [departments])
+  // Companies and divisions — backend already shaped and scoped
+  const companyOptions  = D.companies  || []
+  const divisionOptions = departments.map(d => ({ value: d.originalIndex, label: d.label }))
+  const processDivOptions = (D.processorDepts || []).map(d => ({ value: d, label: d }))
   const canChangeDivision = isAdmin || divisionOptions.length > 1
   const vendorOptions = useMemo(() => (D.vendors || []).map(v => ({ value: v.name, label: v.name })), [D.vendors])
   const kategoriOptions = ['Pengadaan Barang Baru', 'Pergantian Barang', 'Penambahan Barang'].map(k => ({ value: k, label: k }))
@@ -522,16 +388,9 @@ export default function NewRP({
       payload.class = values.class || selectedDept?.class || selectedDept?.name || '';
 
       if (processId) {
-        const res = await fetch(`/api/rp/${processId}/process-update`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        const result = await res.json()
+        const result = await rpService.processUpdate(processId, payload)
         if (result.success) {
-          setSuccessDialog({
-            isOpen: true,
-            title: 'Update Berhasil!',
-            message: 'Data berhasil diupdate oleh divisi pemroses.',
-            subMessage: 'Anda akan dialihkan kembali ke halaman Approval RP.',
-            rpNo: ''
-          })
+          setSuccessDialog({ isOpen: true, title: 'Update Berhasil!', message: 'Data berhasil diupdate oleh divisi pemroses.', subMessage: 'Anda akan dialihkan kembali ke halaman Approval RP.', rpNo: '' })
         } else {
           setSubmitError(result.error || 'Gagal menyimpan')
         }
@@ -539,20 +398,12 @@ export default function NewRP({
         if (searchParams.get('revisi')) {
           payload.rpId = values.id
         } else {
-          const rpNoRes = await fetch(`/api/rp/next-number/${encodeURIComponent(payload.divisi)}`)
-          const rpNoData = await rpNoRes.json()
+          const rpNoData = await rpService.getNextRpNo(payload.divisi)
           payload.rpNo = rpNoData.rpNo
         }
-        const res = await fetch('/api/rp/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        const result = await res.json()
+        const result = await rpService.saveRp(payload)
         if (result.success) {
-          setSuccessDialog({
-            isOpen: true,
-            title: 'Berhasil!',
-            message: 'Request Purchase Anda telah berhasil disimpan.',
-            subMessage: 'Anda akan dialihkan kembali ke halaman Approval RP.',
-            rpNo: result.rpNo
-          })
+          setSuccessDialog({ isOpen: true, title: 'Berhasil!', message: 'Request Purchase Anda telah berhasil disimpan.', subMessage: 'Anda akan dialihkan kembali ke halaman Approval RP.', rpNo: result.rpNo })
         } else {
           setSubmitError(result.error || 'Gagal menyimpan')
         }

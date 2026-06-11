@@ -1,4 +1,4 @@
-import { useLocation, Outlet } from 'react-router-dom'
+import { useLocation, Outlet, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
@@ -11,6 +11,7 @@ const HIDE_MENU_PATHS = new Set(['/select-company', '/select-division'])
 
 export default function DashboardLayout() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { sidebarCollapsed, setSidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useSidebarState()
   const { user } = useUser()
   const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false)
@@ -60,7 +61,13 @@ export default function DashboardLayout() {
         allAssignments={u.allAssignments || []}
         onToggleCollapse={handleSidebarToggle}
         onCloseMobile={() => setMobileMenuOpen(false)}
-        onChangeAccess={() => setIsAccessDialogOpen(true)}
+        onChangeAccess={(href) => {
+          if (href === '/select-company') {
+            navigate('/select-company')
+          } else {
+            setIsAccessDialogOpen(true)
+          }
+        }}
         hideMenu={HIDE_MENU_PATHS.has(pathname)}
       />
       <div className="dashboard-stage">

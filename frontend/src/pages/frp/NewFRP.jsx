@@ -38,75 +38,6 @@ const getEmployeeAssignments = e => {
   return []
 }
 
-const buildDepartments = (employees, companyName) =>
-  [...new Set((employees || [])
-    .flatMap(e => getEmployeeAssignments(e))
-    .filter(a => !companyName || normalizeCompany(a.name) === normalizeCompany(companyName))
-    .map(a => a.class || '')
-    .filter(Boolean))]
-    .sort()
-
-const buildDepartmentsFromMaster = (departments, companyName) =>
-  (departments || [])
-    .filter(d => !companyName || normalizeCompany(d.company) === normalizeCompany(companyName))
-    .map((d, i) => ({
-      originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-      name: d.name || '',
-      class: d.class || '',
-      label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-      company: d.company || ''
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
-
-const buildAssignableDepartments = (departments, assignments, companyName) => {
-  const normalizedCompany = normalizeCompany(companyName)
-  const scopedAssignments = (assignments || []).filter(a => !normalizedCompany || normalizeCompany(a.name) === normalizedCompany)
-
-  if (scopedAssignments.length > 0) {
-    const allowedDeptIds = new Set(
-      scopedAssignments
-        .map(a => String(a.department_id ?? a.departmentId ?? a.id ?? ''))
-        .filter(Boolean),
-    )
-    const allowedNames = new Set(
-      scopedAssignments
-        .flatMap(a => [a.dept_name, a.dept_class, a.class, a.departmentName, a.departmentClass].filter(Boolean))
-        .map(normalizeCompany)
-        .filter(Boolean),
-    )
-
-    const filtered = (departments || [])
-      .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
-      .filter(d => {
-        const deptId = String(d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : ''))
-        const name = normalizeCompany(d.name)
-        const className = normalizeCompany(d.class)
-        return allowedDeptIds.has(deptId) || allowedNames.has(name) || allowedNames.has(className)
-      })
-      .map((d, i) => ({
-        originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-        name: d.name || '',
-        class: d.class || '',
-        label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-        company: d.company || '',
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-
-    if (filtered.length > 0) return filtered
-  }
-
-  return (departments || [])
-    .filter(d => !normalizedCompany || normalizeCompany(d.company) === normalizedCompany)
-    .map((d, i) => ({
-      originalIndex: d.originalIndex !== undefined ? d.originalIndex : (d.id !== undefined ? d.id : i),
-      name: d.name || '',
-      class: d.class || '',
-      label: d.class ? `${d.name} - ${d.class}` : (d.name || ''),
-      company: d.company || ''
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
-}
-
 const getDefaultItems = () => [{ memo: '', budgetId: '', qty: '1', hargaSatuan: '0' }]
 
 const blankForm = {
@@ -200,22 +131,14 @@ const buildInitialForm = (data, isDuplicate = false) => {
 }
 
 const resolveDepartmentValue = (departments, currentValue) => {
-  if (!Array.isArray(departments) || departments.length === 0) {
-    return currentValue || ''
-  }
-
-  const normalizedValue = normalizeCompany(currentValue)
+  if (!departments?.length) return currentValue || ''
+  const norm = normalizeCompany(currentValue)
   const matched = departments.find(d =>
     String(d.originalIndex) === String(currentValue) ||
-    normalizeCompany(d.name) === normalizedValue ||
-    normalizeCompany(d.class) === normalizedValue
+    normalizeCompany(d.name) === norm ||
+    normalizeCompany(d.class) === norm
   )
-
-  if (!matched) {
-    return currentValue || ''
-  }
-
-  return matched.originalIndex !== undefined ? matched.originalIndex : (matched.id ?? currentValue ?? '')
+  return matched ? String(matched.originalIndex ?? matched.id ?? currentValue ?? '') : (currentValue || '')
 }
 
 const getGridColumns = (desktopColumns, isMobile, isTablet) => {
@@ -407,23 +330,14 @@ export default function NewFRP() {
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
-  const departments = useMemo(
-    () => {
-      if (FRP.user?.role === 'administrator') {
-        return (FRP.departments?.length
-          ? buildDepartmentsFromMaster(FRP.departments, values.companyName)
-          : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName)).map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' })))
-      }
-
-      const userAssignments = FRP.user?.allAssignments || []
-      const masterDepartments = FRP.departments?.length
-        ? buildDepartmentsFromMaster(FRP.departments, values.companyName)
-        : (FRP.divisionList || buildDepartments(FRP.employees || [], values.companyName)).map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' }))
-
-      return buildAssignableDepartments(masterDepartments, userAssignments, values.companyName)
-    },
-    [FRP.departments, FRP.divisionList, FRP.employees, FRP.user?.allAssignments, FRP.user?.role, values.companyName],
-  )
+  // Backend sudah filter berdasarkan user scope — frontend hanya filter by company
+  const departments = useMemo(() => {
+    const target = normalizeCompany(values.companyName)
+    return (FRP.departments || [])
+      .filter(d => !target || normalizeCompany(d.company) === target)
+      .map(d => ({ ...d, label: d.class ? `${d.name} - ${d.class}` : d.name }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [FRP.departments, values.companyName])
 
   const previousCompanyRef = useRef(values.companyName)
   const companySyncInitializedRef = useRef(false)
@@ -454,21 +368,9 @@ export default function NewFRP() {
   }, [values.companyName, departments])
 
   const getDefaultDivisionForCompany = (companyName) => {
-    const sourceDepartments = FRP.user?.role === 'administrator'
-      ? (FRP.departments?.length
-        ? buildDepartmentsFromMaster(FRP.departments, companyName)
-        : (FRP.divisionList || buildDepartments(FRP.employees || [], companyName))
-          .map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' })))
-      : buildAssignableDepartments(
-          FRP.departments?.length
-            ? buildDepartmentsFromMaster(FRP.departments, companyName)
-            : (FRP.divisionList || buildDepartments(FRP.employees || [], companyName))
-              .map((d, i) => ({ originalIndex: d, name: d, class: d, label: d, company: '' })),
-          FRP.user?.allAssignments || [],
-          companyName,
-        )
-
-    return resolveDepartmentValue(sourceDepartments, sourceDepartments[0]?.originalIndex ?? '')
+    const target = normalizeCompany(companyName)
+    const depts = (FRP.departments || []).filter(d => !target || normalizeCompany(d.company) === target)
+    return String(depts[0]?.originalIndex ?? depts[0]?.id ?? '')
   }
 
   const divisionSelectOptions = useMemo(
@@ -477,87 +379,39 @@ export default function NewFRP() {
   )
   const canChangeDivision = FRP.user?.role === 'administrator' || divisionSelectOptions.length > 1
 
+  // Backend sudah scoping employees — filter by company + class saja
   const filteredEmployees = useMemo(() => {
-    let sourceEmployees = FRP.user?.role === 'administrator' ? FRP.employees : FRP.departmentEmployees;
-    if (!sourceEmployees || sourceEmployees.length === 0) {
-      sourceEmployees = [{
-        fullName: FRP.user?.fullName || '',
-        companies: [{
-          name: FRP.user?.selectedCompany || '',
-          code: FRP.user?.selectedCompany || '',
-          class: FRP.user?.selectedDivision || '',
-          deptName: FRP.user?.selectedDivision || '',
-        }]
-      }];
+    const source = FRP.employees || []
+    if (!source.length) {
+      return [{ fullName: FRP.user?.fullName || '', companies: [{ name: FRP.user?.selectedCompany || '', class: FRP.user?.selectedDivision || '' }] }]
     }
-    const targetCompany = normalizeCompany(values.companyName);
-    const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-    const targetDivision = normalizeCompany(selectedDept ? selectedDept.name : values.divisi);
-    const targetClass = normalizeCompany(selectedDept ? selectedDept.class : '');
-
-    return sourceEmployees.filter(e => {
-      const assignments = getEmployeeAssignments(e);
-      if (!targetCompany && !targetDivision && !targetClass) return true;
-      return assignments.some(a => {
-        const matchCompany = !targetCompany ||
-          normalizeCompany(a.name) === targetCompany ||
-          normalizeCompany(a.code) === targetCompany ||
-          normalizeCompany(a.companyCode) === targetCompany;
-
-        const matchDivision = !targetDivision ||
-          normalizeCompany(a.class) === targetDivision ||
-          normalizeCompany(a.deptName) === targetDivision;
-
-        const matchClass = !targetClass || normalizeCompany(a.class) === targetClass;
-
-        return matchCompany && matchDivision && matchClass;
-      });
-    });
-  }, [values.companyName, values.divisi, departments, FRP.employees, FRP.departmentEmployees, FRP.user?.fullName, FRP.user?.role, FRP.user?.selectedCompany, FRP.user?.selectedDivision])
-
-  const budgetOptions = useMemo(
-    () => {
-      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      const sd = selectedDept ? String(selectedDept.name || '').trim().toUpperCase() : String(values.divisi || '').trim().toUpperCase();
-      const sk = selectedDept ? String(selectedDept.class || '').trim().toUpperCase() : '';
-      const sc = String(values.companyName || '').trim().toUpperCase();
-
-      return (FRP.budgets || []).filter(b => {
-        const tc = (b.company || 'PT PILAR NIAGA MAKMUR').trim().toUpperCase()
-        const matchCompany = !sc || tc === sc
-
-        if (!matchCompany) return false
-
-        // Divisi tertentu (HCGA, IT, Marketing, Product) memiliki akses ke seluruh budget
-        const fullAccessDivisions = ['HCGA', 'IT', 'MARKETING', 'PRODUCT']
-        if (fullAccessDivisions.includes(sd) || fullAccessDivisions.includes(sk)) {
-          return true
-        }
-
-        if (sd || sk) {
-          const matchedDepts = (FRP.departments || []).filter(d => {
-            const matchName = (d.name || '').trim().toUpperCase() === sd || (d.class || '').trim().toUpperCase() === sd
-            const matchClass = !sk || (d.class || '').trim().toUpperCase() === sk
-            const matchDeptCompany = !sc || (d.company || '').trim().toUpperCase() === sc
-            return matchName && matchClass && matchDeptCompany
-          })
-
-          if (matchedDepts.length > 0) {
-            const deptIds = matchedDepts.map(d => String(d.id))
-            const bDeptId = String(b.department_id !== undefined ? b.department_id : (b.departmentId || ''))
-            return deptIds.includes(bDeptId)
-          } else {
-            const bDeptName = (b.department || '').trim().toUpperCase()
-            const bClass = (b.class || '').trim().toUpperCase()
-            return bDeptName === sd || bClass === sd || (sk && (bDeptName === sk || bClass === sk))
-          }
-        }
-
-        return true
+    const targetCompany = normalizeCompany(values.companyName)
+    const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi))
+    const targetClass = normalizeCompany(selectedDept?.class || '')
+    return source.filter(e =>
+      getEmployeeAssignments(e).some(a => {
+        const matchCompany = !targetCompany || normalizeCompany(a.name) === targetCompany || normalizeCompany(a.code) === targetCompany
+        const matchClass = !targetClass || normalizeCompany(a.class) === targetClass
+        return matchCompany && matchClass
       })
-    },
-    [values.companyName, values.divisi, departments, FRP.budgets, FRP.departments],
-  )
+    )
+  }, [FRP.employees, FRP.user, departments, values.companyName, values.divisi])
+
+  // Backend sudah filter budget berdasarkan scope user
+  // Frontend hanya filter by company + selected department
+  const budgetOptions = useMemo(() => {
+    const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi))
+    const targetCompany = normalizeCompany(values.companyName)
+
+    return (FRP.budgets || []).filter(b => {
+      if (targetCompany && normalizeCompany(b.company) !== targetCompany) return false
+      if (!selectedDept) return true
+      const bDeptId = String(b.department_id ?? b.departmentId ?? '')
+      const dId = String(selectedDept.originalIndex ?? selectedDept.id ?? '')
+      if (bDeptId && dId && bDeptId === dId) return true
+      return normalizeCompany(b.department) === normalizeCompany(selectedDept.name)
+    })
+  }, [FRP.budgets, departments, values.companyName, values.divisi])
 
   const calculateRowAmount = item =>
     normalizeNumber(item.qty) * normalizeNumber(item.hargaSatuan) * (normalizeNumber(values.kurs) || 1)
@@ -652,7 +506,7 @@ export default function NewFRP() {
 
     try {
       // Cek ke database terlebih dahulu untuk mendapatkan sisa budget ter-update
-      const resBudgets = await fetch('/api/budgets/all')
+      const resBudgets = await fetch('/api/frp/budgets')
       if (!resBudgets.ok) {
         throw new Error('Gagal memeriksa budget terbaru dari database. Silakan coba lagi.')
       }
@@ -872,19 +726,7 @@ export default function NewFRP() {
               </div>
               <div className="frp-grid-3" style={{ marginTop: "20px", gridTemplateColumns: (!isMobile && !isTablet) ? 'minmax(0, 1.8fr) minmax(0, 1.2fr) 170px' : undefined }}>
                 <FloatingGroup label="Division & Class">
-                  {canChangeDivision ? (
-                    <SearchableSelect
-                      name="divisi"
-                      value={values.divisi}
-                      onChange={selectedValue => updateField('divisi', selectedValue)}
-                      options={divisionSelectOptions}
-                      placeholder="Select divisi..."
-                      className="frp-select"
-                      menuPosition="fixed"
-                    />
-                  ) : (
-                    <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
-                  )}
+                  <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
                 </FloatingGroup>
                 <FloatingGroup label="Request by">
                   <input className="frp-input-readonly" value={values.dimintaOleh} readOnly />

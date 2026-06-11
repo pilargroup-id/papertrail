@@ -35,7 +35,20 @@
       "PowerShell(Get-ChildItem \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne 'node_modules' } | Select-Object Name)",
       "PowerShell(dir \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\" | Where-Object { $_.Name -ne 'node_modules' })",
       "Bash(git pull *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(node -e \"require\\('./src/routes/frp.js'\\); console.log\\('frp.js OK'\\)\")",
+      "Bash(node -e \"require\\('./src/services/frpService.js'\\); console.log\\('frpService.js OK'\\)\")",
+      "Bash(findstr \"scripts\" /A)",
+      "Bash(findstr \":3000 \\\\|:5173 \\\\|:4173 \\\\|:3001 \")",
+      "Bash(findstr LISTENING)",
+      "Bash(findstr \"\\\\\"start\\\\\"\\\\|\\\\\"dev\\\\\"\\\\|\\\\\"scripts\\\\\"\")",
+      "Bash(findstr \"\\\\\"start\\\\\"\\\\|\\\\\"dev\\\\\"\\\\|\\\\\"build\\\\\"\\\\|\\\\\"scripts\\\\\"\")",
+      "PowerShell(taskkill /PID 7704 /F)",
+      "Bash(taskkill /PID 27108 /F)",
+      "Bash(start /B node server.js)",
+      "PowerShell($proc = netstat -ano | findstr \":3000\" | findstr \"LISTENING\"; if \\($proc\\) { $pid = \\($proc -split '\\\\s+'\\)[-1]; Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 1; Set-Location \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\"; Start-Process -FilePath \"node\" -ArgumentList \"server.js\" -WindowStyle Hidden -RedirectStandardOutput \"server.log\" -RedirectStandardError \"server-err.log\"; Start-Sleep -Seconds 2; netstat -ano | findstr \":3000\" | findstr \"LISTENING\")",
+      "PowerShell($proc = netstat -ano | findstr \":3000\" | findstr \"LISTENING\"; $procId = \\($proc -split '\\\\s+'\\)[-1]; Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Set-Location \"c:\\\\Users\\\\IT\\\\Documents\\\\FRP\\\\backend\"; Start-Process -FilePath \"node\" -ArgumentList \"server.js\" -WindowStyle Hidden -RedirectStandardOutput \"server.log\" -RedirectStandardError \"server-err.log\"; Start-Sleep -Seconds 2; netstat -ano | findstr \":3000\" | findstr \"LISTENING\")",
+      "Bash(findstr \":3000 \\\\|:5173 \\\\|:8080 \")"
     ]
   }
 }

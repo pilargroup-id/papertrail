@@ -268,6 +268,8 @@ function SearchableSelect({
 export default function FilterApprovalRp({
   filters,
   setFilters,
+  searchValue = '',
+  onSearchChange,
   creatorOptions,
   statusOptions,
   divisionOptions,
@@ -292,6 +294,7 @@ export default function FilterApprovalRp({
   }
 
   const handleReset = () => {
+    onSearchChange?.('')
     setFilters({
       search: '',
       date: '',
@@ -302,7 +305,7 @@ export default function FilterApprovalRp({
     })
   }
 
-  const hasActiveFilters = Object.values(filters).some(Boolean)
+  const hasActiveFilters = searchValue || Object.values(filters).some(Boolean)
 
   return (
     <>
@@ -412,8 +415,8 @@ export default function FilterApprovalRp({
                 className="filter-input-element"
                 style={filterInput}
                 placeholder="No RP / Vendor..."
-                value={filters.search}
-                onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
+                value={onSearchChange ? searchValue : filters.search}
+                onChange={(e) => onSearchChange ? onSearchChange(e.target.value) : setFilters((c) => ({ ...c, search: e.target.value }))}
               />
             </FilterField>
 
