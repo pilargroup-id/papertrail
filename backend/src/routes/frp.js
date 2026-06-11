@@ -134,8 +134,9 @@ router.get('/api/vendors', checkAuth, (req, res) => {
 });
 
 // GET /api/employees
-// Admin → semua karyawan; user biasa → otomatis filter by company dari session
-// - ?company=xxx  → override filter (admin only, atau saat perlu cross-company)
+// Admin & IT → semua karyawan (filter company opsional)
+// User biasa → filter by company + divisi sendiri
+// - ?company=xxx → override filter company (admin/IT only)
 router.get('/api/employees', checkAuth, async (req, res) => {
     try {
         const user = req.session.user;
@@ -144,11 +145,26 @@ router.get('/api/employees', checkAuth, async (req, res) => {
         if (user.role === 'administrator') return res.json(all);
 
         const targetCompany = normalizeCompanyCode(req.query.company || user.selectedCompany || '');
-        if (!targetCompany) return res.json(all);
+        const userDivision = String(user.selectedDivision || user.departmentClass || '').trim().toUpperCase();
+        const isIT = userDivision === 'IT';
 
+        // IT bisa lihat semua karyawan, hanya filter by company jika ada
+        if (isIT) {
+            if (!targetCompany) return res.json(all);
+            const filtered = all.filter(e =>
+                normalizeCompanyCode(e.companyCode || e.companyName || '') === targetCompany ||
+                (e.allAssignments || []).some(a => normalizeCompanyCode(a.code || a.name || '') === targetCompany)
+            );
+            return res.json(filtered.length > 0 ? filtered : all);
+        }
+
+        // Non-IT: filter by company AND divisi user
         const filtered = all.filter(e =>
-            normalizeCompanyCode(e.companyCode || e.companyName || '') === targetCompany ||
-            (e.allAssignments || []).some(a => normalizeCompanyCode(a.code || a.name || '') === targetCompany)
+            (e.allAssignments || []).some(a => {
+                const matchCompany = !targetCompany || normalizeCompanyCode(a.code || a.name || '') === targetCompany;
+                const matchDivision = !userDivision || String(a.class || a.dept_class || '').trim().toUpperCase() === userDivision;
+                return matchCompany && matchDivision;
+            })
         );
         res.json(filtered.length > 0 ? filtered : all);
     } catch (e) {
@@ -427,23 +443,26 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
 //   search, date, requester, status, division  — filter
 //   sortBy=date|requester|division|status|total, sortDir=asc|desc
 //   page=1, limit=10
-router.get('/api/data/approval', checkAuth, async (req, res) => {
+async function sendFrpApprovalView(req, res, forcedView, section = 'full') {
     try {
         const u = req.session.user;
         const { isRequestInUserScope } = require('../middleware/scope');
+        const routeValue = (key, fallback = '') => req.params[key] || req.query[key] || fallback;
 
-        const isApprovedView = req.query.view === 'approved';
-        const isAllView      = req.query.view === 'all';
+        const view = forcedView || req.query.view || 'pending';
+        const isApprovedView = view === 'approved';
+        const isAllView      = view === 'all';
 
         const search    = (req.query.search    || '').toLowerCase().trim();
         const date      = (req.query.date      || '').trim();
         const requester = (req.query.requester || '').toLowerCase().trim();
         const status    = (req.query.status    || '').toUpperCase().trim();
         const division  = (req.query.division  || '').trim();
-        const page      = Math.max(1, parseInt(req.query.page  || '1',  10));
-        const limit     = Math.max(1, Math.min(200, parseInt(req.query.limit || '10', 10)));
-        const sortBy    = req.query.sortBy  || 'date';
-        const sortDir   = req.query.sortDir === 'asc' ? 'asc' : 'desc';
+        const page      = Math.max(1, parseInt(routeValue('page', '1'),  10));
+        const limit     = Math.max(1, Math.min(200, parseInt(routeValue('limit', '10'), 10)));
+        const sortBy    = routeValue('sortBy', 'date');
+        const sortOrder = routeValue('sortDir', 'desc');
+        const sortDir   = (sortOrder === 'asc' || sortOrder === 'ascending') ? 'asc' : 'desc';
 
         const hasLookAccess = await canLookAllFrp(u);
         let all = await fetchAllFrpRequests();
@@ -501,7 +520,7 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
                 valA = a.createdAt ? new Date(a.createdAt).getTime() : (parseInt(a.id) || 0);
                 valB = b.createdAt ? new Date(b.createdAt).getTime() : (parseInt(b.id) || 0);
                 return sortDir === 'asc' ? valA - valB : valB - valA;
-            } else if (sortBy === 'total') {
+            } else if (sortBy === 'amount') {
                 return sortDir === 'asc' ? a.total - b.total : b.total - a.total;
             }
             const map = { requester: 'dimintaOleh', division: 'divisi', status: 'status' };
@@ -517,32 +536,104 @@ router.get('/api/data/approval', checkAuth, async (req, res) => {
         const total      = all.length;
         const totalPages = Math.max(1, Math.ceil(total / limit));
         const safePage   = Math.min(page, totalPages);
-        const requests   = all.slice((safePage - 1) * limit, safePage * limit);
+        const pageItems  = all.slice((safePage - 1) * limit, safePage * limit);
 
         const canApprove = u.role === 'administrator' ||
             Number(u.jobLevelRank || 0) >= 4 ||
             ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
 
-        res.json({
-            requests,
-            pagination:    { total, page: safePage, limit, totalPages },
-            filterOptions,
-            counts:        { pending: pendingCount, approved: approvedCount },
+        // Map ke struktur response bersih — hanya field yang dipakai frontend
+        const data = pageItems.map(r => ({
+            // Core table fields
+            id:            r.id,
+            frpNo:         r.frpNo,
+            status:        r.status,
+            date:          r.tanggalFrp,
+            requesterName: r.dimintaOleh,
+            vendor:        r.vendor,
+            division:      r.divisi,
+            amount:        r.total,
+            approvedBy:    r.approvedBy,
+            attachLink:    r.attachLink,
+            canRevert:     r.canRevert,
+            items:         r.items,
+            // Detail dialog fields
+            checkDocs:        r.checkDocs,
+            companyName:      r.companyName,
+            keteranganFrp:    r.keteranganFrp,
+            internalPoNumber: r.internalPoNumber,
+            extDocType:       r.extDocType,
+            extDocNumber:     r.extDocNumber,
+            paymentMethod:    r.paymentMethod,
+            paymentDate:      r.paymentDate,
+            bankTujuan:       r.bankTujuan,
+            rekBankTujuan:    r.rekBankTujuan,
+            rpReference:      r.rpReference,
+        }));
+
+        const payload = {
             canApprove,
             isApprovedView,
-            user: {
-                fullName:        u.fullName,
-                role:            u.role,
-                jobLevelRank:    u.jobLevelRank,
-                selectedDivision: u.selectedDivision,
-                selectedJobLevel: u.selectedJobLevel,
-                allAssignments:  u.allAssignments || [],
+            summary:    { pending: pendingCount, approved: approvedCount },
+            filters:    filterOptions,
+            pagination: { total, page: safePage, limit, totalPages },
+            data,
+            meta: {
+                user: {
+                    fullName:         u.fullName,
+                    selectedDivision: u.selectedDivision,
+                    jobLevelRank:     u.jobLevelRank,
+                },
             },
-        });
+        };
+
+        if (section === 'meta') {
+            return res.json({
+                canApprove: payload.canApprove,
+                isApprovedView: payload.isApprovedView,
+                meta: payload.meta,
+            });
+        }
+        if (section === 'summary') return res.json({ summary: payload.summary });
+        if (section === 'filters') return res.json({ filters: payload.filters });
+        if (section === 'data') {
+            return res.json({
+                pagination: payload.pagination,
+                data: payload.data,
+            });
+        }
+
+        res.json(payload);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
-});
+}
+
+router.get('/api/frp/approval/pending/meta', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'meta'));
+router.get('/api/frp/approval/pending/summary', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'summary'));
+router.get('/api/frp/approval/pending/filters', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'filters'));
+router.get('/api/frp/approval/pending/data/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'data'));
+
+router.get('/api/frp/approval/approved/meta', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'meta'));
+router.get('/api/frp/approval/approved/summary', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'summary'));
+router.get('/api/frp/approval/approved/filters', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'filters'));
+router.get('/api/frp/approval/approved/data/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'data'));
+
+router.get('/api/frp/status/meta', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all', 'meta'));
+router.get('/api/frp/status/summary', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all', 'summary'));
+router.get('/api/frp/status/data/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all', 'data'));
+
+router.get('/api/frp/approval/pending/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending'));
+router.get('/api/frp/approval/approved/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved'));
+router.get('/api/frp/status/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all'));
+router.get('/api/frp/approval/pending/page/:page/limit/:limit/sort/:sortBy/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending'));
+router.get('/api/frp/approval/approved/page/:page/limit/:limit/sort/:sortBy/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved'));
+router.get('/api/frp/status/page/:page/limit/:limit/sort/:sortBy/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all'));
+router.get('/api/frp/approval/pending', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending'));
+router.get('/api/frp/approval/approved', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved'));
+router.get('/api/frp/status', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all'));
+router.get('/api/data/approval', checkAuth, (req, res) => sendFrpApprovalView(req, res));
+router.get('/api/data/frp-approval', checkAuth, (req, res) => sendFrpApprovalView(req, res));
 
 // ============================================================
 // FRP — READ

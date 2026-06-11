@@ -1,26 +1,26 @@
 import api from '../api'
 
 // ── Lookup ──────────────────────────────────────────────────
-const getEmployees   = ()  => api.get('/api/employees')
-const getMyTeam      = ()  => api.get('/api/user/departement')   // karyawan di dept user (for "Diminta Oleh")
-const getDepartments = ()  => api.get('/api/departments')         // list dept (for dropdown divisi)
-const getCompanies           = ()  => api.get('/api/company')
-const getVendors             = ()  => api.get('/api/vendors')
-const getBudgets             = ()  => api.get('/api/frp/budgets')
-const getUserInfo            = ()  => api.get('/api/user/info')
-const getJobLevels           = ()  => api.get('/api/job-levels')
+const getEmployees   = ()        => api.get('/api/employees')
+const getMyTeam      = ()        => api.get('/api/user/departement')
+const getDepartments = ()        => api.get('/api/departments')
+const getCompanies   = ()        => api.get('/api/company')
+const getVendors     = ()        => api.get('/api/vendors')
+const getBudgets     = ()        => api.get('/api/frp/budgets')
+const getUserInfo    = ()        => api.get('/api/user/info')
+const getJobLevels   = ()        => api.get('/api/job-levels')
 
 // ── FRP ─────────────────────────────────────────────────────
-const getFrpById        = (id)       => api.get(`/api/frp/${id}`)
-const getNextFrpNumber  = (dept, co) => api.get(`/api/next-frp-number/${dept}?company=${co || ''}`)
-const saveFrp           = (payload)  => api.post('/api/frp/save', payload)
-const frpAction         = (id, act)  => api.post(`/api/frp/${id}/${act}`)
+const getFrpById       = (id)       => api.get(`/api/frp/${id}`)
+const getNextFrpNumber = (dept, co) => api.get(`/api/next-frp-number/${dept}?company=${co || ''}`)
+const saveFrp          = (payload)  => api.post('/api/frp/save', payload)
+const frpAction        = (id, act)  => api.post(`/api/frp/${id}/${act}`)
 
 // ── RP ──────────────────────────────────────────────────────
-const getRpData         = (rpId)     => api.get(`/api/rp/${rpId}`)
+const getRpData = (rpId) => api.get(`/api/rp/${rpId}`)
 
 // ── Kurs ────────────────────────────────────────────────────
-const getKurs           = (currency) => api.get(`/api/kurs/${currency}`)
+const getKurs = (currency) => api.get(`/api/kurs/${currency}`)
 
 // ── Attachment ──────────────────────────────────────────────
 const uploadAttachment = async (id, file) => {
@@ -34,7 +34,7 @@ const uploadAttachment = async (id, file) => {
   return response.json()
 }
 
-const deleteAttachment  = (id)       => api.delete(`/api/frp/${id}/attachment`)
+const deleteAttachment = (id) => api.delete(`/api/frp/${id}/attachment`)
 
 // ── Aggregate: panggil semua endpoint secara parallel ───────
 const getFormData = async (query = '') => {
@@ -68,7 +68,6 @@ const getFormData = async (query = '') => {
 }
 
 export const frpService = {
-  // lookup
   getEmployees,
   getMyTeam,
   getDepartments,
@@ -77,23 +76,13 @@ export const frpService = {
   getBudgets,
   getUserInfo,
   getJobLevels,
-
-  // frp
   getFrpById,
   getNextFrpNumber,
   saveFrp,
   frpAction,
-
-  // rp
   getRpData,
-
-  // kurs
   getKurs,
-
-  // attachment
   uploadAttachment,
   deleteAttachment,
-
-  // aggregate
   getFormData,
 }

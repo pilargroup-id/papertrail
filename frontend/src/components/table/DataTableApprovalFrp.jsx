@@ -30,7 +30,7 @@ const desktopHeaders = [
   { label: 'FRP Number', key: 'date' },
   { label: 'Requestor & Vendor', key: 'requester' },
   { label: 'Division', key: 'division' },
-  { label: 'Total', key: 'total' },
+  { label: 'Total', key: 'amount' },
   { label: 'Status', key: 'status' },
   { label: 'Attachment', key: null },
   { label: 'Action', key: null },
@@ -181,10 +181,10 @@ export default function DataTableApprovalFrp({
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: '12px' }}>
                   {[
-                    { label: 'Tanggal', value: formatDate(request.tanggalFrp) },
-                    { label: 'Pemohon', value: request.dimintaOleh || '-' },
+                    { label: 'Tanggal', value: formatDate(request.date) },
+                    { label: 'Pemohon', value: request.requesterName || '-' },
                     { label: 'Vendor', value: request.vendor || '-' },
-                    { label: 'Divisi', value: request.divisi || '-' },
+                    { label: 'Divisi', value: request.division || '-' },
                   ].map(({ label, value }) => (
                     <div key={label}>
                       <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>{label}</div>
@@ -193,7 +193,7 @@ export default function DataTableApprovalFrp({
                   ))}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>Total</div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#0f172a' }}>{formatCurrency(request.total || 0)}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace', color: '#0f172a' }}>{formatCurrency(request.amount || 0)}</div>
                   </div>
                   {/* {isApprovedView && request.approvedBy && (
                     <div style={{ gridColumn: '1 / -1' }}>
@@ -391,29 +391,29 @@ export default function DataTableApprovalFrp({
                                 {copiedFrpId === request.id ? 'check' : 'content_copy'}
                               </span>
                             </button>
-                            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>{formatDate(request.tanggalFrp)}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>{formatDate(request.date)}</div>
                           </div>
                         </div>
                       </td>
 
                       {/* 2. Pemohon & Vendor */}
                       <td style={{ ...td, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.45 }}>
-                        <DataTableIdentity 
-                          title={request.dimintaOleh || '-'} 
-                          subtitle={request.vendor || '-'} 
+                        <DataTableIdentity
+                          title={request.requesterName || '-'}
+                          subtitle={request.vendor || '-'}
                         />
                       </td>
 
                       {/* 3. Divisi */}
                       <td style={{ ...td, whiteSpace: 'normal' }}>
                         <span style={{ background: '#e0e7ef', color: '#334155', borderRadius: '6px', padding: '2px 8px', fontSize: '12px', fontWeight: 600, display: 'inline-block', maxWidth: '100%', wordBreak: 'break-word' }}>
-                          {request.divisi}
+                          {request.division}
                         </span>
                       </td>
 
                       {/* 4. Total */}
                       <td style={{ ...td, fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700, color: '#0f172a', wordBreak: 'break-word' }}>
-                        {formatCurrency(request.total || 0)}
+                        {formatCurrency(request.amount || 0)}
                       </td>
 
                       {/* 5. Status */}

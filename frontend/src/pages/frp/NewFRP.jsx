@@ -726,19 +726,7 @@ export default function NewFRP() {
               </div>
               <div className="frp-grid-3" style={{ marginTop: "20px", gridTemplateColumns: (!isMobile && !isTablet) ? 'minmax(0, 1.8fr) minmax(0, 1.2fr) 170px' : undefined }}>
                 <FloatingGroup label="Division & Class">
-                  {canChangeDivision ? (
-                    <SearchableSelect
-                      name="divisi"
-                      value={values.divisi}
-                      onChange={selectedValue => updateField('divisi', selectedValue)}
-                      options={divisionSelectOptions}
-                      placeholder="Select divisi..."
-                      className="frp-select"
-                      menuPosition="fixed"
-                    />
-                  ) : (
-                    <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
-                  )}
+                  <input className="frp-input-readonly" value={departments.find(d => String(d.originalIndex) === String(values.divisi))?.label || values.divisi} readOnly />
                 </FloatingGroup>
                 <FloatingGroup label="Request by">
                   <input className="frp-input-readonly" value={values.dimintaOleh} readOnly />

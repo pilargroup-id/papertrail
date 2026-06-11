@@ -78,22 +78,23 @@ export default function StatusFRP() {
     setLoading(true)
     setError(null)
 
-    const params = new URLSearchParams({
-      view:    'all',
-      page:    currentPage,
-      limit:   rowsPerPage,
-      sortBy:  sortConfig.key,
-      sortDir: sortConfig.direction,
-    })
+    const params = new URLSearchParams()
+    params.set('view', 'all')
+    params.set('page', currentPage)
+    params.set('limit', rowsPerPage)
+    params.set('sortBy', sortConfig.key)
+    params.set('sortDir', sortConfig.direction)
     if (debouncedSearch) params.set('search', debouncedSearch)
     if (filterStatus)    params.set('status', filterStatus)
-
-    fetch(`/api/data/approval?${params}`, { signal: ctrl.signal })
+    fetch(`/api/data/frp-approval?${params}`, { signal: ctrl.signal })
       .then(res => {
         if (!res.ok) { window.location.href = '/'; throw new Error('Unauthorized') }
         return res.json()
       })
-      .then(d => { setData(d); setUser(d?.user) })
+      .then(nextData => {
+        setData(nextData)
+        setUser(nextData?.meta?.user)
+      })
       .catch(e => { if (e.name !== 'AbortError') setError(e.message || 'Gagal memuat data') })
       .finally(() => setLoading(false))
 
@@ -113,7 +114,7 @@ export default function StatusFRP() {
   const safePage      = data?.pagination?.page       ?? 1
   const rangeStart    = total === 0 ? 0 : (safePage - 1) * rowsPerPage + 1
   const rangeEnd      = Math.min(total, safePage * rowsPerPage)
-  const counts        = data?.counts || { pending: 0, approved: 0 }
+  const counts        = data?.summary || { pending: 0, approved: 0 }
 
   const toggleSort = key => {
     setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc' }))
@@ -150,8 +151,8 @@ export default function StatusFRP() {
     { label: 'No FRP',   key: 'frpNo',  w: '14%' },
     { label: 'Tanggal',  key: 'date',   w: '11%' },
     { label: 'Vendor',   key: 'vendor', w: '18%' },
-    { label: 'Divisi',   key: 'divisi', w: '12%' },
-    { label: 'Total',    key: 'total',  w: '13%' },
+    { label: 'Divisi',   key: 'division', w: '12%' },
+    { label: 'Total',    key: 'amount',   w: '13%' },
     { label: 'Status',   key: 'status', w: '11%' },
     { label: 'Attach',   key: null,     w: '9%'  },
     { label: 'Detail',   key: null,     w: '9%'  },
@@ -265,7 +266,7 @@ export default function StatusFRP() {
             /* ── Mobile Card View ── */
             <>
               <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {(data?.requests || []).map(req => (
+                {(data?.data || []).map(req => (
                   <div key={req.id} style={{ background: 'white', border: '1px solid #e8edf4', borderRadius: '14px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <button type="button" onClick={() => copyFrpNo(req.id, req.frpNo)}
@@ -279,10 +280,10 @@ export default function StatusFRP() {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: '10px' }}>
                       {[
-                        { label: 'Tanggal', value: formatDate(req.tanggalFrp) },
+                        { label: 'Tanggal', value: formatDate(req.date) },
                         { label: 'Vendor',  value: req.vendor || '-' },
-                        { label: 'Divisi',  value: req.divisi || '-' },
-                        { label: 'Total',   value: formatCurrency(req.total || 0) },
+                        { label: 'Divisi',  value: req.division || '-' },
+                        { label: 'Total',   value: formatCurrency(req.amount || 0) },
                       ].map(({ label, value }) => (
                         <div key={label}>
                           <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.04em', marginBottom: '2px' }}>{label}</div>
@@ -337,7 +338,7 @@ export default function StatusFRP() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(data?.requests || []).map((req, idx) => {
+                    {(data?.data || []).map((req, idx) => {
                       const rowBg = idx % 2 === 0 ? 'white' : '#fafbfc'
                       return (
                         <tr key={req.id} style={{ background: rowBg, transition: 'background 0.12s' }}
@@ -353,10 +354,10 @@ export default function StatusFRP() {
                               </span>
                             </button>
                           </td>
-                          <td style={{ ...td, color: '#475569', fontSize: '0.82rem' }}>{formatDate(req.tanggalFrp)}</td>
+                          <td style={{ ...td, color: '#475569', fontSize: '0.82rem' }}>{formatDate(req.date)}</td>
                           <td style={{ ...td, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={req.vendor}>{req.vendor || '-'}</td>
-                          <td style={{ ...td, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#475569' }} title={req.divisi}>{req.divisi || '-'}</td>
-                          <td style={{ ...td, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: '0.82rem' }}>{formatCurrency(req.total || 0)}</td>
+                          <td style={{ ...td, maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#475569' }} title={req.division}>{req.division || '-'}</td>
+                          <td style={{ ...td, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, fontSize: '0.82rem' }}>{formatCurrency(req.amount || 0)}</td>
                           <td style={td}><StatusBadge status={req.status} /></td>
                           <td style={td}>
                             {req.attachLink ? (

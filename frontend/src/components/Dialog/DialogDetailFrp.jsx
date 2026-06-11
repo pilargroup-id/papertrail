@@ -222,11 +222,11 @@ function DialogFrpDetail({
               <h3 style={headingStyle}><span className="material-icons-round" style={iconStyle}>info</span> Informasi FRP</h3>
               <div style={grid2}>
                 <div><label style={labelStyle}>Company Name</label><input readOnly value={request.companyName || ''} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Tanggal FRP</label><input readOnly value={formatDisplayDate(request.tanggalFrp)} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Tanggal FRP</label><input readOnly value={formatDisplayDate(request.date)} style={fieldStyle} /></div>
               </div>
               <div style={grid2}>
-                <div><label style={labelStyle}>Divisi</label><input readOnly value={request.divisi || ''} style={fieldStyle} /></div>
-                <div><label style={labelStyle}>Diminta Oleh</label><input readOnly value={request.dimintaOleh || ''} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Divisi</label><input readOnly value={request.division || ''} style={fieldStyle} /></div>
+                <div><label style={labelStyle}>Diminta Oleh</label><input readOnly value={request.requesterName || ''} style={fieldStyle} /></div>
               </div>
               <div><label style={labelStyle}>Keterangan FRP</label><textarea rows="2" readOnly value={request.keteranganFrp || ''} style={{ ...fieldStyle, resize: 'none' }} /></div>
               {request.rpReference && (

@@ -461,7 +461,16 @@ router.get('/api/rp/budgets', checkAuth, async (req, res) => {
 // RP FORM DATA
 // ============================================================
 
+router.get('/api/rp/form-options', checkAuth, async (req, res) => {
+    // alias — same handler as /api/rp/form-data
+    return rpFormData(req, res);
+});
+
 router.get('/api/rp/form-data', checkAuth, async (req, res) => {
+    return rpFormData(req, res);
+});
+
+async function rpFormData(req, res) {
     try {
         const u = req.session.user;
 
@@ -621,7 +630,7 @@ router.get('/api/rp/form-data', checkAuth, async (req, res) => {
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
-});
+}
 
 // ============================================================
 // RP NUMBER
@@ -650,6 +659,22 @@ router.get('/api/rp/processor-departments', checkAuth, async (req, res) => {
             FROM budget_access_policies
             WHERE module = 'RP'
               AND flow = 'PROCESS'
+              AND is_active = 1
+        `);
+        res.json(rows.map(r => r.department_class).filter(Boolean));
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/api/rp/cross-budget-divisions', checkAuth, async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT DISTINCT department_class
+            FROM budget_access_policies
+            WHERE module = 'RP'
+              AND flow = 'CREATE'
+              AND can_cross_department_budget = 1
               AND is_active = 1
         `);
         res.json(rows.map(r => r.department_class).filter(Boolean));
