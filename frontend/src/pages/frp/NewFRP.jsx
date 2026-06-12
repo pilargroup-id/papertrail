@@ -262,7 +262,7 @@ export default function NewFRP() {
   const navigate = useNavigate()
   const [frpData, setFrpData] = useState(null)
   const [values, setValues] = useState(blankForm)
-  const { setUser } = useUser()
+  const { user: sessionUser, setUser } = useUser()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -355,6 +355,7 @@ export default function NewFRP() {
   }, [])
 
   const FRP = frpData || {}
+  const activeUser = sessionUser || FRP.user || {}
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
@@ -366,6 +367,39 @@ export default function NewFRP() {
       .map(d => ({ ...d, label: d.class ? `${d.name} - ${d.class}` : d.name }))
       .sort((a, b) => a.label.localeCompare(b.label))
   }, [FRP.departments, values.companyName])
+
+  useEffect(() => {
+    if (!activeUser) return
+
+    setValues(prev => {
+      const nextCompany = activeUser.selectedCompany || prev.companyName || ''
+      const nextDivision = activeUser.selectedDivision || prev.divisi || ''
+      const matchedDivision = departments.find(d =>
+        String(d.originalIndex) === String(nextDivision) ||
+        normalizeCompany(d.name) === normalizeCompany(activeUser.selectedDivision || '') ||
+        normalizeCompany(d.class) === normalizeCompany(activeUser.selectedDivision || ''),
+      )
+      const nextClass = matchedDivision?.class || prev.kelas || activeUser.selectedDivision || ''
+      const nextRequestBy = getDisplayName(activeUser) || prev.dimintaOleh
+
+      if (
+        prev.companyName === nextCompany &&
+        prev.divisi === nextDivision &&
+        prev.kelas === nextClass &&
+        prev.dimintaOleh === nextRequestBy
+      ) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        companyName: nextCompany,
+        divisi: nextDivision,
+        kelas: nextClass,
+        dimintaOleh: nextRequestBy,
+      }
+    })
+  }, [activeUser, departments])
 
   const previousCompanyRef = useRef(values.companyName)
   const companySyncInitializedRef = useRef(false)
@@ -410,13 +444,13 @@ export default function NewFRP() {
     () => departments.map(d => ({ value: getDepartmentValue(d), label: d.label })),
     [departments],
   )
-  const canChangeDivision = FRP.user?.role === 'administrator' || divisionSelectOptions.length > 1
+  const canChangeDivision = activeUser?.role === 'administrator' || divisionSelectOptions.length > 1
 
   // Backend sudah scoping employees — filter by company + class saja
   const filteredEmployees = useMemo(() => {
     const source = FRP.employees || []
     if (!source.length) {
-      return [{ fullName: getDisplayName(FRP.user), companies: [{ name: FRP.user?.selectedCompany || '', class: FRP.user?.selectedDivision || '' }] }]
+      return [{ fullName: getDisplayName(activeUser), companies: [{ name: activeUser?.selectedCompany || '', class: activeUser?.selectedDivision || '' }] }]
     }
     const targetCompany = normalizeCompany(values.companyName)
     const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi))
@@ -428,7 +462,7 @@ export default function NewFRP() {
         return matchCompany && matchClass
       })
     )
-  }, [FRP.employees, FRP.user, departments, values.companyName, values.divisi])
+  }, [FRP.employees, activeUser, departments, values.companyName, values.divisi])
 
   // Backend sudah filter budget berdasarkan scope user
   // Frontend hanya filter by company + selected department
@@ -487,7 +521,7 @@ export default function NewFRP() {
         : [...prev.checkDocs, doc],
     }))
 
-  const visibleCompanyField = FRP.user?.role === 'administrator'
+  const visibleCompanyField = activeUser?.role === 'administrator'
         const companySelectOptions = useMemo(
     () => (FRP.companies || []).map(company => ({ value: company.name, label: company.name })),
     [FRP.companies],
@@ -1014,7 +1048,7 @@ export default function NewFRP() {
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={processSubmit}
         frpNo={values.frpNo || values.id}
-        dimintaOleh={values.dimintaOleh || getDisplayName(FRP.user)}
+        dimintaOleh={values.dimintaOleh || getDisplayName(activeUser)}
       />
       <DialogSuccesAction
         isOpen={successDialog.isOpen}

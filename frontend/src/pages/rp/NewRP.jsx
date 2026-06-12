@@ -256,7 +256,7 @@ export default function NewRP({
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [values, setValues] = useState(blankRp)
-  const { setUser } = useUser()
+  const { user: sessionUser, setUser } = useUser()
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
@@ -289,7 +289,8 @@ export default function NewRP({
   useEffect(() => { const h = () => setVw(window.innerWidth); window.addEventListener('resize', h); return () => window.removeEventListener('resize', h) }, [])
 
   const D = data || {}
-  const isAdmin = D.user?.role === 'administrator'
+  const activeUser = sessionUser || D.user || {}
+  const isAdmin = activeUser?.role === 'administrator'
   const isMobile = vw < MOBILE_BREAKPOINT
   const isTablet = vw >= MOBILE_BREAKPOINT && vw < TABLET_BREAKPOINT
   const selectMenuPosition = isMobile ? 'fixed' : 'fixed'
@@ -309,6 +310,39 @@ export default function NewRP({
       d => !values.companyName || normalizeCompany(d.company) === normalizeCompany(values.companyName)
     )
   }, [D.departments, values.companyName])
+
+  useEffect(() => {
+    if (!activeUser) return
+
+    setValues(prev => {
+      const nextCompany = activeUser.selectedCompany || prev.companyName || ''
+      const nextDivision = activeUser.selectedDivision || prev.divisi || ''
+      const matchedDept = departments.find(d =>
+        String(d.originalIndex) === String(nextDivision) ||
+        normalizeCompany(d.name) === normalizeCompany(activeUser.selectedDivision || '') ||
+        normalizeCompany(d.class) === normalizeCompany(activeUser.selectedDivision || ''),
+      )
+      const nextClass = matchedDept?.class || prev.class || activeUser.selectedDivision || ''
+      const nextCreatedBy = getDisplayName(activeUser) || prev.dibuatOleh
+
+      if (
+        prev.companyName === nextCompany &&
+        prev.divisi === nextDivision &&
+        prev.class === nextClass &&
+        prev.dibuatOleh === nextCreatedBy
+      ) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        companyName: nextCompany,
+        divisi: nextDivision,
+        class: nextClass,
+        dibuatOleh: nextCreatedBy,
+      }
+    })
+  }, [activeUser, departments])
 
   useEffect(() => {
     const previousCompany = previousCompanyRef.current
