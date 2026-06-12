@@ -23,6 +23,9 @@ export default function SearchableSelect({
   const triggerRef = useRef(null)
   const dropdownRef = useRef(null)
   const [rect, setRect] = useState(null)
+  const selectedValues = multiple
+    ? (Array.isArray(value) ? value : (value ? [value] : []))
+    : [value]
 
   const normalizedOptions = options.map(option =>
     typeof option === 'string'
@@ -34,11 +37,7 @@ export default function SearchableSelect({
         },
   )
 
-  const selectedValues = multiple
-    ? (Array.isArray(value) ? value : (value ? [value] : []))
-    : [value]
-  const selectedOption = normalizedOptions.find(option => option.value === value)
-  const selectedOptions = normalizedOptions.filter(option => selectedValues.includes(option.value))
+  const selectedOption = normalizedOptions.find(option => String(option.value) === String(value))
   const filteredOptions = normalizedOptions.filter(option =>
     String(option.keywords || '').toLowerCase().includes(search.toLowerCase()),
   )
@@ -217,14 +216,14 @@ export default function SearchableSelect({
               width: '100%',
               border: 'none',
               borderTop: '1px solid #f8fafc',
-              background: (multiple ? selectedSet.has(String(option.value)) : option.value === value) ? '#eff6ff' : 'white',
-              color: (multiple ? selectedSet.has(String(option.value)) : option.value === value) ? '#1f4e8c' : '#1e293b',
+              background: (multiple ? selectedSet.has(String(option.value)) : String(option.value) === String(value)) ? '#eff6ff' : 'white',
+              color: (multiple ? selectedSet.has(String(option.value)) : String(option.value) === String(value)) ? '#1f4e8c' : '#1e293b',
               textAlign: 'left',
               padding: '10px 12px',
               fontFamily: 'inherit',
               fontSize: '0.875rem',
               cursor: 'pointer',
-              fontWeight: (multiple ? selectedSet.has(String(option.value)) : option.value === value) ? 700 : 500,
+              fontWeight: (multiple ? selectedSet.has(String(option.value)) : String(option.value) === String(value)) ? 700 : 500,
               whiteSpace: 'normal',
               wordBreak: 'break-word',
               display: 'flex',

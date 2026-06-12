@@ -143,7 +143,7 @@ export default function DataTableRp({
   loading,
   isMobile,
   paginated,
-  filtered,
+  total = 0,
   safeCurrentPage,
   totalPages,
   rowsPerPage,
@@ -161,6 +161,34 @@ export default function DataTableRp({
   const [copiedId, setCopiedId] = useState(null)
   const showStaffActionsInDone = approvalMode === 'staff'
   const showRowActions = tab !== 'approved' || showStaffActionsInDone
+
+  const renderPageNumbers = () => {
+    const pages = []
+    const maxVisible = 5
+    let start = Math.max(1, safeCurrentPage - Math.floor(maxVisible / 2))
+    let end = Math.min(totalPages, start + maxVisible - 1)
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1)
+    for (let i = start; i <= end; i++) {
+      pages.push(
+        <button
+          key={i}
+          type="button"
+          onClick={() => setCurrentPage(i)}
+          style={{
+            width: '36px', height: '36px', borderRadius: '8px',
+            border: i === safeCurrentPage ? 'none' : '1px solid #dbe5f0',
+            background: i === safeCurrentPage ? '#1e5e4d' : 'white',
+            color: i === safeCurrentPage ? 'white' : '#475569',
+            fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+            display: 'grid', placeItems: 'center', transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => { if (i !== safeCurrentPage) { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1' } }}
+          onMouseLeave={(e) => { if (i !== safeCurrentPage) { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#dbe5f0' } }}
+        >{i}</button>
+      )
+    }
+    return pages
+  }
 
   const copyRpNo = async (id, rpNo) => {
     if (!rpNo) return
@@ -222,7 +250,7 @@ export default function DataTableRp({
     )
   }
 
-  const isEmpty = filtered.length === 0
+  const isEmpty = total === 0
 
   if (isEmpty && isMobile) {
     return (
@@ -492,57 +520,31 @@ export default function DataTableRp({
             borderRadius: '0 0 16px 16px',
           }}
         >
-          <div style={{ fontSize: '12px', color: '#64748b' }}>
-            {rangeStart}-{rangeEnd} dari {filtered.length}
+          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
+            {rangeStart}-{rangeEnd} dari {total} data
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>Rows</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <select
               value={rowsPerPage}
               onChange={(e) => setRowsPerPage(Number(e.target.value))}
-              style={{
-                padding: '6px 10px',
-                borderRadius: '8px',
-                border: '1px solid #dbe5f0',
-                fontFamily: 'inherit',
-                fontSize: '12px',
-              }}
+              style={{ padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #dbe5f0', fontFamily: 'inherit', fontSize: '12px', fontWeight: 600, background: 'white', outline: 'none' }}
             >
-              {[10, 25, 50, 100].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
+              {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
             <button
               type="button"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={safeCurrentPage === 1}
-              style={{
-                border: '1px solid #dbe5f0',
-                background: safeCurrentPage === 1 ? '#e2e8f0' : 'white',
-                color: '#475569',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
-                fontFamily: 'inherit',
-              }}
+              style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === 1 ? '#f1f5f9' : 'white', color: safeCurrentPage === 1 ? '#94a3b8' : '#475569', borderRadius: '8px', padding: '6px 12px', cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '12px' }}
             >
               Prev
             </button>
+            <span style={{ fontSize: '12px', color: '#64748b', padding: '0 4px' }}>{safeCurrentPage}/{totalPages}</span>
             <button
               type="button"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={safeCurrentPage === totalPages}
-              style={{
-                border: '1px solid #dbe5f0',
-                background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white',
-                color: '#475569',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
-                fontFamily: 'inherit',
-              }}
+              style={{ border: '1px solid #dbe5f0', background: safeCurrentPage === totalPages ? '#f1f5f9' : 'white', color: safeCurrentPage === totalPages ? '#94a3b8' : '#475569', borderRadius: '8px', padding: '6px 12px', cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '12px' }}
             >
               Next
             </button>
@@ -889,82 +891,71 @@ export default function DataTableRp({
         style={{
           flexShrink: 0,
           borderTop: '1px solid #e2e8f0',
-          padding: '12px 14px',
+          padding: '16px 20px',
           display: 'flex',
-          flexWrap: 'nowrap',
-          gap: '12px',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: '#f8fafc',
+          background: 'white',
+          borderRadius: '0 0 16px 16px',
+          flexWrap: 'wrap',
+          gap: '16px',
         }}
       >
-        <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>
-          {rangeStart}-{rangeEnd} dari {filtered.length} data
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            flexWrap: 'nowrap',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>Rows per page</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Rows</span>
             <select
               value={rowsPerPage}
               onChange={(e) => setRowsPerPage(Number(e.target.value))}
               style={{
-                padding: '6px 10px',
-                borderRadius: '8px',
-                border: '1px solid #dbe5f0',
-                fontFamily: 'inherit',
-                fontSize: '12px',
-                background: 'white',
+                padding: '6px 12px', borderRadius: '8px', border: '1.5px solid #dbe5f0',
+                background: 'white', fontFamily: 'inherit', fontSize: '13px',
+                fontWeight: 600, color: '#1e293b', cursor: 'pointer', outline: 'none',
               }}
             >
-              {[10, 25, 50, 100].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
+              {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
           </div>
-          <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap' }}>
-            Page {safeCurrentPage} / {totalPages}
-          </div>
+          <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+            Menampilkan {rangeStart}-{rangeEnd} dari {total} data
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <button
             type="button"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={safeCurrentPage === 1}
             style={{
               border: '1px solid #dbe5f0',
-              background: safeCurrentPage === 1 ? '#e2e8f0' : 'white',
-              color: '#475569',
-              borderRadius: '8px',
-              padding: '6px 10px',
+              background: safeCurrentPage === 1 ? '#f1f5f9' : 'white',
+              color: safeCurrentPage === 1 ? '#94a3b8' : '#475569',
+              borderRadius: '8px', padding: '8px 14px',
+              fontWeight: 700, fontSize: '13px',
               cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-              fontSize: '12px',
+              fontFamily: 'inherit', transition: 'all 0.2s',
             }}
+            onMouseEnter={(e) => { if (safeCurrentPage !== 1) { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1' } }}
+            onMouseLeave={(e) => { if (safeCurrentPage !== 1) { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#dbe5f0' } }}
           >
-            Prev
+            Previous
           </button>
+          {renderPageNumbers()}
           <button
             type="button"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={safeCurrentPage === totalPages}
             style={{
               border: '1px solid #dbe5f0',
-              background: safeCurrentPage === totalPages ? '#e2e8f0' : 'white',
-              color: '#475569',
-              borderRadius: '8px',
-              padding: '6px 10px',
+              background: safeCurrentPage === totalPages ? '#f1f5f9' : 'white',
+              color: safeCurrentPage === totalPages ? '#94a3b8' : '#475569',
+              borderRadius: '8px', padding: '8px 14px',
+              fontWeight: 700, fontSize: '13px',
               cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-              fontSize: '12px',
+              fontFamily: 'inherit', transition: 'all 0.2s',
             }}
+            onMouseEnter={(e) => { if (safeCurrentPage !== totalPages) { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1' } }}
+            onMouseLeave={(e) => { if (safeCurrentPage !== totalPages) { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = '#dbe5f0' } }}
           >
             Next
           </button>

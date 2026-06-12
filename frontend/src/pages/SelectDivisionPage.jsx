@@ -4,6 +4,22 @@ import { useNavigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import DialogChangeAccess from '../components/Dialog/DialogChangeAccess.jsx'
 
+const normalizeDepartment = (division, index = 0) => {
+  const className = division?.class || division?.dept_class || division?.departmentClass || ''
+  const name = division?.name || division?.deptName || division?.departmentName || ''
+  const label = division?.label || (className && name ? `${name} - ${className}` : (name || className || '-'))
+
+  return {
+    ...division,
+    originalIndex: division?.originalIndex ?? division?.id ?? index,
+    class: className,
+    name,
+    jobLevel: division?.jobLevel || division?.job_level_name || '',
+    jobLevelRank: division?.jobLevelRank || division?.job_level_rank || null,
+    label,
+  }
+}
+
 export default function SelectDivisionPage({
   isOpen = true,
   onClose,
@@ -23,7 +39,7 @@ export default function SelectDivisionPage({
 
     let cancelled = false
 
-    fetch('/api/data/select-division')
+    fetch('/api/departments')
       .then((response) => {
         if (!response.ok) {
           window.location.href = '/'
@@ -35,11 +51,21 @@ export default function SelectDivisionPage({
       .then((payload) => {
         if (cancelled) return
 
-        setData(payload)
-        setUser(payload?.user)
+        const divisions = Array.isArray(payload)
+          ? payload
+          : (payload?.divisions || payload?.departments || payload?.data || [])
+        const normalizedDivisions = divisions.map((division, index) => normalizeDepartment(division, index))
 
-        const initialDivision = payload?.selectedDivision || payload?.user?.selectedDivision || payload?.divisions?.[0]?.class || ''
-        const initialItem = (payload?.divisions || []).find((division) => division.class === initialDivision) || payload?.divisions?.[0]
+        setData({
+          ...(payload && !Array.isArray(payload) ? payload : {}),
+          divisions: normalizedDivisions,
+        })
+        if (payload?.user) {
+          setUser(payload.user)
+        }
+
+        const initialDivision = payload?.selectedDivision || payload?.user?.selectedDivision || normalizedDivisions[0]?.class || ''
+        const initialItem = normalizedDivisions.find((division) => division.class === initialDivision || division.name === initialDivision) || normalizedDivisions[0]
 
         if (initialItem) {
           setSelectedDivision(initialItem.class || '')
@@ -185,7 +211,7 @@ export default function SelectDivisionPage({
                   onMouseLeave={() => setHoveredIdx(null)}
                 >
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.98rem' }}>{division.class}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.98rem' }}>{division.label || division.class || division.name}</div>
                     <div style={{ fontSize: '0.82rem', color: isSelected ? '#15803d' : '#94a3b8', marginTop: '2px' }}>
                       {division.jobLevel || selectedJobLevel || '-'}
                     </div>

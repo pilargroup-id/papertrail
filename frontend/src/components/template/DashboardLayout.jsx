@@ -1,4 +1,4 @@
-import { useLocation, Outlet } from 'react-router-dom'
+import { useLocation, Outlet, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Sidebar from './Sidebar'
 import Header from './Header'
@@ -9,8 +9,29 @@ import { POST_LOGIN_ACCESS_DIALOG_KEY } from '../../utils/auth'
 
 const HIDE_MENU_PATHS = new Set(['/select-company', '/select-division'])
 
+function getDisplayName(user) {
+  return (
+    user?.fullName ||
+    user?.name ||
+    user?.username ||
+    user?.displayName ||
+    'User'
+  )
+}
+
+function getDisplayJobLevel(user) {
+  return (
+    user?.selectedJobLevel ||
+    user?.jobLevelName ||
+    user?.jobLevel ||
+    user?.role ||
+    'staff'
+  )
+}
+
 export default function DashboardLayout() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { sidebarCollapsed, setSidebarCollapsed, mobileMenuOpen, setMobileMenuOpen } = useSidebarState()
   const { user } = useUser()
   const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false)
@@ -52,15 +73,21 @@ export default function DashboardLayout() {
       <Sidebar
         collapsed={sidebarCollapsed}
         mobileOpen={mobileMenuOpen}
-        userName={u.fullName}
-        userJobLevel={u.selectedJobLevel}
+        userName={getDisplayName(u)}
+        userJobLevel={getDisplayJobLevel(u)}
         userDivision={u.selectedDivision}
-        userRole={u.role}
-        userIsAdmin={u.role === 'administrator'}
+        userRole={u.role || u.selectedRole}
+        userIsAdmin={u.role === 'administrator' || u.selectedRole === 'administrator'}
         allAssignments={u.allAssignments || []}
         onToggleCollapse={handleSidebarToggle}
         onCloseMobile={() => setMobileMenuOpen(false)}
-        onChangeAccess={() => setIsAccessDialogOpen(true)}
+        onChangeAccess={(href) => {
+          if (href === '/select-company') {
+            navigate('/select-company')
+          } else {
+            setIsAccessDialogOpen(true)
+          }
+        }}
         hideMenu={HIDE_MENU_PATHS.has(pathname)}
       />
       <div className="dashboard-stage">

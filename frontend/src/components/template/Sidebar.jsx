@@ -59,6 +59,77 @@ function getInitialExpandedByPathname(pathname) {
   return initial
 }
 
+function normalizeText(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function normalizeDivision(value) {
+  return String(value || '').trim().toUpperCase()
+}
+
+function matchesAuthRule(rule, context) {
+  if (!rule) return true
+
+  if (typeof rule === 'function') {
+    return rule(context)
+  }
+
+  if (rule.allow === 'all') {
+    return true
+  }
+
+  if (Array.isArray(rule.any)) {
+    return rule.any.some((nestedRule) => matchesAuthRule(nestedRule, context))
+  }
+
+  if (Array.isArray(rule.all)) {
+    return rule.all.every((nestedRule) => matchesAuthRule(nestedRule, context))
+  }
+
+  const roleList = Array.isArray(rule.roles) ? rule.roles.map(normalizeText) : null
+  const divisionList = Array.isArray(rule.divisions) ? rule.divisions.map(normalizeDivision) : null
+  const jobLevelList = Array.isArray(rule.jobLevels) ? rule.jobLevels.map(normalizeText) : null
+
+  if (roleList && !roleList.includes(context.role)) {
+    return false
+  }
+
+  if (divisionList && !divisionList.some((division) => context.divisions.has(division))) {
+    return false
+  }
+
+  if (jobLevelList && !jobLevelList.includes(context.jobLevel)) {
+    return false
+  }
+
+  return true
+}
+
+function filterMenuItems(items, context) {
+  return (items || [])
+    .map((item) => {
+      if (!matchesAuthRule(item.auth, context)) {
+        return null
+      }
+
+      if (item.children?.length) {
+        const children = filterMenuItems(item.children, context)
+
+        if (!children.length) {
+          return null
+        }
+
+        return {
+          ...item,
+          children,
+        }
+      }
+
+      return item
+    })
+    .filter(Boolean)
+}
+
 function SidebarNavItem({
   item,
   selectedPath,
@@ -205,41 +276,121 @@ function Sidebar({
   const showBack = (allAssignments || []).length > 1
   const backUrl = uniqueCompanies.length > 1 ? '/select-company' : '/select-division'
   const rpApprovalHref = '/rp-approval'
+  const normalizedRole = normalizeText(userRole)
+  const normalizedJobLevel = normalizeText(userJobLevel)
+  const assignmentDivisions = useMemo(
+    () => {
+      const divisions = new Set(
+        (allAssignments || [])
+          .map((assignment) => normalizeDivision(assignment?.class))
+          .filter(Boolean),
+      )
 
-  const primaryItems = hideMenu ? [] : [
-    ...(userIsAdmin ? [{ label: 'Dashboard', href: '/dashboard', icon: 'space_dashboard' }] : []),
-    { label: 'FRP', icon: 'receipt_long', children: [
-      { label: 'New FRP', href: '/frp', icon: 'note_add' },
-      { label: 'Approval FRP', href: '/approval', icon: 'fact_check' },
-      { label: 'Status FRP', href: '/approved', icon: 'task_alt' },
-    ]},
-    { label: 'RP', icon: 'shopping_bag', children: [
-      { label: 'New RP', href: '/rp', icon: 'note_add' },
-      { label: 'Approval RP', href: rpApprovalHref, icon: 'rule' },
-    ]},
-    { label: 'Document', icon: 'description', children: [
-      { label: 'Generate Document', href: '/document/generate', icon: 'note_add' },
-      { label: 'Riwayat Document', href: '/document/riwayat', icon: 'history' },
-      { label: 'Kelola Template', href: '/document/template', icon: 'folder_open' },
-    ]},
-    ...((userIsAdmin || (allAssignments || []).some(a => a.class === 'IT')) ? [{
-      label: 'Report', icon: 'analytics', children: [
-        { label: 'Report FRP', href: '/laporan-frp', icon: 'receipt_long' },
-        { label: 'Report RP', href: '/laporan-rp', icon: 'shopping_bag' }
-      ]
-    }] : []),
-    ...(userIsAdmin ? [{
-      label: 'Master Data', icon: 'dns', children: [
-        { label: 'Vendor', href: '/admin/vendors', icon: 'storefront' },
-        { label: 'Anggaran', href: '/admin/budgets', icon: 'account_balance' },
-      ]
-    }] : []),
-  ]
+      if (userDivision) {
+        divisions.add(normalizeDivision(userDivision))
+      }
 
-  const secondaryItems = [
-    ...(showBack && !hideMenu ? [{ label: 'Change Access', href: backUrl, icon: 'switch_account' }] : []),
-    { label: 'Back Pilargroup', href: 'https://pilargroup.id/dashboard', icon: 'logout', danger: true, external: true, flipIcon: true },
-  ]
+      return divisions
+    },
+    [allAssignments, userDivision],
+  )
+  const isAdmin = userIsAdmin || normalizedRole === 'administrator'
+  const isITUser = userDivision === 'IT' || assignmentDivisions.has('IT')
+  const authContext = useMemo(() => ({
+    role: normalizedRole,
+    jobLevel: normalizedJobLevel,
+    division: normalizeDivision(userDivision),
+    divisions: assignmentDivisions,
+    isAdmin,
+    isITUser,
+  }), [assignmentDivisions, isAdmin, isITUser, normalizedJobLevel, normalizedRole, userDivision])
+
+  const primaryItems = useMemo(() => {
+    const rawItems = hideMenu ? [] : [
+      {
+        label: 'Dashboard',
+        href: '/dashboard',
+        icon: 'space_dashboard',
+        auth: { roles: ['administrator'] },
+      },
+      {
+        label: 'FRP',
+        icon: 'receipt_long',
+        auth: { allow: 'all' },
+        children: [
+          { label: 'New FRP', href: '/frp', icon: 'note_add', auth: { allow: 'all' } },
+          { label: 'Approval FRP', href: '/approval', icon: 'fact_check', auth: { allow: 'all' } },
+          { label: 'Status FRP', href: '/approved', icon: 'task_alt', auth: { allow: 'all' } },
+        ],
+      },
+      {
+        label: 'RP',
+        icon: 'shopping_bag',
+        auth: { allow: 'all' },
+        children: [
+          { label: 'New RP', href: '/rp', icon: 'note_add', auth: { allow: 'all' } },
+          { label: 'Approval RP', href: rpApprovalHref, icon: 'rule', auth: { allow: 'all' } },
+        ],
+      },
+      {
+        label: 'Document',
+        icon: 'description',
+        auth: { allow: 'all' },
+        children: [
+          { label: 'Generate Document', href: '/document/generate', icon: 'note_add', auth: { allow: 'all' } },
+          { label: 'Riwayat Document', href: '/document/riwayat', icon: 'history', auth: { allow: 'all' } },
+          { label: 'Kelola Template', href: '/document/template', icon: 'folder_open', auth: { allow: 'all' } },
+        ],
+      },
+      {
+        label: 'Report',
+        icon: 'analytics',
+        auth: {
+          any: [
+            { roles: ['administrator'] },
+            { divisions: ['IT'] },
+          ],
+        },
+        children: [
+          { label: 'Report FRP', href: '/laporan-frp', icon: 'receipt_long', auth: { any: [{ roles: ['administrator'] }, { divisions: ['IT'] }] } },
+          { label: 'Report RP', href: '/laporan-rp', icon: 'shopping_bag', auth: { any: [{ roles: ['administrator'] }, { divisions: ['IT'] }] } },
+        ],
+      },
+      {
+        label: 'Master Data',
+        icon: 'dns',
+        auth: { roles: ['administrator'] },
+        children: [
+          { label: 'Vendor', href: '/admin/vendors', icon: 'storefront', auth: { roles: ['administrator'] } },
+          { label: 'Anggaran', href: '/admin/budgets', icon: 'account_balance', auth: { roles: ['administrator'] } },
+        ],
+      },
+    ]
+
+    return filterMenuItems(rawItems, authContext)
+  }, [authContext, hideMenu, rpApprovalHref])
+
+  const secondaryItems = useMemo(() => {
+    const rawItems = [
+      ...(showBack && !hideMenu ? [{
+        label: 'Change Access',
+        href: backUrl,
+        icon: 'switch_account',
+        auth: { allow: 'all' },
+      }] : []),
+      {
+        label: 'Back Pilargroup',
+        href: 'https://pilargroup.id/dashboard',
+        icon: 'logout',
+        danger: true,
+        external: true,
+        flipIcon: true,
+        auth: { allow: 'all' },
+      },
+    ]
+
+    return filterMenuItems(rawItems, authContext)
+  }, [authContext, backUrl, hideMenu, showBack])
 
   const initialExpandedPathname = useMemo(() => getInitialExpandedByPathname(pathname), [pathname])
   const [userExpandedGroups, setUserExpandedGroups] = useState({})
@@ -324,7 +475,7 @@ function Sidebar({
   
   const displayedRole = userDivision && userJobLevel
     ? `${userDivision} ${userJobLevel}`
-    : (userJobLevel || userDivision || (userIsAdmin ? 'Administrator' : 'Staff'))
+    : (userJobLevel || userDivision || userRole || (userIsAdmin ? 'Administrator' : 'Staff'))
 
   return (
     <>

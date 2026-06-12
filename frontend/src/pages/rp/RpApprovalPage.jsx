@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useUser } from '../../contexts/UserContext'
 import DialogConfirm from '../../components/Dialog/DialogConfirm'
@@ -207,6 +207,8 @@ export default function RpApprovalPage() {
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchInput, setSearchInput] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
   const [filters, setFilters] = useState({
     search: '',
     date: '',
@@ -222,11 +224,6 @@ export default function RpApprovalPage() {
   const currentUser = data?.user || null
   const approvalMode = getRpApprovalMode(currentUser)
   const currentUserJobLevelRank = getUserJobLevelRank(currentUser)
-  // console.log('=== DEBUG RP APPROVAL ===')
-  // console.log('currentUser:', currentUser)
-  // console.log('approvalMode:', approvalMode)
-  // console.log('userJobLevelRank:', currentUserJobLevelRank)
-
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
   const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
@@ -273,8 +270,32 @@ export default function RpApprovalPage() {
   }, [isApprovedView])
 
   useEffect(() => {
-    loadData(tab)
-  }, [tab])
+    const ctrl = new AbortController()
+    const params = new URLSearchParams()
+    params.set('view', tab)
+    params.set('page', currentPage)
+    params.set('limit', rowsPerPage)
+    params.set('sortBy', sortConfig.key)
+    params.set('sortDir', sortConfig.direction)
+    if (filters.search)    params.set('search',    filters.search)
+    if (filters.date)      params.set('date',      filters.date)
+    if (filters.creator)   params.set('creator',   filters.creator)
+    if (filters.status)    params.set('status',    filters.status)
+    if (filters.division)  params.set('division',  filters.division)
+    if (filters.processor) params.set('processor', filters.processor)
+
+    setLoading(true)
+    fetch(`/api/data/rp-approval?${params}`, { signal: ctrl.signal })
+      .then(r => {
+        if (!r.ok) { window.location.href = '/'; throw new Error('Unauthorized') }
+        return r.json()
+      })
+      .then(d => { setData(d); setUser(d?.user) })
+      .catch(err => { if (err.name !== 'AbortError') {} })
+      .finally(() => setLoading(false))
+
+    return () => ctrl.abort()
+  }, [tab, filters, currentPage, rowsPerPage, sortConfig, refreshKey])
 
   useEffect(() => {
     if (pathname === '/rp-approval') return
@@ -321,19 +342,6 @@ export default function RpApprovalPage() {
     if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc'
     setSortConfig({ key, direction })
   }
-
-  const renderSortIcon = key => {
-    if (!key) return null
-    if (sortConfig.key !== key) {
-      return <span className="material-icons-round" style={{ fontSize: '14px', marginLeft: '4px', verticalAlign: 'middle', opacity: 0.3 }}>unfold_more</span>
-    }
-    return sortConfig.direction === 'asc'
-      ? <span className="material-icons-round" style={{ fontSize: '14px', marginLeft: '4px', verticalAlign: 'middle', color: '#2563eb' }}>arrow_upward</span>
-      : <span className="material-icons-round" style={{ fontSize: '14px', marginLeft: '4px', verticalAlign: 'middle', color: '#2563eb' }}>arrow_downward</span>
-  }
-
-  const calcTotal = rp =>
-    (rp.items || []).reduce((sum, item) => sum + parseNumber(item.qty) * parseNumber(item.estimatedValue), 0)
 
   const requestAction = (rp, action, body = {}) => {
     setConfirmAction({ rp, action, body })
@@ -419,112 +427,27 @@ export default function RpApprovalPage() {
   }
 
   const D = data || {}
-  const requests = D.requests || []
   const user = currentUser || {}
   const userJobLevelRank = getUserJobLevelRank(user)
   const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
   const isAdmin = user?.role === 'administrator'
   const userDivision = user.selectedDivision || ''
   const canTakeApprovalAction = userJobLevelRank >= 2 && !/\bstaff\b/.test(userJobLevelName)
-  const isProcessDivision = division => ['IT', 'HCGA', 'Product'].includes(userDivision) && userDivision === division
+  const isProcessDivision = useCallback(division => ['IT', 'HCGA', 'Product'].includes(userDivision) && userDivision === division, [userDivision])
 
-  const divisions = useMemo(
-    () => [...new Set(requests.map(request => request.divisi).filter(Boolean))].sort(),
-    [requests],
-  )
-  const processors = useMemo(
-    () => [...new Set(requests.map(request => request.diprosesOleh).filter(Boolean))].sort(),
-    [requests],
-  )
-  const creators = useMemo(
-    () => [...new Set(requests.map(request => request.dibuatOleh).filter(Boolean))].sort(),
-    [requests],
-  )
+  const pagination = D.pagination || { total: 0, page: 1, limit: rowsPerPage, totalPages: 1 }
+  const totalPages = pagination.totalPages
+  const safeCurrentPage = pagination.page
+  const totalCount = pagination.total
+  const rangeStart = totalCount === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
+  const rangeEnd = Math.min(totalCount, safeCurrentPage * rowsPerPage)
 
-  const filtered = useMemo(() => {
-    const list = requests.filter(request => {
-      const search = filters.search.toLowerCase()
-      const matchSearch =
-        !search ||
-        (request.rpNo || '').toLowerCase().includes(search) ||
-        (request.vendorSuggestion || '').toLowerCase().includes(search) ||
-        (request.kategoriPembelian || '').toLowerCase().includes(search)
-      const requestDate = (request.createdAt || request.tanggalDibutuhkan || '').slice(0, 10)
-      const matchDate = !filters.date || requestDate === filters.date || request.tanggalDibutuhkan === filters.date
-      const matchCreator = !filters.creator || request.dibuatOleh === filters.creator
-      const matchStatus = !filters.status || request.status === filters.status
-      const matchDivision = !filters.division || request.divisi === filters.division
-      const matchProcessor = !filters.processor || request.diprosesOleh === filters.processor
+  const filterOptions = D.filterOptions || {}
+  const creatorOptions   = (filterOptions.creators   || []).map(v => ({ value: v, label: v }))
+  const divisionOptions  = (filterOptions.divisions  || []).map(v => ({ value: v, label: v }))
+  const processorOptions = (filterOptions.processors || []).map(v => ({ value: v, label: v }))
+  const statusOptions    = Object.entries(STATUS_META).map(([value, meta]) => ({ value, label: meta.label }))
 
-      return matchSearch && matchDate && matchCreator && matchStatus && matchDivision && matchProcessor
-    })
-
-    return list.sort((a, b) => {
-      let valA
-      let valB
-      if (sortConfig.key === 'date') {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : parseInt(a.id, 10) || 0
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : parseInt(b.id, 10) || 0
-        return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA
-      }
-      if (sortConfig.key === 'rpNo') {
-        valA = (a.rpNo || '').toLowerCase()
-        valB = (b.rpNo || '').toLowerCase()
-      } else if (sortConfig.key === 'creator') {
-        valA = (a.dibuatOleh || '').toLowerCase()
-        valB = (b.dibuatOleh || '').toLowerCase()
-      } else if (sortConfig.key === 'division') {
-        valA = (a.divisi || '').toLowerCase()
-        valB = (b.divisi || '').toLowerCase()
-      } else if (sortConfig.key === 'processor') {
-        valA = (a.diprosesOleh || '').toLowerCase()
-        valB = (b.diprosesOleh || '').toLowerCase()
-      } else if (sortConfig.key === 'status') {
-        valA = (a.status || '').toLowerCase()
-        valB = (b.status || '').toLowerCase()
-      } else if (sortConfig.key === 'total') {
-        valA = calcTotal(a)
-        valB = calcTotal(b)
-        return sortConfig.direction === 'asc' ? valA - valB : valB - valA
-      }
-
-      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1
-      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1
-      return 0
-    })
-  }, [requests, filters, sortConfig])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
-  const safeCurrentPage = Math.min(currentPage, totalPages)
-  const paginated = useMemo(() => {
-    const start = (safeCurrentPage - 1) * rowsPerPage
-    return filtered.slice(start, start + rowsPerPage)
-  }, [filtered, rowsPerPage, safeCurrentPage])
-  const rangeStart = filtered.length === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
-  const rangeEnd = Math.min(filtered.length, safeCurrentPage * rowsPerPage)
-
-  const creatorOptions = useMemo(() => creators.map(value => ({ value, label: value })), [creators])
-  const divisionOptions = useMemo(() => divisions.map(value => ({ value, label: value })), [divisions])
-  const processorOptions = useMemo(() => processors.map(value => ({ value, label: value })), [processors])
-  const statusOptions = useMemo(
-    () => Object.entries(STATUS_META).map(([value, meta]) => ({ value, label: meta.label })),
-    [],
-  )
-
-  const filterInput = {
-    width: '100%',
-    padding: '9px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #dde3ed',
-    fontSize: '13px',
-    background: 'white',
-    boxSizing: 'border-box',
-    fontFamily: 'inherit',
-    outline: 'none',
-    color: '#1e293b',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-    minHeight: '42px',
-  }
   const detailValueBox = {
     padding: '10px 12px',
     borderRadius: '10px',
@@ -536,43 +459,6 @@ export default function RpApprovalPage() {
     boxSizing: 'border-box',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
   }
-  const filterGridStyle = useMemo(
-    () => ({
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : getGridColumns(6, false, isTablet),
-      gap: isMobile ? '10px' : '15px',
-      alignItems: 'flex-end',
-    }),
-    [isMobile, isTablet],
-  )
-  const desktopHeaders = [
-    { label: 'Ringkasan', key: 'date' },
-    { label: 'Pemohon', key: 'creator' },
-    { label: 'Divisi', key: 'division' },
-    { label: 'Proses', key: 'processor' },
-    { label: 'Total', key: 'total' },
-    { label: 'Status', key: 'status' },
-    { label: 'Aksi', key: null },
-    { label: 'Detail', key: null },
-  ]
-  const desktopColumnWidths = ['14%', '14%', '9%', '11%', '12%', '13%', '18%', '9%']
-
-  const actionButtonStyle = variant => {
-    const variants = {
-      approve: { background: '#dcfce7', color: '#15803d', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
-      reject: { background: '#fee2e2', color: '#dc2626', border: 'none', padding: '5px 12px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
-      neutral: { background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
-      primary: { background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
-      warning: { background: '#fef9c3', color: '#92400e', border: 'none', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit' },
-    }
-    const currentVariant = variants[variant] || variants.neutral;
-    return {
-      cursor: actionLoading ? 'not-allowed' : 'pointer',
-      opacity: actionLoading ? 0.7 : 1,
-      ...currentVariant,
-    }
-  }
-
   const renderStatus = status => {
     const meta = STATUS_META[status] || { label: status || '-', background: '#e2e8f0', color: '#475569' }
     return (
@@ -614,7 +500,7 @@ export default function RpApprovalPage() {
   const renderDetail = () => {
     if (!selected) return null
     const items = selected.items || []
-    const total = calcTotal(selected)
+    const total = selected.total ?? 0
 
     // Determine what actions should be rendered in the footer
     const canProcess =
@@ -956,13 +842,15 @@ export default function RpApprovalPage() {
           <FilterApprovalRp
             filters={filters}
             setFilters={setFilters}
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
             creatorOptions={creatorOptions}
             statusOptions={statusOptions}
             divisionOptions={divisionOptions}
             processorOptions={processorOptions}
             isMobile={isMobile}
-            filteredCount={filtered.length}
-            onRefresh={() => loadData(tab)}
+            filteredCount={totalCount}
+            onRefresh={() => setRefreshKey(k => k + 1)}
           />
 
           {/* TABS INSIDE CARD, BELOW FILTER, ABOVE TABLE */}
@@ -981,8 +869,8 @@ export default function RpApprovalPage() {
             approvalMode={approvalMode}
             loading={loading}
             isMobile={isMobile}
-            paginated={paginated}
-            filtered={filtered}
+            paginated={D.requests || []}
+            total={totalCount}
             safeCurrentPage={safeCurrentPage}
             totalPages={totalPages}
             rowsPerPage={rowsPerPage}
@@ -994,7 +882,7 @@ export default function RpApprovalPage() {
             requestSort={requestSort}
             renderRowActions={renderRowActions}
             setSelected={setSelected}
-            calcTotal={calcTotal}
+            calcTotal={rp => rp.total ?? 0}
           />
         </div>
       </main>
@@ -1048,6 +936,7 @@ export default function RpApprovalPage() {
         icon={actionResultDialog?.icon || getActionResultIcon(actionResultDialog?.action)}
         onConfirm={() => {
           setActionResultDialog(null)
+          setRefreshKey(k => k + 1)
         }}
         buttonText="Tutup"
       />

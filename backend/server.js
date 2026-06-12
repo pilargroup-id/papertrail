@@ -92,6 +92,11 @@ app.use(async (req, res, next) => {
         return next();
     }
 
+    // Di dev mode tanpa JWT_SECRET, abaikan token (devAuth sudah handle session)
+    if (!process.env.JWT_SECRET) {
+        return next();
+    }
+
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -146,8 +151,9 @@ app.use(async (req, res, next) => {
             ...user,
             sso: true,
             apps: allowedApps,
+            cv: user.cv ?? decoded.cv ?? null,
         };
-
+        
         req.session.save((err) => {
             if (err) {
                 console.error('Failed to save SSO session:', err);

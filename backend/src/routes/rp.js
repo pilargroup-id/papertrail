@@ -397,109 +397,240 @@ router.get('/rp-approved', checkAuth, (req, res) => res.sendSPA());
 router.get('/rp/:id', checkAuth, (req, res) => res.sendSPA());
 
 // ============================================================
-// RP FORM DATA
+// RP LOOKUP ENDPOINTS
 // ============================================================
 
-router.get('/api/rp/form-data', checkAuth, async (req, res) => {
+// GET /api/rp/budgets
+// Mengembalikan budget dengan remaining dihitung dari FRP + RP approved
+router.get('/api/rp/budgets', checkAuth, async (req, res) => {
     try {
-        const u = req.session.user;
-        const [employees, departmentsData, companiesData] = await Promise.all([
-            getAllEmployees(),
+        const [departmentsData, companiesData, rpRequests, frpRequests] = await Promise.all([
             getDepartmentRows(),
             getCompanies(),
+            fetchAllRpRequests(),
+            fetchAllFrpRequests(),
         ]);
-        const processDivisions = [...new Set(departmentsData.map(d => d.name).filter(Boolean))].sort();
 
-        const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
-        const budgetsData = budgetsRows.map(row => ({
-            id: row.id,
-            company_id: null,
-            companyId: null,
-            department_id: row.department_id,
-            departmentId: row.department_id,
-            class_id: row.department_class,
-            classId: row.department_class,
-            class: row.department_class,
-            description: row.project_name,
-            type: row.budget_type,
-            total_amount: Number(row.budget_amount || 0),
-            totalAmount: Number(row.budget_amount || 0),
-            budget_remaining: Number(row.budget_remaining || 0),
-            sisa_budget: Number(row.budget_remaining || 0),
-            sisaBudget: Number(row.budget_remaining || 0),
-            remainingAmount: Number(row.budget_remaining || 0)
-        }));
-        const vendorsData = readJson('vendors.json');
-        const rpRequests = await fetchAllRpRequests();
-        const frpRequests = await fetchAllFrpRequests();
+        const [budgetsRows] = await db.query(`
+            SELECT id, department_id, department_name, department_class, department_code,
+                   project_name, budget_type, budget_amount, budget_used, budget_remaining
+            FROM master_budgets
+        `);
 
-        // Calculate used budgets from both FRP (approved) and RP (approved)
         const usedBudgets = {};
         frpRequests.forEach(r => {
             if (r.status === 'APPROVED' && r.items) {
                 r.items.forEach(item => {
-                    const bId = item.budgetId;
                     const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                    usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
+                    usedBudgets[item.budgetId] = (usedBudgets[item.budgetId] || 0) + amt;
                 });
             }
         });
         rpRequests.forEach(r => {
             if (r.status === 'approved' && r.items) {
                 r.items.forEach(item => {
-                    const bId = item.budgetId;
                     const amt = parseFloat(String(item.estimatedValue || '0').replace(/[^0-9.-]/g, '')) || 0;
-                    usedBudgets[bId] = (usedBudgets[bId] || 0) + (amt * (parseFloat(item.qty) || 1));
+                    usedBudgets[item.budgetId] = (usedBudgets[item.budgetId] || 0) + amt * (parseFloat(item.qty) || 1);
                 });
             }
         });
 
-        const budgetsWithRemaining = budgetsData.map(b => {
-            const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-            const bDept = departmentsData.find(d => String(d.id) === String(bDepartmentId));
-            const bCompanyId = b.company_id || b.companyId || (bDept ? bDept.companyId : null);
-            const bCompany = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
-            const bClassId = b.class_id !== undefined ? b.class_id : b.classId;
-            const bClass = departmentsData.find(d => String(d.id) === String(bClassId) || d.class === bClassId);
+        const budgets = budgetsRows.map(row => {
+            const dept    = departmentsData.find(d => String(d.id) === String(row.department_id));
+            const company = companiesData.find(c => String(c.id) === String(dept?.companyId));
             return {
-                ...b,
-                company_id: bCompanyId,
-                companyId: bCompanyId,
-                company: bCompany ? (bCompany.name || bCompany.code) : (b.company || 'PT PILAR NIAGA MAKMUR'),
-                department: bDept ? bDept.name : (b.department || ''),
-                class: bClass ? bClass.class : (b.class || ''),
-                remainingAmount: (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0),
+                id:              row.id,
+                department_id:   row.department_id,
+                department:      row.department_name || (dept?.name ?? ''),
+                class:           row.department_class || (dept?.class ?? ''),
+                description:     row.project_name || '',
+                type:            row.budget_type || '',
+                company:         company ? (company.name || company.code) : 'PT PILAR NIAGA MAKMUR',
+                totalAmount:     Number(row.budget_amount || 0),
+                remainingAmount: Number(row.budget_amount || 0) - (usedBudgets[row.id] || 0),
             };
         });
 
+        res.json(budgets);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ============================================================
+// RP FORM DATA
+// ============================================================
+
+router.get('/api/rp/form-options', checkAuth, async (req, res) => {
+    // alias — same handler as /api/rp/form-data
+    return rpFormData(req, res);
+});
+
+router.get('/api/rp/form-data', checkAuth, async (req, res) => {
+    return rpFormData(req, res);
+});
+
+async function rpFormData(req, res) {
+    try {
+        const u = req.session.user;
+
+        // Fetch all raw data in parallel
+        const [
+            departmentsData, companiesData, vendorsData,
+            rpRequests, frpRequests,
+            [budgetsRows], [processorRows], [crossBudgetRows],
+        ] = await Promise.all([
+            getDepartmentRows(),
+            getCompanies(),
+            Promise.resolve(readJson('vendors.json')),
+            fetchAllRpRequests(),
+            fetchAllFrpRequests(),
+            db.query(`SELECT id, department_id, department_name, department_class,
+                      project_name, budget_type, budget_amount FROM master_budgets`),
+            db.query(`SELECT DISTINCT department_class FROM budget_access_policies
+                      WHERE module = 'RP' AND flow = 'PROCESS' AND is_active = 1`),
+            db.query(`SELECT DISTINCT department_class FROM budget_access_policies
+                      WHERE module = 'RP' AND flow = 'CREATE'
+                        AND can_cross_department_budget = 1 AND is_active = 1`),
+        ]);
+
+        // Divisions that can use any company budget
+        const crossBudgetSet = new Set(
+            crossBudgetRows.map(r => (r.department_class || '').trim().toUpperCase()).filter(Boolean)
+        );
+        const processorDepts = processorRows.map(r => r.department_class).filter(Boolean);
+
+        // Compute used budgets from approved FRP + RP
+        const usedBudgets = {};
+        frpRequests.forEach(r => {
+            if (r.status === 'APPROVED' && r.items) {
+                r.items.forEach(item => {
+                    const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                    usedBudgets[item.budgetId] = (usedBudgets[item.budgetId] || 0) + amt;
+                });
+            }
+        });
+        rpRequests.forEach(r => {
+            if (r.status === 'approved' && r.items) {
+                r.items.forEach(item => {
+                    const amt = parseFloat(String(item.estimatedValue || '0').replace(/[^0-9.-]/g, '')) || 0;
+                    usedBudgets[item.budgetId] = (usedBudgets[item.budgetId] || 0) + amt * (parseFloat(item.qty) || 1);
+                });
+            }
+        });
+
+        // Build fully-shaped budget list with remaining amount
+        const allBudgets = budgetsRows.map(row => {
+            const dept    = departmentsData.find(d => String(d.id) === String(row.department_id));
+            const company = companiesData.find(c => String(c.id) === String(dept?.companyId));
+            return {
+                id:              row.id,
+                department_id:   row.department_id,
+                department:      row.department_name || dept?.name || '',
+                class:           row.department_class || dept?.class || '',
+                description:     row.project_name || '',
+                type:            row.budget_type || '',
+                company:         company ? (company.name || company.code) : 'PT PILAR NIAGA MAKMUR',
+                totalAmount:     Number(row.budget_amount || 0),
+                remainingAmount: Number(row.budget_amount || 0) - (usedBudgets[row.id] || 0),
+            };
+        });
+
+        // Shape + annotate departments with canCrossBudget flag
+        const allDepts = departmentsData.map(d => ({
+            originalIndex:  d.originalIndex,
+            value:          d.originalIndex,
+            name:           d.name || '',
+            class:          d.class || '',
+            label:          d.class ? `${d.name} - ${d.class}` : (d.name || ''),
+            company:        d.company || '',
+            companyCode:    d.companyCode || '',
+            canCrossBudget: crossBudgetSet.has((d.class || '').trim().toUpperCase()) ||
+                            crossBudgetSet.has((d.name  || '').trim().toUpperCase()),
+        })).sort((a, b) => a.label.localeCompare(b.label));
+
+        // Filter departments to user-accessible ones (non-admins)
+        let departments;
+        if (u.role === 'administrator') {
+            departments = allDepts;
+        } else {
+            const scopes     = getUserDepartmentScopes(u);
+            const allowedIds = new Set(scopes.map(s => String(s.id || '')).filter(Boolean));
+            const allowedNm  = new Set(
+                scopes.flatMap(s => [s.name, s.class].filter(Boolean)).map(n => n.trim().toUpperCase())
+            );
+            const filtered = allDepts.filter(d => {
+                const dId  = String(d.originalIndex || '');
+                const dNm  = (d.name  || '').trim().toUpperCase();
+                const dCls = (d.class || '').trim().toUpperCase();
+                return allowedIds.has(dId) || allowedNm.has(dNm) || allowedNm.has(dCls);
+            });
+            departments = filtered.length > 0 ? filtered : allDepts;
+        }
+
+        // Filter budgets to user-accessible ones (non-admins)
+        let budgets;
+        if (u.role === 'administrator') {
+            budgets = allBudgets;
+        } else {
+            budgets = allBudgets.filter(b => {
+                // Budgets belonging to a cross-budget division are visible to everyone
+                const bClass = (b.class      || '').trim().toUpperCase();
+                const bDept  = (b.department || '').trim().toUpperCase();
+                if (crossBudgetSet.has(bClass) || crossBudgetSet.has(bDept)) return true;
+                // Check user's direct department scope
+                return isBudgetInUserDepartments(
+                    { department_id: b.department_id, department_name: b.department,
+                      department_class: b.class, department_code: '' },
+                    u
+                );
+            });
+        }
+
+        // User-accessible companies (shaped as { value, label })
+        let companies;
+        if (u.role === 'administrator') {
+            companies = [...new Set(companiesData.map(c => c.name || c.code).filter(Boolean))].sort()
+                        .map(n => ({ value: n, label: n }));
+        } else {
+            const accessible = new Set();
+            if (u.selectedCompany) accessible.add(u.selectedCompany.trim());
+            (u.allAssignments || []).forEach(a => {
+                if (a.name) accessible.add(a.name.trim());
+            });
+            budgets.forEach(b => { if (b.company) accessible.add(b.company.trim()); });
+
+            companies = [...accessible].filter(Boolean).sort().map(n => ({ value: n, label: n }));
+        }
+
+        // Edit data for revisi / process mode
         let editData = null;
         if (req.query.revisi) {
-            editData = rpRequests.find(r => r.id === req.query.revisi);
+            editData = rpRequests.find(r => String(r.id) === String(req.query.revisi)) || null;
         } else if (req.query.process) {
-            editData = rpRequests.find(r => r.id === req.query.process);
+            editData = rpRequests.find(r => String(r.id) === String(req.query.process)) || null;
         }
 
         res.json({
-            employees,
-            budgets: budgetsWithRemaining,
-            companies: companiesData,
+            departments,
+            companies,
+            budgets,
             vendors: vendorsData,
-            departments: departmentsData,
-            processDivisions,
+            processorDepts,
             editData,
             user: {
                 ...u,
-                selectedCompany: u.selectedCompany || '',
+                selectedCompany:  u.selectedCompany  || '',
                 selectedDivision: u.selectedDivision || '',
                 selectedJobLevel: u.selectedJobLevel || '',
             },
-            selectedCompany: u.selectedCompany || '',
+            selectedCompany:  u.selectedCompany  || '',
             selectedDivision: u.selectedDivision || '',
         });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
-});
+}
 
 // ============================================================
 // RP NUMBER
@@ -528,6 +659,22 @@ router.get('/api/rp/processor-departments', checkAuth, async (req, res) => {
             FROM budget_access_policies
             WHERE module = 'RP'
               AND flow = 'PROCESS'
+              AND is_active = 1
+        `);
+        res.json(rows.map(r => r.department_class).filter(Boolean));
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/api/rp/cross-budget-divisions', checkAuth, async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT DISTINCT department_class
+            FROM budget_access_policies
+            WHERE module = 'RP'
+              AND flow = 'CREATE'
+              AND can_cross_department_budget = 1
               AND is_active = 1
         `);
         res.json(rows.map(r => r.department_class).filter(Boolean));
@@ -815,9 +962,27 @@ router.post('/api/rp/save', checkAuth, async (req, res) => {
 // RP APPROVAL DATA
 // ============================================================
 
+// GET /api/data/rp-approval
+// Query params:
+//   view=pending|approved|process|process-approval|all
+//   search, status, division  — filter
+//   sortBy=date|requester|division|status, sortDir=asc|desc
+//   page=1, limit=10
 router.get('/api/data/rp-approval', checkAuth, async (req, res) => {
     const u = req.session.user;
     const view = req.query.view || 'pending';
+
+    const search    = (req.query.search    || '').toLowerCase().trim();
+    const status    = (req.query.status    || '').trim();
+    const division  = (req.query.division  || '').trim();
+    const creator   = (req.query.creator   || '').trim();
+    const processor = (req.query.processor || '').trim();
+    const date      = (req.query.date      || '').trim();
+    const page      = Math.max(1, parseInt(req.query.page  || '1',  10));
+    const limit     = Math.max(1, Math.min(200, parseInt(req.query.limit || '10', 10)));
+    const sortBy    = req.query.sortBy  || 'date';
+    const sortDir   = req.query.sortDir === 'asc' ? 'asc' : 'desc';
+
     let reqs = await fetchAllRpRequests();
 
     const isApprovedScope = r => u.role === 'administrator' || (
@@ -825,14 +990,15 @@ router.get('/api/data/rp-approval', checkAuth, async (req, res) => {
         (r.divisi === u.selectedDivision || r.diprosesOleh === u.selectedDivision)
     );
 
-    const pendingCount = reqs.filter(r => r.status === 'waiting_manager' && isRpInUserScope(r, u)).length;
-    const processCount = reqs.filter(r => r.status === 'division_review' && isRpInUserScope(r, u, true)).length;
+    // badge counts (sebelum view filter)
+    const pendingCount         = reqs.filter(r => r.status === 'waiting_manager' && isRpInUserScope(r, u)).length;
+    const processCount         = reqs.filter(r => r.status === 'division_review' && isRpInUserScope(r, u, true)).length;
     const processApprovalCount = reqs.filter(r => r.status === 'final_review' && isRpInUserScope(r, u, true)).length;
-    const approvedCount = reqs.filter(r =>
-        (r.status === 'approved' || r.status === 'REJECTED' || r.status === 'CREATED_FRP') &&
-        isApprovedScope(r)
+    const approvedCount        = reqs.filter(r =>
+        ['approved', 'REJECTED', 'CREATED_FRP'].includes(r.status) && isApprovedScope(r)
     ).length;
 
+    // view filter
     if (view === 'approved') {
         reqs = reqs.filter(r => ['approved', 'REJECTED', 'CREATED_FRP'].includes(r.status));
         if (u.role !== 'administrator') reqs = reqs.filter(r => isApprovedScope(r));
@@ -853,35 +1019,89 @@ router.get('/api/data/rp-approval', checkAuth, async (req, res) => {
     const isPendingView = view === 'pending';
 
     if (lookScope === 'own') {
-        reqs = reqs.filter(r =>
-            sameCompanyName(r.companyName, u.selectedCompany) &&
-            r.divisi === u.selectedDivision
-        );
+        reqs = reqs.filter(r => sameCompanyName(r.companyName, u.selectedCompany) && r.divisi === u.selectedDivision);
     } else if (lookScope === 'processor' && !isPendingView) {
+        reqs = reqs.filter(r => sameCompanyName(r.companyName, u.selectedCompany) && r.diprosesOleh === u.selectedDivision);
+    }
+
+    // enrich + total per request
+    const getRpTotal = r => Array.isArray(r.items)
+        ? r.items.reduce((s, it) => s + (parseFloat(it.estimatedValue || 0) * (parseFloat(it.qty) || 1)), 0)
+        : 0;
+
+    reqs = reqs.map(r => ({ ...enrichRpWithRevert(r, u), total: getRpTotal(r) }));
+
+    // filter options (sebelum search filter)
+    const filterOptions = {
+        divisions:  [...new Set(reqs.map(r => r.departmentName || r.departmentClass || r.divisi).filter(Boolean))].sort(),
+        statuses:   [...new Set(reqs.map(r => r.status).filter(Boolean))].sort(),
+        creators:   [...new Set(reqs.map(r => r.dibuatOleh).filter(Boolean))].sort(),
+        processors: [...new Set(reqs.map(r => r.diprosesOleh).filter(Boolean))].sort(),
+    };
+
+    // apply filters
+    if (search) {
         reqs = reqs.filter(r =>
-            sameCompanyName(r.companyName, u.selectedCompany) &&
-            r.diprosesOleh === u.selectedDivision
+            (r.rpNo         || '').toLowerCase().includes(search) ||
+            (r.dibuatOleh   || '').toLowerCase().includes(search) ||
+            (r.divisi       || '').toLowerCase().includes(search) ||
+            (r.diprosesOleh || '').toLowerCase().includes(search) ||
+            (r.status       || '').toLowerCase().includes(search) ||
+            (r.items || []).some(i => (i.memo || '').toLowerCase().includes(search))
         );
     }
+    if (status)    reqs = reqs.filter(r => r.status === status);
+    if (division)  reqs = reqs.filter(r =>
+        (r.departmentName || r.departmentClass || r.divisi || '') === division
+    );
+    if (creator)   reqs = reqs.filter(r => (r.dibuatOleh   || '') === creator);
+    if (processor) reqs = reqs.filter(r => (r.diprosesOleh || '') === processor);
+    if (date)      reqs = reqs.filter(r => r.createdAt && r.createdAt.startsWith(date));
+
+    // sort
+    reqs.sort((a, b) => {
+        let valA, valB;
+        if (sortBy === 'date') {
+            valA = a.createdAt ? new Date(a.createdAt).getTime() : parseInt(a.id) || 0;
+            valB = b.createdAt ? new Date(b.createdAt).getTime() : parseInt(b.id) || 0;
+            return sortDir === 'asc' ? valA - valB : valB - valA;
+        }
+        if (sortBy === 'total') return sortDir === 'asc' ? a.total - b.total : b.total - a.total;
+        const map = { requester: 'dibuatOleh', division: 'divisi', status: 'status' };
+        valA = (a[map[sortBy] || 'dibuatOleh'] || '').toLowerCase();
+        valB = (b[map[sortBy] || 'dibuatOleh'] || '').toLowerCase();
+        if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDir === 'asc' ?  1 : -1;
+        return 0;
+    });
+
+    // paginate
+    const total      = reqs.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage   = Math.min(page, totalPages);
+    const requests   = reqs.slice((safePage - 1) * limit, safePage * limit);
 
     const canApprove = isManagerLevel(u);
 
     res.json({
-        requests: reqs.map(r => enrichRpWithRevert(r, u)),
+        requests,
+        pagination:    { total, page: safePage, limit, totalPages },
+        filterOptions,
+        counts: {
+            pending:            pendingCount,
+            process:            processCount,
+            'process-approval': processApprovalCount,
+            approved:           approvedCount,
+        },
         canApprove,
         view,
-        counts: {
-            pending: pendingCount,
-            process: processCount,
-            'process-approval': processApprovalCount,
-            approved: approvedCount,
-        },
         user: {
-            fullName: u.fullName,
-            role: u.role,
+            fullName:         u.fullName,
+            role:             u.role,
+            jobLevelRank:     u.jobLevelRank,
             selectedDivision: u.selectedDivision,
             selectedJobLevel: u.selectedJobLevel,
-            allAssignments: u.allAssignments || [],
+            allAssignments:   u.allAssignments || [],
         },
     });
 });

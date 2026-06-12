@@ -1,192 +1,117 @@
 const express = require('express');
 const db = require('../../db');
 const { centralDb } = require('../../db');
-const crypto = require('crypto');
+const path = require('path');
 const { checkAuth } = require('../middleware/auth');
 const { USER_SQL } = require('../config/constants');
-const { readJson, writeJson } = require('../utils/json');
+const { readJson } = require('../utils/json');
+const { normalizeCompanyCode } = require('../utils/company');
+const { bucket } = require('../config/storage');
+const { upload } = require('../middleware/upload');
 const {
     getAllEmployees,
     getCompanies,
     getDepartmentRows,
     getDeptCode,
-    getCompanyId,
     getDeptId,
+    getCompanyId,
     dbRowsToEmployees,
     getDepartmentEmployeesByUserId,
     fetchAllFrpRequests,
 } = require('../services/dbService');
-const { normalizeCompanyCode } = require('../utils/company');
-
-const { bucket } = require('../config/storage');
-const { upload } = require('../middleware/upload');
-const path = require('path');
+const {
+    normalizeAssignmentList,
+    resolveSelectedScope,
+    getFrpSnapshotFromUser,
+    normalizeFrpItems,
+    replaceFrpItems,
+    adjustBudgetUsage,
+    validateFrpBudgetAccess,
+    canLookAllFrp,
+    enrichReqWithRevert,
+    getExchangeRateFromGoogle,
+    filterDepartmentsForUser,
+    filterBudgetsForUser,
+} = require('../services/frpService');
 
 const router = express.Router();
 
-function normalizeAssignmentList(u, departmentEmployees = []) {
-    const sessionAssignments = Array.isArray(u?.allAssignments) ? u.allAssignments : [];
-    const fallbackAssignments = Array.isArray(departmentEmployees)
-        ? departmentEmployees.flatMap(emp => Array.isArray(emp?.allAssignments) ? emp.allAssignments : [])
-        : [];
+// ============================================================
+// HELPER — map raw budget rows to normalized objects
+// ============================================================
 
-    const source = sessionAssignments.length > 0 ? sessionAssignments : fallbackAssignments;
-    const seen = new Set();
+function mapBudgetRows(rows) {
+    return rows.map(row => ({
+        id: row.id,
+        company_id: null,
+        companyId: null,
+        department_id: row.department_id,
+        departmentId: row.department_id,
+        class: row.department_class,
+        description: row.project_name,
+        type: row.budget_type,
+        total_amount: Number(row.budget_amount || 0),
+        totalAmount: Number(row.budget_amount || 0),
+        budget_remaining: Number(row.budget_remaining || 0),
+        sisa_budget: Number(row.budget_remaining || 0),
+        sisaBudget: Number(row.budget_remaining || 0),
+        remainingAmount: Number(row.budget_remaining || 0),
+    }));
+}
 
-    return source.filter(a => {
-        if (!a) return false;
-        const key = [
-            a.id || '',
-            a.code || '',
-            a.name || '',
-            a.department_id || a.departmentId || '',
-            a.dept_code || '',
-            a.dept_name || '',
-            a.dept_class || a.class || '',
-        ].join('|');
+function enrichBudgets(budgetsData, departments, companiesData, usedBudgets) {
+    return budgetsData.map(b => {
+        const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
+        const dept = departments.find(d => String(d.id) === String(bDepartmentId));
+        const bCompanyId = b.company_id || b.companyId || (dept ? dept.companyId : null);
+        const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
+        const classDept = departments.find(d => String(d.id) === String(b.class) || d.class === b.class);
+        const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
 
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
+        return {
+            ...b,
+            company_id: bCompanyId,
+            companyId: bCompanyId,
+            company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
+            department: dept ? dept.name : (b.department || ''),
+            class: classDept ? classDept.class : b.class,
+            remainingAmount: dynamicRemaining,
+            sisa_budget: dynamicRemaining,
+            sisaBudget: dynamicRemaining,
+        };
     });
 }
 
-function resolveSelectedScope(u, allAssignments = []) {
-    const currentCompany = u?.selectedCompany || '';
-    const currentDivision = u?.selectedDivision || '';
-
-    const companyMatch = currentCompany
-        ? allAssignments.find(a => a.name === currentCompany)
-        : allAssignments[0];
-
-    const scopedAssignments = companyMatch
-        ? allAssignments.filter(a => a.name === companyMatch.name)
-        : allAssignments;
-
-    const divisionMatch = currentDivision
-        ? scopedAssignments.find(a =>
-            a.class === currentDivision ||
-            a.dept_class === currentDivision ||
-            a.dept_name === currentDivision
-        )
-        : scopedAssignments[0];
-
-    return {
-        selectedCompany: companyMatch?.name || currentCompany || '',
-        selectedDivision: divisionMatch?.class || divisionMatch?.dept_class || divisionMatch?.dept_name || currentDivision || '',
-        selectedJobLevel: divisionMatch?.job_level_name || u?.selectedJobLevel || '',
-        selectedCompanyId: companyMatch?.id || u?.selectedCompanyId || '',
-        selectedCompanyCode: companyMatch?.code || u?.selectedCompanyCode || '',
-        selectedDivisionId: divisionMatch?.department_id || divisionMatch?.departmentId || u?.selectedDivisionId || '',
-        allAssignments,
-    };
+function calcUsedBudgets(requests) {
+    const usedBudgets = {};
+    requests.forEach(r => {
+        if (r.status === 'APPROVED' && r.items) {
+            r.items.forEach(item => {
+                const bId = item.budgetId;
+                const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
+            });
+        }
+    });
+    return usedBudgets;
 }
 
+const BUDGET_SELECT_SQL = `
+    SELECT id, department_id, department_name, department_class, department_code,
+           project_name, budget_type, budget_amount, budget_used, budget_remaining
+    FROM master_budgets
+`;
+
 // ============================================================
-// MAIN APP PAGES
+// SPA PAGES
 // ============================================================
 
 router.get('/', checkAuth, (req, res) => res.sendSPA());
 router.get('/frp', checkAuth, (req, res) => res.sendSPA());
 router.get('/frp/:id', checkAuth, (req, res) => res.sendSPA());
-
-// ============================================================
-// FORM DATA
-// ============================================================
-
-router.get('/api/form-data', checkAuth, async (req, res) => {
-    try {
-        const u = req.session.user;
-        const [employees, departmentEmployees, budgetsData, companiesData, vendorsData, departments] = await Promise.all([
-            getAllEmployees(),
-            getDepartmentEmployeesByUserId(u.id),
-            db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets').then(([r]) => r.map(row => ({
-                id: row.id,
-                company_id: null,
-                companyId: null,
-                department_id: row.department_id,
-                departmentId: row.department_id,
-                class: row.department_class,
-                description: row.project_name,
-                type: row.budget_type,
-                total_amount: Number(row.budget_amount || 0),
-                totalAmount: Number(row.budget_amount || 0),
-                budget_remaining: Number(row.budget_remaining || 0),
-                sisa_budget: Number(row.budget_remaining || 0),
-                sisaBudget: Number(row.budget_remaining || 0),
-                remainingAmount: Number(row.budget_remaining || 0)
-            }))),
-            getCompanies(),
-            Promise.resolve(readJson('vendors.json')),
-            getDepartmentRows(),
-        ]);
-        const requests = await fetchAllFrpRequests();
-
-        // Calculate used budget amounts from approved FRP requests
-        const usedBudgets = {};
-        requests.forEach(r => {
-            if (r.status === 'APPROVED' && r.items) {
-                r.items.forEach(item => {
-                    const bId = item.budgetId;
-                    const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                    usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
-                });
-            }
-        });
-
-        const budgetsWithRemaining = budgetsData.map(b => {
-            const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-            const dept = departments.find(d => String(d.id) === String(bDepartmentId));
-            const bCompanyId = b.company_id || b.companyId || (dept ? dept.companyId : null);
-            const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
-            const classDept = departments.find(d => String(d.id) === String(b.class) || d.class === b.class);
-            const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
-            return {
-                ...b,
-                company_id: bCompanyId,
-                companyId: bCompanyId,
-                company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
-                department: dept ? dept.name : (b.department || ''),
-                class: classDept ? classDept.class : b.class,
-                remainingAmount: dynamicRemaining,
-                sisa_budget: dynamicRemaining,
-                sisaBudget: dynamicRemaining,
-            };
-        });
-
-        let editData = null;
-        if (req.query.revisi) {
-            editData = requests.find(r => r.id === req.query.revisi);
-        }
-
-        const allAssignments = normalizeAssignmentList(u, departmentEmployees);
-        const scope = resolveSelectedScope(u, allAssignments);
-        const divisionList = [...new Set(departments.map(r => r.name))].sort();
-
-        res.json({
-            employees,
-            departmentEmployees,
-            budgets: budgetsWithRemaining,
-            companies: companiesData,
-            vendors: vendorsData,
-            departments,
-            divisionList,
-            editData,
-            user: {
-                ...u,
-                ...scope,
-                selectedCompany: scope.selectedCompany,
-                selectedDivision: scope.selectedDivision,
-                selectedJobLevel: scope.selectedJobLevel,
-            },
-            selectedCompany: scope.selectedCompany,
-            selectedDivision: scope.selectedDivision,
-            selectedJobLevel: scope.selectedJobLevel,
-        });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
+router.get('/approval', checkAuth, (req, res) => res.sendSPA());
+router.get('/approved', checkAuth, (req, res) => res.sendSPA());
+router.get('/status_frp', checkAuth, (req, res) => res.sendSPA());
 
 // ============================================================
 // LOOKUP ENDPOINTS
@@ -194,114 +119,54 @@ router.get('/api/form-data', checkAuth, async (req, res) => {
 
 router.get('/api/company', checkAuth, async (req, res) => {
     try {
-        const companiesData = await getCompanies();
-        res.json(companiesData);
+        res.json(await getCompanies());
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
 
-router.get('/api/user/departement', checkAuth, async (req, res) => {
+router.get('/api/vendors', checkAuth, (req, res) => {
     try {
-        const u = req.session.user;
-        const departmentEmployees = await getDepartmentEmployeesByUserId(u.id);
-        res.json(departmentEmployees);
+        res.json(readJson('vendors.json'));
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
 
-router.get('/api/vendors', checkAuth, async (req, res) => {
-    try {
-        const vendorsData = readJson('vendors.json');
-        res.json(vendorsData);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
-router.get('/api/budgets/all', checkAuth, async (req, res) => {
-    try {
-        const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
-        const budgetsData = budgetsRows.map(row => ({
-            id: row.id,
-            company_id: null,
-            companyId: null,
-            department_id: row.department_id,
-            departmentId: row.department_id,
-            class: row.department_class,
-            description: row.project_name,
-            type: row.budget_type,
-            total_amount: Number(row.budget_amount || 0),
-            totalAmount: Number(row.budget_amount || 0),
-            budget_remaining: Number(row.budget_remaining || 0),
-            sisa_budget: Number(row.budget_remaining || 0),
-            sisaBudget: Number(row.budget_remaining || 0),
-            remainingAmount: Number(row.budget_remaining || 0)
-        }));
-        const requests = await fetchAllFrpRequests();
-        const [companiesData, departments] = await Promise.all([
-            getCompanies(),
-            getDepartmentRows(),
-        ]);
-        const usedBudgets = {};
-        requests.forEach(r => {
-            if (r.status === 'APPROVED' && r.items) {
-                r.items.forEach(item => {
-                    const bId = item.budgetId;
-                    const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                    usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
-                });
-            }
-        });
-        const budgetsWithRemaining = budgetsData.map(b => {
-            const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-            const dept = departments.find(d => String(d.id) === String(bDepartmentId));
-            const bCompanyId = b.company_id || b.companyId || (dept ? dept.companyId : null);
-            const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
-            const classDept = departments.find(d => String(d.id) === String(b.class) || d.class === b.class);
-            const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
-            return {
-                ...b,
-                company_id: bCompanyId,
-                companyId: bCompanyId,
-                company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
-                department: dept ? dept.name : (b.department || ''),
-                class: classDept ? classDept.class : b.class,
-                remainingAmount: dynamicRemaining,
-                sisa_budget: dynamicRemaining,
-                sisaBudget: dynamicRemaining,
-            };
-        });
-        res.json(budgetsWithRemaining);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
+// GET /api/employees
+// Admin & IT → semua karyawan (filter company opsional)
+// User biasa → filter by company + divisi sendiri
+// - ?company=xxx → override filter company (admin/IT only)
 router.get('/api/employees', checkAuth, async (req, res) => {
     try {
-        const employees = await getAllEmployees();
-        res.json(employees);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
+        const user = req.session.user;
+        const all = await getAllEmployees();
 
-router.get('/api/user/info', checkAuth, (req, res) => {
-    const u = req.session.user;
-    res.json({
-        ...u,
-        selectedCompany: u.selectedCompany || '',
-        selectedDivision: u.selectedDivision || '',
-        selectedJobLevel: u.selectedJobLevel || '',
-    });
-});
+        if (user.role === 'administrator') return res.json(all);
 
-router.get('/api/departments/all', checkAuth, async (req, res) => {
-    try {
-        const departments = await getDepartmentRows();
-        res.json(departments);
+        const targetCompany = normalizeCompanyCode(req.query.company || user.selectedCompany || '');
+        const userDivision = String(user.selectedDivision || user.departmentClass || '').trim().toUpperCase();
+        const isIT = userDivision === 'IT';
+
+        // IT bisa lihat semua karyawan, hanya filter by company jika ada
+        if (isIT) {
+            if (!targetCompany) return res.json(all);
+            const filtered = all.filter(e =>
+                normalizeCompanyCode(e.companyCode || e.companyName || '') === targetCompany ||
+                (e.allAssignments || []).some(a => normalizeCompanyCode(a.code || a.name || '') === targetCompany)
+            );
+            return res.json(filtered.length > 0 ? filtered : all);
+        }
+
+        // Non-IT: filter by company AND divisi user
+        const filtered = all.filter(e =>
+            (e.allAssignments || []).some(a => {
+                const matchCompany = !targetCompany || normalizeCompanyCode(a.code || a.name || '') === targetCompany;
+                const matchDivision = !userDivision || String(a.class || a.dept_class || '').trim().toUpperCase() === userDivision;
+                return matchCompany && matchDivision;
+            })
+        );
+        res.json(filtered.length > 0 ? filtered : all);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -309,13 +174,11 @@ router.get('/api/departments/all', checkAuth, async (req, res) => {
 
 router.get('/api/employees/:department', checkAuth, async (req, res) => {
     try {
-        const dept = req.params.department;
-        const company = req.query.company;
-        const params = [dept];
+        const params = [req.params.department];
         let sql = USER_SQL + ' AND md.name = ?';
-        if (company) {
+        if (req.query.company) {
             sql += ' AND mc.code = ?';
-            params.push(normalizeCompanyCode(company));
+            params.push(normalizeCompanyCode(req.query.company));
         }
         sql += ' ORDER BY cu.name';
         const [rows] = await db.query(sql, params);
@@ -325,94 +188,26 @@ router.get('/api/employees/:department', checkAuth, async (req, res) => {
     }
 });
 
-router.get('/api/budgets/:department', checkAuth, async (req, res) => {
-    try {
-        const [budgetsRows] = await db.query('SELECT id, department_id, department_name, department_class, department_code, project_name, budget_type, budget_amount, budget_used, budget_remaining FROM master_budgets');
-        const budgetsData = budgetsRows.map(row => ({
-            id: row.id,
-            company_id: null,
-            companyId: null,
-            department_id: row.department_id,
-            departmentId: row.department_id,
-            class: row.department_class,
-            description: row.project_name,
-            type: row.budget_type,
-            total_amount: Number(row.budget_amount || 0),
-            totalAmount: Number(row.budget_amount || 0),
-            budget_remaining: Number(row.budget_remaining || 0),
-            sisa_budget: Number(row.budget_remaining || 0),
-            sisaBudget: Number(row.budget_remaining || 0),
-            remainingAmount: Number(row.budget_remaining || 0)
-        }));
-        const requests = await fetchAllFrpRequests();
-        const [companiesData, departments] = await Promise.all([
-            getCompanies(),
-            getDepartmentRows(),
-        ]);
-        const usedBudgets = {};
-        requests.forEach(r => {
-            if (r.status === 'APPROVED' && r.items) {
-                r.items.forEach(item => {
-                    const bId = item.budgetId;
-                    const amt = parseInt(String(item.amount || '0').replace(/[^0-9]/g, ''), 10) || 0;
-                    usedBudgets[bId] = (usedBudgets[bId] || 0) + amt;
-                });
-            }
-        });
-        const filtered = budgetsData
-            .map(b => {
-                const bDepartmentId = b.department_id !== undefined ? b.department_id : b.departmentId;
-                const dept = departments.find(d => String(d.id) === String(bDepartmentId));
-                const bCompanyId = b.company_id || b.companyId || (dept ? dept.companyId : null);
-                const comp = companiesData.find(c => String(c.id) === String(bCompanyId) || c.code === bCompanyId);
-                const classDept = departments.find(d => String(d.id) === String(b.class) || d.class === b.class);
-                return {
-                    ...b,
-                    company_id: bCompanyId,
-                    companyId: bCompanyId,
-                    company: comp ? comp.name : (b.company || 'PT PILAR NIAGA MAKMUR'),
-                    department: dept ? dept.name : (b.department || ''),
-                    class: classDept ? classDept.class : b.class,
-                };
-            })
-            .filter(b => (b.department || '').toLowerCase() === req.params.department.toLowerCase())
-            .map(b => {
-                const dynamicRemaining = (b.total_amount !== undefined ? b.total_amount : (b.totalAmount || 0)) - (usedBudgets[b.id] || 0);
-                return {
-                    ...b,
-                    remainingAmount: dynamicRemaining,
-                    sisa_budget: dynamicRemaining,
-                    sisaBudget: dynamicRemaining,
-                };
-            });
-        res.json(filtered);
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
+// GET /api/departments
+// Sudah difilter berdasarkan scope user (via allAssignments)
+// - ?company=xxx  → filter by company
+// - ?names=true   → return name strings only
 router.get('/api/departments', checkAuth, async (req, res) => {
     try {
-        const company = req.query.company;
-        const full = req.query.full === '1';
-        const departments = await getDepartmentRows();
         const { sameCompanyName } = require('../utils/company');
-        const filtered = company ? departments.filter(d => sameCompanyName(d.company, company)) : departments;
+        const departments = await getDepartmentRows();
 
-        if (full) {
-            const seen = new Set();
-            const result = [];
-            for (const d of filtered) {
-                const key = `${d.class}||${d.name}`;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    result.push({ name: d.name, class: d.class, code: d.kodeFrp });
-                }
-            }
-            return res.json(result.sort((a, b) => a.name.localeCompare(b.name)));
+        const byCompany = req.query.company
+            ? departments.filter(d => sameCompanyName(d.company, req.query.company))
+            : departments;
+
+        const scoped = filterDepartmentsForUser(byCompany, req.session.user);
+
+        if (req.query.names === 'true') {
+            return res.json([...new Set(scoped.map(r => r.name))].sort());
         }
 
-        res.json([...new Set(filtered.map(r => r.name))].sort());
+        res.json(scoped);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
@@ -429,13 +224,11 @@ router.get('/api/job-levels', checkAuth, async (req, res) => {
 
 router.get('/api/managers/:department', checkAuth, async (req, res) => {
     try {
-        const dept = req.params.department;
-        const company = req.query.company;
-        const params = [dept];
+        const params = [req.params.department];
         let sql = USER_SQL + ' AND md.name = ? AND mjl.level >= 4';
-        if (company) {
+        if (req.query.company) {
             sql += ' AND mc.code = ?';
-            params.push(normalizeCompanyCode(company));
+            params.push(normalizeCompanyCode(req.query.company));
         }
         sql += ' ORDER BY cu.name';
         const [rows] = await db.query(sql, params);
@@ -445,50 +238,137 @@ router.get('/api/managers/:department', checkAuth, async (req, res) => {
     }
 });
 
+function toPilargroupUserInfo(user) {
+    return {
+        id: user.id,
+        internal_id: user.internal_id ?? null,
+        username: user.username,
+        name: user.name || user.fullName || user.username,
+        email: user.email ?? null,
+        phone: user.phone ?? null,
+
+        departments: user.departments || [],
+        companies: user.companies || [],
+
+        department_id: user.department_id ?? user.departmentId ?? null,
+        department: user.department || user.departmentName || user.selectedDivision || '',
+
+        company_id: user.company_id || user.companyId || '',
+        company: user.company || user.companyName || user.selectedCompany || '',
+
+        job_position: user.job_position || user.jobPosition || '',
+        job_level: user.job_level || user.jobLevelName || user.selectedJobLevel || '',
+        job_level_value: user.job_level_value ?? user.jobLevelRank ?? null,
+
+        apps: user.apps || [],
+        cv: user.cv ?? null,
+    };
+}
+
+router.get('/api/user/info', checkAuth, (req, res) => {
+    res.json(toPilargroupUserInfo(req.session.user));
+});
+
+router.get('/api/user/departement', checkAuth, async (req, res) => {
+    try {
+        res.json(await getDepartmentEmployeesByUserId(req.session.user.id));
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ============================================================
+// FRP FORM OPTIONS
+// Satu endpoint untuk semua data form — sudah difilter per user.
+// Frontend tidak perlu lagi logic scope/assignment, tinggal render.
+// GET /api/frp/form-options
+// GET /api/frp/form-options?revisi=<id>
+// ============================================================
+
+router.get('/api/frp/form-options', checkAuth, async (req, res) => {
+    try {
+        const u = req.session.user;
+        const revisiId = req.query.revisi || null;
+
+        const [employees, departmentEmployees, [budgetRows], companiesData, vendorsData, departments, requests] = await Promise.all([
+            getAllEmployees(),
+            getDepartmentEmployeesByUserId(u.id),
+            db.query(BUDGET_SELECT_SQL),
+            getCompanies(),
+            Promise.resolve(readJson('vendors.json')),
+            getDepartmentRows(),
+            fetchAllFrpRequests(),
+        ]);
+
+        const usedBudgets = calcUsedBudgets(requests);
+        const allBudgets = enrichBudgets(mapBudgetRows(budgetRows), departments, companiesData, usedBudgets);
+
+        const allAssignments = normalizeAssignmentList(u, departmentEmployees);
+        const scope = resolveSelectedScope(u, allAssignments);
+        const userWithScope = { ...u, ...scope };
+
+        // Pre-filter berdasarkan scope user — frontend tidak perlu logic ini
+        const userDepts   = filterDepartmentsForUser(departments, userWithScope);
+        const userBudgets = filterBudgetsForUser(allBudgets, userWithScope);
+
+        const editData    = revisiId ? (requests.find(r => r.id === revisiId) || null) : null;
+        const divisionList = [...new Set(userDepts.map(d => d.name))].sort();
+
+        res.json({
+            user:             userWithScope,
+            companies:        companiesData,
+            departments:      userDepts,
+            budgets:          userBudgets,
+            employees,
+            departmentEmployees,
+            vendors:          vendorsData,
+            divisionList,
+            editData,
+            selectedCompany:  scope.selectedCompany,
+            selectedDivision: scope.selectedDivision,
+            selectedJobLevel: scope.selectedJobLevel,
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ============================================================
+// FRP BUDGET ENDPOINTS  (enriched with remaining & company info)
+// Berbeda dari /api/budgets (admin CRUD) — ini khusus untuk form FRP
+// GET /api/frp/budgets              → semua budget
+// GET /api/frp/budgets?department=x → filtered by department name
+// ============================================================
+
+router.get('/api/frp/budgets', checkAuth, async (req, res) => {
+    try {
+        const [[budgetRows], requests, companiesData, departments] = await Promise.all([
+            db.query(BUDGET_SELECT_SQL),
+            fetchAllFrpRequests(),
+            getCompanies(),
+            getDepartmentRows(),
+        ]);
+        const budgets = mapBudgetRows(budgetRows);
+        const usedBudgets = calcUsedBudgets(requests);
+        let result = enrichBudgets(budgets, departments, companiesData, usedBudgets);
+
+        // Filter berdasarkan scope user
+        result = filterBudgetsForUser(result, req.session.user);
+
+        if (req.query.department) {
+            const dept = req.query.department.toLowerCase();
+            result = result.filter(b => (b.department || '').toLowerCase() === dept);
+        }
+
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ============================================================
 // EXCHANGE RATE
 // ============================================================
-
-const https = require('https');
-
-function getExchangeRateFromGoogle(from, to = 'IDR') {
-    return new Promise((resolve, reject) => {
-        const url = `https://www.google.com/finance/quote/${from}-${to}`;
-
-        function fetchUrl(currentUrl, depth) {
-            if (depth > 5) return reject(new Error('Too many redirects'));
-            https.get(currentUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                },
-            }, (res) => {
-                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-                    let nextUrl = res.headers.location;
-                    if (!nextUrl.startsWith('http')) nextUrl = new URL(nextUrl, currentUrl).href;
-                    return fetchUrl(nextUrl, depth + 1);
-                }
-                let data = '';
-                res.on('data', chunk => data += chunk);
-                res.on('end', () => {
-                    try {
-                        const pattern = new RegExp(`"${from}\\s*\\/\\s*${to}",\\s*\\d+\\s*,\\s*null\\s*,\\s*\\[\\s*([\\d.]+)`);
-                        const match = data.match(pattern);
-                        if (match) return resolve(parseFloat(match[1]));
-
-                        const matchClass = data.match(/class="YMlKec fxfa3d"[^>]*>([\d,.]+)</);
-                        if (matchClass) return resolve(parseFloat(matchClass[1].replace(/,/g, '')));
-
-                        reject(new Error(`Nilai kurs ${from}/${to} tidak ditemukan di Google Finance`));
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-            }).on('error', reject);
-        }
-
-        fetchUrl(url, 0);
-    });
-}
 
 router.get('/api/kurs/:currency', checkAuth, async (req, res) => {
     try {
@@ -511,7 +391,6 @@ router.get('/api/next-frp-number/:department', checkAuth, async (req, res) => {
         const dept = (req.params.department || '').trim().toUpperCase();
         const deptCode = await getDeptCode(dept, req.query.company || req.session.user.selectedCompany);
         const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
-        
         const [seqRows] = await db.query(`SELECT frp_no FROM frp_request WHERE frp_no LIKE ?`, [`${prefix}%`]);
         const sequences = seqRows.map(r => parseInt(r.frp_no.split('-').pop(), 10) || 0);
         const nextSeq = Math.max(0, ...sequences) + 1;
@@ -522,87 +401,299 @@ router.get('/api/next-frp-number/:department', checkAuth, async (req, res) => {
 });
 
 // ============================================================
-// FRP APPROVAL VIEWS
+// FORM DATA (combined initial load)
 // ============================================================
 
-router.get('/approval', checkAuth, (req, res) => res.sendSPA());
-router.get('/approved', checkAuth, (req, res) => res.sendSPA());
-router.get('/status_frp', checkAuth, (req, res) => res.sendSPA());
+router.get('/api/form-data', checkAuth, async (req, res) => {
+    try {
+        const u = req.session.user;
 
-router.get('/api/data/approval', checkAuth, async (req, res) => {
-    const u = req.session.user;
-    const { isRequestInUserScope } = require('../middleware/scope');
-    const isApprovedView = req.query.view === 'approved';
-    const isAllView = req.query.view === 'all';
+        const [employees, departmentEmployees, [budgetRows], companiesData, vendorsData, departments] = await Promise.all([
+            getAllEmployees(),
+            getDepartmentEmployeesByUserId(u.id),
+            db.query(BUDGET_SELECT_SQL),
+            getCompanies(),
+            Promise.resolve(readJson('vendors.json')),
+            getDepartmentRows(),
+        ]);
 
-    const hasLookAccess = await canLookAllFrp(u);
+        const requests = await fetchAllFrpRequests();
+        const usedBudgets = calcUsedBudgets(requests);
+        const budgets = enrichBudgets(mapBudgetRows(budgetRows), departments, companiesData, usedBudgets);
 
-    let reqs = await fetchAllFrpRequests();
+        const editData = req.query.revisi
+            ? requests.find(r => r.id === req.query.revisi) || null
+            : null;
 
-    const pendingCount = reqs.filter(r => r.status === 'PENDING' && (hasLookAccess || isRequestInUserScope(r, u))).length;
-    const approvedCount = reqs.filter(r =>
-        (r.status === 'APPROVED' || r.status === 'REJECTED') &&
-        (hasLookAccess || isRequestInUserScope(r, u))
-    ).length;
+        const allAssignments = normalizeAssignmentList(u, departmentEmployees);
+        const scope = resolveSelectedScope(u, allAssignments);
+        const divisionList = [...new Set(departments.map(r => r.name))].sort();
 
-    if (!isAllView) {
-        reqs = isApprovedView
-            ? reqs.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED')
-            : reqs.filter(r => r.status === 'PENDING');
+        res.json({
+            employees,
+            departmentEmployees,
+            budgets,
+            companies: companiesData,
+            vendors: vendorsData,
+            departments,
+            divisionList,
+            editData,
+            user: {
+                ...u,
+                ...scope,
+                selectedCompany: scope.selectedCompany,
+                selectedDivision: scope.selectedDivision,
+                selectedJobLevel: scope.selectedJobLevel,
+            },
+            selectedCompany: scope.selectedCompany,
+            selectedDivision: scope.selectedDivision,
+            selectedJobLevel: scope.selectedJobLevel,
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
-
-    if (!hasLookAccess) {
-        reqs = reqs.filter(r => isRequestInUserScope(r, u));
-    }
-
-    const canApprove = u.role === 'administrator' ||
-        Number(u.jobLevelRank || 0) >= 4 ||
-        ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
-
-    res.json({
-        requests: reqs.map(r => enrichReqWithRevert(r, u)), // pakai helper
-        canApprove,
-        isApprovedView,
-        counts: { pending: pendingCount, approved: approvedCount },
-        user: {
-            fullName: u.fullName,
-            role: u.role,
-            selectedDivision: u.selectedDivision,
-            selectedJobLevel: u.selectedJobLevel,
-            allAssignments: u.allAssignments || [],
-        },
-    });
 });
 
 // ============================================================
-// FRP CRUD
+// APPROVAL VIEW
+// ============================================================
+
+// GET /api/data/approval
+// Query params:
+//   view=pending|approved|all
+//   search, date, requester, status, division  — filter
+//   sortBy=date|requester|division|status|total, sortDir=asc|desc
+//   page=1, limit=10
+async function sendFrpApprovalView(req, res, forcedView, section = 'full') {
+    try {
+        const u = req.session.user;
+        const { isRequestInUserScope } = require('../middleware/scope');
+        const routeValue = (key, fallback = '') => req.params[key] || req.query[key] || fallback;
+
+        const view = forcedView || req.query.view || 'pending';
+        const isApprovedView = view === 'approved';
+        const isAllView      = view === 'all';
+
+        const search    = (req.query.search    || '').toLowerCase().trim();
+        const date      = (req.query.date      || '').trim();
+        const requester = (req.query.requester || '').toLowerCase().trim();
+        const status    = (req.query.status    || '').toUpperCase().trim();
+        const division  = (req.query.division  || '').trim();
+        const page      = Math.max(1, parseInt(routeValue('page', '1'),  10));
+        const limit     = Math.max(1, Math.min(200, parseInt(routeValue('limit', '10'), 10)));
+        const sortBy    = routeValue('sortBy', 'date');
+        const sortOrder = routeValue('sortDir', 'desc');
+        const sortDir   = (sortOrder === 'asc' || sortOrder === 'ascending') ? 'asc' : 'desc';
+
+        const hasLookAccess = await canLookAllFrp(u);
+        let all = await fetchAllFrpRequests();
+
+        // scope filter
+        if (!hasLookAccess) all = all.filter(r => isRequestInUserScope(r, u));
+
+        // badge counts (sebelum view/filter)
+        const pendingCount  = all.filter(r => r.status === 'PENDING').length;
+        const approvedCount = all.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED').length;
+
+        // view filter
+        if (!isAllView) {
+            all = isApprovedView
+                ? all.filter(r => r.status === 'APPROVED' || r.status === 'REJECTED')
+                : all.filter(r => r.status === 'PENDING');
+        }
+
+        // enrich + tambah field total per request
+        all = all.map(r => ({
+            ...enrichReqWithRevert(r, u),
+            total: (r.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0),
+        }));
+
+        // filter options (dari semua data view, sebelum search)
+        const filterOptions = {
+            requesters: [...new Set(all.map(r => r.dimintaOleh).filter(Boolean))].sort(),
+            divisions:  [...new Set(all.map(r => r.divisi).filter(Boolean))].sort(),
+        };
+
+        // apply filters
+        if (search) {
+            all = all.filter(r =>
+                (r.frpNo       || '').toLowerCase().includes(search) ||
+                (r.vendor      || '').toLowerCase().includes(search) ||
+                (r.dimintaOleh || '').toLowerCase().includes(search) ||
+                (r.divisi      || '').toLowerCase().includes(search) ||
+                (r.status      || '').toLowerCase().includes(search) ||
+                (r.approvedBy  || '').toLowerCase().includes(search) ||
+                (r.items || []).some(i =>
+                    (i.memo        || '').toLowerCase().includes(search) ||
+                    (i.projectName || '').toLowerCase().includes(search)
+                )
+            );
+        }
+        if (date)      all = all.filter(r => r.tanggalFrp === date);
+        if (requester) all = all.filter(r => (r.dimintaOleh || '').toLowerCase().includes(requester));
+        if (status)    all = all.filter(r => r.status === status);
+        if (division)  all = all.filter(r => r.divisi === division);
+
+        // sort
+        all.sort((a, b) => {
+            let valA, valB;
+            if (sortBy === 'date') {
+                valA = a.createdAt ? new Date(a.createdAt).getTime() : (parseInt(a.id) || 0);
+                valB = b.createdAt ? new Date(b.createdAt).getTime() : (parseInt(b.id) || 0);
+                return sortDir === 'asc' ? valA - valB : valB - valA;
+            } else if (sortBy === 'amount') {
+                return sortDir === 'asc' ? a.total - b.total : b.total - a.total;
+            }
+            const map = { requester: 'dimintaOleh', division: 'divisi', status: 'status' };
+            const field = map[sortBy] || 'dimintaOleh';
+            valA = (a[field] || '').toLowerCase();
+            valB = (b[field] || '').toLowerCase();
+            if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+            if (valA > valB) return sortDir === 'asc' ?  1 : -1;
+            return 0;
+        });
+
+        // paginate
+        const total      = all.length;
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+        const safePage   = Math.min(page, totalPages);
+        const pageItems  = all.slice((safePage - 1) * limit, safePage * limit);
+
+        const canApprove = u.role === 'administrator' ||
+            Number(u.jobLevelRank || 0) >= 4 ||
+            ['Manager', 'Direktur', 'Komisaris'].includes(u.selectedJobLevel);
+
+        // Map ke struktur response bersih — hanya field yang dipakai frontend
+        const data = pageItems.map(r => ({
+            // Core table fields
+            id:            r.id,
+            frpNo:         r.frpNo,
+            status:        r.status,
+            date:          r.tanggalFrp,
+            requesterName: r.dimintaOleh,
+            vendor:        r.vendor,
+            division:      r.divisi,
+            amount:        r.total,
+            approvedBy:    r.approvedBy,
+            attachLink:    r.attachLink,
+            canRevert:     r.canRevert,
+            items:         r.items,
+            // Detail dialog fields
+            checkDocs:        r.checkDocs,
+            companyName:      r.companyName,
+            keteranganFrp:    r.keteranganFrp,
+            internalPoNumber: r.internalPoNumber,
+            extDocType:       r.extDocType,
+            extDocNumber:     r.extDocNumber,
+            paymentMethod:    r.paymentMethod,
+            paymentDate:      r.paymentDate,
+            bankTujuan:       r.bankTujuan,
+            rekBankTujuan:    r.rekBankTujuan,
+            rpReference:      r.rpReference,
+        }));
+
+        const payload = {
+            canApprove,
+            isApprovedView,
+            summary:    { pending: pendingCount, approved: approvedCount },
+            filters:    filterOptions,
+            pagination: { total, page: safePage, limit, totalPages },
+            data,
+            meta: {
+                user: {
+                    fullName:         u.fullName,
+                    selectedDivision: u.selectedDivision,
+                    jobLevelRank:     u.jobLevelRank,
+                },
+            },
+        };
+
+        if (section === 'meta') {
+            return res.json({
+                canApprove: payload.canApprove,
+                isApprovedView: payload.isApprovedView,
+                meta: payload.meta,
+            });
+        }
+        if (section === 'summary') return res.json({ summary: payload.summary });
+        if (section === 'filters') return res.json({ filters: payload.filters });
+        if (section === 'data') {
+            return res.json({
+                pagination: payload.pagination,
+                data: payload.data,
+            });
+        }
+
+        res.json(payload);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+}
+
+router.get('/api/frp/approval/pending/meta', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'meta'));
+router.get('/api/frp/approval/pending/summary', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'summary'));
+router.get('/api/frp/approval/pending/filters', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'filters'));
+router.get('/api/frp/approval/pending/data/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending', 'data'));
+
+router.get('/api/frp/approval/approved/meta', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'meta'));
+router.get('/api/frp/approval/approved/summary', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'summary'));
+router.get('/api/frp/approval/approved/filters', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'filters'));
+router.get('/api/frp/approval/approved/data/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved', 'data'));
+
+router.get('/api/frp/status/meta', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all', 'meta'));
+router.get('/api/frp/status/summary', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all', 'summary'));
+router.get('/api/frp/status/data/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all', 'data'));
+
+router.get('/api/frp/approval/pending/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending'));
+router.get('/api/frp/approval/approved/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved'));
+router.get('/api/frp/status/page/:page/limit/:limit/sort-by/:sortBy/order/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all'));
+router.get('/api/frp/approval/pending/page/:page/limit/:limit/sort/:sortBy/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending'));
+router.get('/api/frp/approval/approved/page/:page/limit/:limit/sort/:sortBy/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved'));
+router.get('/api/frp/status/page/:page/limit/:limit/sort/:sortBy/:sortDir', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all'));
+router.get('/api/frp/approval/pending', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'pending'));
+router.get('/api/frp/approval/approved', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'approved'));
+router.get('/api/frp/status', checkAuth, (req, res) => sendFrpApprovalView(req, res, 'all'));
+router.get('/api/data/approval', checkAuth, (req, res) => sendFrpApprovalView(req, res));
+router.get('/api/data/frp-approval', checkAuth, (req, res) => sendFrpApprovalView(req, res));
+
+// ============================================================
+// FRP — READ
+// ============================================================
+
+router.get('/api/frp/:id', checkAuth, async (req, res) => {
+    try {
+        const data = (await fetchAllFrpRequests()).find(r => r.id === req.params.id);
+        if (!data) return res.status(404).json({ error: 'Not found' });
+
+        const user = req.session.user;
+        const isIT = user.role === 'administrator' || user.selectedDivision === 'IT';
+        const canApprove = isIT || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
+        const [employees, companies] = await Promise.all([getAllEmployees(), getCompanies()]);
+
+        res.json({ data, employees, companies, user, isIT, canApprove, canEdit: isIT });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ============================================================
+// FRP — ATTACHMENT
 // ============================================================
 
 router.post('/api/frp/:id/attachment', checkAuth, (req, res, next) => {
-    upload.single('attachment')(req, res, function (err) {
-        if (err) {
-            return res.status(400).json({ success: false, error: err.message });
-        }
+    upload.single('attachment')(req, res, err => {
+        if (err) return res.status(400).json({ success: false, error: err.message });
         next();
     });
 }, async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, error: 'File tidak ditemukan' });
-        }
+        if (!req.file) return res.status(400).json({ success: false, error: 'File tidak ditemukan' });
 
         const frpId = req.params.id;
+        const [frpRows] = await db.query('SELECT frp_no FROM frp_request WHERE id = ?', [frpId]);
+        if (!frpRows.length) return res.status(404).json({ success: false, error: 'FRP tidak ditemukan' });
 
-        const [frpRows] = await db.query(
-            'SELECT frp_no FROM frp_request WHERE id = ?',
-            [frpId]
-        );
-
-        if (!frpRows.length) {
-            return res.status(404).json({ success: false, error: 'FRP tidak ditemukan' });
-        }
-
-        const frpNo = frpRows[0].frp_no.replace(/\//g, '-'); // sanitize kalau ada slash
+        const frpNo = frpRows[0].frp_no.replace(/\//g, '-');
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -610,17 +701,10 @@ router.post('/api/frp/:id/attachment', checkAuth, (req, res, next) => {
         const filename = `frp/${year}/${month}/${frpNo}${ext}`;
 
         const blob = bucket.file(filename);
-        await blob.save(req.file.buffer, {
-            contentType: req.file.mimetype,
-            resumable: false,
-        });
+        await blob.save(req.file.buffer, { contentType: req.file.mimetype, resumable: false });
 
-        // Simpan public URL ke DB
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-        await db.query(
-            'UPDATE frp_request SET attachment_link = ? WHERE id = ?',
-            [publicUrl, frpId]
-        );
+        await db.query('UPDATE frp_request SET attachment_link = ? WHERE id = ?', [publicUrl, frpId]);
 
         res.json({ success: true, path: publicUrl });
     } catch (e) {
@@ -629,48 +713,9 @@ router.post('/api/frp/:id/attachment', checkAuth, (req, res, next) => {
     }
 });
 
-router.delete('/api/frp/:id/attachment', checkAuth, async (req, res) => {
-    try {
-        const frpId = req.params.id;
-
-        const [rows] = await db.query(
-            'SELECT attachment_link FROM frp_request WHERE id = ?',
-            [frpId]
-        );
-
-        if (!rows.length || !rows[0].attachment_link) {
-            return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
-        }
-
-        let filenameToDelete = rows[0].attachment_link;
-        const bucketPrefix = `https://storage.googleapis.com/${bucket.name}/`;
-        if (filenameToDelete.startsWith(bucketPrefix)) {
-            filenameToDelete = filenameToDelete.substring(bucketPrefix.length);
-        }
-
-        await bucket.file(filenameToDelete).delete();
-
-        await db.query(
-            'UPDATE frp_request SET attachment_link = NULL WHERE id = ?',
-            [frpId]
-        );
-
-        res.json({ success: true });
-    } catch (e) {
-        console.error('Delete error:', e);
-        res.status(500).json({ success: false, error: e.message });
-    }
-});
-
 router.get('/api/frp/:id/attachment', checkAuth, async (req, res) => {
     try {
-        const frpId = req.params.id;
-
-        const [rows] = await db.query(
-            'SELECT attachment_link FROM frp_request WHERE id = ?',
-            [frpId]
-        );
-
+        const [rows] = await db.query('SELECT attachment_link FROM frp_request WHERE id = ?', [req.params.id]);
         if (!rows.length || !rows[0].attachment_link) {
             return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
         }
@@ -678,17 +723,15 @@ router.get('/api/frp/:id/attachment', checkAuth, async (req, res) => {
         let attachmentLink = rows[0].attachment_link;
         const bucketPrefix = `https://storage.googleapis.com/${bucket.name}/`;
 
-        if (attachmentLink.startsWith(bucketPrefix)) {
-            // File in our private GCP bucket
+        if (!attachmentLink.startsWith(bucketPrefix)) {
+            if (attachmentLink.startsWith('http')) return res.redirect(attachmentLink);
+        } else {
             attachmentLink = attachmentLink.substring(bucketPrefix.length);
-        } else if (attachmentLink.startsWith('http')) {
-            // External link (e.g. Google Drive)
-            return res.redirect(attachmentLink);
         }
 
         const [signedUrl] = await bucket.file(attachmentLink).getSignedUrl({
             action: 'read',
-            expires: Date.now() + 15 * 60 * 1000, // 15 menit
+            expires: Date.now() + 15 * 60 * 1000,
             responseDisposition: 'inline',
         });
 
@@ -705,377 +748,32 @@ router.get('/api/frp/:id/attachment', checkAuth, async (req, res) => {
     }
 });
 
-
-router.get('/api/frp/:id', checkAuth, async (req, res) => {
+router.delete('/api/frp/:id/attachment', checkAuth, async (req, res) => {
     try {
-        const data = (await fetchAllFrpRequests()).find(r => r.id === req.params.id);
-        if (!data) return res.status(404).json({ error: 'Not found' });
-        const user = req.session.user;
-        const isIT = user.role === 'administrator' || user.selectedDivision === 'IT';
-        const canApprove = isIT || ['Manager', 'Direktur', 'Komisaris'].includes(user.selectedJobLevel);
-        const [employees, companies] = await Promise.all([getAllEmployees(), getCompanies()]);
-        res.json({ data, employees, companies, user, isIT, canApprove, canEdit: isIT });
+        const [rows] = await db.query('SELECT attachment_link FROM frp_request WHERE id = ?', [req.params.id]);
+        if (!rows.length || !rows[0].attachment_link) {
+            return res.status(404).json({ success: false, error: 'File tidak ditemukan' });
+        }
+
+        let filenameToDelete = rows[0].attachment_link;
+        const bucketPrefix = `https://storage.googleapis.com/${bucket.name}/`;
+        if (filenameToDelete.startsWith(bucketPrefix)) {
+            filenameToDelete = filenameToDelete.substring(bucketPrefix.length);
+        }
+
+        await bucket.file(filenameToDelete).delete();
+        await db.query('UPDATE frp_request SET attachment_link = NULL WHERE id = ?', [req.params.id]);
+
+        res.json({ success: true });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('Delete error:', e);
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
-function getFrpSnapshotFromUser(user) {
-    return {
-        companyId: user.companyId || null,
-        companyCode: user.companyCode || '',
-        companyName: user.companyName || user.selectedCompany || '',
-
-        departmentId: user.departmentId || null,
-        departmentName: user.departmentName || '',
-        departmentClass: user.departmentClass || user.selectedDivision || '',
-        departmentCode: user.departmentCode || '',
-
-        jobLevelId: user.jobLevelId || null,
-        jobLevelName: user.jobLevelName || user.selectedJobLevel || '',
-        jobLevelRank: user.jobLevelRank || null,
-
-        createdByUserId: user.id || null,
-        createdByUserName: user.fullName || user.name || user.username || '',
-    };
-}
-
-function normalizeFrpItems(items = []) {
-    return Array.isArray(items)
-        ? items.map(item => ({
-            id: item.id || crypto.randomUUID(),
-            budgetId: item.budgetId || item.budget_id || null,
-            memo: item.memo || '',
-            qty: Number(item.qty || 0),
-            price: Number(item.price || item.hargaSatuan || 0),
-            amount: Number(item.amount || 0),
-        }))
-        : [];
-}
-
-async function replaceFrpItems(client, frpRequestId, items) {
-    await client.query(
-        'DELETE FROM items_frp WHERE frp_request_id = ?',
-        [frpRequestId]
-    );
-
-    for (const item of items) {
-        await client.query(`
-            INSERT INTO items_frp (
-                id,
-                frp_request_id,
-                budget_id,
-                memo,
-                qty,
-                price,
-                amount
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [
-            item.id,
-            frpRequestId,
-            item.budgetId,
-            item.memo,
-            item.qty,
-            item.price,
-            item.amount,
-        ]);
-    }
-}
-
-async function adjustBudgetUsage(client, items, direction = 'deduct') {
-    const multiplier = direction === 'revert' ? -1 : 1;
-
-    for (const item of items) {
-        if (!item.budgetId) continue;
-
-        const amount = Number(item.amount || 0) * multiplier;
-
-        await client.query(`
-            UPDATE master_budgets
-            SET 
-                budget_used = budget_used + ?,
-                budget_remaining = budget_remaining - ?
-            WHERE id = ?
-        `, [
-            amount,
-            amount,
-            item.budgetId,
-        ]);
-    }
-}
-
-// Cek apakah user boleh lihat semua FRP lintas divisi
-async function canLookAllFrp(user) {
-    if (user.role === 'administrator') return true;
-    if (Number(user.jobLevelRank || 0) >= 4) return true;
-
-    const departmentClass = String(
-        user.departmentClass ||
-        user.selectedDivision ||
-        ''
-    ).trim();
-
-    const [rows] = await db.query(`
-        SELECT 1 FROM budget_access_policies
-        WHERE module = 'FRP'
-          AND flow = 'LOOK'
-          AND department_class = ?
-          AND is_active = 1
-        LIMIT 1
-    `, [departmentClass]);
-
-    return rows.length > 0;
-}
-
-// Tambahkan flag canRevert ke tiap request
-function enrichReqWithRevert(r, u) {
-    const isIT = u.selectedDivision === 'IT';
-    // support kedua format
-    const frpDeptClass = r.department_class || r.departmentClass || '';
-    const isOwnDivision = u.selectedDivision === frpDeptClass;
-
-    return {
-        ...r,
-        canRevert:
-            u.role === 'administrator' ||
-            isIT ||
-            (Number(u.jobLevelRank || 0) >= 3 && isOwnDivision),
-    };
-}
-
-function normText(value) {
-    return String(value || '').trim().toUpperCase();
-}
-
-function getUserDepartmentScopes(user) {
-    const scopes = [];
-
-    // root / selected department
-    scopes.push({
-        id: user.departmentId,
-        name: user.departmentName,
-        class: user.departmentClass || user.selectedDivision,
-        code: user.departmentCode,
-    });
-
-    // all assignments / multi department
-    (user.allAssignments || []).forEach(a => {
-        scopes.push({
-            id: a.department_id || a.departmentId || a.dept_id || a.id,
-            name: a.dept_name || a.departmentName || a.department_name || a.name,
-            class: a.dept_class || a.departmentClass || a.department_class || a.class,
-            code: a.dept_code || a.departmentCode || a.department_code || a.code,
-        });
-
-        // kalau classes array ada, masukkan juga
-        (a.classes || []).forEach(cls => {
-            scopes.push({
-                id: a.department_id || a.departmentId || a.dept_id,
-                name: a.dept_name || a.departmentName || a.department_name,
-                class: cls,
-                code: a.dept_code || a.departmentCode || a.department_code,
-            });
-        });
-    });
-
-    return scopes.filter(s =>
-        s.id || s.name || s.class || s.code
-    );
-}
-
-function isBudgetInUserDepartments(budget, user) {
-    const scopes = getUserDepartmentScopes(user);
-
-    const bId = String(budget.department_id || '');
-    const bName = normText(budget.department_name);
-    const bClass = normText(budget.department_class);
-    const bCode = normText(budget.department_code);
-
-    return scopes.some(scope => {
-        const sId = String(scope.id || '');
-        const sName = normText(scope.name);
-        const sClass = normText(scope.class);
-        const sCode = normText(scope.code);
-
-        if (sId && bId && sId === bId) return true;
-        if (sClass && (sClass === bClass || sClass === bName)) return true;
-        if (sName && (sName === bName || sName === bClass)) return true;
-        if (sCode && bCode && sCode === bCode) return true;
-
-        return false;
-    });
-}
-
-async function userHasCrossBudgetPolicy(client, moduleName, user) {
-    if (user.role === 'administrator') return true;
-
-    const scopes = getUserDepartmentScopes(user);
-    const departmentClasses = [...new Set(
-        scopes
-            .map(s => s.class)
-            .filter(Boolean)
-    )];
-
-    if (!departmentClasses.length) return false;
-
-    const [rows] = await client.query(`
-        SELECT 1
-        FROM budget_access_policies
-        WHERE module = ?
-          AND flow = 'CREATE'
-          AND department_class IN (?)
-          AND can_cross_department_budget = 1
-          AND is_active = 1
-        LIMIT 1
-    `, [moduleName, departmentClasses]);
-
-    return rows.length > 0;
-}
-
-async function userRequiresBudgetCheck(client, moduleName, user) {
-    const scopes = getUserDepartmentScopes(user);
-    const departmentClasses = [...new Set(
-        scopes
-            .map(s => s.class)
-            .filter(Boolean)
-    )];
-
-    if (!departmentClasses.length) return true;
-
-    const [rows] = await client.query(`
-        SELECT requires_budget_check
-        FROM budget_access_policies
-        WHERE module = ?
-          AND flow = 'CREATE'
-          AND department_class IN (?)
-          AND is_active = 1
-    `, [moduleName, departmentClasses]);
-
-    // default aman: kalau tidak ada policy, tetap check budget
-    if (!rows.length) return true;
-
-    // kalau ada salah satu policy requires check, tetap check
-    return rows.some(r => Number(r.requires_budget_check) === 1);
-}
-
-async function getBudgetAccessPolicy(client, moduleName, user) {
-    const departmentClass = String(
-        user.departmentClass ||
-        user.selectedDivision ||
-        user.departmentName ||
-        ''
-    ).trim();
-
-    const [rows] = await client.query(`
-        SELECT
-            module,
-            flow,
-            department_id,
-            department_name,
-            department_class,
-            department_code,
-            can_cross_department_budget,
-            requires_budget_check
-        FROM budget_access_policies
-        WHERE module = ?
-          AND flow = 'CREATE'
-          AND department_class = ?
-          AND is_active = 1
-        LIMIT 1
-    `, [moduleName, departmentClass]);
-
-    if (!rows.length) {
-        return {
-            canCrossDepartmentBudget: false,
-            requiresBudgetCheck: true,
-        };
-    }
-
-    return {
-        canCrossDepartmentBudget: Number(rows[0].can_cross_department_budget) === 1,
-        requiresBudgetCheck: Number(rows[0].requires_budget_check) === 1,
-    };
-}
-
-async function validateFrpBudgetAccess(client, user, items) {
-    const requiresBudgetCheck = await userRequiresBudgetCheck(client, 'FRP', user);
-    const canCrossDepartmentBudget = await userHasCrossBudgetPolicy(client, 'FRP', user);
-
-    if (!requiresBudgetCheck) {
-        return;
-    }
-
-    const budgetIds = [...new Set(
-        items
-            .map(item => item.budgetId)
-            .filter(Boolean)
-    )];
-
-    if (!budgetIds.length) {
-        return;
-    }
-
-    const [budgets] = await client.query(`
-        SELECT
-            id,
-            department_id,
-            department_name,
-            department_class,
-            department_code,
-            budget_remaining,
-            is_active
-        FROM master_budgets
-        WHERE id IN (?)
-    `, [budgetIds]);
-
-    const foundBudgetIds = new Set(budgets.map(b => b.id));
-    const missingBudgetIds = budgetIds.filter(id => !foundBudgetIds.has(id));
-
-    if (missingBudgetIds.length) {
-        const error = new Error(`Budget not found: ${missingBudgetIds.join(', ')}`);
-        error.statusCode = 400;
-        throw error;
-    }
-
-    const inactiveBudgets = budgets.filter(b => Number(b.is_active) !== 1);
-    if (inactiveBudgets.length) {
-        const error = new Error(`Inactive budget: ${inactiveBudgets.map(b => b.id).join(', ')}`);
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (!canCrossDepartmentBudget && user.role !== 'administrator') {
-        const invalidBudgets = budgets.filter(b => !isBudgetInUserDepartments(b, user));
-
-        if (invalidBudgets.length) {
-            const error = new Error(
-                `You are not allowed to use budget from another department: ${invalidBudgets.map(b => b.id).join(', ')}`
-            );
-            error.statusCode = 403;
-            throw error;
-        }
-    }
-
-    const amountByBudgetId = items.reduce((acc, item) => {
-        if (!item.budgetId) return acc;
-        acc[item.budgetId] = (acc[item.budgetId] || 0) + Number(item.amount || 0);
-        return acc;
-    }, {});
-
-    const overBudgetItems = budgets.filter(b => {
-        const requestedAmount = Number(amountByBudgetId[b.id] || 0);
-        const remaining = Number(b.budget_remaining || 0);
-        return requestedAmount > remaining;
-    });
-
-    if (overBudgetItems.length) {
-        const error = new Error(
-            `Budget remaining is not enough: ${overBudgetItems.map(b => b.id).join(', ')}`
-        );
-        error.statusCode = 400;
-        throw error;
-    }
-}
+// ============================================================
+// FRP — SAVE (create / revisi)
+// ============================================================
 
 router.post('/api/frp/save', checkAuth, async (req, res) => {
     const client = await db.getConnection();
@@ -1097,15 +795,14 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             });
         }
 
-        // Fetch old items if it is an update/revision, needed for budget validation and update
+        // Load old items for revision (needed to revert budget usage)
         let oldItems = [];
         if (req.body.frpId) {
-            const frpId = req.body.frpId;
             const [oldItemRows] = await client.query(`
                 SELECT id, budget_id, memo, qty, price, amount
                 FROM items_frp
                 WHERE frp_request_id = ?
-            `, [frpId]);
+            `, [req.body.frpId]);
 
             oldItems = oldItemRows.map(item => ({
                 id: item.id,
@@ -1117,118 +814,100 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             }));
         }
 
-        // Validate budgets before deducting/saving
+        // Pre-save budget validation
         const kurs = parseFloat(req.body.exchangeRate) || parseFloat(req.body.kurs) || 1;
         for (const item of (req.body.items || [])) {
-            if (item.budgetId) {
-                const reqAmount = parseFloat(item.amount) || 0;
-                const price = parseFloat(item.price) || parseFloat(item.hargaSatuan) || 0;
-                const unitPriceIdr = price * kurs;
+            if (!item.budgetId) continue;
 
-                // Find if this budgetId was used in old items of the same FRP
-                let revertedAmount = 0;
-                if (req.body.frpId) {
-                    const matchedOld = oldItems.filter(oi => oi.budgetId === item.budgetId);
-                    revertedAmount = matchedOld.reduce((sum, oi) => sum + (parseFloat(oi.amount) || 0), 0);
+            const reqAmount = parseFloat(item.amount) || 0;
+            const price = parseFloat(item.price) || parseFloat(item.hargaSatuan) || 0;
+            const unitPriceIdr = price * kurs;
+
+            let revertedAmount = 0;
+            if (req.body.frpId) {
+                const matchedOld = oldItems.filter(oi => oi.budgetId === item.budgetId);
+                revertedAmount = matchedOld.reduce((sum, oi) => sum + (parseFloat(oi.amount) || 0), 0);
+            }
+
+            const [bRows] = await db.query('SELECT budget_remaining FROM master_budgets WHERE id = ?', [item.budgetId]);
+            if (bRows.length) {
+                const availableBudget = parseFloat(bRows[0].budget_remaining) + revertedAmount;
+                const fmt = n => new Intl.NumberFormat('id-ID').format(n);
+
+                if (unitPriceIdr > availableBudget) {
+                    return res.json({
+                        success: false,
+                        error: `Harga Satuan untuk budget ${item.budgetId} (Rp ${fmt(unitPriceIdr)}) melebihi batas budget yang tersedia (Rp ${fmt(availableBudget)}).`,
+                    });
                 }
-
-                // Query current budget_remaining from database
-                const [bRows] = await db.query('SELECT budget_remaining FROM master_budgets WHERE id = ?', [item.budgetId]);
-                if (bRows.length) {
-                    const currentRemaining = parseFloat(bRows[0].budget_remaining) || 0;
-                    const availableBudget = currentRemaining + revertedAmount;
-
-                    if (unitPriceIdr > availableBudget) {
-                        return res.json({
-                            success: false,
-                            error: `Harga Satuan untuk budget ${item.budgetId} (Rp ${new Intl.NumberFormat('id-ID').format(unitPriceIdr)}) melebihi batas budget yang tersedia (Rp ${new Intl.NumberFormat('id-ID').format(availableBudget)}).`
-                        });
-                    }
-
-                    if (reqAmount > availableBudget) {
-                        return res.json({
-                            success: false,
-                            error: `Total Amount untuk budget ${item.budgetId} (Rp ${new Intl.NumberFormat('id-ID').format(reqAmount)}) melebihi sisa budget yang tersedia (Rp ${new Intl.NumberFormat('id-ID').format(availableBudget)}).`
-                        });
-                    }
+                if (reqAmount > availableBudget) {
+                    return res.json({
+                        success: false,
+                        error: `Total Amount untuk budget ${item.budgetId} (Rp ${fmt(reqAmount)}) melebihi sisa budget yang tersedia (Rp ${fmt(availableBudget)}).`,
+                    });
                 }
             }
         }
 
-        // Handle update / revision
+        const commonFields = {
+            company_id: snapshot.companyId,
+            company_code: snapshot.companyCode,
+            company_name: snapshot.companyName,
+            frp_date: req.body.frpDate || req.body.tanggalFrp || null,
+            department_id: snapshot.departmentId,
+            department_name: snapshot.departmentName,
+            department_class: snapshot.departmentClass,
+            department_code: snapshot.departmentCode,
+            job_level_name: snapshot.jobLevelName,
+            job_level_rank: snapshot.jobLevelRank,
+            requested_by: snapshot.createdByUserName,
+            currency: req.body.currency || 'IDR',
+            kurs: req.body.exchangeRate || req.body.kurs || '1',
+            frp_description: req.body.frpDescription || req.body.keteranganFrp || '',
+            vendor: req.body.vendor || '',
+            internal_po_number: req.body.internalPoNumber || '',
+            ext_doc_type: req.body.externalDocumentType || req.body.extDocType || '',
+            ext_doc_number: req.body.externalDocumentNumber || req.body.extDocNumber || '',
+            payment_method: req.body.paymentMethod || 'Transfer',
+            payment_date: req.body.paymentDate || req.body.payment_date || null,
+            destination_bank: req.body.destinationBank || req.body.bankTujuan || '',
+            destination_bank_account: req.body.destinationBankAccount || req.body.rekBankTujuan || '',
+            check_docs: JSON.stringify(req.body.checkDocs || []),
+            created_by_user_id: snapshot.createdByUserId,
+            created_by_user_name: snapshot.createdByUserName,
+        };
+
+        // UPDATE (revision)
         if (req.body.frpId) {
             const frpId = req.body.frpId;
 
             await client.query(`
                 UPDATE frp_request SET
-                    company_id = ?,
-                    company_code = ?,
-                    company_name = ?,
-
+                    company_id = ?, company_code = ?, company_name = ?,
                     frp_date = ?,
-
-                    department_id = ?,
-                    department_name = ?,
-                    department_class = ?,
-                    department_code = ?,
-
-                    job_level_name = ?,
-                    job_level_rank = ?,
-
+                    department_id = ?, department_name = ?, department_class = ?, department_code = ?,
+                    job_level_name = ?, job_level_rank = ?,
                     requested_by = ?,
-
-                    currency = ?,
-                    kurs = ?,
-                    frp_description = ?,
-                    vendor = ?,
-                    internal_po_number = ?,
-                    ext_doc_type = ?,
-                    ext_doc_number = ?,
-                    payment_method = ?,
-                    payment_date = ?,
-                    destination_bank = ?,
-                    destination_bank_account = ?,
+                    currency = ?, kurs = ?, frp_description = ?, vendor = ?,
+                    internal_po_number = ?, ext_doc_type = ?, ext_doc_number = ?,
+                    payment_method = ?, payment_date = ?,
+                    destination_bank = ?, destination_bank_account = ?,
                     check_docs = ?,
-
-                    created_by_user_id = ?,
-                    created_by_user_name = ?,
-
+                    created_by_user_id = ?, created_by_user_name = ?,
                     status = 'PENDING'
                 WHERE id = ?
             `, [
-                snapshot.companyId,
-                snapshot.companyCode,
-                snapshot.companyName,
-
-                req.body.frpDate || req.body.tanggalFrp || null,
-
-                snapshot.departmentId,
-                snapshot.departmentName,
-                snapshot.departmentClass,
-                snapshot.departmentCode,
-
-                
-                snapshot.jobLevelName,
-                snapshot.jobLevelRank,
-
-                snapshot.createdByUserName,
-
-                req.body.currency || 'IDR',
-                req.body.exchangeRate || req.body.kurs || '1',
-                req.body.frpDescription || req.body.keteranganFrp || '',
-                req.body.vendor || '',
-                req.body.internalPoNumber || '',
-                req.body.externalDocumentType || req.body.extDocType || '',
-                req.body.externalDocumentNumber || req.body.extDocNumber || '',
-                req.body.paymentMethod || 'Transfer',
-                req.body.paymentDate || req.body.payment_date || null,
-                req.body.destinationBank || req.body.bankTujuan || '',
-                req.body.destinationBankAccount || req.body.rekBankTujuan || '',
-                JSON.stringify(req.body.checkDocs || []),
-
-                snapshot.createdByUserId,
-                snapshot.createdByUserName,
-
+                commonFields.company_id, commonFields.company_code, commonFields.company_name,
+                commonFields.frp_date,
+                commonFields.department_id, commonFields.department_name, commonFields.department_class, commonFields.department_code,
+                commonFields.job_level_name, commonFields.job_level_rank,
+                commonFields.requested_by,
+                commonFields.currency, commonFields.kurs, commonFields.frp_description, commonFields.vendor,
+                commonFields.internal_po_number, commonFields.ext_doc_type, commonFields.ext_doc_number,
+                commonFields.payment_method, commonFields.payment_date,
+                commonFields.destination_bank, commonFields.destination_bank_account,
+                commonFields.check_docs,
+                commonFields.created_by_user_id, commonFields.created_by_user_name,
                 frpId,
             ]);
 
@@ -1236,149 +915,75 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
             await replaceFrpItems(client, frpId, items);
             await adjustBudgetUsage(client, items, 'deduct');
 
-            const [rows] = await client.query(
-                'SELECT frp_no FROM frp_request WHERE id = ?',
-                [frpId]
-            );
-
+            const [rows] = await client.query('SELECT frp_no FROM frp_request WHERE id = ?', [frpId]);
             await client.commit();
 
-            return res.json({
-                success: true,
-                id: frpId,
-                frpNo: rows.length ? rows[0].frp_no : '',
-            });
+            return res.json({ success: true, id: frpId, frpNo: rows.length ? rows[0].frp_no : '' });
         }
 
-        // Handle create
+        // INSERT (new)
         const deptCode = snapshot.departmentCode || await getDeptCode(snapshot.departmentClass, snapshot.companyName);
         const prefix = `FRP-${deptCode}-${new Date().getFullYear().toString().slice(-2)}-`;
-
-        const [seqRows] = await client.query(
-            'SELECT frp_no FROM frp_request WHERE frp_no LIKE ?',
-            [`${prefix}%`]
-        );
-
+        const [seqRows] = await client.query('SELECT frp_no FROM frp_request WHERE frp_no LIKE ?', [`${prefix}%`]);
         const sequences = seqRows.map(r => parseInt(String(r.frp_no || '').split('-').pop(), 10) || 0);
         const nextSeq = Math.max(0, ...sequences) + 1;
         const frpNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
-
-        const id = crypto.randomUUID();
+        const { randomUUID } = require('crypto');
+        const id = randomUUID();
 
         await client.query(`
             INSERT INTO frp_request (
-                id,
-                frp_no,
-                status,
-
-                company_id,
-                company_code,
-                company_name,
-
+                id, frp_no, status,
+                company_id, company_code, company_name,
                 frp_date,
-
-                department_id,
-                department_name,
-                department_class,
-                department_code,
-
-                job_level_name,
-                job_level_rank,
-
+                department_id, department_name, department_class, department_code,
+                job_level_name, job_level_rank,
                 requested_by,
-
-                currency,
-                kurs,
-                frp_description,
-                vendor,
-                internal_po_number,
-                ext_doc_type,
-                ext_doc_number,
-                payment_method,
-                payment_date,
-                destination_bank,
-                destination_bank_account,
+                currency, kurs, frp_description, vendor,
+                internal_po_number, ext_doc_type, ext_doc_number,
+                payment_method, payment_date,
+                destination_bank, destination_bank_account,
                 check_docs,
-
-                created_by,
-                created_by_user_id,
-                created_by_user_name,
-                created_at,
-
-                approved_by_actual,
-                approved_by,
-                approved_at
+                created_by, created_by_user_id, created_by_user_name, created_at,
+                approved_by_actual, approved_by, approved_at
             ) VALUES (
                 ?, ?, ?,
-
                 ?, ?, ?,
-
                 ?,
-
                 ?, ?, ?, ?,
-
                 ?, ?,
-
                 ?,
-
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-
+                ?, ?, ?, ?,
+                ?, ?, ?,
+                ?, ?,
+                ?, ?,
+                ?,
                 ?, ?, ?, NOW(),
-
                 NULL, NULL, NULL
             )
         `, [
-            id,
-            frpNo,
-            'PENDING',
-
-            snapshot.companyId,
-            snapshot.companyCode,
-            snapshot.companyName,
-
-            req.body.frpDate || req.body.tanggalFrp || null,
-
-            snapshot.departmentId,
-            snapshot.departmentName,
-            snapshot.departmentClass,
-            snapshot.departmentCode,
-
-            
-            snapshot.jobLevelName,
-            snapshot.jobLevelRank,
-
-            snapshot.createdByUserName,
-
-            req.body.currency || 'IDR',
-            req.body.exchangeRate || req.body.kurs || '1',
-            req.body.frpDescription || req.body.keteranganFrp || '',
-            req.body.vendor || '',
-            req.body.internalPoNumber || '',
-            req.body.externalDocumentType || req.body.extDocType || '',
-            req.body.externalDocumentNumber || req.body.extDocNumber || '',
-            req.body.paymentMethod || 'Transfer',
-            req.body.paymentDate || req.body.payment_date || null,
-            req.body.destinationBank || req.body.bankTujuan || '',
-            req.body.destinationBankAccount || req.body.rekBankTujuan || '',
-            JSON.stringify(req.body.checkDocs || []),
-
-            snapshot.createdByUserName,
-            snapshot.createdByUserId,
-            snapshot.createdByUserName,
+            id, frpNo, 'PENDING',
+            commonFields.company_id, commonFields.company_code, commonFields.company_name,
+            commonFields.frp_date,
+            commonFields.department_id, commonFields.department_name, commonFields.department_class, commonFields.department_code,
+            commonFields.job_level_name, commonFields.job_level_rank,
+            commonFields.requested_by,
+            commonFields.currency, commonFields.kurs, commonFields.frp_description, commonFields.vendor,
+            commonFields.internal_po_number, commonFields.ext_doc_type, commonFields.ext_doc_number,
+            commonFields.payment_method, commonFields.payment_date,
+            commonFields.destination_bank, commonFields.destination_bank_account,
+            commonFields.check_docs,
+            commonFields.created_by_user_name, commonFields.created_by_user_id, commonFields.created_by_user_name,
         ]);
 
         await replaceFrpItems(client, id, items);
         await adjustBudgetUsage(client, items, 'deduct');
 
         if (req.body.fromRpId) {
-            await client.query(
-                'UPDATE rp_request SET status = ? WHERE id = ?',
-                ['CREATED_FRP', req.body.fromRpId]
-            );
+            await client.query('UPDATE rp_request SET status = ? WHERE id = ?', ['CREATED_FRP', req.body.fromRpId]);
         }
 
         await client.commit();
-
         res.json({ success: true, id, frpNo });
     } catch (e) {
         await client.rollback();
@@ -1389,22 +994,19 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
     }
 });
 
+// ============================================================
+// FRP — ACTIONS (approve / reject / delete / revert)
+// ============================================================
+
 router.post('/api/frp/:id/:action', checkAuth, async (req, res) => {
     try {
-        const action = req.params.action;
-        const frpId = req.params.id;
+        const { action, id: frpId } = req.params;
         const u = req.session.user;
 
         if (action === 'approve') {
             const [rows] = await db.query(`
-                SELECT
-                    company_id,
-                    company_code,
-                    company_name,
-                    department_id,
-                    department_name,
-                    department_class,
-                    department_code
+                SELECT company_id, company_code, company_name,
+                       department_id, department_name, department_class, department_code
                 FROM frp_request
                 WHERE id = ?
             `, [frpId]);
@@ -1412,48 +1014,33 @@ router.post('/api/frp/:id/:action', checkAuth, async (req, res) => {
             let approvedBy = u.fullName;
 
             if (rows.length) {
-                const request = rows[0];
-
-                const params = [
-                    request.department_name || '',
-                    request.department_class || '',
-                ];
-
-                let sql = USER_SQL + `
-                    AND (md.name = ? OR md.class = ?)
-                    AND mjl.level >= 4
-                `;
-
-                if (request.company_code) {
+                const r = rows[0];
+                const params = [r.department_name || '', r.department_class || ''];
+                let sql = USER_SQL + ' AND (md.name = ? OR md.class = ?) AND mjl.level >= 4';
+                if (r.company_code) {
                     sql += ' AND mc.code = ?';
-                    params.push(normalizeCompanyCode(request.company_code));
+                    params.push(normalizeCompanyCode(r.company_code));
                 }
-
                 sql += ' ORDER BY mjl.level DESC LIMIT 1';
 
                 const [mgrRows] = await centralDb.query(sql, params);
-
                 if (mgrRows.length) approvedBy = mgrRows[0].name;
             }
 
             await db.query(`
-                UPDATE frp_request 
-                SET status = 'APPROVED',
-                    approved_by_actual = ?,
-                    approved_at = NOW(),
-                    approved_by = ?
+                UPDATE frp_request
+                SET status = 'APPROVED', approved_by_actual = ?, approved_at = NOW(), approved_by = ?
                 WHERE id = ?
             `, [u.fullName, approvedBy, frpId]);
+
         } else if (action === 'reject') {
             await db.query(`UPDATE frp_request SET status = 'REJECTED' WHERE id = ?`, [frpId]);
+
         } else if (action === 'delete') {
             await db.query(`DELETE FROM frp_request WHERE id = ?`, [frpId]);
+
         } else if (action === 'revert') {
-            // Ambil department_class FRP dari DB, jangan percaya body
-            const [frpRows] = await db.query(
-                'SELECT department_class FROM frp_request WHERE id = ?',
-                [frpId]
-            );
+            const [frpRows] = await db.query('SELECT department_class FROM frp_request WHERE id = ?', [frpId]);
 
             if (!frpRows.length) {
                 return res.status(404).json({ success: false, error: 'FRP tidak ditemukan' });
@@ -1462,11 +1049,7 @@ router.post('/api/frp/:id/:action', checkAuth, async (req, res) => {
             const frpDeptClass = frpRows[0].department_class;
             const isIT = u.selectedDivision === 'IT';
             const isOwnDivision = u.selectedDivision === frpDeptClass;
-
-            const canRevert =
-                u.role === 'administrator' ||
-                isIT ||
-                (Number(u.jobLevelRank || 0) >= 3 && isOwnDivision);
+            const canRevert = u.role === 'administrator' || isIT || (Number(u.jobLevelRank || 0) >= 3 && isOwnDivision);
 
             if (!canRevert) {
                 return res.status(403).json({
@@ -1476,13 +1059,10 @@ router.post('/api/frp/:id/:action', checkAuth, async (req, res) => {
             }
 
             await db.query(`
-                UPDATE frp_request 
+                UPDATE frp_request
                 SET status = 'PENDING', approved_by_actual = NULL, approved_at = NULL, approved_by = NULL
                 WHERE id = ?
             `, [frpId]);
-        } else if (action === 'update') {
-            // Already handled via POST /api/frp/save with body.frpId
-            // but we can add partial update if necessary
         }
 
         res.json({ success: true });
