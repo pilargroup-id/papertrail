@@ -111,10 +111,7 @@ export default function DashboardLayout() {
         isOpen={isAccessDialogOpen}
         user={u}
         onClose={() => setIsAccessDialogOpen(false)}
-        onSuccess={() => {
-          setIsAccessDialogOpen(false)
-          window.location.reload()
-        }}
+        onSuccess={() => setIsAccessDialogOpen(false)}
       />
     </div>
   )
