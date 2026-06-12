@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
@@ -49,18 +49,20 @@ export default function SelectDivisionPage({
   isOpen = true,
   onClose,
   onSuccess,
+  user: userProp = null,
 } = {}) {
   const navigate = useNavigate()
-  const { setUser } = useUser()
-  const [divisions, setDivisions] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { user: sessionUser, setUser } = useUser()
+  const activeUser = userProp || sessionUser || null
+  const [fallbackUser, setFallbackUser] = useState(null)
+  const [loading, setLoading] = useState(!activeUser)
   const [hoveredIdx, setHoveredIdx] = useState(null)
   const [selectedDivision, setSelectedDivision] = useState('')
   const [selectedJobLevel, setSelectedJobLevel] = useState('')
   const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
-    if (!isOpen) return undefined
+    if (!isOpen || activeUser) return undefined
 
     let cancelled = false
 
@@ -77,24 +79,8 @@ export default function SelectDivisionPage({
         if (cancelled) return
 
         const userInfo = payload?.user || payload || null
-        const normalizedDivisions = getDivisionOptionsFromUserInfo(userInfo)
-
+        setFallbackUser(userInfo)
         setUser(userInfo)
-        setDivisions(normalizedDivisions)
-
-        const initialDivision =
-          userInfo?.selectedDivision ||
-          normalizedDivisions[0]?.class ||
-          ''
-
-        const initialItem =
-          normalizedDivisions.find((division) => division.class === initialDivision || division.name === initialDivision) ||
-          normalizedDivisions[0]
-
-        if (initialItem) {
-          setSelectedDivision(initialItem.class || '')
-          setSelectedJobLevel(initialItem.jobLevel || '')
-        }
       })
       .catch((error) => {
         if (cancelled) return
@@ -109,7 +95,30 @@ export default function SelectDivisionPage({
     return () => {
       cancelled = true
     }
-  }, [isOpen, setUser])
+  }, [activeUser, isOpen, setUser])
+
+  const userInfo = activeUser || fallbackUser
+  const divisions = useMemo(() => getDivisionOptionsFromUserInfo(userInfo), [userInfo])
+
+  useEffect(() => {
+    if (!isOpen || !userInfo) return
+
+    const initialDivision =
+      userInfo.selectedDivision ||
+      divisions[0]?.class ||
+      ''
+
+    const initialItem =
+      divisions.find((division) => division.class === initialDivision || division.name === initialDivision) ||
+      divisions[0]
+
+    if (initialItem) {
+      setSelectedDivision(initialItem.class || '')
+      setSelectedJobLevel(initialItem.jobLevel || '')
+    }
+
+    setLoading(false)
+  }, [divisions, isOpen, userInfo])
 
   const handleSelect = async () => {
     if (!selectedDivision) {
@@ -128,13 +137,16 @@ export default function SelectDivisionPage({
         throw new Error('Gagal menyimpan divisi.')
       }
 
-      try {
-        const meResponse = await fetch('/api/user/info')
-        if (meResponse.ok) {
-          const meData = await meResponse.json()
-          setUser(meData?.user || meData || null)
-        }
-      } catch (_) {}
+      const result = await response.json().catch(() => ({}))
+      if (result?.user) {
+        setUser(result.user)
+      } else if (userInfo) {
+        setUser({
+          ...userInfo,
+          selectedDivision,
+          selectedJobLevel,
+        })
+      }
 
       if (typeof onSuccess === 'function') {
         onSuccess()

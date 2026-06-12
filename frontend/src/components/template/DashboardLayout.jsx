@@ -109,6 +109,7 @@ export default function DashboardLayout() {
 
       <SelectDivisionPage
         isOpen={isAccessDialogOpen}
+        user={u}
         onClose={() => setIsAccessDialogOpen(false)}
         onSuccess={() => {
           setIsAccessDialogOpen(false)

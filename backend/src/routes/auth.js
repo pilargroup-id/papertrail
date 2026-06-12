@@ -151,7 +151,11 @@ router.post('/api/auth/select-company', checkAuth, (req, res) => {
     req.session.user.selectedCompany = req.body.company;
     req.session.user.selectedCompanyId = assignment?.companyId || assignment?.id || '';
     req.session.user.selectedCompanyCode = assignment?.companyCode || assignment?.code || '';
-    res.json({ success: true, redirect: '/select-division' });
+    res.json({
+        success: true,
+        redirect: '/select-division',
+        user: req.session.user,
+    });
 });
 
 router.get('/api/data/select-division', checkAuth, (req, res) => {
@@ -198,7 +202,11 @@ router.post('/api/auth/select-division', checkAuth, (req, res) => {
         req.session.user.selectedJobLevel = assignment.jobLevel || assignment.job_level_name || '';
         req.session.user.jobLevelRank = assignment.jobLevelRank || assignment.job_level_rank || req.session.user.jobLevelRank || null;
     }
-    res.json({ success: true, redirect: '/' });
+    res.json({
+        success: true,
+        redirect: '/',
+        user: req.session.user,
+    });
 });
 
 module.exports = router;
