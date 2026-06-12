@@ -32,6 +32,10 @@ const formatDecimalInput = v => {
 
 const normalizeCompany = v => String(v || '').trim().toUpperCase()
 
+const getDisplayName = (user) => {
+  return user?.name || user?.fullName || user?.username || user?.displayName || ''
+}
+
 const getEmployeeAssignments = e => {
   if (Array.isArray(e?.companies) && e.companies.length > 0) return e.companies
   if (e?.class) return [{ name: e.company || '', class: e.class, jobLevel: e.jobLevel || '' }]
@@ -88,7 +92,7 @@ const buildInitialForm = (data, isDuplicate = false) => {
   const base = {
     ...blankForm,
     companyName: initialCompany,
-    dimintaOleh: data.user?.fullName || '',
+    dimintaOleh: getDisplayName(data.user),
     id: isDuplicate ? '' : (data.editData?.id || ''),
   }
 
@@ -412,7 +416,7 @@ export default function NewFRP() {
   const filteredEmployees = useMemo(() => {
     const source = FRP.employees || []
     if (!source.length) {
-      return [{ fullName: FRP.user?.fullName || '', companies: [{ name: FRP.user?.selectedCompany || '', class: FRP.user?.selectedDivision || '' }] }]
+      return [{ fullName: getDisplayName(FRP.user), companies: [{ name: FRP.user?.selectedCompany || '', class: FRP.user?.selectedDivision || '' }] }]
     }
     const targetCompany = normalizeCompany(values.companyName)
     const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi))
@@ -1010,7 +1014,7 @@ export default function NewFRP() {
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={processSubmit}
         frpNo={values.frpNo || values.id}
-        dimintaOleh={values.dimintaOleh || FRP.user?.fullName}
+        dimintaOleh={values.dimintaOleh || getDisplayName(FRP.user)}
       />
       <DialogSuccesAction
         isOpen={successDialog.isOpen}

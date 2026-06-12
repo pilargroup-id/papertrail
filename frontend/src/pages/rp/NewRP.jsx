@@ -16,6 +16,10 @@ const formatCurrency = v => new Intl.NumberFormat('en-US').format(normalizeNumbe
 const formatNumberInput = v => { if (!v && v !== 0) return ''; const c = String(v).replace(/\D/g, ''); return c ? new Intl.NumberFormat('en-US').format(parseInt(c, 10)) : '' }
 const normalizeCompany = v => String(v || '').trim().toUpperCase()
 
+const getDisplayName = (user) => {
+  return user?.name || user?.fullName || user?.username || user?.displayName || ''
+}
+
 
 function FloatingGroup({ label, children, style, className }) {
   return (
@@ -128,7 +132,7 @@ const buildInitialRp = data => {
     ...blankRp,
     items: getDefaultRpItems(),
     companyName: initialCompany,
-    dibuatOleh: data?.user?.fullName || '',
+    dibuatOleh: getDisplayName(data?.user),
   }
 
   let initialDivisi = '';

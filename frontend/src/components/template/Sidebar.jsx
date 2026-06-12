@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import api from '../../services/api'
 
 function getInitials(name) {
   return (name || '')
@@ -271,39 +272,70 @@ function Sidebar({
 }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  
-  const uniqueCompanies = [...new Set((allAssignments || []).map(a => a.name))]
-  const showBack = (allAssignments || []).length > 1
+
+  const [sessionUserInfo, setSessionUserInfo] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    api.get('/api/user/info')
+      .then((data) => {
+        if (!cancelled) {
+          setSessionUserInfo(data || null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSessionUserInfo(null)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const resolvedUserName = sessionUserInfo?.name || sessionUserInfo?.fullName || sessionUserInfo?.username || userName
+  const resolvedUserDivision = sessionUserInfo?.selectedDivision || sessionUserInfo?.department || userDivision
+  const resolvedUserJobLevel = sessionUserInfo?.selectedJobLevel || sessionUserInfo?.job_level || sessionUserInfo?.jobLevelName || userJobLevel
+  const resolvedUserRole = sessionUserInfo?.role || userRole
+  const resolvedIsAdmin = sessionUserInfo?.role === 'administrator' || userIsAdmin
+  const resolvedAssignments = (Array.isArray(sessionUserInfo?.allAssignments) && sessionUserInfo.allAssignments.length > 0)
+    ? sessionUserInfo.allAssignments
+    : allAssignments
+
+  const uniqueCompanies = [...new Set((resolvedAssignments || []).map(a => a.name))]
+  const showBack = (resolvedAssignments || []).length > 1
   const backUrl = uniqueCompanies.length > 1 ? '/select-company' : '/select-division'
   const rpApprovalHref = '/rp-approval'
-  const normalizedRole = normalizeText(userRole)
-  const normalizedJobLevel = normalizeText(userJobLevel)
+  const normalizedRole = normalizeText(resolvedUserRole)
+  const normalizedJobLevel = normalizeText(resolvedUserJobLevel)
   const assignmentDivisions = useMemo(
     () => {
       const divisions = new Set(
-        (allAssignments || [])
+        (resolvedAssignments || [])
           .map((assignment) => normalizeDivision(assignment?.class))
           .filter(Boolean),
       )
 
-      if (userDivision) {
-        divisions.add(normalizeDivision(userDivision))
+      if (resolvedUserDivision) {
+        divisions.add(normalizeDivision(resolvedUserDivision))
       }
 
       return divisions
     },
-    [allAssignments, userDivision],
+    [resolvedAssignments, resolvedUserDivision],
   )
-  const isAdmin = userIsAdmin || normalizedRole === 'administrator'
-  const isITUser = userDivision === 'IT' || assignmentDivisions.has('IT')
+  const isAdmin = resolvedIsAdmin || normalizedRole === 'administrator'
+  const isITUser = normalizeDivision(resolvedUserDivision) === 'IT' || assignmentDivisions.has('IT')
   const authContext = useMemo(() => ({
     role: normalizedRole,
     jobLevel: normalizedJobLevel,
-    division: normalizeDivision(userDivision),
+    division: normalizeDivision(resolvedUserDivision),
     divisions: assignmentDivisions,
     isAdmin,
     isITUser,
-  }), [assignmentDivisions, isAdmin, isITUser, normalizedJobLevel, normalizedRole, userDivision])
+  }), [assignmentDivisions, isAdmin, isITUser, normalizedJobLevel, normalizedRole, resolvedUserDivision])
 
   const primaryItems = useMemo(() => {
     const rawItems = hideMenu ? [] : [
@@ -471,11 +503,11 @@ function Sidebar({
     .filter(Boolean)
     .join(' ')
 
-  const initials = getInitials(userName)
+  const initials = getInitials(resolvedUserName)
   
-  const displayedRole = userDivision && userJobLevel
-    ? `${userDivision} ${userJobLevel}`
-    : (userJobLevel || userDivision || userRole || (userIsAdmin ? 'Administrator' : 'Staff'))
+  const displayedRole = resolvedUserDivision && resolvedUserJobLevel
+    ? `${resolvedUserDivision} ${resolvedUserJobLevel}`
+    : (resolvedUserJobLevel || resolvedUserDivision || resolvedUserRole || (resolvedIsAdmin ? 'Administrator' : 'Staff'))
 
   return (
     <>
@@ -514,7 +546,7 @@ function Sidebar({
             </div>
 
             <div className="profile-info">
-              <h3 className="profile-name">{userName}</h3>
+              <h3 className="profile-name">{resolvedUserName}</h3>
               <p className="profile-role">{displayedRole}</p>
             </div>
           </div>

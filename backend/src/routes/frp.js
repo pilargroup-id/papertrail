@@ -266,7 +266,19 @@ function toPilargroupUserInfo(user) {
 }
 
 router.get('/api/user/info', checkAuth, (req, res) => {
-    res.json(toPilargroupUserInfo(req.session.user));
+    const user = req.session.user;
+
+    res.json({
+        ...toPilargroupUserInfo(user),
+        role: user.role ?? null,
+        selectedCompany: user.selectedCompany ?? '',
+        selectedCompanyId: user.selectedCompanyId ?? '',
+        selectedCompanyCode: user.selectedCompanyCode ?? '',
+        selectedDivision: user.selectedDivision ?? user.department ?? '',
+        selectedJobLevel: user.selectedJobLevel ?? user.job_level ?? user.jobLevelName ?? '',
+        jobLevelRank: user.jobLevelRank ?? user.job_level_value ?? null,
+        allAssignments: user.allAssignments || [],
+    });
 });
 
 router.get('/api/user/departement', checkAuth, async (req, res) => {
