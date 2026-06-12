@@ -1,6 +1,7 @@
 const TOKEN_KEY = 'token'
 const AUTH_USER_KEY = 'authUser'
 export const POST_LOGIN_ACCESS_DIALOG_KEY = 'frp:post-login-access-dialog'
+export const ACCESS_DIALOG_CHECKED_USER_KEY = 'frp:access-dialog-checked-user'
 
 export function isJwtLike(token) {
   if (typeof token !== 'string') return false
@@ -62,6 +63,7 @@ export function clearAuth() {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(AUTH_USER_KEY)
     sessionStorage.removeItem(POST_LOGIN_ACCESS_DIALOG_KEY)
+    sessionStorage.removeItem(ACCESS_DIALOG_CHECKED_USER_KEY)
   } catch (_) {}
 }
 
@@ -97,7 +99,7 @@ export async function consumeTokenFromUrl() {
   const token = params.get('token')
 
   if (!token) {
-    return getAuthUser()
+    return null
   }
 
   if (!isJwtLike(token)) {
@@ -105,7 +107,7 @@ export async function consumeTokenFromUrl() {
       localStorage.removeItem(TOKEN_KEY)
     } catch (_) {}
     cleanUrlAuthParams()
-    return getAuthUser()
+    return null
   }
 
   localStorage.setItem(TOKEN_KEY, token)
@@ -131,6 +133,9 @@ export async function consumeTokenFromUrl() {
 
   if (user) {
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
+    try {
+      sessionStorage.setItem(POST_LOGIN_ACCESS_DIALOG_KEY, '1')
+    } catch (_) {}
   }
 
   cleanUrlAuthParams()

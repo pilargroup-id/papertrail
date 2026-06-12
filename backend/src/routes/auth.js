@@ -1,11 +1,51 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const db = require('../../db');
+const { centralDb } = require('../../db');
 const { checkAuth } = require('../middleware/auth');
-const { rowsToSessionUser } = require('../middleware/devAuth');
+const { userFromLoginRows } = require('../services/dbService');
 const { LOGIN_SQL } = require('../config/constants');
 
 const router = express.Router();
+
+function sameText(a, b) {
+    return String(a || '').trim() === String(b || '').trim();
+}
+
+function getAssignmentClasses(assignment) {
+    if (Array.isArray(assignment?.classes) && assignment.classes.length > 0) {
+        return assignment.classes;
+    }
+
+    return [
+        assignment?.class,
+        assignment?.dept_class,
+        assignment?.departmentClass,
+    ].filter(Boolean);
+}
+
+function applySelectedAssignment(req, assignment, requestedCompany, requestedDivision) {
+    const nextCompany = assignment?.name || assignment?.companyName || requestedCompany || req.session.user.selectedCompany || '';
+
+    req.session.user.selectedCompany = nextCompany;
+    req.session.user.selectedCompanyId = assignment?.companyId || assignment?.id || req.session.user.selectedCompanyId || '';
+    req.session.user.selectedCompanyCode = assignment?.companyCode || assignment?.code || req.session.user.selectedCompanyCode || '';
+    req.session.user.selectedDivision = requestedDivision || assignment?.class || assignment?.dept_class || '';
+    req.session.user.selectedJobLevel = assignment?.jobLevel || assignment?.job_level_name || req.session.user.selectedJobLevel || '';
+    req.session.user.jobLevelRank = assignment?.jobLevelRank || assignment?.job_level_rank || req.session.user.jobLevelRank || null;
+}
+
+function findAssignment(user, requestedCompany, requestedDivision) {
+    const company = String(requestedCompany || '').trim();
+    const division = String(requestedDivision || '').trim();
+
+    return (user.allAssignments || []).find((assignment) => {
+        const assignmentCompany = assignment.name || assignment.companyName || '';
+        const companyMatches = !company || sameText(assignmentCompany, company);
+        const divisionMatches = !division || getAssignmentClasses(assignment).some((item) => sameText(item, division));
+
+        return companyMatches && divisionMatches;
+    });
+}
 
 // ============================================================
 // AUTH PAGES (HTML redirects)
@@ -19,12 +59,15 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [rows] = await db.query(LOGIN_SQL, [username]);
+        const [rows] = await centralDb.query(LOGIN_SQL, [username]);
         if (rows.length) {
             const match = await bcrypt.compare(password, rows[0].password || '');
             if (match) {
-                req.session.user = rowsToSessionUser(rows);
-                return res.redirect('/');
+                const sessionUser = userFromLoginRows(rows);
+                if (sessionUser) {
+                    req.session.user = sessionUser;
+                    return res.redirect('/');
+                }
             }
         }
     } catch (e) {
@@ -74,13 +117,9 @@ router.get('/select-division', checkAuth, (req, res) => {
 
 router.post('/select-division', checkAuth, (req, res) => {
     const user = req.session.user;
-    const assignment = user.allAssignments.find(
-        a => a.name === user.selectedCompany && a.class === req.body.division
-    );
+    const assignment = findAssignment(user, req.body.company || user.selectedCompany, req.body.division);
     if (assignment) {
-        req.session.user.selectedDivision = assignment.class || assignment.dept_class || req.body.division;
-        req.session.user.selectedJobLevel = assignment.jobLevel || assignment.job_level_name || '';
-        req.session.user.jobLevelRank = assignment.jobLevelRank || assignment.job_level_rank || req.session.user.jobLevelRank || null;
+        applySelectedAssignment(req, assignment, req.body.company, req.body.division);
     }
     res.redirect('/');
 });
@@ -97,12 +136,15 @@ router.get('/logout', (req, res) => {
 router.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [rows] = await db.query(LOGIN_SQL, [username]);
+        const [rows] = await centralDb.query(LOGIN_SQL, [username]);
         if (rows.length) {
             const match = await bcrypt.compare(password, rows[0].password || '');
             if (match) {
-                req.session.user = rowsToSessionUser(rows);
-                return res.json({ success: true, redirect: '/' });
+                const sessionUser = userFromLoginRows(rows);
+                if (sessionUser) {
+                    req.session.user = sessionUser;
+                    return res.json({ success: true, redirect: '/' });
+                }
             }
         }
     } catch (e) {
@@ -193,14 +235,9 @@ router.get('/api/data/select-division', checkAuth, (req, res) => {
 router.post('/api/auth/select-division', checkAuth, (req, res) => {
     const user = req.session.user;
     const div = req.body.division;
-    const assignment = user.allAssignments.find(a =>
-        a.name === user.selectedCompany &&
-        ((a.classes && a.classes.includes(div)) || a.class === div)
-    );
+    const assignment = findAssignment(user, req.body.company || user.selectedCompany, div);
     if (assignment) {
-        req.session.user.selectedDivision = div;
-        req.session.user.selectedJobLevel = assignment.jobLevel || assignment.job_level_name || '';
-        req.session.user.jobLevelRank = assignment.jobLevelRank || assignment.job_level_rank || req.session.user.jobLevelRank || null;
+        applySelectedAssignment(req, assignment, req.body.company, div);
     }
     res.json({
         success: true,

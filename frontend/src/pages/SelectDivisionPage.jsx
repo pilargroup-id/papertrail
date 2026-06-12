@@ -6,7 +6,7 @@ import DialogChangeAccess from '../components/Dialog/DialogChangeAccess.jsx'
 
 const normalizeDivision = (assignment, index = 0) => {
   const className = assignment?.class || assignment?.dept_class || assignment?.departmentClass || ''
-  const name = assignment?.name || assignment?.deptName || assignment?.departmentName || ''
+  const name = assignment?.name || assignment?.companyName || assignment?.company || assignment?.deptName || assignment?.departmentName || ''
   const jobLevel = assignment?.jobLevel || assignment?.job_level_name || assignment?.selectedJobLevel || ''
   const jobLevelRank = assignment?.jobLevelRank || assignment?.job_level_rank || null
   const label = assignment?.label || (className && name ? `${name} - ${className}` : (name || className || '-'))
@@ -22,11 +22,18 @@ const normalizeDivision = (assignment, index = 0) => {
   }
 }
 
-const getDivisionOptionsFromUserInfo = (userInfo) => {
+const getDivisionOptionsFromUserInfo = (userInfo, options = {}) => {
+  const { includeAllCompanies = false } = options
   const selectedCompany = String(userInfo?.selectedCompany || '').trim()
-  const assignments = Array.isArray(userInfo?.allAssignments) ? userInfo.allAssignments : []
+  const assignments = Array.isArray(userInfo?.allAssignments) && userInfo.allAssignments.length > 0
+    ? userInfo.allAssignments
+    : (Array.isArray(userInfo?.departments) ? userInfo.departments : []).map((department) => ({
+        ...department,
+        name: department?.companyName || department?.company || selectedCompany,
+        class: department?.class || department?.dept_class || department?.name || '',
+      }))
 
-  const filteredAssignments = selectedCompany
+  const filteredAssignments = selectedCompany && !includeAllCompanies
     ? assignments.filter((assignment) => String(assignment?.name || '').trim() === selectedCompany)
     : assignments
 
@@ -50,6 +57,7 @@ export default function SelectDivisionPage({
   onClose,
   onSuccess,
   user: userProp = null,
+  includeAllCompanies = false,
 } = {}) {
   const navigate = useNavigate()
   const { user: sessionUser, setUser } = useUser()
@@ -57,6 +65,7 @@ export default function SelectDivisionPage({
   const [fallbackUser, setFallbackUser] = useState(null)
   const [loading, setLoading] = useState(!activeUser)
   const [hoveredIdx, setHoveredIdx] = useState(null)
+  const [selectedCompany, setSelectedCompany] = useState('')
   const [selectedDivision, setSelectedDivision] = useState('')
   const [selectedJobLevel, setSelectedJobLevel] = useState('')
   const [submitError, setSubmitError] = useState('')
@@ -98,7 +107,10 @@ export default function SelectDivisionPage({
   }, [activeUser, isOpen, setUser])
 
   const userInfo = activeUser || fallbackUser
-  const divisions = useMemo(() => getDivisionOptionsFromUserInfo(userInfo), [userInfo])
+  const divisions = useMemo(
+    () => getDivisionOptionsFromUserInfo(userInfo, { includeAllCompanies }),
+    [includeAllCompanies, userInfo],
+  )
 
   useEffect(() => {
     if (!isOpen || !userInfo) return
@@ -113,6 +125,7 @@ export default function SelectDivisionPage({
       divisions[0]
 
     if (initialItem) {
+      setSelectedCompany(initialItem.name || userInfo.selectedCompany || '')
       setSelectedDivision(initialItem.class || '')
       setSelectedJobLevel(initialItem.jobLevel || '')
     }
@@ -126,11 +139,21 @@ export default function SelectDivisionPage({
       return
     }
 
+    const selectedItem =
+      divisions.find((division) =>
+        division.class === selectedDivision &&
+        (!selectedCompany || division.name === selectedCompany)
+      ) ||
+      divisions.find((division) => division.class === selectedDivision) ||
+      null
+
+    const company = selectedItem?.name || selectedCompany || userInfo?.selectedCompany || ''
+
     try {
       const response = await fetch('/api/auth/select-division', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ division: selectedDivision }),
+        body: JSON.stringify({ company, division: selectedDivision }),
       })
 
       if (!response.ok) {
@@ -143,6 +166,7 @@ export default function SelectDivisionPage({
       } else if (userInfo) {
         setUser({
           ...userInfo,
+          selectedCompany: company,
           selectedDivision,
           selectedJobLevel,
         }, { replaceSelection: true })
@@ -215,13 +239,14 @@ export default function SelectDivisionPage({
         {!loading && divisions.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {divisions.map((division, index) => {
-              const isSelected = selectedDivision === division.class
+              const isSelected = selectedDivision === division.class && selectedCompany === division.name
 
               return (
                 <button
                   key={`${division.class}-${division.name}-${index}`}
                   type="button"
                   onClick={() => {
+                    setSelectedCompany(division.name || '')
                     setSelectedDivision(division.class || '')
                     setSelectedJobLevel(division.jobLevel || '')
                     setSubmitError('')

@@ -64,6 +64,9 @@ function dbRowsToEmployees(rows) {
                     name: departmentName,
                     class: departmentClass,
                     code: departmentCode,
+                    companyId,
+                    companyCode,
+                    companyName,
                     is_primary: Number(row.department_is_primary || 0),
                 };
 
@@ -153,9 +156,12 @@ function dbRowsToEmployees(rows) {
             selectedJobLevel: jobLevelName,
 
             allAssignments: departments.map(d => ({
-                id: primaryCompany.id || '',
-                code: primaryCompany.code || '',
-                name: primaryCompany.name || '',
+                id: d.companyId || primaryCompany.id || '',
+                code: d.companyCode || primaryCompany.code || '',
+                name: d.companyName || primaryCompany.name || '',
+                companyId: d.companyId || primaryCompany.id || '',
+                companyCode: d.companyCode || primaryCompany.code || '',
+                companyName: d.companyName || primaryCompany.name || '',
                 class: d.class || '',
                 department_id: d.id || null,
                 dept_name: d.name || '',
