@@ -96,6 +96,67 @@ function calcUsedBudgets(requests) {
     return usedBudgets;
 }
 
+function normalizeScopeText(value) {
+    return String(value || '').trim().toUpperCase();
+}
+
+function resolveRequestDepartmentSnapshot(baseSnapshot, user, body = {}) {
+    const requestedClass = body.departmentClass || body.kelas || body.classClass || body.class || '';
+    const requestedName = body.departmentName || body.divisi || body.className || '';
+    const requestedId = body.departmentId || body.classId || '';
+    const requestedCompany = body.companyName || user.selectedCompany || baseSnapshot.companyName || '';
+    const assignments = Array.isArray(user.allAssignments) ? user.allAssignments : [];
+
+    const match = assignments.find((assignment) => {
+        const companyMatch =
+            !requestedCompany ||
+            normalizeScopeText(assignment.name) === normalizeScopeText(requestedCompany) ||
+            normalizeScopeText(assignment.companyName) === normalizeScopeText(requestedCompany);
+
+        if (!companyMatch) return false;
+
+        const assignmentClasses = Array.isArray(assignment.classes) && assignment.classes.length > 0
+            ? assignment.classes
+            : [assignment.class, assignment.dept_class, assignment.departmentClass].filter(Boolean);
+
+        const classMatch = requestedClass
+            ? assignmentClasses.some(cls => normalizeScopeText(cls) === normalizeScopeText(requestedClass))
+            : false;
+
+        const nameMatch = requestedName
+            ? [assignment.dept_name, assignment.departmentName, assignment.department_name, assignment.name]
+                .some(name => normalizeScopeText(name) === normalizeScopeText(requestedName))
+            : false;
+
+        const idMatch = requestedId
+            ? [assignment.department_id, assignment.departmentId, assignment.dept_id, assignment.id]
+                .some(id => String(id || '') === String(requestedId))
+            : false;
+
+        return classMatch || nameMatch || idMatch;
+    });
+
+    if (!match && !requestedClass && !requestedName && !requestedId) {
+        return baseSnapshot;
+    }
+
+    const selectedClass = requestedClass || match?.class || match?.dept_class || match?.departmentClass || baseSnapshot.departmentClass;
+    const selectedName = requestedName || match?.dept_name || match?.departmentName || match?.department_name || baseSnapshot.departmentName || selectedClass;
+
+    return {
+        ...baseSnapshot,
+        companyId: match?.companyId || match?.company_id || match?.id || baseSnapshot.companyId,
+        companyCode: match?.companyCode || match?.company_code || match?.code || baseSnapshot.companyCode,
+        companyName: match?.name || requestedCompany || baseSnapshot.companyName,
+        departmentId: requestedId || match?.department_id || match?.departmentId || match?.dept_id || baseSnapshot.departmentId,
+        departmentName: selectedName,
+        departmentClass: selectedClass,
+        departmentCode: body.departmentCode || match?.dept_code || match?.departmentCode || match?.department_code || baseSnapshot.departmentCode,
+        jobLevelName: match?.jobLevel || match?.job_level_name || baseSnapshot.jobLevelName,
+        jobLevelRank: match?.jobLevelRank || match?.job_level_rank || baseSnapshot.jobLevelRank,
+    };
+}
+
 const BUDGET_SELECT_SQL = `
     SELECT id, department_id, department_name, department_class, department_code,
            project_name, budget_type, budget_amount, budget_used, budget_remaining
@@ -794,7 +855,7 @@ router.post('/api/frp/save', checkAuth, async (req, res) => {
         await client.beginTransaction();
 
         const u = req.session.user;
-        const snapshot = getFrpSnapshotFromUser(u);
+        const snapshot = resolveRequestDepartmentSnapshot(getFrpSnapshotFromUser(u), u, req.body);
         const items = normalizeFrpItems(req.body.items || []);
 
         await validateFrpBudgetAccess(client, u, items);

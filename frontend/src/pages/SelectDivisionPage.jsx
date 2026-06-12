@@ -139,13 +139,13 @@ export default function SelectDivisionPage({
 
       const result = await response.json().catch(() => ({}))
       if (result?.user) {
-        setUser(result.user)
+        setUser(result.user, { replaceSelection: true })
       } else if (userInfo) {
         setUser({
           ...userInfo,
           selectedDivision,
           selectedJobLevel,
-        })
+        }, { replaceSelection: true })
       }
 
       if (typeof onSuccess === 'function') {

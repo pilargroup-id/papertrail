@@ -636,16 +636,21 @@ export default function NewFRP() {
     setIsConfirmOpen(false)
     setSubmitting(true)
     try {
-      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      const selectedClass = values.kelas || selectedDept?.class || '';
+      const selectedDept = findDepartmentByValue(departments, values.divisi);
+      const activeSelectedDept = findDepartmentByValue(departments, activeUser?.selectedDivision);
+      const selectedClass = values.kelas || selectedDept?.class || activeSelectedDept?.class || '';
 
       const payload = {
         frpId: values.id || undefined,
         fromRpId: values.fromRpId || undefined,
         
-        companyName: values.companyName,
-        divisi: selectedDept ? selectedDept.name : values.divisi,
+        companyName: activeUser?.selectedCompany || values.companyName,
+        divisi: selectedDept?.name || activeSelectedDept?.name || values.divisi || activeUser?.selectedDivision || '',
         kelas: selectedClass,
+        departmentId: selectedDept?.id || selectedDept?.department_id || activeSelectedDept?.id || activeSelectedDept?.department_id || undefined,
+        departmentName: selectedDept?.name || activeSelectedDept?.name || undefined,
+        departmentClass: selectedClass || undefined,
+        departmentCode: selectedDept?.code || selectedDept?.department_code || activeSelectedDept?.code || activeSelectedDept?.department_code || undefined,
         dimintaOleh: values.dimintaOleh,
         rpReference: values.rpReference,
         attachLink: values.attachLink,

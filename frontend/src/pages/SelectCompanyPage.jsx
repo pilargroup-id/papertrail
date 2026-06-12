@@ -31,7 +31,7 @@ export default function SelectCompanyPage() {
     if (response.ok) {
       const result = await response.json().catch(() => ({}))
       if (result?.user) {
-        setUser(result.user)
+        setUser(result.user, { replaceSelection: true })
       }
     }
 

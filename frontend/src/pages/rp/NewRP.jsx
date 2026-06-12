@@ -476,6 +476,7 @@ export default function NewRP({
     try {
       let payload = { 
         ...values,
+        companyName: activeUser?.selectedCompany || values.companyName,
         purchaseCategory: values.kategoriPembelian,
         description: values.deskripsi,
         processedByDepartment: values.diprosesOleh,
@@ -483,9 +484,14 @@ export default function NewRP({
         vendorSuggestion: values.vendorSuggestion,
         receiverPic: values.picPenerima,
       }
-      const selectedDept = departments.find(d => String(d.originalIndex) === String(values.divisi));
-      payload.divisi = selectedDept ? selectedDept.name : values.divisi;
-      payload.class = values.class || selectedDept?.class || selectedDept?.name || '';
+      const selectedDept = findDepartmentByValue(departments, values.divisi);
+      const activeSelectedDept = findDepartmentByValue(departments, activeUser?.selectedDivision);
+      payload.divisi = selectedDept?.name || activeSelectedDept?.name || values.divisi || activeUser?.selectedDivision || '';
+      payload.class = values.class || selectedDept?.class || activeSelectedDept?.class || selectedDept?.name || activeSelectedDept?.name || '';
+      payload.classId = selectedDept?.id || selectedDept?.department_id || activeSelectedDept?.id || activeSelectedDept?.department_id || undefined;
+      payload.className = selectedDept?.name || activeSelectedDept?.name || payload.divisi;
+      payload.classClass = payload.class;
+      payload.classCode = selectedDept?.code || selectedDept?.department_code || activeSelectedDept?.code || activeSelectedDept?.department_code || undefined;
 
       if (processId) {
         const result = await rpService.processUpdate(processId, payload)
