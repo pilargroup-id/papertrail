@@ -4,20 +4,45 @@ import { useNavigate } from 'react-router-dom'
 import { useUser } from '../contexts/UserContext'
 import DialogChangeAccess from '../components/Dialog/DialogChangeAccess.jsx'
 
-const normalizeDepartment = (division, index = 0) => {
-  const className = division?.class || division?.dept_class || division?.departmentClass || ''
-  const name = division?.name || division?.deptName || division?.departmentName || ''
-  const label = division?.label || (className && name ? `${name} - ${className}` : (name || className || '-'))
+const normalizeDivision = (assignment, index = 0) => {
+  const className = assignment?.class || assignment?.dept_class || assignment?.departmentClass || ''
+  const name = assignment?.name || assignment?.deptName || assignment?.departmentName || ''
+  const jobLevel = assignment?.jobLevel || assignment?.job_level_name || assignment?.selectedJobLevel || ''
+  const jobLevelRank = assignment?.jobLevelRank || assignment?.job_level_rank || null
+  const label = assignment?.label || (className && name ? `${name} - ${className}` : (name || className || '-'))
 
   return {
-    ...division,
-    originalIndex: division?.originalIndex ?? division?.id ?? index,
+    ...assignment,
+    originalIndex: assignment?.originalIndex ?? assignment?.id ?? index,
     class: className,
     name,
-    jobLevel: division?.jobLevel || division?.job_level_name || '',
-    jobLevelRank: division?.jobLevelRank || division?.job_level_rank || null,
+    jobLevel,
+    jobLevelRank,
     label,
   }
+}
+
+const getDivisionOptionsFromUserInfo = (userInfo) => {
+  const selectedCompany = String(userInfo?.selectedCompany || '').trim()
+  const assignments = Array.isArray(userInfo?.allAssignments) ? userInfo.allAssignments : []
+
+  const filteredAssignments = selectedCompany
+    ? assignments.filter((assignment) => String(assignment?.name || '').trim() === selectedCompany)
+    : assignments
+
+  const divisions = filteredAssignments.flatMap((assignment, index) => {
+    const classes = Array.isArray(assignment?.classes) && assignment.classes.length > 0
+      ? assignment.classes
+      : [assignment?.class || assignment?.dept_class || assignment?.departmentClass].filter(Boolean)
+
+    return classes.map((className, classIndex) => normalizeDivision({
+      ...assignment,
+      class: className,
+      originalIndex: assignment?.id ?? index + classIndex,
+    }, index + classIndex))
+  })
+
+  return [...new Map(divisions.map((division) => [`${division.name}::${division.class}`, division])).values()]
 }
 
 export default function SelectDivisionPage({
@@ -27,7 +52,7 @@ export default function SelectDivisionPage({
 } = {}) {
   const navigate = useNavigate()
   const { setUser } = useUser()
-  const [data, setData] = useState(null)
+  const [divisions, setDivisions] = useState([])
   const [loading, setLoading] = useState(true)
   const [hoveredIdx, setHoveredIdx] = useState(null)
   const [selectedDivision, setSelectedDivision] = useState('')
@@ -39,11 +64,11 @@ export default function SelectDivisionPage({
 
     let cancelled = false
 
-    fetch('/api/departments')
+    fetch('/api/user/info')
       .then((response) => {
         if (!response.ok) {
           window.location.href = '/'
-          throw new Error('Failed to load division data')
+          throw new Error('Failed to load user info')
         }
 
         return response.json()
@@ -51,21 +76,20 @@ export default function SelectDivisionPage({
       .then((payload) => {
         if (cancelled) return
 
-        const divisions = Array.isArray(payload)
-          ? payload
-          : (payload?.divisions || payload?.departments || payload?.data || [])
-        const normalizedDivisions = divisions.map((division, index) => normalizeDepartment(division, index))
+        const userInfo = payload?.user || payload || null
+        const normalizedDivisions = getDivisionOptionsFromUserInfo(userInfo)
 
-        setData({
-          ...(payload && !Array.isArray(payload) ? payload : {}),
-          divisions: normalizedDivisions,
-        })
-        if (payload?.user) {
-          setUser(payload.user)
-        }
+        setUser(userInfo)
+        setDivisions(normalizedDivisions)
 
-        const initialDivision = payload?.selectedDivision || payload?.user?.selectedDivision || normalizedDivisions[0]?.class || ''
-        const initialItem = normalizedDivisions.find((division) => division.class === initialDivision || division.name === initialDivision) || normalizedDivisions[0]
+        const initialDivision =
+          userInfo?.selectedDivision ||
+          normalizedDivisions[0]?.class ||
+          ''
+
+        const initialItem =
+          normalizedDivisions.find((division) => division.class === initialDivision || division.name === initialDivision) ||
+          normalizedDivisions[0]
 
         if (initialItem) {
           setSelectedDivision(initialItem.class || '')
@@ -74,7 +98,8 @@ export default function SelectDivisionPage({
       })
       .catch((error) => {
         if (cancelled) return
-        console.error('[SelectDivisionPage] Failed to load division data', error)
+
+        console.error('[SelectDivisionPage] Failed to load user info', error)
         setSubmitError('Gagal memuat data divisi.')
       })
       .finally(() => {
@@ -85,8 +110,6 @@ export default function SelectDivisionPage({
       cancelled = true
     }
   }, [isOpen, setUser])
-
-  const divisions = data?.divisions || []
 
   const handleSelect = async () => {
     if (!selectedDivision) {
@@ -106,10 +129,10 @@ export default function SelectDivisionPage({
       }
 
       try {
-        const meResponse = await fetch('/api/auth/me')
+        const meResponse = await fetch('/api/user/info')
         if (meResponse.ok) {
           const meData = await meResponse.json()
-          setUser(meData?.user || null)
+          setUser(meData?.user || meData || null)
         }
       } catch (_) {}
 
@@ -184,7 +207,7 @@ export default function SelectDivisionPage({
 
               return (
                 <button
-                  key={`${division.class}-${index}`}
+                  key={`${division.class}-${division.name}-${index}`}
                   type="button"
                   onClick={() => {
                     setSelectedDivision(division.class || '')
@@ -211,7 +234,9 @@ export default function SelectDivisionPage({
                   onMouseLeave={() => setHoveredIdx(null)}
                 >
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.98rem' }}>{division.label || division.class || division.name}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.98rem' }}>
+                      {division.label || division.class || division.name}
+                    </div>
                     <div style={{ fontSize: '0.82rem', color: isSelected ? '#15803d' : '#94a3b8', marginTop: '2px' }}>
                       {division.jobLevel || selectedJobLevel || '-'}
                     </div>
