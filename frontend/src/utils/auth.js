@@ -65,6 +65,23 @@ export function clearAuth() {
   } catch (_) {}
 }
 
+export function isPageReload() {
+  if (typeof window === 'undefined' || typeof performance === 'undefined') {
+    return false
+  }
+
+  try {
+    const navigationEntries = performance.getEntriesByType?.('navigation')
+    if (Array.isArray(navigationEntries) && navigationEntries.length > 0) {
+      return navigationEntries[0]?.type === 'reload'
+    }
+
+    return performance.navigation?.type === 1
+  } catch (_) {
+    return false
+  }
+}
+
 function cleanUrlAuthParams() {
   const url = new URL(window.location.href)
   url.searchParams.delete('token')

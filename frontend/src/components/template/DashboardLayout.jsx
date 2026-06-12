@@ -5,7 +5,7 @@ import Header from './Header'
 import { useSidebarState } from '../../hooks/useSidebarState'
 import { useUser } from '../../contexts/UserContext'
 import SelectDivisionPage from '../../pages/SelectDivisionPage'
-import { POST_LOGIN_ACCESS_DIALOG_KEY } from '../../utils/auth'
+import { POST_LOGIN_ACCESS_DIALOG_KEY, isPageReload } from '../../utils/auth'
 
 const HIDE_MENU_PATHS = new Set(['/select-company', '/select-division'])
 
@@ -60,6 +60,11 @@ export default function DashboardLayout() {
       const shouldOpenAccessDialog = sessionStorage.getItem(POST_LOGIN_ACCESS_DIALOG_KEY) === '1'
 
       if (!shouldOpenAccessDialog) {
+        return
+      }
+
+      if (isPageReload()) {
+        sessionStorage.removeItem(POST_LOGIN_ACCESS_DIALOG_KEY)
         return
       }
 
