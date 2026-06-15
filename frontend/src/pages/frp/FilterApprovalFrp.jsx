@@ -85,7 +85,7 @@ function FilterField({ label, icon, children }) {
             fontSize: '11px',
             fontWeight: '700',
             color: '#64748b',
-            zIndex: 3,
+            zIndex: 1000000,
             pointerEvents: 'none',
             letterSpacing: '0.02em',
           }}
@@ -103,7 +103,7 @@ function FilterField({ label, icon, children }) {
               color: '#64748b',
               fontSize: '18px',
               pointerEvents: 'none',
-              zIndex: 3,
+              zIndex: 1000000,
             }}
           >
             {icon}

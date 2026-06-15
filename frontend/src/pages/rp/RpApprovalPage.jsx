@@ -293,7 +293,11 @@ export default function RpApprovalPage() {
         if (!r.ok) { window.location.href = '/'; throw new Error('Unauthorized') }
         return r.json()
       })
-      .then(d => { setData(d); setUser(d?.user) })
+      .then(d => {
+        setData(d)
+        setCounts(d?.counts || {})
+        setUser(d?.user)
+      })
       .catch(err => { if (err.name !== 'AbortError') {} })
       .finally(() => setLoading(false))
 
@@ -866,7 +870,7 @@ export default function RpApprovalPage() {
             isMobile={isMobile}
             tab={tab}
             setTab={setTab}
-            counts={counts || D.counts || {}}
+            counts={Object.keys(counts || {}).length > 0 ? counts : (D.counts || {})}
             tabDropdownOpen={tabDropdownOpen}
             setTabDropdownOpen={setTabDropdownOpen}
             tabDropdownRef={tabDropdownRef}

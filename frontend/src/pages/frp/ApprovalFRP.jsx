@@ -9,11 +9,6 @@ import DialogSuccesAction from '../../components/Dialog/DialogSuccesAction'
 import DialogFailAction from '../../components/Dialog/DialogFailAction'
 
 const MOBILE_BREAKPOINT = 768
-const TABLET_BREAKPOINT = 1100
-
-function parseAmount(amount) {
-  return parseInt(String(amount || '0').replace(/\./g, '').replace(/[^0-9]/g, ''), 10) || 0
-}
 
 function formatDate(value) {
   return value
@@ -23,16 +18,6 @@ function formatDate(value) {
       year: 'numeric',
     }).format(new Date(value))
     : '-'
-}
-
-function formatCurrency(value) {
-  return `IDR ${value.toLocaleString('id-ID')}`
-}
-
-const getGridColumns = (desktopColumns, isMobile, isTablet) => {
-  if (isMobile) return '1fr'
-  if (isTablet && desktopColumns >= 3) return '1fr 1fr'
-  return `repeat(${desktopColumns}, minmax(0, 1fr))`
 }
 
 function DateField({ value, onChange, placeholder = 'Pilih Tanggal', style }) {
@@ -104,7 +89,7 @@ function FilterField({ label, icon, children }) {
             fontSize: '11px',
             fontWeight: '700',
             color: '#64748b',
-            zIndex: 3,
+            zIndex: 1000000,
             pointerEvents: 'none',
             letterSpacing: '0.02em',
           }}
@@ -122,7 +107,7 @@ function FilterField({ label, icon, children }) {
               color: '#64748b',
               fontSize: '18px',
               pointerEvents: 'none',
-              zIndex: 3,
+              zIndex: 1000000,
             }}
           >
             {icon}
@@ -297,7 +282,7 @@ export default function ApprovalFRP() {
   const isApprovedView = pathname === '/approved'
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const { setUser } = useUser()
+  const { user, setUser } = useUser()
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === 'undefined' ? 1280 : window.innerWidth))
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -314,7 +299,6 @@ export default function ApprovalFRP() {
   })
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
 
-  const [filtersOpen, setFiltersOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionResultDialog, setActionResultDialog] = useState(null)
@@ -376,75 +360,12 @@ export default function ApprovalFRP() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const calcTotal = (request) => {
-    if (!request.items) {
-      return 0
-    }
-
-    return request.items.reduce((sum, item) => sum + parseAmount(item.amount), 0)
-  }
-
-  const divisions = useMemo(
-    () => (data?.requests ? [...new Set(data.requests.map((request) => request.divisi))].sort() : []),
-    [data],
+  const currentUser = useMemo(
+    () => ({ ...(user || {}), ...(data?.meta?.user || {}) }),
+    [user, data],
   )
-
-  const filtered = useMemo(() => {
-    if (!data?.requests) {
-      return []
-    }
-
-    const filteredList = data.requests.filter((request) => {
-      const searchLower = (filters.search || '').toLowerCase()
-      const matchSearch =
-        !searchLower ||
-        (request.frpNo || '').toLowerCase().includes(searchLower) ||
-        (request.vendor || '').toLowerCase().includes(searchLower) ||
-        (request.dimintaOleh || '').toLowerCase().includes(searchLower) ||
-        (request.divisi || '').toLowerCase().includes(searchLower) ||
-        (request.status || '').toLowerCase().includes(searchLower) ||
-        (request.approvedBy || '').toLowerCase().includes(searchLower) ||
-        (request.items || []).some(item => 
-          (item.memo || '').toLowerCase().includes(searchLower) ||
-          (item.budgetId || '').toLowerCase().includes(searchLower) ||
-          (item.projectName || '').toLowerCase().includes(searchLower)
-        )
-      const matchDate = !filters.date || request.tanggalFrp === filters.date
-      const matchRequester =
-        !filters.requester ||
-        (request.dimintaOleh || '').toLowerCase().includes(filters.requester.toLowerCase())
-      const matchStatus = !filters.status || request.status === filters.status
-      const matchDivision = !filters.division || request.divisi === filters.division
-
-      return matchSearch && matchDate && matchRequester && matchStatus && matchDivision
-    })
-
-    return filteredList.sort((a, b) => {
-      let valA, valB;
-      if (sortConfig.key === 'date') {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (parseInt(a.id) || 0);
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (parseInt(b.id) || 0);
-        return sortConfig.direction === 'asc' ? timeA - timeB : timeB - timeA;
-      } else if (sortConfig.key === 'requester') {
-        valA = (a.dimintaOleh || '').toLowerCase();
-        valB = (b.dimintaOleh || '').toLowerCase();
-      } else if (sortConfig.key === 'division') {
-        valA = (a.divisi || '').toLowerCase();
-        valB = (b.divisi || '').toLowerCase();
-      } else if (sortConfig.key === 'status') {
-        valA = (a.status || '').toLowerCase();
-        valB = (b.status || '').toLowerCase();
-      } else if (sortConfig.key === 'total') {
-        valA = calcTotal(a);
-        valB = calcTotal(b);
-        return sortConfig.direction === 'asc' ? valA - valB : valB - valA;
-      }
-
-      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [data, filters, sortConfig])
+  const requesters = data?.filters?.requesters || []
+  const divisions = data?.filters?.divisions || []
 
   const confirmActionMeta = {
     approve: {
@@ -526,11 +447,8 @@ export default function ApprovalFRP() {
     }
   }
 
-  const user = data?.user || {}
-  const userJobLevelRank = Number(user?.jobLevelRank || 0)
-  const canApprove = Boolean(data?.canApprove) && userJobLevelRank > 1
+  const canApprove = Boolean(data?.canApprove)
   const isMobile = viewportWidth < MOBILE_BREAKPOINT
-  const isTablet = viewportWidth >= MOBILE_BREAKPOINT && viewportWidth < TABLET_BREAKPOINT
 
   const filterInput = {
     width: '100%',
@@ -545,24 +463,6 @@ export default function ApprovalFRP() {
     color: '#1e293b',
     minHeight: '42px',
   }
-
-  const detailValueBox = {
-    padding: '10px 12px',
-    borderRadius: '10px',
-    border: '1.5px solid #d7e0ea',
-    background: '#f8fafc',
-    color: '#334155',
-    lineHeight: 1.5,
-    minHeight: '42px',
-    boxSizing: 'border-box',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.65)',
-    transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
-  }
-
-  const requesters = useMemo(
-    () => (data?.requests ? [...new Set(data.requests.map((request) => request.dimintaOleh).filter(Boolean))].sort() : []),
-    [data],
-  )
 
   const requesterOptions = useMemo(
     () => requesters.map(requester => ({ value: requester, label: requester })),
@@ -586,46 +486,18 @@ export default function ApprovalFRP() {
     setCurrentPage(1)
   }, [filters, isApprovedView, rowsPerPage])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage))
-  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const total = data?.pagination?.total ?? 0
+  const totalPages = data?.pagination?.totalPages ?? 1
+  const safeCurrentPage = data?.pagination?.page ?? currentPage
+  const currentRows = data?.data || []
+  const rangeStart = total === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
+  const rangeEnd = Math.min(total, safeCurrentPage * rowsPerPage)
 
-  const paginated = useMemo(() => {
-    const start = (safeCurrentPage - 1) * rowsPerPage
-    return filtered.slice(start, start + rowsPerPage)
-  }, [filtered, rowsPerPage, safeCurrentPage])
-
-  const rangeStart = filtered.length === 0 ? 0 : (safeCurrentPage - 1) * rowsPerPage + 1
-  const rangeEnd = Math.min(filtered.length, safeCurrentPage * rowsPerPage)
-  const currentRows = paginated
-  const total = filtered.length
-
-  const exportToCSV = () => {
-    if (!filtered || filtered.length === 0) return
-    const headers = ['No FRP', 'Tanggal FRP', 'Pemohon', 'Vendor', 'Divisi', 'Total', 'Status']
-    const rows = filtered.map(req => [
-      req.frpNo || '',
-      formatDate(req.tanggalFrp),
-      req.dimintaOleh || '',
-      req.vendor || '',
-      req.divisi || '',
-      calcTotal(req),
-      req.status || ''
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.setAttribute('href', url)
-    link.setAttribute('download', `FRP_${isApprovedView ? 'History' : 'Pending'}_Export_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+  useEffect(() => {
+    if (data?.pagination?.page && data.pagination.page !== currentPage) {
+      setCurrentPage(data.pagination.page)
+    }
+  }, [data?.pagination?.page, currentPage])
 
   return (
     <>
@@ -773,7 +645,7 @@ export default function ApprovalFRP() {
                     style={filterInput}
                     placeholder="No FRP / Vendor..."
                     value={filters.search}
-                    onChange={(e) => setFilters((c) => ({ ...c, search: e.target.value }))}
+                    onChange={(e) => setFilter('search', e.target.value)}
                   />
                 </FilterField>
 
@@ -781,7 +653,7 @@ export default function ApprovalFRP() {
                 <FilterField label="Date" icon="calendar_month">
                   <DateField
                     value={filters.date}
-                    onChange={(e) => setFilters((c) => ({ ...c, date: e.target.value }))}
+                    onChange={(e) => setFilter('date', e.target.value)}
                     style={filterInput}
                   />
                 </FilterField>
@@ -790,7 +662,7 @@ export default function ApprovalFRP() {
                 <FilterField label="Request By" icon="person">
                   <SearchableSelect
                     value={filters.requester}
-                    onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
+                    onChange={(v) => setFilter('requester', v)}
                     options={requesterOptions}
                     placeholder="Semua Pemohon"
                     style={filterInput}
@@ -802,7 +674,7 @@ export default function ApprovalFRP() {
                   <FilterField label="Status" icon="rule">
                     <SearchableSelect
                       value={filters.status}
-                      onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
+                      onChange={(v) => setFilter('status', v)}
                       options={statusOptions}
                       placeholder="Semua Status"
                       style={filterInput}
@@ -814,7 +686,7 @@ export default function ApprovalFRP() {
                 <FilterField label="Division" icon="business">
                   <SearchableSelect
                     value={filters.division}
-                    onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
+                    onChange={(v) => setFilter('division', v)}
                     options={divisionOptions}
                     placeholder="Semua Divisi"
                     style={filterInput}
@@ -863,7 +735,7 @@ export default function ApprovalFRP() {
         onClose={() => setSelectedRequest(null)}
         canApprove={canApprove}
         isApprovedView={isApprovedView}
-        userRole={user.role}
+        userRole={currentUser.role}
         onApprove={(req) => setConfirmAction({ request: req, action: 'approve' })}
         onReject={(req) => setConfirmAction({ request: req, action: 'reject' })}
         onRevert={(req) => setConfirmAction({ request: req, action: 'revert' })}
