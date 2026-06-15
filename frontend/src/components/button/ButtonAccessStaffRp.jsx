@@ -4,6 +4,10 @@ import ButtonReject from './ButtonReject.jsx'
 import ButtonDetail from './ButtonDetail.jsx'
 import ButtonRevert from './ButtonRevert.jsx'
 
+const PROCESS_ACCESS_DIVISIONS = new Set(['IT', 'HCGA'])
+
+const normalizeDivision = value => String(value || '').trim().toUpperCase()
+
 export default function ButtonAccessStaffRp({
   rp,
   actionLoading,
@@ -14,6 +18,7 @@ export default function ButtonAccessStaffRp({
   showDetail = true,
   showRevert = true,
   isStaff = false,
+  userDivision = '',
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
@@ -45,10 +50,47 @@ export default function ButtonAccessStaffRp({
 
   if (!showActions || !rp) return null
 
+  const normalizedUserDivision = normalizeDivision(userDivision)
+  const canProcessDivision = PROCESS_ACCESS_DIVISIONS.has(normalizedUserDivision)
   const isDivisionProcess = rp.status === 'division_review'
   const isStaffFinalStage = isStaff && (rp.status === 'final_review' || rp.status === 'approved')
-  const showDivisionProcessActions = isDivisionProcess && typeof onCheckData === 'function'
+  const showDivisionProcessActions = isDivisionProcess && canProcessDivision && typeof onCheckData === 'function'
+  const showRestrictedDivisionProcess = isDivisionProcess && !canProcessDivision
   const showRevertAction = showRevert && rp.canRevert
+
+  if (showRestrictedDivisionProcess) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '8px',
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 12px',
+          borderRadius: '12px',
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          color: '#475569',
+          fontSize: '12px',
+          fontWeight: 600,
+          lineHeight: 1.4,
+          maxWidth: '280px',
+        }}>
+          <span className="material-icons-round" style={{ fontSize: '16px', color: '#64748b', flexShrink: 0 }}>
+            info
+          </span>
+          <span>Department Anda tidak memiliki akses untuk memproses RP</span>
+        </div>
+        {showDetail && (
+          <ButtonDetail onClick={() => setSelected(rp)}>Detail</ButtonDetail>
+        )}
+      </div>
+    )
+  }
 
   const extractDetail = showDetail && (
     rp.status === 'waiting_manager' ||

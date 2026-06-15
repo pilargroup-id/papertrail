@@ -141,9 +141,9 @@ export default function FilterApprovalFrp({
   onRefresh,
 }) {
   const attachmentOptions = [
-    { value: 'all',     label: 'Semua Attachment' },
-    { value: 'with',    label: 'Ada Attachment'   },
-    { value: 'without', label: 'Tanpa Attachment'  },
+    { value: 'all',     label: 'All Attachment' },
+    { value: 'with',    label: 'With Attachment'   },
+    { value: 'without', label: 'Without Attachment'  },
   ]
 
   /**
@@ -285,12 +285,12 @@ export default function FilterApprovalFrp({
 
         {/* Request By */}
         <div style={col('requester')}>
-          <FilterField label="Request By" icon="person">
+          <FilterField label="Requesters" icon="person">
             <SearchableSelect
               value={filters.requester}
               onChange={(v) => setFilters((c) => ({ ...c, requester: v }))}
               options={requesterOptions}
-              placeholder="Semua Pemohon"
+              placeholder="All Requesters"
               style={inputStyle}
             />
           </FilterField>
@@ -330,7 +330,7 @@ export default function FilterApprovalFrp({
                 value={filters.status}
                 onChange={(v) => setFilters((c) => ({ ...c, status: v }))}
                 options={statusOptions}
-                placeholder="Semua Status"
+                placeholder="All Status"
                 style={inputStyle}
               />
             </FilterField>
@@ -344,7 +344,7 @@ export default function FilterApprovalFrp({
               value={filters.division}
               onChange={(v) => setFilters((c) => ({ ...c, division: v }))}
               options={divisionOptions}
-              placeholder="Semua Divisi"
+              placeholder="All Divisions"
               style={inputStyle}
             />
           </FilterField>

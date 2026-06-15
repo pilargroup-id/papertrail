@@ -189,6 +189,9 @@ const getUserJobLevelRank = user => {
   return Number(user?.jobLevelRank || user?.job_level_rank || assignmentRank || 0)
 }
 
+const PROCESS_ACCESS_DIVISIONS = new Set(['IT', 'HCGA'])
+
+const normalizeDivision = value => String(value || '').trim().toUpperCase()
 
 export default function RpApprovalPage() {
   const { pathname } = useLocation()
@@ -432,8 +435,12 @@ export default function RpApprovalPage() {
   const userJobLevelName = String(user?.selectedJobLevel || user?.jobLevelName || '').toLowerCase()
   const isAdmin = user?.role === 'administrator'
   const userDivision = user.selectedDivision || ''
+  const normalizedUserDivision = normalizeDivision(userDivision)
   const canTakeApprovalAction = userJobLevelRank >= 2 && !/\bstaff\b/.test(userJobLevelName)
-  const isProcessDivision = useCallback(division => ['IT', 'HCGA', 'Product'].includes(userDivision) && userDivision === division, [userDivision])
+  const isProcessDivision = useCallback(
+    division => PROCESS_ACCESS_DIVISIONS.has(normalizedUserDivision) && normalizedUserDivision === normalizeDivision(division),
+    [normalizedUserDivision],
+  )
 
   const pagination = D.pagination || { total: 0, page: 1, limit: rowsPerPage, totalPages: 1 }
   const totalPages = pagination.totalPages
@@ -779,6 +786,7 @@ export default function RpApprovalPage() {
             ) : (
               <ButtonAccessStaffRp
                 rp={selected}
+                userDivision={userDivision}
                 actionLoading={actionLoading}
                 requestAction={requestAction}
                 onCheckData={openCheckData}

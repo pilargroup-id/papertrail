@@ -295,14 +295,17 @@ function Sidebar({
     }
   }, [])
 
-  const resolvedUserName = sessionUserInfo?.name || sessionUserInfo?.fullName || sessionUserInfo?.username || userName
-  const resolvedUserDivision = sessionUserInfo?.selectedDivision || sessionUserInfo?.department || userDivision
-  const resolvedUserJobLevel = sessionUserInfo?.selectedJobLevel || sessionUserInfo?.job_level || sessionUserInfo?.jobLevelName || userJobLevel
-  const resolvedUserRole = sessionUserInfo?.role || userRole
-  const resolvedIsAdmin = sessionUserInfo?.role === 'administrator' || userIsAdmin
-  const resolvedAssignments = (Array.isArray(sessionUserInfo?.allAssignments) && sessionUserInfo.allAssignments.length > 0)
-    ? sessionUserInfo.allAssignments
-    : allAssignments
+  // Prefer the latest user state from props so access changes update the sidebar immediately.
+  const resolvedUserName = userName || sessionUserInfo?.name || sessionUserInfo?.fullName || sessionUserInfo?.username || 'User'
+  const resolvedUserDivision = userDivision || sessionUserInfo?.selectedDivision || sessionUserInfo?.department || ''
+  const resolvedUserJobLevel = userJobLevel || sessionUserInfo?.selectedJobLevel || sessionUserInfo?.job_level || sessionUserInfo?.jobLevelName || ''
+  const resolvedUserRole = userRole || sessionUserInfo?.role || 'staff'
+  const resolvedIsAdmin = userIsAdmin || sessionUserInfo?.role === 'administrator'
+  const resolvedAssignments = (Array.isArray(allAssignments) && allAssignments.length > 0)
+    ? allAssignments
+    : (Array.isArray(sessionUserInfo?.allAssignments) && sessionUserInfo.allAssignments.length > 0)
+      ? sessionUserInfo.allAssignments
+      : []
 
   const uniqueCompanies = [...new Set((resolvedAssignments || []).map(a => a.name))]
   const showBack = (resolvedAssignments || []).length > 1

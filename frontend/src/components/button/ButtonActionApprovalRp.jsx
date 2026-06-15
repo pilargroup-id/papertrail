@@ -84,6 +84,7 @@ export default function ButtonActionApprovalRp({
       {showStaffActions && (
         <ButtonAccessStaffRp
           rp={rp}
+          userDivision={userDivision}
           actionLoading={actionLoading}
           requestAction={requestAction}
           onCheckData={onCheckData}
