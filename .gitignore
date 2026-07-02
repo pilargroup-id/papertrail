@@ -1,0 +1,184 @@
+# =========================================================
+# Papertrail - Express + React
+# Root .gitignore
+# =========================================================
+
+# -------------------------
+# Dependencies
+# -------------------------
+node_modules/
+frontend/node_modules/
+
+# -------------------------
+# Environment files
+# -------------------------
+.env
+.env.*
+!.env.example
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# -------------------------
+# Logs
+# -------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -------------------------
+# Runtime / Process files
+# -------------------------
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# -------------------------
+# Build output
+# -------------------------
+dist/
+build/
+public/build/
+
+frontend/dist/
+frontend/build/
+
+# -------------------------
+# Cache
+# -------------------------
+.cache/
+.parcel-cache/
+.vite/
+.eslintcache
+.stylelintcache
+
+frontend/.cache/
+frontend/.vite/
+frontend/.eslintcache
+
+# -------------------------
+# Coverage / Test output
+# -------------------------
+coverage/
+.nyc_output/
+
+frontend/coverage/
+
+# -------------------------
+# Uploads / Temporary files
+# -------------------------
+uploads/
+tmp/
+temp/
+storage/temp/
+storage/tmp/
+
+# Kalau nanti ada upload local dev
+public/uploads/
+frontend/public/uploads/
+
+# -------------------------
+# Database / Local dump
+# -------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+*.dump
+
+# -------------------------
+# OS files
+# -------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# -------------------------
+# Editor / IDE
+# -------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# -------------------------
+# TypeScript / JS cache
+# -------------------------
+*.tsbuildinfo
+
+# -------------------------
+# Package manager
+# -------------------------
+.pnpm-store/
+.yarn/
+.yarn-cache/
+.yarn-integrity
+
+# Keep lock files tracked
+!package-lock.json
+!yarn.lock
+!pnpm-lock.yaml
+
+# -------------------------
+# PM2
+# -------------------------
+.pm2/
+ecosystem.local.config.js
+
+# -------------------------
+# Docker local override
+# -------------------------
+docker-compose.override.yml
+
+# -------------------------
+# SSL / Keys / Secrets
+# -------------------------
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# -------------------------
+# GCP / Cloud credentials
+# -------------------------
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!jsconfig.json
+
+# Kalau nanti ada service account, jangan sampai ke-push
+service-account*.json
+gcp-credentials*.json
+google-credentials*.json
+
+# -------------------------
+# React / Vite specific
+# -------------------------
+frontend/.vite/
+frontend/.vite-temp/
+frontend/dist-ssr/
+
+# -------------------------
+# Misc
+# -------------------------
+*.local
+*.bak
+*.backup
+*.tmp
+*.temp
