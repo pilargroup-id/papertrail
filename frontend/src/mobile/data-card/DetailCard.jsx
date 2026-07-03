@@ -9,6 +9,10 @@ function joinClassNames(...classNames) {
 }
 
 function getActionButton(action) {
+  if (typeof action.buttonComponent === 'function') {
+    return action.buttonComponent
+  }
+
   const actionKey = String(action.key ?? action.label ?? '').toLowerCase()
 
   if (actionKey === 'edit') {

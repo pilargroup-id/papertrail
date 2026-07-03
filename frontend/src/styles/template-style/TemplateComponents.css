@@ -3109,6 +3109,53 @@ select {
   color: #b42318;
 }
 
+.vendor-status-toggle__switch {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  vertical-align: middle;
+}
+
+.vendor-status-toggle__switch .form-switch__control,
+.vendor-status-toggle__switch .form-switch__copy {
+  flex: 0 0 auto;
+}
+
+.vendor-status-toggle__pill {
+  vertical-align: middle;
+}
+
+.vendor-status-toggle__switch .form-switch__copy {
+  display: inline-flex;
+  align-items: center;
+}
+
+.vendor-status-toggle__switch .form-switch__title {
+  display: inline-flex;
+  align-items: center;
+}
+
+.vendor-status-toggle__switch .form-switch__track {
+  width: 42px;
+  height: 24px;
+  padding: 3px;
+}
+
+.vendor-status-toggle__switch .form-switch__thumb {
+  width: 18px;
+  height: 18px;
+}
+
+.vendor-status-toggle__switch .form-switch__input:checked + .form-switch__track .form-switch__thumb {
+  transform: translateX(18px);
+}
+
 .users-table__accordion-header {
   display: flex;
   align-items: flex-start;
@@ -4391,6 +4438,18 @@ select {
 
 .mtickets-create-popup {
   width: min(100%, 860px);
+}
+
+.vendor-popup {
+  width: min(100%, 480px);
+}
+
+.vendor-popup .register-user-popup__layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.vendor-popup .register-user-popup__grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .register-user-popup--users {

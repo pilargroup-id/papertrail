@@ -7,6 +7,9 @@ const AUTH_TOKEN_STORAGE_KEYS = [
 ];
 
 const normalizeBaseUrl = (url) => url.replace(/\/+$/, '');
+const shouldUseStoredAuthToken = () =>
+  import.meta.env.VITE_USE_STORED_AUTH_TOKEN !== 'false';
+
 const normalizeAuthToken = (value) => {
   if (!value) {
     return null;
@@ -118,7 +121,7 @@ const resolveToken = (tokenFromRequest) => {
     }
   }
 
-  return normalizeAuthToken(authToken) || getStoredAuthToken();
+  return normalizeAuthToken(authToken) || (shouldUseStoredAuthToken() ? getStoredAuthToken() : null);
 };
 
 const createResource = (path) => ({

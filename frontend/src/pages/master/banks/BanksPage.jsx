@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../../services/api.js';
-import DialogEditVendor from '../../../components/Dialog/dialog-vendor/DialogEditVendor.jsx';
-import DataTableVendor from '../../../components/table/master-table/vendor/DataTableVendor.jsx';
+import DialogEditBanks from '../../../components/Dialog/dialog-banks/DialogEditBanks.jsx';
+import DataTableBanks from '../../../components/table/master-table/banks/DataTableBanks.jsx';
 
-// Button Vendor
+// Button Banks
 import Switch from '../../../components/forms/Switch.jsx';
-import ButtonCreateVendor from '../../../components/button/button-vendor/ButtonCreateVendor.jsx';
-
-
+import ButtonCreateBanks from '../../../components/button/button-banks/ButtonCreateBanks.jsx';
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -71,11 +69,11 @@ function updateVendorRecord(vendors, vendorId, updatedVendor) {
   )
 }
 
-function VendorPage(props) {
+function BanksPage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
-  const pageTitle = activePage?.title ?? 'Vendor'
+  const pageTitle = activePage?.title ?? 'Banks'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [vendors, setVendors] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -243,4 +241,4 @@ function VendorPage(props) {
   )
 }
 
-export default VendorPage
+export default BanksPage

@@ -19,6 +19,7 @@ export const implementedNavigationPaths = [
   // master menu
   '/Master',
   '/Master/Vendor',
+  '/Master/Banks',
   // '/Master/Budget',
   // '/Master/Bank',
   // '/Master/BankAccount',
@@ -57,6 +58,12 @@ export const primaryNavigationItems = [
         label: 'Vendor',
         href: '/Master/Vendor',
         icon: Users01,
+      },
+      {
+        id: 'banks',
+        label: 'Banks',
+        href: '/Master/Banks',
+        icon: TrendingUp,
       },
       //   {
       //   id: 'budget',

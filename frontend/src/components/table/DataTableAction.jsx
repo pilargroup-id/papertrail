@@ -30,6 +30,10 @@ function isActionDisabled(action, row, index) {
 }
 
 function getActionButton(action) {
+  if (typeof action.buttonComponent === 'function') {
+    return action.buttonComponent
+  }
+
   const actionKey = String(action.key ?? action.label ?? '').toLowerCase()
 
   if (actionKey === 'edit') {
@@ -46,6 +50,7 @@ function getActionButton(action) {
 function DataTableAction({
   columns = [],
   actions = [],
+  useDefaultActions = true,
   mobileCard,
   actionColumnLabel = 'Action',
   actionColumnKey = 'action',
@@ -53,7 +58,7 @@ function DataTableAction({
   actionCellStyle = { width: '1%', whiteSpace: 'nowrap' },
   ...props
 }) {
-  const resolvedActions = actions.length > 0 ? actions : defaultActions
+  const resolvedActions = actions.length > 0 ? actions : useDefaultActions ? defaultActions : []
   const actionColumn =
     resolvedActions.length > 0
       ? {
