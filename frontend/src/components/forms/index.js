@@ -1,5 +1,6 @@
 export { default as Checkbox } from './Checkbox.jsx'
 export { default as RadioGroup } from './RadioGroup.jsx'
+export { default as PaginationTable } from './PaginationTable.jsx'
 export { default as Select } from './Select.jsx'
 export { default as Switch } from './Switch.jsx'
 export { default as TextArea } from './TextArea.jsx'

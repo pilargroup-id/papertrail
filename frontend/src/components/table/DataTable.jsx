@@ -1,6 +1,7 @@
 import { Fragment, isValidElement, useState } from 'react'
 
 import CreateButton from '../button/ButtonCreate.jsx'
+import PaginationTable from '../forms/PaginationTable.jsx'
 import { ChevronDown, ChevronUp } from '../layoute/TemplateIcons.jsx'
 import DetailCard from '../../mobile/data-card/DetailCard.jsx'
 
@@ -43,39 +44,6 @@ function getPathValue(source, path) {
   }
 
   return path.split('.').reduce((currentValue, key) => currentValue?.[key], source)
-}
-
-function normalizePageSizeOptions(options, pageSize) {
-  const normalizedOptions = (Array.isArray(options) ? options : [])
-    .map((option) => Number(option))
-    .filter((option) => Number.isInteger(option) && option > 0)
-  const normalizedPageSize = Number(pageSize)
-
-  if (
-    Number.isInteger(normalizedPageSize) &&
-    normalizedPageSize > 0 &&
-    !normalizedOptions.includes(normalizedPageSize)
-  ) {
-    return [normalizedPageSize, ...normalizedOptions]
-  }
-
-  return normalizedOptions
-}
-
-function getPaginationItems(currentPage, totalPages) {
-  if (totalPages <= 5) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1)
-  }
-
-  if (currentPage <= 3) {
-    return [1, 2, 3, 4, 'end-ellipsis', totalPages]
-  }
-
-  if (currentPage >= totalPages - 2) {
-    return [1, 'start-ellipsis', totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
-  }
-
-  return [1, 'start-ellipsis', currentPage - 1, currentPage, currentPage + 1, 'end-ellipsis', totalPages]
 }
 
 function getDefaultPaginationConfig(pagination) {
@@ -696,7 +664,6 @@ function DataTable({
   const [localPageSize, setLocalPageSize] = useState(
     getDefaultPaginationConfig(pagination).pageSize ?? 5,
   )
-  const [isPageSizeMenuOpen, setIsPageSizeMenuOpen] = useState(false)
   const hasDetail = Boolean(detail)
   const detailToggleInFirstCell =
     hasDetail && detailTogglePlacement === 'first-cell' && columns.length > 0
@@ -731,22 +698,6 @@ function DataTable({
     : null
   const resolvedEmptyMessage = emptyMessage ?? tableMessage ?? 'Belum ada data.'
   const colSpan = columns.length + (showDetailColumn ? 1 : 0)
-  const currentPageSize = Number(effectivePageSize)
-  const pageSizeOptions = normalizePageSizeOptions(
-    paginationConfig.pageSizeOptions ?? [5, 10, 25, 50],
-    currentPageSize,
-  )
-  const canChangePageSize =
-    hasPagination &&
-    Number.isInteger(currentPageSize) &&
-    currentPageSize > 0 &&
-    pageSizeOptions.length > 0
-  const firstItem = totalRows === 0 ? 0 : (currentPage - 1) * currentPageSize + 1
-  const lastItem = Math.min(currentPage * currentPageSize, totalRows)
-  const paginationItems = paginationConfig.items ?? getPaginationItems(currentPage, totalPages)
-  const paginationSummary =
-    paginationConfig.summary ?? `${firstItem}-${lastItem} dari ${totalRows} data`
-  const pageSizeMenuId = `${sanitizeId(idPrefix)}-page-size-options`
 
   const handleToggleRow = (rowKey) => {
     if (!hasDetail) {
@@ -777,8 +728,6 @@ function DataTable({
       return
     }
 
-    setIsPageSizeMenuOpen(false)
-
     if (typeof paginationConfig.onPageSizeChange === 'function') {
       paginationConfig.onPageSizeChange(nextPageSize)
       return
@@ -786,18 +735,6 @@ function DataTable({
 
     setLocalPageSize(nextPageSize)
     setLocalPage(1)
-  }
-
-  const handlePageSizeBlur = (event) => {
-    if (!event.currentTarget.contains(event.relatedTarget)) {
-      setIsPageSizeMenuOpen(false)
-    }
-  }
-
-  const handlePageSizeKeyDown = (event) => {
-    if (event.key === 'Escape') {
-      setIsPageSizeMenuOpen(false)
-    }
   }
 
   const handlePreviousPage = () => {
@@ -1094,119 +1031,28 @@ function DataTable({
       ) : null}
 
       {hasPagination ? (
-        <div className="users-table-pagination">
-          <div className="users-table-pagination__meta">
-            <p className="users-table-pagination__summary">{paginationSummary}</p>
-
-            {canChangePageSize ? (
-              <div
-                className="users-table-pagination__page-size"
-                onBlur={handlePageSizeBlur}
-                onKeyDown={handlePageSizeKeyDown}
-              >
-                <span className="users-table-pagination__page-size-label">
-                  {paginationConfig.pageSizeLabel ?? 'Rows per page'}
-                </span>
-                <div className="users-table-pagination__page-size-menu">
-                  <button
-                    className="users-table-pagination__select"
-                    type="button"
-                    onClick={() => setIsPageSizeMenuOpen((isOpen) => !isOpen)}
-                    aria-haspopup="listbox"
-                    aria-expanded={isPageSizeMenuOpen}
-                    aria-controls={pageSizeMenuId}
-                    aria-label={paginationConfig.pageSizeAriaLabel ?? 'Jumlah baris per halaman'}
-                  >
-                    <span>{currentPageSize}</span>
-                    {isPageSizeMenuOpen ? (
-                      <ChevronUp size={16} aria-hidden="true" />
-                    ) : (
-                      <ChevronDown size={16} aria-hidden="true" />
-                    )}
-                  </button>
-
-                  {isPageSizeMenuOpen ? (
-                    <div
-                      className="users-table-pagination__page-size-options"
-                      id={pageSizeMenuId}
-                      role="listbox"
-                      aria-label={paginationConfig.pageSizeAriaLabel ?? 'Jumlah baris per halaman'}
-                    >
-                      {pageSizeOptions.map((option) => (
-                        <button
-                          key={option}
-                          className={joinClassNames(
-                            'users-table-pagination__page-size-option',
-                            option === currentPageSize
-                              ? 'users-table-pagination__page-size-option--active'
-                              : '',
-                          )}
-                          type="button"
-                          role="option"
-                          aria-selected={option === currentPageSize}
-                          onClick={() => handlePageSizeChange(option)}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-                {paginationConfig.pageSizeSuffix ? (
-                  <span className="users-table-pagination__page-size-suffix">
-                    {paginationConfig.pageSizeSuffix}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div
-            className="users-table-pagination__controls"
-            aria-label={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
-          >
-            <CreateButton
-              variant="pagination"
-              type="button"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              {paginationConfig.previousLabel ?? 'Previous'}
-            </CreateButton>
-
-            {paginationItems.map((item, index) =>
-              typeof item === 'number' ? (
-                <CreateButton
-                  key={item}
-                  variant="pagination"
-                  active={item === currentPage}
-                  type="button"
-                  onClick={() => handleSelectPage(item)}
-                  aria-current={item === currentPage ? 'page' : undefined}
-                >
-                  {item}
-                </CreateButton>
-              ) : (
-                <span
-                  key={`${item}-${index}`}
-                  className="users-table-pagination__ellipsis"
-                  aria-hidden="true"
-                >
-                  ...
-                </span>
-              ),
-            )}
-
-            <CreateButton
-              variant="pagination"
-              type="button"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              {paginationConfig.nextLabel ?? 'Next'}
-            </CreateButton>
-          </div>
-        </div>
+        <PaginationTable
+          id={idPrefix}
+          summary={paginationConfig.summary}
+          totalRows={totalRows}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={effectivePageSize}
+          pageSizeOptions={paginationConfig.pageSizeOptions}
+          pageSizeLabel={paginationConfig.pageSizeLabel ?? 'Rows per page'}
+          pageSizeAriaLabel={
+            paginationConfig.pageSizeAriaLabel ?? 'Jumlah baris per halaman'
+          }
+          pageSizeSuffix={paginationConfig.pageSizeSuffix}
+          ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
+          items={paginationConfig.items}
+          previousLabel={paginationConfig.previousLabel ?? 'Previous'}
+          nextLabel={paginationConfig.nextLabel ?? 'Next'}
+          onPageSizeChange={handlePageSizeChange}
+          onPrevious={handlePreviousPage}
+          onNext={handleNextPage}
+          onSelectPage={handleSelectPage}
+        />
       ) : null}
     </div>
   )

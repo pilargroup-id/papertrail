@@ -12,8 +12,8 @@ const initialFormValues = {
 
 function DialogCreateBanks({
   isOpen = false,
-  eyebrow = 'Create Banks',
-  title = 'Create Banks',
+  eyebrow = 'Banks',
+  title = 'Create New Banks',
   onClose,
   onCreated,
 }) {

@@ -3511,7 +3511,7 @@ select {
 .users-table-pagination__page-size-options {
   position: absolute;
   right: 0;
-  top: calc(100% + 0.45rem);
+  bottom: calc(100% + 0.45rem);
   z-index: 20;
   display: grid;
   gap: 0.2rem;
@@ -4444,12 +4444,20 @@ select {
   width: min(100%, 480px);
 }
 
+.entity-form-popup.entity-form-popup--vendor-banks {
+  width: min(100%, 760px);
+}
+
 .entity-form-popup .register-user-popup__layout {
   grid-template-columns: minmax(0, 1fr);
 }
 
 .entity-form-popup .register-user-popup__grid {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--vendor-banks {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .register-user-popup--users {
@@ -5401,6 +5409,10 @@ select {
   .register-user-popup__grid {
     grid-template-columns: 1fr;
   }
+
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--vendor-banks {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -5839,6 +5851,12 @@ select {
   background: #ffffff;
   box-shadow: 0 18px 42px rgba(17, 38, 75, 0.14);
   overflow: auto;
+}
+
+.form-dropdown__menu--portal {
+  position: fixed;
+  right: auto;
+  z-index: 1400;
 }
 
 .form-dropdown__item {

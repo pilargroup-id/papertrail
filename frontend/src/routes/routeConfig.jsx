@@ -13,6 +13,7 @@ import Page3 from '../pages/page3/Page3.jsx';
 // master pages
 import VendorPage from '../pages/master/vendor/VendorPage.jsx';
 import BanksPage from '../pages/master/banks/BanksPage.jsx';
+import VendorBanksPage from '../pages/master/vendors-banks-account/VendorBanksAccountPage.jsx';
 
 import IconsPage from '../pages/icons/IconsPage.jsx';
 import FormsPage from '../pages/forms/FormsPage.jsx';
@@ -34,8 +35,11 @@ export default function RouteConfig() {
         <Route path="forms" element={<FormsPage />} />
         <Route path="Forms" element={<FormsPage />} />
         <Route path="icons" element={<IconsPage />} />
+
+        {/* master pages */}
         <Route path="Master/Vendor" element={<VendorPage />} />
         <Route path="Master/Banks" element={<BanksPage />} />
+        <Route path="Master/VendorBanksAccount" element={<VendorBanksPage />} />
       </Route>
     </Routes>
   );

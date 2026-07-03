@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
 import TextField from '../../forms/TextField.jsx'
-import { Users01, XClose } from '../../layoute/TemplateIcons.jsx'
+import { Users01 } from '../../layoute/TemplateIcons.jsx'
 
 const initialFormValues = {
   code: '',
@@ -12,7 +12,7 @@ const initialFormValues = {
 
 function DialogEditBanks({
   isOpen = false,
-  eyebrow = 'Edit Banks',
+  eyebrow = 'Banks',
   title = 'Edit Banks',
   user = null,
   banks = null,
@@ -143,15 +143,6 @@ function DialogEditBanks({
               </h2>
             </div>
 
-            <button
-              type="button"
-              className="dashboard-popup__close"
-              aria-label="Tutup dialog"p
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              <XClose size={18} />
-            </button>
           </div>
 
           <div className="dashboard-popup__body">

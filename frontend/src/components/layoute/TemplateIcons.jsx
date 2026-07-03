@@ -493,6 +493,36 @@ export function BankCode(props) {
   )
 }
 
+export function CreditCard(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+      <path d="M6 15h2" />
+      <path d="M10 15h4" />
+    </IconBase>
+  )
+}
+
+export function UserBank(props) {
+  return (
+    <IconBase {...props}>
+      {/* User */}
+      <circle cx="8" cy="8" r="3" />
+      <path d="M3 19a5 5 0 0 1 10 0" />
+
+      {/* Bank */}
+      <path d="M15 9h7" />
+      <path d="M18.5 4 14 6h9l-4.5-2Z" />
+      <path d="M15 9v7" />
+      <path d="M17 9v7" />
+      <path d="M20 9v7" />
+      <path d="M22 9v7" />
+      <path d="M14 18h9" />
+    </IconBase>
+  )
+}
+
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

@@ -1,16 +1,37 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 
 import BackgroundMain from '../components/layoute/BackgroundMain.jsx'
 import Header from '../components/layoute/Header.jsx'
 import Sidebar from '../components/layoute/Sidebar.jsx'
 import { pageDetails } from '../dummy/pageDetails.js'
+import api from '../services/api.js'
 
 const defaultActivePage = {
   title: 'Page1',
   eyebrow: 'Master Data',
   value: '0',
   detail: 'Halaman default.',
+}
+
+function extractAuthProfile(authResponse) {
+  const authData = authResponse?.data ?? authResponse?.result ?? authResponse ?? {}
+
+  return {
+    userName:
+      authData.fullName ??
+      authData.full_name ??
+      authData.name ??
+      authData.userName ??
+      authData.username ??
+      '',
+    userRole:
+      authData.job_position ??
+      authData.jobPosition ??
+      authData.role ??
+      authData.userRole ??
+      '',
+  }
 }
 
 function AppLayout({
@@ -27,6 +48,10 @@ function AppLayout({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const [lastUpdated, setLastUpdated] = useState(() => new Date())
+  const [authProfile, setAuthProfile] = useState({
+    userName: '',
+    userRole: '',
+  })
 
   const resolvedActivePath = activePath ?? location.pathname
   const resolvedActivePage = pageDetails[resolvedActivePath] ?? activePage ?? defaultActivePage
@@ -44,6 +69,33 @@ function AppLayout({
 
   const isMyTicketsPage = resolvedActivePath === '/MyTickets'
 
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const loadAuthProfile = async () => {
+      try {
+        const authResponse = await api.auth.me({
+          signal: controller.signal,
+        })
+
+        setAuthProfile(extractAuthProfile(authResponse))
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          return
+        }
+
+        setAuthProfile({
+          userName: '',
+          userRole: '',
+        })
+      }
+    }
+
+    loadAuthProfile()
+
+    return () => controller.abort()
+  }, [])
+
   return (
     <div className={shellClassName}>
       <BackgroundMain />
@@ -52,8 +104,8 @@ function AppLayout({
         collapsed={sidebarCollapsed}
         mobileOpen={mobileSidebarOpen}
         activePath={resolvedActivePath}
-        userName=""
-        userRole=""
+        userName={authProfile.userName}
+        userRole={authProfile.userRole}
         onToggleCollapse={() => setSidebarCollapsed((currentValue) => !currentValue)}
         onCloseMobile={() => setMobileSidebarOpen(false)}
       />

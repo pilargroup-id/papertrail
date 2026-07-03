@@ -11,8 +11,8 @@ const initialFormValues = {
 
 function DialogCreateVendor({
   isOpen = false,
-  eyebrow = 'Create Vendor',
-  title = 'Create Vendor',
+  eyebrow = 'Vendor',
+  title = 'Create New Vendor',
   onClose,
   onCreated,
 }) {

@@ -11,7 +11,7 @@ const initialFormValues = {
 
 function DialogEditVendor({
   isOpen = false,
-  eyebrow = 'Edit Vendor',
+  eyebrow = 'Vendor',
   title = 'Edit Vendor',
   user = null,
   vendor = null,

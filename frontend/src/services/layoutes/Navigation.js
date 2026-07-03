@@ -8,7 +8,8 @@ import {
   Users01,
   Settings01,
   Banks,
-
+  CreditCard,
+  UserBank,
 } from '../../components/layoute/TemplateIcons.jsx'
 
 export const defaultNavigationPath = '/forms'
@@ -21,6 +22,7 @@ export const implementedNavigationPaths = [
   '/Master',
   '/Master/Vendor',
   '/Master/Banks',
+  '/Master/VendorBanksAccount',
   // '/Master/Budget',
   // '/Master/Bank',
   // '/Master/BankAccount',
@@ -65,6 +67,12 @@ export const primaryNavigationItems = [
         label: 'Banks',
         href: '/Master/Banks',
         icon: Banks,
+      },
+      {
+        id: 'vendor-banks-account',
+        label: 'Vendor Banks',
+        href: '/Master/VendorBanksAccount',
+        icon: UserBank,
       },
       //   {
       //   id: 'budget',
