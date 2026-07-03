@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   Users01,
   Settings01,
+  Banks,
 
 } from '../../components/layoute/TemplateIcons.jsx'
 
@@ -63,7 +64,7 @@ export const primaryNavigationItems = [
         id: 'banks',
         label: 'Banks',
         href: '/Master/Banks',
-        icon: TrendingUp,
+        icon: Banks,
       },
       //   {
       //   id: 'budget',

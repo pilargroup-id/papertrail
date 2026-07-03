@@ -4440,15 +4440,15 @@ select {
   width: min(100%, 860px);
 }
 
-.vendor-popup {
+.entity-form-popup {
   width: min(100%, 480px);
 }
 
-.vendor-popup .register-user-popup__layout {
+.entity-form-popup .register-user-popup__layout {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.vendor-popup .register-user-popup__grid {
+.entity-form-popup .register-user-popup__grid {
   grid-template-columns: minmax(0, 1fr);
 }
 

@@ -117,7 +117,7 @@ function DialogEditVendor({
   const dialogNode = (
     <div className="dashboard-popup-overlay" role="presentation" onClick={onClose}>
       <div
-        className="dashboard-popup register-user-popup vendor-popup"
+        className="dashboard-popup register-user-popup entity-form-popup"
         role="dialog"
         aria-modal="true"
         aria-labelledby="dialog-edit-vendor-title"

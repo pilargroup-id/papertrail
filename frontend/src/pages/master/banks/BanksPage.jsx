@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../../services/api.js';
-import DialogEditBanks from '../../../components/Dialog/dialog-banks/DialogEditBanks.jsx';
 import DataTableBanks from '../../../components/table/master-table/banks/DataTableBanks.jsx';
 
 // Button Banks
 import Switch from '../../../components/forms/Switch.jsx';
 import ButtonCreateBanks from '../../../components/button/button-banks/ButtonCreateBanks.jsx';
+
+// Dialog ba
+import DialogEditBanks from '../../../components/Dialog/dialog-banks/DialogEditBanks.jsx';
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -28,7 +30,7 @@ function getRowsFromResponse(response) {
   return []
 }
 
-function getVendorFromResponse(response) {
+function getBanksFromResponse(response) {
   const candidates = [
     response?.data?.data,
     response?.data,
@@ -44,28 +46,28 @@ function getVendorFromResponse(response) {
   ) ?? null
 }
 
-function updateVendorStatus(vendors, vendorId, isActive, updatedVendor) {
-  return vendors.map((vendor) => {
-    if (String(vendor?.id) !== String(vendorId)) {
-      return vendor
+function updateBanksStatus(currentBanks, banksId, isActive, updatedBanks) {
+  return currentBanks.map((banks) => {
+    if (String(banks?.id) !== String(banksId)) {
+      return banks
     }
 
     return {
-      ...vendor,
-      ...(updatedVendor ?? {}),
-      is_active: updatedVendor?.is_active ?? isActive,
+      ...banks,
+      ...(updatedBanks ?? {}),
+      is_active: updatedBanks?.is_active ?? isActive,
     }
   })
 }
 
-function updateVendorRecord(vendors, vendorId, updatedVendor) {
-  return vendors.map((vendor) =>
-    String(vendor?.id) === String(vendorId)
+function updateBanksRecord(currentBanks, banksId, updatedBanks) {
+  return currentBanks.map((banks) =>
+    String(banks?.id) === String(banksId)
       ? {
-          ...vendor,
-          ...updatedVendor,
+          ...banks,
+          ...updatedBanks,
         }
-      : vendor,
+      : banks,
   )
 }
 
@@ -75,23 +77,23 @@ function BanksPage(props) {
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
   const pageTitle = activePage?.title ?? 'Banks'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
-  const [vendors, setVendors] = useState([])
+  const [banks, setBanks] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
-  const [selectedVendor, setSelectedVendor] = useState(null)
+  const [selectedBanks, setSelectedBanks] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
 
-    async function loadVendors() {
+    async function loadBanks() {
       setIsLoading(true)
       setErrorMessage('')
 
       try {
-        const response = await api.vendors.list(
+        const response = await api.banks.list(
           {
             page: 1,
             limit: 100,
@@ -102,14 +104,14 @@ function BanksPage(props) {
           },
         )
 
-        setVendors(getRowsFromResponse(response))
+        setBanks(getRowsFromResponse(response))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-        setVendors([])
-        setErrorMessage(error.message || 'Gagal memuat data vendor.')
+        setBanks([])
+        setErrorMessage(error.message || 'Gagal memuat data banks.')
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false)
@@ -117,75 +119,75 @@ function BanksPage(props) {
       }
     }
 
-    loadVendors()
+    loadBanks()
 
     return () => controller.abort()
   }, [searchQuery, reloadToken])
 
-  const handleVendorCreated = () => {
+  const handleBanksCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
   }
 
-  const openEditDialog = (vendor) => {
-    setSelectedVendor(vendor)
+  const openEditDialog = (banks) => {
+    setSelectedBanks(banks)
     setIsEditDialogOpen(true)
   }
 
   const closeEditDialog = () => {
     setIsEditDialogOpen(false)
-    setSelectedVendor(null)
+    setSelectedBanks(null)
   }
 
-  const handleVendorUpdated = async (response) => {
-    const updatedVendor = getVendorFromResponse(response)
+  const handleBanksUpdated = async (response) => {
+    const updatedBanks = getBanksFromResponse(response)
 
-    if (updatedVendor?.id !== undefined && updatedVendor?.id !== null) {
-      setVendors((currentVendors) =>
-        updateVendorRecord(currentVendors, updatedVendor.id, updatedVendor),
+    if (updatedBanks?.id !== undefined && updatedBanks?.id !== null) {
+      setBanks((currentBanks) =>
+        updateBanksRecord(currentBanks, updatedBanks.id, updatedBanks),
       )
-    } else if (selectedVendor?.id !== undefined && selectedVendor?.id !== null) {
+    } else if (selectedBanks?.id !== undefined && selectedBanks?.id !== null) {
       setReloadToken((currentValue) => currentValue + 1)
     }
 
     closeEditDialog()
   }
 
-  const handleVendorStatusChange = async (vendor, nextIsActive) => {
-    const vendorId = vendor?.id
+  const handleBanksStatusChange = async (banks, nextIsActive) => {
+    const banksId = banks?.id
 
-    if (vendorId === undefined || vendorId === null) {
+    if (banksId === undefined || banksId === null) {
       return
     }
 
-    const vendorIdKey = String(vendorId)
+    const banksIdKey = String(banksId)
     const normalizedIsActive = nextIsActive ? 1 : 0
 
     setErrorMessage('')
-    setUpdatingStatusIds((currentIds) => new Set(currentIds).add(vendorIdKey))
-    setVendors((currentVendors) =>
-      updateVendorStatus(currentVendors, vendorId, normalizedIsActive),
+    setUpdatingStatusIds((currentIds) => new Set(currentIds).add(banksIdKey))
+    setBanks((currentBanks) =>
+      updateBanksStatus(currentBanks, banksId, normalizedIsActive),
     )
 
     try {
-      const response = await api.vendors.updateStatus(vendorId, normalizedIsActive)
-      const updatedVendor = getVendorFromResponse(response)
+      const response = await api.banks.updateStatus(banksId, normalizedIsActive)
+      const updatedBanks = getBanksFromResponse(response)
 
-      if (updatedVendor) {
-        setVendors((currentVendors) =>
-          updateVendorStatus(currentVendors, vendorId, normalizedIsActive, updatedVendor),
+      if (updatedBanks) {
+        setBanks((currentBanks) =>
+          updateBanksStatus(currentBanks, banksId, normalizedIsActive, updatedBanks),
         )
       }
     } catch (error) {
-      setVendors((currentVendors) =>
-        currentVendors.map((currentVendor) =>
-          String(currentVendor?.id) === vendorIdKey ? vendor : currentVendor,
+      setBanks((currentBanks) =>
+        currentBanks.map((currentBanks) =>
+          String(currentBanks?.id) === banksIdKey ? banks : currentBanks,
         ),
       )
-      setErrorMessage(error.message || 'Gagal memperbarui status vendor.')
+      setErrorMessage(error.message || 'Gagal memperbarui status banks.')
     } finally {
       setUpdatingStatusIds((currentIds) => {
         const nextIds = new Set(currentIds)
-        nextIds.delete(vendorIdKey)
+        nextIds.delete(banksIdKey)
 
         return nextIds
       })
@@ -193,7 +195,7 @@ function BanksPage(props) {
   }
 
   const emptyMessage = isLoading
-    ? 'Memuat data vendor...'
+    ? 'Memuat data banks...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.')
 
   return (
@@ -208,33 +210,33 @@ function BanksPage(props) {
         </div>
 
         <div className="users-table-card__actions">
-          <ButtonCreateVendor
+          <ButtonCreateBanks
             variant="create"
             dialogProps={{
-              onCreated: handleVendorCreated,
+              onCreated: handleBanksCreated,
             }}
           >
             Create
-          </ButtonCreateVendor>
+          </ButtonCreateBanks>
         </div>
       </div>
 
-      <DataTableVendor
-        rows={vendors}
+      <DataTableBanks
+        rows={banks}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
         onEdit={openEditDialog}
-        isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
-        onStatusChange={handleVendorStatusChange}
+        isStatusUpdating={(banks) => updatingStatusIds.has(String(banks?.id))}
+        onStatusChange={handleBanksStatusChange}
       />
 
-      <DialogEditVendor
+      <DialogEditBanks
         isOpen={isEditDialogOpen}
-        title={`Edit ${selectedVendor?.name ?? 'Vendor'}`}
-        vendor={selectedVendor}
+        title={`Edit ${selectedBanks?.name ?? 'Banks'}`}
+        banks={selectedBanks}
         onClose={closeEditDialog}
-        onUpdated={handleVendorUpdated}
+        onUpdated={handleBanksUpdated}
       />
     </section>
 

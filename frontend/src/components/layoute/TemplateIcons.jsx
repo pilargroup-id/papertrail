@@ -448,6 +448,51 @@ export function Trash(props) {
   )
 }
 
+export function Code(props) {
+  return (
+    <IconBase {...props}>
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
+      <line x1="14" y1="4" x2="10" y2="20" />
+    </IconBase>
+  )
+}
+
+export function Banks(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 10h18" />
+      <path d="M5 10v8" />
+      <path d="M9 10v8" />
+      <path d="M15 10v8" />
+      <path d="M19 10v8" />
+      <path d="M2 20h20" />
+      <path d="M12 3 2 8h20L12 3z" />
+    </IconBase>
+  )
+}
+
+export function BankCode(props) {
+  return (
+    <IconBase {...props}>
+      {/* Bank */}
+      <path d="M12 3 2 8h20L12 3z" />
+      <path d="M4 9h16" />
+      <path d="M6 9v7" />
+      <path d="M10 9v7" />
+      <path d="M14 9v7" />
+      <path d="M18 9v7" />
+      <path d="M3 19h18" />
+
+      {/* Code/List */}
+      <path d="M15 12h4" />
+      <path d="M15 15h4" />
+      <path d="M13 12h.01" />
+      <path d="M13 15h.01" />
+    </IconBase>
+  )
+}
+
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

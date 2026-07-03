@@ -2,17 +2,18 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
-import { XClose, Users01 } from '../../layoute/TemplateIcons';
+import { BankCode, Banks } from '../../layoute/TemplateIcons';
 import TextField from '../../forms/TextField.jsx'
 
 const initialFormValues = {
+  code: '',
   name: '',
 }
 
-function DialogCreateVendor({
+function DialogCreateBanks({
   isOpen = false,
-  eyebrow = 'Create Vendor',
-  title = 'Create Vendor',
+  eyebrow = 'Create Banks',
+  title = 'Create Banks',
   onClose,
   onCreated,
 }) {
@@ -64,12 +65,20 @@ function DialogCreateVendor({
   const handleSubmit = async (event) => {
     event.preventDefault()
 
+    const normalizedCode = formValues.code.trim().toUpperCase()
     const normalizedName = formValues.name.trim()
+    const nextFieldErrors = {}
+
+    if (!normalizedCode) {
+      nextFieldErrors.code = 'Kode banks wajib diisi.'
+    }
 
     if (!normalizedName) {
-      setFieldErrors({
-        name: 'Nama vendor wajib diisi.',
-      })
+      nextFieldErrors.name = 'Nama banks wajib diisi.'
+    }
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors)
       return
     }
 
@@ -78,14 +87,22 @@ function DialogCreateVendor({
     setIsSubmitting(true)
 
     try {
-      const response = await api.vendors.create({
+      const response = await api.banks.create({
+        code: normalizedCode,
         name: normalizedName,
       })
 
       await onCreated?.(response)
       onClose?.()
     } catch (error) {
-      setSubmitError(error.message || 'Gagal membuat vendor.')
+      if (error?.data?.errors) {
+        setFieldErrors({
+          code: error.data.errors.code || '',
+          name: error.data.errors.name || '',
+        })
+      }
+
+      setSubmitError(error.message || 'Gagal membuat banks.')
     } finally {
       setIsSubmitting(false)
     }
@@ -116,16 +133,6 @@ function DialogCreateVendor({
                 {title}
               </h2>
             </div>
-
-            <button
-              type="button"
-              className="dashboard-popup__close"
-              aria-label="Tutup dialog"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              <XClose size={18} />
-            </button>
           </div>
 
           <div className="dashboard-popup__body">
@@ -136,10 +143,19 @@ function DialogCreateVendor({
                   <div className="register-user-popup__grid">
                     <div className="register-user-popup__field register-user-popup__field--full">
                       <TextField
-                        label="Nama Vendor"
+                        label="Banks Code"
+                        value={formValues.code}
+                        placeholder="Input Code Banks"
+                        leftIcon={BankCode}
+                        required
+                        error={fieldErrors.code}
+                        onChange={(event) => updateValue('code', event.target.value)}
+                      />
+                       <TextField
+                        label="Banks Name"
                         value={formValues.name}
-                        placeholder="Masukkan nama vendor"
-                        leftIcon={Users01}
+                        placeholder="Input Name Banks"
+                        leftIcon={Banks}
                         required
                         error={fieldErrors.name}
                         onChange={(event) => updateValue('name', event.target.value)}
@@ -178,4 +194,4 @@ function DialogCreateVendor({
   return createPortal(dialogNode, document.body)
 }
 
-export default DialogCreateVendor
+export default DialogCreateBanks
