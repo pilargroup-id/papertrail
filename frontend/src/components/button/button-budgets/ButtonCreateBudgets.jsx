@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import DialogCreateBudgetType from '../../Dialog/dialog-budget-type/DialogCreateBudgetType.jsx'
+import DialogCreateBudgets from '../../Dialog/dialog-budgets/DialogCreateBudgets.jsx'
 
 const buttonClassNames = {
   create: 'dashboard-popup__button dashboard-popup__button--primary',
@@ -10,8 +10,8 @@ const buttonClassNames = {
   pagination: 'users-table-pagination__button',
 }
 
-function ButtonCreateBudgetType({
-  children = 'Create Budget Type',
+function ButtonCreateBudgets({
+  children = 'Create Budgets',
   className = '',
   variant = 'accordion',
   tone = 'default',
@@ -58,7 +58,7 @@ function ButtonCreateBudgetType({
         {children}
       </button>
 
-      <DialogCreateBudgetType
+      <DialogCreateBudgets
         {...dialogProps}
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
@@ -67,4 +67,4 @@ function ButtonCreateBudgetType({
   )
 }
 
-export default ButtonCreateBudgetType
+export default ButtonCreateBudgets

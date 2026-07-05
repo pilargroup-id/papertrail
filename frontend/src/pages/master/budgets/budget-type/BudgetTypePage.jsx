@@ -6,7 +6,8 @@ import DataTableBudgetType from '../../../../components/table/master-table/budge
 
 // Button Vendor
 import Switch from '../../../../components/forms/Switch.jsx';
-// import ButtonCreateBudgetType from '../../../components/button/budget-type/ButtonCreateBudgetType.jsx';
+import ButtonCreateBudgetType from '../../../../components/button/button-budget-type/ButtonCreateBudgetType.jsx';
+// import ButtonCreateBudgetType from '../../../../components/butt/dialog-budget-type/DialogEditBudgetType.jsx';
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -208,14 +209,14 @@ function BudgetTypePage(props) {
         </div>
 
         <div className="users-table-card__actions">
-          {/* <ButtonCreateVendor
+          <ButtonCreateBudgetType
             variant="create"
             dialogProps={{
               onCreated: handleVendorCreated,
             }}
           >
             Create
-          </ButtonCreateVendor> */}
+          </ButtonCreateBudgetType>
         </div>
       </div>
 

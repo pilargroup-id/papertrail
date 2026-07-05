@@ -10,8 +10,8 @@ const buttonClassNames = {
   pagination: 'users-table-pagination__button',
 }
 
-function ButtonCreateBudgetType({
-  children = 'Create Budget Type',
+function ButtonCreateBudgetAccesRules({
+  children = 'Create Budget Access',
   className = '',
   variant = 'accordion',
   tone = 'default',
@@ -67,4 +67,4 @@ function ButtonCreateBudgetType({
   )
 }
 
-export default ButtonCreateBudgetType
+export default ButtonCreateBudgetAccesRules

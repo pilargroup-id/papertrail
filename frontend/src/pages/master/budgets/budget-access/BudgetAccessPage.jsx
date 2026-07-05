@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../../../services/api.js';
-import DialogEditBudgets from '../../../../components/Dialog/dialog-budgets/DialogEditBudgets.jsx';
-import DataTableBudget from '../../../../components/table/master-table/budget/DataTableBudget.jsx';
+// import DialogEditBudgets from '../../../../components/Dialog/dialog-budgets/DialogEditBudgets.jsx';
+import DataTableBudgetAccessRules from '../../../../components/table/master-table/budget-access/DataTableBudgetAccess.jsx';
 
 // Button Vendor
 import Switch from '../../../../components/forms/Switch.jsx';
-import ButtonCreateBudgets from '../../../../components/button/button-budgets/ButtonCreateBudgets.jsx';
-// import ButtonCreateBudgetType from '../../../../components/butt/dialog-budget-type/DialogEditBudgetType.jsx';
+import ButtonCreateBudgetAccesRules from '../../../../components/button/button-budget-access/ButtonCreateBudgetAccess.jsx';
+
+import DialogCreateBudgetAccesRules from '../../../../components/Dialog/dialog-budget-access/DialogEditBudgetAccess.jsx';
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -45,38 +46,38 @@ function getVendorFromResponse(response) {
   ) ?? null
 }
 
-function updateVendorStatus(budgets, budgetsId, isActive, updatedBudgetType) {
-  return budgets.map((budgets) => {
-    if (String(budgets?.id) !== String(budgetsId)) {
-      return budgets
+function updateVendorStatus(budgetAccessRules, budgetAccessRulesId, isActive, updatedBudgetType) {
+  return budgetAccessRules.map((budgetAccessRules) => {
+    if (String(budgetAccessRules?.id) !== String(budgetAccessRulesId)) {
+      return budgetAccessRules
     }
 
     return {
-      ...budgets,
+      ...budgetAccessRules,
       ...(updatedBudgetType ?? {}),
       is_active: updatedBudgetType?.is_active ?? isActive,
     }
   })
 }
 
-function updateVendorRecord(budgets, budgetsId, updatedBudgetType) {
-  return budgets.map((budgets) =>
-    String(budgets?.id) === String(budgetsId)
+function updateVendorRecord(budgetAccessRules, budgetAccessRulesId, updatedBudgetType) {
+  return budgetAccessRules.map((budgetAccessRules) =>
+    String(budgetAccessRules?.id) === String(budgetAccessRulesId)
       ? {
-          ...budgets,
+          ...budgetAccessRules,
           ...updatedBudgetType,
         }
-      : budgets,
+      : budgetAccessRules,
   )
 }
 
-function BudgetsPage(props) {
+function BudgetAccessPage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
   const pageTitle = activePage?.title ?? 'Budget Type'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
-  const [budgets, setBudgetType] = useState([])
+  const [budgetAccessRules, setBudgetType] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
@@ -92,7 +93,7 @@ function BudgetsPage(props) {
       setErrorMessage('')
 
       try {
-        const response = await api.budgets.list(
+        const response = await api.budgetAccessRules.list(
           {
             page: 1,
             limit: 100,
@@ -127,8 +128,8 @@ function BudgetsPage(props) {
     setReloadToken((currentValue) => currentValue + 1)
   }
 
-  const openEditDialog = (budgets) => {
-    setSelectedBudgetType(budgets)
+  const openEditDialog = (budgetAccessRules) => {
+    setSelectedBudgetType(budgetAccessRules)
     setIsEditDialogOpen(true)
   }
 
@@ -151,42 +152,42 @@ function BudgetsPage(props) {
     closeEditDialog()
   }
 
-  const handleVendorStatusChange = async (budgets, nextIsActive) => {
-    const budgetsId = budgets?.id
+  const handleVendorStatusChange = async (budgetAccessRules, nextIsActive) => {
+    const budgetAccessRulesId = budgetAccessRules?.id
 
-    if (budgetsId === undefined || budgetsId === null) {
+    if (budgetAccessRulesId === undefined || budgetAccessRulesId === null) {
       return
     }
 
-    const budgetsIdKey = String(budgetsId)
+    const budgetAccessRulesIdKey = String(budgetAccessRulesId)
     const normalizedIsActive = nextIsActive ? 1 : 0
 
     setErrorMessage('')
-    setUpdatingStatusIds((currentIds) => new Set(currentIds).add(budgetsIdKey))
+    setUpdatingStatusIds((currentIds) => new Set(currentIds).add(budgetAccessRulesIdKey))
     setBudgetType((currentVendors) =>
-      updateVendorStatus(currentVendors, budgetsId, normalizedIsActive),
+      updateVendorStatus(currentVendors, budgetAccessRulesId, normalizedIsActive),
     )
 
     try {
-      const response = await api.budgets.updateStatus(budgetsId, normalizedIsActive)
+      const response = await api.budgetAccessRules.updateStatus(budgetAccessRulesId, normalizedIsActive)
       const updatedVendor = getVendorFromResponse(response)
 
       if (updatedVendor) {
         setBudgetType((currentVendors) =>
-          updateVendorStatus(currentVendors, budgetsId, normalizedIsActive, updatedVendor),
+          updateVendorStatus(currentVendors, budgetAccessRulesId, normalizedIsActive, updatedVendor),
         )
       }
     } catch (error) {
       setBudgetType((currentVendors) =>
         currentVendors.map((currentVendor) =>
-          String(currentVendor?.id) === budgetsIdKey ? budgets : currentVendor,
+          String(currentVendor?.id) === budgetAccessRulesIdKey ? budgetAccessRules : currentVendor,
         ),
       )
       setErrorMessage(error.message || 'Gagal memperbarui status Budget Type.')
     } finally {
       setUpdatingStatusIds((currentIds) => {
         const nextIds = new Set(currentIds)
-        nextIds.delete(budgetsIdKey)
+        nextIds.delete(budgetAccessRulesIdKey)
 
         return nextIds
       })
@@ -209,19 +210,19 @@ function BudgetsPage(props) {
         </div>
 
         <div className="users-table-card__actions">
-          <ButtonCreateBudgets
+          <ButtonCreateBudgetAccesRules
             variant="create"
             dialogProps={{
               onCreated: handleVendorCreated,
             }}
           >
             Create
-          </ButtonCreateBudgets>
+          </ButtonCreateBudgetAccesRules>
         </div>
       </div>
 
-      <DataTableBudget
-        rows={budgets}
+      <DataTableBudgetAccessRules
+        rows={budgetAccessRules}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
@@ -230,17 +231,17 @@ function BudgetsPage(props) {
         onStatusChange={handleVendorStatusChange}
       />
 
-      <DialogEditBudgets
+      {/* <DialogEditBudgets
         key={selectedBudgetType?.id ?? 'budget-edit-dialog'}
         isOpen={isEditDialogOpen}
         title={`Edit ${selectedBudgetType?.project_name ?? 'Budget'}`}
         budgetType={selectedBudgetType}
         onClose={closeEditDialog}
         onUpdated={handleVendorUpdated}
-      />
+      /> */}
     </section>
 
   )
 }
 
-export default BudgetsPage
+export default BudgetAccessPage

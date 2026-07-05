@@ -10,6 +10,9 @@ import {
   Banks,
   CreditCard,
   UserBank,
+  Budgets,
+  BudgetType,
+  BudgetAccess,
 } from '../../components/layoute/TemplateIcons.jsx'
 
 export const defaultNavigationPath = '/forms'
@@ -25,11 +28,9 @@ export const implementedNavigationPaths = [
   '/Master/VendorBanksAccount',
   
   // BUDGET MANAGEMENT
-  '/Master/Budget',
+  '/Master/Budgets',
   '/Master/Budget-type',
   '/Master/Budget-access',
-
-  
 
   '/Page1',
   '/Page2',
@@ -86,24 +87,26 @@ export const primaryNavigationItems = [
       },
       {
         id: 'budget-management',
-        label: 'Budget',
-        icon: Users01,
+        label: 'Budgets',
+        icon: Budgets,
         children: [
           {
-            id: 'budget',
-            label: 'Budget',
-            icon: Users01,
+            id: 'budgets',
+            label: 'Budgets',
+            href: '/Master/Budgets',
+            icon: Budgets,
           },
           {
             id: 'budget-type',
             label: 'Budget Type',
             href: '/Master/Budget-type',
-            icon: Users01,
+            icon: BudgetType,
           },
           {
             id: 'budget-access',
             label: 'Budget Access',
-            icon: Users01,
+            href: '/Master/Budget-access',
+            icon: BudgetAccess,
           }
         ]
       }

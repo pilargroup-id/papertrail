@@ -4554,6 +4554,16 @@ select {
   width: min(100%, 760px);
 }
 
+.entity-form-popup.entity-form-popup--budget {
+  width: min(100%, 860px);
+}
+
+.entity-form-popup.entity-form-popup--budget .dashboard-popup__body {
+  max-height: min(76vh, 680px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
 .entity-form-popup .register-user-popup__layout {
   grid-template-columns: minmax(0, 1fr);
 }

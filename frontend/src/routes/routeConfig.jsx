@@ -11,14 +11,16 @@ import Page2 from '../pages/page2/Page2.jsx';
 import Page3 from '../pages/page3/Page3.jsx';
 
 // =========MASTER PAGES=========
+
 // Vendor Management
 import VendorPage from '../pages/master/vendors/vendor/VendorPage.jsx';
 import BanksPage from '../pages/master/vendors/banks/BanksPage.jsx';
 import VendorBanksPage from '../pages/master/vendors/vendors-banks-account/VendorBanksAccountPage.jsx';
 
 // Budget Management
-// import BudgetPage from '../pages/master/budgets/budget/BudgetPage.jsx';
+import BudgetPages from '../pages/master/budgets/budget/BudgetPage.jsx';
 import BudgetTypePage from '../pages/master/budgets/budget-type/BudgetTypePage.jsx';
+import BudgetAccessPage from '../pages/master/budgets/budget-access/BudgetAccessPage.jsx';
 
 import IconsPage from '../pages/icons/IconsPage.jsx';
 import FormsPage from '../pages/forms/FormsPage.jsx';
@@ -47,9 +49,9 @@ export default function RouteConfig() {
         <Route path="Master/Banks" element={<BanksPage />} />
         <Route path="Master/VendorBanksAccount" element={<VendorBanksPage />} />
         {/* Budget Management */}
-        {/* <Route path="Master/Budget" element={<BudgetPage/>} /> */}
+        <Route path="Master/Budgets" element={<BudgetPages />} />
         <Route path="Master/Budget-type" element={<BudgetTypePage/>} />
-
+        <Route path="Master/Budget-access" element={<BudgetAccessPage/>} />
 
       </Route>
     </Routes>
