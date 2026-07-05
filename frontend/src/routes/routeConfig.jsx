@@ -10,10 +10,15 @@ import Page1 from '../pages/page1/Page1.jsx';
 import Page2 from '../pages/page2/Page2.jsx';
 import Page3 from '../pages/page3/Page3.jsx';
 
-// master pages
-import VendorPage from '../pages/master/vendor/VendorPage.jsx';
-import BanksPage from '../pages/master/banks/BanksPage.jsx';
-import VendorBanksPage from '../pages/master/vendors-banks-account/VendorBanksAccountPage.jsx';
+// =========MASTER PAGES=========
+// Vendor Management
+import VendorPage from '../pages/master/vendors/vendor/VendorPage.jsx';
+import BanksPage from '../pages/master/vendors/banks/BanksPage.jsx';
+import VendorBanksPage from '../pages/master/vendors/vendors-banks-account/VendorBanksAccountPage.jsx';
+
+// Budget Management
+// import BudgetPage from '../pages/master/budgets/budget/BudgetPage.jsx';
+import BudgetTypePage from '../pages/master/budgets/budget-type/BudgetTypePage.jsx';
 
 import IconsPage from '../pages/icons/IconsPage.jsx';
 import FormsPage from '../pages/forms/FormsPage.jsx';
@@ -23,7 +28,6 @@ export default function RouteConfig() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<Page1 />} />
-        <Route path="Menu1" element={<Page1 />} />
         <Route path="Page1" element={<Page1 />} />
         <Route path="Page2" element={<Page2 />} />
         <Route path="Page3" element={<Page3 />} />
@@ -37,9 +41,16 @@ export default function RouteConfig() {
         <Route path="icons" element={<IconsPage />} />
 
         {/* master pages */}
+
+        {/* Vendor Management */}
         <Route path="Master/Vendor" element={<VendorPage />} />
         <Route path="Master/Banks" element={<BanksPage />} />
         <Route path="Master/VendorBanksAccount" element={<VendorBanksPage />} />
+        {/* Budget Management */}
+        {/* <Route path="Master/Budget" element={<BudgetPage/>} /> */}
+        <Route path="Master/Budget-type" element={<BudgetTypePage/>} />
+
+
       </Route>
     </Routes>
   );

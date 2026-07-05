@@ -1,5 +1,5 @@
 import DataTableAction, { DataTableStatus } from '../../DataTableAction.jsx'
-import ButtonEditVendorBanks from '../../../button/button-vendor-banks/ButtonEditVendorBanks.jsx'
+import ButtonEditBudgetType from '../../../button/button-budget-type/ButtonEditBudgetType.jsx'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -21,24 +21,24 @@ function formatDateTime(value) {
   }).format(date)
 }
 
-function getBanksStatusLabel(vendorBanks) {
-  return Number(vendorBanks?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
+function getBanksStatusLabel(budgetTypes) {
+  return Number(budgetTypes?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
 }
 
-function getBanksStatusVariant(vendorBanks) {
-  return Number(vendorBanks?.is_active) === 1 ? 'active' : 'inactive'
+function getBanksStatusVariant(budgetTypes) {
+  return Number(budgetTypes?.is_active) === 1 ? 'active' : 'inactive'
 }
 
-function getIsBanksActive(vendorBanks) {
-  return Number(vendorBanks?.is_active) === 1
+function getIsBanksActive(budgetTypes) {
+  return Number(budgetTypes?.is_active) === 1
 }
 
-function getVendorBankPrimaryLabel(vendorBanks) {
-  return Number(vendorBanks?.is_primary) === 1 ? 'Primary' : 'Secondary'
+function getVendorBankPrimaryLabel(budgetTypes) {
+  return Number(budgetTypes?.is_primary) === 1 ? 'Primary' : 'Secondary'
 }
 
-function getVendorBankPrimaryVariant(vendorBanks) {
-  return Number(vendorBanks?.is_primary) === 1 ? 'active' : 'inactive'
+function getVendorBankPrimaryVariant(budgetTypes) {
+  return Number(budgetTypes?.is_primary) === 1 ? 'active' : 'inactive'
 }
 
 function joinClassNames(...classNames) {
@@ -105,22 +105,22 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   }
 }
 
-function renderBanksStatus(vendorBanks, index, {
+function renderBanksStatus(budgetTypes, index, {
   isStatusUpdating,
   onStatusChange,
   SwitchComponent,
 }) {
-  const isActive = getIsBanksActive(vendorBanks)
+  const isActive = getIsBanksActive(budgetTypes)
   const isUpdating =
     typeof isStatusUpdating === 'function'
-      ? Boolean(isStatusUpdating(vendorBanks, index))
+      ? Boolean(isStatusUpdating(budgetTypes, index))
       : false
-  const isDisabled = vendorBanks?.id === undefined || vendorBanks?.id === null || isUpdating
-  const statusLabel = getBanksStatusLabel(vendorBanks)
+  const isDisabled = budgetTypes?.id === undefined || budgetTypes?.id === null || isUpdating
+  const statusLabel = getBanksStatusLabel(budgetTypes)
   const statusPill = (
     <DataTableStatus
       className="banks-status-toggle__pill"
-      variant={getBanksStatusVariant(vendorBanks)}
+      variant={getBanksStatusVariant(budgetTypes)}
     >
       {statusLabel}
     </DataTableStatus>
@@ -134,11 +134,11 @@ function renderBanksStatus(vendorBanks, index, {
           label={statusPill}
           checked={isActive}
           disabled={isDisabled}
-          aria-label={`Ubah status banks ${vendorBanks?.name ?? vendorBanks?.id ?? index}`}
+          aria-label={`Ubah status banks ${budgetTypes?.name ?? budgetTypes?.id ?? index}`}
           onClick={(event) => event.stopPropagation()}
           onChange={(event) => {
             event.stopPropagation()
-            onStatusChange?.(vendorBanks, event.target.checked ? 1 : 0, index)
+            onStatusChange?.(budgetTypes, event.target.checked ? 1 : 0, index)
           }}
         />
       ) : (
@@ -148,42 +148,28 @@ function renderBanksStatus(vendorBanks, index, {
   )
 }
 
-const columnsDataTableBanks = [{
-    key: 'vendor_name',
-    header: 'Vendor',
-    accessor: 'vendor_name',
+const columnsDataTableBudgetType = [{
+    key: 'code',
+    header: 'Code',
+    accessor: 'code',
     type: 'identity',
-    subtitleAccessor: (vendorBanks) => `Vendor ID: ${vendorBanks?.vendor_id ?? '-'}`,
+    subtitleAccessor: (budgetTypes) => `Vendor ID: ${budgetTypes?.vendor_id ?? '-'}`,
     minWidth: 260,
   },
   {
-    key: 'bank_name',
-    header: 'Bank',
-    accessor: 'bank_name',
+    key: 'name',
+    header: 'Name Budget Type',
+    accessor: 'name',
     type: 'identity',
-    subtitleAccessor: (vendorBanks) => `Code: ${vendorBanks?.bank_code ?? '-'}`,
+    subtitleAccessor: (budgetTypes) => `Code: ${budgetTypes?.bank_code ?? '-'}`,
     minWidth: 260,
   },
   {
-    key: 'account_number',
-    header: 'Account Number',
-    accessor: 'account_number',
+    key: 'description',
+    header: 'Description',
+    accessor: 'description',
     nowrap: true,
     minWidth: 180,
-  },
-  {
-    key: 'account_name',
-    header: 'Account Name',
-    accessor: 'account_name',
-    minWidth: 220,
-  },
-  {
-    key: 'is_primary',
-    header: 'Primary',
-    accessor: getVendorBankPrimaryLabel,
-    type: 'status',
-    variantAccessor: getVendorBankPrimaryVariant,
-    nowrap: true,
   },
   {
     key: 'status',
@@ -211,11 +197,11 @@ const columnsDataTableBanks = [{
   },
 ]
 
-function DataTableVendorBanks({
+function DataTableBudgetType({
   rows = [],
-  columns = columnsDataTableBanks,
+  columns = columnsDataTableBudgetType,
   actions,
-  getRowId = (vendorBanks, index) => vendorBanks?.id ?? index,
+  getRowId = (budgetTypes, index) => budgetTypes?.id ?? index,
   tableLabel = 'Vendor bank accounts table',
   emptyMessage = 'Belum ada data.',
   isStatusUpdating,
@@ -234,8 +220,8 @@ function DataTableVendorBanks({
         column.key === 'status'
           ? {
               ...column,
-              render: (vendorBanks, index) =>
-                renderBanksStatus(vendorBanks, index, {
+              render: (budgetTypes, index) =>
+                renderBanksStatus(budgetTypes, index, {
                   isStatusUpdating,
                   onStatusChange,
                   SwitchComponent,
@@ -251,8 +237,8 @@ function DataTableVendorBanks({
           header: {
             ...(mobileCard?.header ?? {}),
             status: {
-              label: (vendorBanks) => getBanksStatusLabel(vendorBanks),
-              variant: (vendorBanks) => getBanksStatusVariant(vendorBanks),
+              label: (budgetTypes) => getBanksStatusLabel(budgetTypes),
+              variant: (budgetTypes) => getBanksStatusVariant(budgetTypes),
               ...(mobileCard?.header?.status ?? {}),
             },
           },
@@ -263,7 +249,7 @@ function DataTableVendorBanks({
       ? {
           key: 'edit',
           label: 'Edit Vendor Banks',
-          buttonComponent: ButtonEditVendorBanks,
+          buttonComponent: ButtonEditBudgetType,
           onClick: onEdit,
         }
       : null,
@@ -295,4 +281,4 @@ function DataTableVendorBanks({
   )
 }
 
-export default DataTableVendorBanks
+export default DataTableBudgetType

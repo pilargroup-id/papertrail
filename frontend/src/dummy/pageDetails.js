@@ -53,6 +53,24 @@ export const pageDetails = {
     value: '0',
     detail: 'Master data vendor.',
   },
+  '/Master/Banks': {
+    title: 'Vendor Bank',
+    eyebrow: 'Vendor Management',
+    value: '0',
+    detail: 'Master data vendor bank.',
+  },
+  '/Master/VendorBanksAccount': {
+    title: 'Vendor Banks Account',
+    eyebrow: 'Vendor Management',
+    value: '0',
+    detail: 'Master data vendor bank account.',
+  },
+  '/Master/Budget-type': {
+    title: 'Budget Type',
+    eyebrow: 'Budget Management',
+    value: '0',
+    detail: 'Master data budget type.',
+  },
   '/Reports/TeamPerformance': {
     title: 'Team Performance',
     eyebrow: 'Reports',

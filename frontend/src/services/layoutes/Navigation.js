@@ -17,16 +17,19 @@ export const defaultNavigationPath = '/forms'
 export const implementedNavigationPaths = [
   '/icons',
   '/forms',
-
-  // master menu
   '/Master',
+
+  // VENDOR MANAGEMENT
   '/Master/Vendor',
   '/Master/Banks',
   '/Master/VendorBanksAccount',
-  // '/Master/Budget',
-  // '/Master/Bank',
-  // '/Master/BankAccount',
-  // =====================
+  
+  // BUDGET MANAGEMENT
+  '/Master/Budget',
+  '/Master/Budget-type',
+  '/Master/Budget-access',
+
+  
 
   '/Page1',
   '/Page2',
@@ -57,41 +60,53 @@ export const primaryNavigationItems = [
     icon: Settings01,
     children: [
       {
-        id: 'vendor',
+        id: 'vendor-management',
         label: 'Vendor',
-        href: '/Master/Vendor',
         icon: Users01,
+        children: [
+          {
+            id: 'vendor',
+            label: 'Vendor',
+            href: '/Master/Vendor',
+            icon: Users01,
+          },
+          {
+            id: 'vendor-bank',
+            label: 'Banks',
+            href: '/Master/Banks',
+            icon: Banks,
+          },
+          {
+            id: 'vendor-banks-account',
+            label: 'Vendor Banks',
+            href: '/Master/VendorBanksAccount',
+            icon: UserBank,
+          },
+        ],
       },
       {
-        id: 'banks',
-        label: 'Banks',
-        href: '/Master/Banks',
-        icon: Banks,
-      },
-      {
-        id: 'vendor-banks-account',
-        label: 'Vendor Banks',
-        href: '/Master/VendorBanksAccount',
-        icon: UserBank,
-      },
-      //   {
-      //   id: 'budget',
-      //   label: 'Budget',
-      //   href: '/Master/Budget',
-      //   icon: TrendingUp,
-      // },
-      // {
-      //   id: 'bank',
-      //   label: 'Bank',
-      //   href: '/Master/Bank',
-      //   icon: TrendingUp,
-      // },
-      // {
-      //   id: 'bank-account',
-      //   label: 'Bank Account',
-      //   href: '/Master/BankAccount',
-      //   icon: TrendingUp,
-      // },
+        id: 'budget-management',
+        label: 'Budget',
+        icon: Users01,
+        children: [
+          {
+            id: 'budget',
+            label: 'Budget',
+            icon: Users01,
+          },
+          {
+            id: 'budget-type',
+            label: 'Budget Type',
+            href: '/Master/Budget-type',
+            icon: Users01,
+          },
+          {
+            id: 'budget-access',
+            label: 'Budget Access',
+            icon: Users01,
+          }
+        ]
+      }
     ],
   },
   {

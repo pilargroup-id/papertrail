@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import api from '../../../services/api.js';
-import DataTableVendorBanks from '../../../components/table/master-table/vendor-banks/DataTableVendorBanks.jsx';
+import api from '../../../../services/api.js';
+import DataTableVendorBanks from '../../../../components/table/master-table/vendor-banks/DataTableVendorBanks.jsx';
 
 // Button Vendor Banks
-import Switch from '../../../components/forms/Switch.jsx';
-import ButtonCreateVendorBanks from '../../../components/button/button-vendor-banks/ButtonCreateVendorBanks.jsx';
+import Switch from '../../../../components/forms/Switch.jsx';
+import ButtonCreateVendorBanks from '../../../../components/button/button-vendor-banks/ButtonCreateVendorBanks.jsx';
 
 // Dialog Vendor Banks
-import DialogEditVendorBanks from '../../../components/Dialog/dialog-vendor-banks/DialogEditVendorBanks.jsx';
+import DialogEditVendorBanks from '../../../../components/Dialog/dialog-vendor-banks/DialogEditVendorBanks.jsx';
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {

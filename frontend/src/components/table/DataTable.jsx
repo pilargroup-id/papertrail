@@ -656,6 +656,7 @@ function DataTable({
   emptyMessage,
   idPrefix = 'data-table',
   className = '',
+  tableWrapperStyle,
   onRowClick,
   getRowClassName,
 }) {
@@ -793,7 +794,10 @@ function DataTable({
         hasMobileCard ? 'users-table-layout--with-mobile' : '',
       )}
     >
-      <div className={['users-table-wrapper', className].filter(Boolean).join(' ')}>
+      <div
+        className={['users-table-wrapper', className].filter(Boolean).join(' ')}
+        style={tableWrapperStyle}
+      >
         <table className="users-table" aria-label={tableLabel}>
           <thead>
             <tr>

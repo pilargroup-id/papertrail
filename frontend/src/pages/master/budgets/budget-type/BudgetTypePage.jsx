@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import api from '../../../services/api.js';
-import DialogEditVendor from '../../../components/Dialog/dialog-vendor/DialogEditVendor.jsx';
-import DataTableVendor from '../../../components/table/master-table/vendor/DataTableVendor.jsx';
+import api from '../../../../services/api.js';
+import DialogEditBudgetType from '../../../../components/Dialog/dialog-budget-type/DialogEditBudgetType.jsx';
+import DataTableBudgetType from '../../../../components/table/master-table/budget-type/DataTableBudgetType.jsx';
 
 // Button Vendor
-import Switch from '../../../components/forms/Switch.jsx';
-import ButtonCreateVendor from '../../../components/button/button-vendor/ButtonCreateVendor.jsx';
-
-
+import Switch from '../../../../components/forms/Switch.jsx';
+// import ButtonCreateBudgetType from '../../../components/button/budget-type/ButtonCreateBudgetType.jsx';
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -46,44 +44,44 @@ function getVendorFromResponse(response) {
   ) ?? null
 }
 
-function updateVendorStatus(vendors, vendorId, isActive, updatedVendor) {
-  return vendors.map((vendor) => {
-    if (String(vendor?.id) !== String(vendorId)) {
-      return vendor
+function updateVendorStatus(budgetTypes, budgetTypesId, isActive, updatedBudgetType) {
+  return budgetTypes.map((budgetTypes) => {
+    if (String(budgetTypes?.id) !== String(budgetTypesId)) {
+      return budgetTypes
     }
 
     return {
-      ...vendor,
-      ...(updatedVendor ?? {}),
-      is_active: updatedVendor?.is_active ?? isActive,
+      ...budgetTypes,
+      ...(updatedBudgetType ?? {}),
+      is_active: updatedBudgetType?.is_active ?? isActive,
     }
   })
 }
 
-function updateVendorRecord(vendors, vendorId, updatedVendor) {
-  return vendors.map((vendor) =>
-    String(vendor?.id) === String(vendorId)
+function updateVendorRecord(budgetTypes, budgetTypesId, updatedBudgetType) {
+  return budgetTypes.map((budgetTypes) =>
+    String(budgetTypes?.id) === String(budgetTypesId)
       ? {
-          ...vendor,
-          ...updatedVendor,
+          ...budgetTypes,
+          ...updatedBudgetType,
         }
-      : vendor,
+      : budgetTypes,
   )
 }
 
-function VendorPage(props) {
+function BudgetTypePage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
-  const pageTitle = activePage?.title ?? 'Vendor'
+  const pageTitle = activePage?.title ?? 'Budget Type'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
-  const [vendors, setVendors] = useState([])
+  const [budgetTypes, setBudgetType] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
-  const [selectedVendor, setSelectedVendor] = useState(null)
+  const [selectedBudgetType, setSelectedBudgetType] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -93,7 +91,7 @@ function VendorPage(props) {
       setErrorMessage('')
 
       try {
-        const response = await api.vendors.list(
+        const response = await api.budgetTypes.list(
           {
             page: 1,
             limit: 100,
@@ -104,14 +102,14 @@ function VendorPage(props) {
           },
         )
 
-        setVendors(getRowsFromResponse(response))
+        setBudgetType(getRowsFromResponse(response))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-        setVendors([])
-        setErrorMessage(error.message || 'Gagal memuat data vendor.')
+        setBudgetType([])
+        setErrorMessage(error.message || 'Gagal memuat data Budget Type.')
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false)
@@ -128,66 +126,66 @@ function VendorPage(props) {
     setReloadToken((currentValue) => currentValue + 1)
   }
 
-  const openEditDialog = (vendor) => {
-    setSelectedVendor(vendor)
+  const openEditDialog = (budgetTypesss) => {
+    setSelectedBudgetType(budgetTypesss)
     setIsEditDialogOpen(true)
   }
 
   const closeEditDialog = () => {
     setIsEditDialogOpen(false)
-    setSelectedVendor(null)
+    setSelectedBudgetType(null)
   }
 
   const handleVendorUpdated = async (response) => {
     const updatedVendor = getVendorFromResponse(response)
 
     if (updatedVendor?.id !== undefined && updatedVendor?.id !== null) {
-      setVendors((currentVendors) =>
+      setBudgetType((currentVendors) =>
         updateVendorRecord(currentVendors, updatedVendor.id, updatedVendor),
       )
-    } else if (selectedVendor?.id !== undefined && selectedVendor?.id !== null) {
+    } else if (selectedBudgetType?.id !== undefined && selectedBudgetType?.id !== null) {
       setReloadToken((currentValue) => currentValue + 1)
     }
 
     closeEditDialog()
   }
 
-  const handleVendorStatusChange = async (vendor, nextIsActive) => {
-    const vendorId = vendor?.id
+  const handleVendorStatusChange = async (budgetTypesss, nextIsActive) => {
+    const budgetTypesssId = budgetTypesss?.id
 
-    if (vendorId === undefined || vendorId === null) {
+    if (budgetTypesssId === undefined || budgetTypesssId === null) {
       return
     }
 
-    const vendorIdKey = String(vendorId)
+    const budgetTypesssIdKey = String(budgetTypesssId)
     const normalizedIsActive = nextIsActive ? 1 : 0
 
     setErrorMessage('')
-    setUpdatingStatusIds((currentIds) => new Set(currentIds).add(vendorIdKey))
-    setVendors((currentVendors) =>
-      updateVendorStatus(currentVendors, vendorId, normalizedIsActive),
+    setUpdatingStatusIds((currentIds) => new Set(currentIds).add(budgetTypesssIdKey))
+    setBudgetType((currentVendors) =>
+      updateVendorStatus(currentVendors, budgetTypesssId, normalizedIsActive),
     )
 
     try {
-      const response = await api.vendors.updateStatus(vendorId, normalizedIsActive)
+      const response = await api.budgetTypes.updateStatus(budgetTypesssId, normalizedIsActive)
       const updatedVendor = getVendorFromResponse(response)
 
       if (updatedVendor) {
-        setVendors((currentVendors) =>
-          updateVendorStatus(currentVendors, vendorId, normalizedIsActive, updatedVendor),
+        setBudgetType((currentVendors) =>
+          updateVendorStatus(currentVendors, budgetTypesssId, normalizedIsActive, updatedVendor),
         )
       }
     } catch (error) {
-      setVendors((currentVendors) =>
+      setBudgetType((currentVendors) =>
         currentVendors.map((currentVendor) =>
-          String(currentVendor?.id) === vendorIdKey ? vendor : currentVendor,
+          String(currentVendor?.id) === budgetTypesssIdKey ? budgetTypesss : currentVendor,
         ),
       )
-      setErrorMessage(error.message || 'Gagal memperbarui status vendor.')
+      setErrorMessage(error.message || 'Gagal memperbarui status Budget Type.')
     } finally {
       setUpdatingStatusIds((currentIds) => {
         const nextIds = new Set(currentIds)
-        nextIds.delete(vendorIdKey)
+        nextIds.delete(budgetTypesssIdKey)
 
         return nextIds
       })
@@ -195,7 +193,7 @@ function VendorPage(props) {
   }
 
   const emptyMessage = isLoading
-    ? 'Memuat data vendor...'
+    ? 'Memuat data Budget Type...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.')
 
   return (
@@ -210,19 +208,19 @@ function VendorPage(props) {
         </div>
 
         <div className="users-table-card__actions">
-          <ButtonCreateVendor
+          {/* <ButtonCreateVendor
             variant="create"
             dialogProps={{
               onCreated: handleVendorCreated,
             }}
           >
             Create
-          </ButtonCreateVendor>
+          </ButtonCreateVendor> */}
         </div>
       </div>
 
-      <DataTableVendor
-        rows={vendors}
+      <DataTableBudgetType
+        rows={budgetTypes}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
@@ -231,10 +229,10 @@ function VendorPage(props) {
         onStatusChange={handleVendorStatusChange}
       />
 
-      <DialogEditVendor
+      <DialogEditBudgetType
         isOpen={isEditDialogOpen}
-        title={`Edit ${selectedVendor?.name ?? 'Vendor'}`}
-        vendor={selectedVendor}
+        title={`Edit ${selectedBudgetType?.name ?? 'Budget Type'}`}
+        budgetType={selectedBudgetType}
         onClose={closeEditDialog}
         onUpdated={handleVendorUpdated}
       />
@@ -243,4 +241,4 @@ function VendorPage(props) {
   )
 }
 
-export default VendorPage
+export default BudgetTypePage
