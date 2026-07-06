@@ -39,6 +39,7 @@ export const implementedNavigationPaths = [
 
   // SETTINGS
   '/Master/Rp-destination-departments',
+  '/Master/Rp-checker-rules',
 
   '/Page1',
   '/Page2',
@@ -155,7 +156,11 @@ export const primaryNavigationItems = [
         id: 'rp-destination-departments',
         label: 'RP Destinations',
         href: '/Master/Rp-destination-departments',
-        icon: MoreHorizontal,
+      },
+      {
+        id: 'rp-checker-rules',
+        label: 'Checker Rules (Rp)',
+        href: '/Master/Rp-checker-rules',
       }
     ]
   },
