@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import DialogCreateBudgetType from '../../Dialog/dialog-budget-type/DialogCreateBudgetType.jsx'
+import DialogCreateBudgetAccess from '../../Dialog/dialog-budget-access/DialogCreateBudgetAccess.jsx'
 
 const buttonClassNames = {
   create: 'dashboard-popup__button dashboard-popup__button--primary',
@@ -58,7 +58,7 @@ function ButtonCreateBudgetAccesRules({
         {children}
       </button>
 
-      <DialogCreateBudgetType
+      <DialogCreateBudgetAccess
         {...dialogProps}
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}

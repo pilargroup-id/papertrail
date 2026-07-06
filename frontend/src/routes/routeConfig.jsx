@@ -22,6 +22,9 @@ import BudgetPages from '../pages/master/budgets/budget/BudgetPage.jsx';
 import BudgetTypePage from '../pages/master/budgets/budget-type/BudgetTypePage.jsx';
 import BudgetAccessPage from '../pages/master/budgets/budget-access/BudgetAccessPage.jsx';
 
+// Document Management
+import FrpDocumentsType from '../pages/master/Documents/FrpDocumentsType.jsx';
+
 import IconsPage from '../pages/icons/IconsPage.jsx';
 import FormsPage from '../pages/forms/FormsPage.jsx';
 

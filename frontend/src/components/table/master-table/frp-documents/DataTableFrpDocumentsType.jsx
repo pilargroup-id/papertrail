@@ -142,30 +142,21 @@ function renderBudgetAccessRuleStatus(budgetAccessRules, index, {
 
 const columnsDataTableBudgetAccess = [
         {
-            key: 'module',
-            header: 'Module',
-            accessor: 'module',
+            key: 'code',
+            header: 'Code',
+            accessor: 'code',
             type: 'identity',
             // subtitleAccessor: (budgetAccessRules) => `Budget Code: ${budgetAccessRules?.budget_code ?? '-'}`,
             minWidth: 260,
         },
         {
-            key: 'access_type',
-            header: 'Access Type',
-            accessor: 'access_type',
+            key: 'name',
+            header: 'Name',
+            accessor: 'name',
             type: 'identity',
             // subtitleAccessor: (budgetAccessRules) => `Remaining: ${budgetAccessRules?.budget_remaining ?? '-'}`,
             minWidth: 260,
         },
-        {
-            key: 'department_name_snapshot',
-            header: 'Department',
-            accessor: 'department_name_snapshot',
-            type: 'identity',
-            subtitleAccessor: (budgetAccessRules) => `Class: ${budgetAccessRules?.department_class_snapshot ?? '-'}`,
-            minWidth: 260,
-        },
-
         {
             key: 'status',
             header: 'Status',

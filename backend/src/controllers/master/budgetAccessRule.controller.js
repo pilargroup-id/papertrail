@@ -59,10 +59,21 @@ async function updateStatus(req, res, next) {
   }
 }
 
+async function destroy(req, res, next) {
+  try {
+    const rule = await BudgetAccessRuleService.deleteBudgetAccessRule(req.params.id, req);
+
+    return R.ok(res, rule, 'Budget access rule deleted');
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   index,
   show,
   store,
   update,
   updateStatus,
+  destroy,
 };

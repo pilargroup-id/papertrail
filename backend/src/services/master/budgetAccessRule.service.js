@@ -237,10 +237,45 @@ async function updateBudgetAccessRuleStatus(id, payload, req) {
   }
 }
 
+async function deleteBudgetAccessRule(id, req) {
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const oldRule = await BudgetAccessRuleModel.remove(id, connection);
+
+    if (!oldRule) {
+      throw createHttpError('Budget access rule not found', 404);
+    }
+
+    await ActivityLogService.createActivityLog(connection, {
+      req,
+      module: 'MASTER',
+      entityType: 'master_budget_access_rules',
+      entityId: id,
+      action: 'DELETE',
+      description: `Delete budget access rule ${oldRule.module} - ${oldRule.department_name_snapshot || oldRule.department_id}`,
+      oldValues: oldRule,
+      newValues: null,
+    });
+
+    await connection.commit();
+
+    return oldRule;
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   getBudgetAccessRules,
   getBudgetAccessRuleById,
   createBudgetAccessRule,
   updateBudgetAccessRule,
   updateBudgetAccessRuleStatus,
+  deleteBudgetAccessRule,
 };

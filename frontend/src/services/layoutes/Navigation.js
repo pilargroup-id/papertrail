@@ -32,6 +32,9 @@ export const implementedNavigationPaths = [
   '/Master/Budget-type',
   '/Master/Budget-access',
 
+  // DOCUMENT MANAGEMENT
+  '/Master/Frp-docs-type',
+
   '/Page1',
   '/Page2',
   '/Page3',
@@ -108,6 +111,19 @@ export const primaryNavigationItems = [
             href: '/Master/Budget-access',
             icon: BudgetAccess,
           }
+        ]
+      },
+      {
+        id: 'document',
+        label: 'Document',
+        icon: Folder,
+        children: [
+          {
+            id: 'frp-docs-type',
+            label: 'Frp Docs Type',
+            href: 'Master/Frp-docs-type',
+            icon: Folder,
+          },
         ]
       }
     ],

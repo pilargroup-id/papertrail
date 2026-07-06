@@ -34,4 +34,10 @@ router.patch(
   BudgetAccessRuleController.updateStatus
 );
 
+router.delete(
+  '/:id',
+  requireModulePermission('MASTER_BUDGET_ACCESS_RULE', 'deactivate'),
+  BudgetAccessRuleController.destroy
+);
+
 module.exports = router;

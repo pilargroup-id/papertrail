@@ -510,7 +510,7 @@ Do not hardcode HCGA/IT/Marketing in FE or BE.
 
 ---
 
-### 5.7 FRP Document Types
+### 5.7 FRP Document Typespaper
 
 Purpose: FRP checklist documents. Multi-select in FRP.
 

@@ -182,6 +182,22 @@ async function updateStatus(id, isActive, connection = db) {
   return findById(id, connection);
 }
 
+async function remove(id, connection = db) {
+  const rule = await findById(id, connection);
+
+  if (!rule) {
+    return null;
+  }
+
+  await connection.query(
+    `DELETE FROM master_budget_access_rules
+     WHERE id = ?`,
+    [id]
+  );
+
+  return rule;
+}
+
 module.exports = {
   findAll,
   findById,
@@ -189,4 +205,5 @@ module.exports = {
   create,
   update,
   updateStatus,
+  remove,
 };

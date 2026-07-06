@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-import DialogDelete from '../../../../components/Dialog/DialogDelete.jsx'
-import DialogEditBudgetAccesRules from '../../../../components/Dialog/dialog-budget-access/DialogEditBudgetAccess.jsx'
-import ButtonCreateBudgetAccesRules from '../../../../components/button/button-budget-access/ButtonCreateBudgetAccess.jsx'
-import Switch from '../../../../components/forms/Switch.jsx'
-import DataTableBudgetAccessRules from '../../../../components/table/master-table/budget-access/DataTableBudgetAccess.jsx'
-import api from '../../../../services/api.js'
+import DialogDelete from '../../../components/Dialog/DialogDelete.jsx'
+import DialogEditBudgetAccesRules from '../../../components/Dialog/dialog-budget-access/DialogEditBudgetAccess.jsx'
+import ButtonCreateBudgetAccesRules from '../../../components/button/button-budget-access/ButtonCreateBudgetAccess.jsx'
+import Switch from '../../../components/forms/Switch.jsx'
+import DataTableFrpDocumentsType from '../../../components/table/master-table/frp-documents/DataTableFrpDocumentsType.jsx'
+import api from '../../../services/api.js'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -77,25 +77,25 @@ function updateRuleRecord(budgetAccessRules, budgetAccessRuleId, updatedRule) {
   )
 }
 
-function BudgetAccessPage(props) {
+function FrpDocumentsTypePage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
   const pageTitle = activePage?.title ?? 'Budget Access'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
-  const [budgetAccessRules, setBudgetAccessRules] = useState([])
+  const [budgetAccessRules, setFrpDocumentsTypeRules] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
-  const [selectedBudgetAccessRule, setSelectedBudgetAccessRule] = useState(null)
+  const [selectedFrpDocumentsTypeRule, setSelectedFrpDocumentsTypeRule] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
 
-    async function loadBudgetAccessRules() {
+    async function loadFrpDocumentsTypeRules() {
       setIsLoading(true)
       setErrorMessage('')
 
@@ -111,13 +111,13 @@ function BudgetAccessPage(props) {
           },
         )
 
-        setBudgetAccessRules(getRowsFromResponse(response))
+        setFrpDocumentsTypeRules(getRowsFromResponse(response))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-        setBudgetAccessRules([])
+        setFrpDocumentsTypeRules([])
         setErrorMessage(error.message || 'Gagal memuat data Budget Access.')
       } finally {
         if (!controller.signal.aborted) {
@@ -126,7 +126,7 @@ function BudgetAccessPage(props) {
       }
     }
 
-    loadBudgetAccessRules()
+    loadFrpDocumentsTypeRules()
 
     return () => controller.abort()
   }, [searchQuery, reloadToken])
@@ -136,33 +136,33 @@ function BudgetAccessPage(props) {
   }
 
   const openEditDialog = (budgetAccessRule) => {
-    setSelectedBudgetAccessRule(budgetAccessRule)
+    setSelectedFrpDocumentsTypeRule(budgetAccessRule)
     setIsEditDialogOpen(true)
   }
 
   const closeEditDialog = () => {
     setIsEditDialogOpen(false)
-    setSelectedBudgetAccessRule(null)
+    setSelectedFrpDocumentsTypeRule(null)
   }
 
   const openDeleteDialog = (budgetAccessRule) => {
-    setSelectedBudgetAccessRule(budgetAccessRule)
+    setSelectedFrpDocumentsTypeRule(budgetAccessRule)
     setIsDeleteDialogOpen(true)
   }
 
   const closeDeleteDialog = () => {
     setIsDeleteDialogOpen(false)
-    setSelectedBudgetAccessRule(null)
+    setSelectedFrpDocumentsTypeRule(null)
   }
 
   const handleRuleUpdated = async (response) => {
     const updatedRule = getRuleFromResponse(response)
 
     if (updatedRule?.id !== undefined && updatedRule?.id !== null) {
-      setBudgetAccessRules((currentRules) =>
+      setFrpDocumentsTypeRules((currentRules) =>
         updateRuleRecord(currentRules, updatedRule.id, updatedRule),
       )
-    } else if (selectedBudgetAccessRule?.id !== undefined && selectedBudgetAccessRule?.id !== null) {
+    } else if (selectedFrpDocumentsTypeRule?.id !== undefined && selectedFrpDocumentsTypeRule?.id !== null) {
       setReloadToken((currentValue) => currentValue + 1)
     }
 
@@ -180,7 +180,7 @@ function BudgetAccessPage(props) {
 
     try {
       await api.budgetAccessRules.remove(budgetAccessRuleId)
-      setBudgetAccessRules((currentRules) =>
+      setFrpDocumentsTypeRules((currentRules) =>
         currentRules.filter((currentRule) => String(currentRule?.id) !== String(budgetAccessRuleId)),
       )
       closeDeleteDialog()
@@ -201,7 +201,7 @@ function BudgetAccessPage(props) {
 
     setErrorMessage('')
     setUpdatingStatusIds((currentIds) => new Set(currentIds).add(budgetAccessRuleIdKey))
-    setBudgetAccessRules((currentRules) =>
+    setFrpDocumentsTypeRules((currentRules) =>
       updateRuleStatus(currentRules, budgetAccessRuleId, normalizedIsActive),
     )
 
@@ -210,12 +210,12 @@ function BudgetAccessPage(props) {
       const updatedRule = getRuleFromResponse(response)
 
       if (updatedRule) {
-        setBudgetAccessRules((currentRules) =>
+        setFrpDocumentsTypeRules((currentRules) =>
           updateRuleStatus(currentRules, budgetAccessRuleId, normalizedIsActive, updatedRule),
         )
       }
     } catch (error) {
-      setBudgetAccessRules((currentRules) =>
+      setFrpDocumentsTypeRules((currentRules) =>
         currentRules.map((currentRule) =>
           String(currentRule?.id) === budgetAccessRuleIdKey ? budgetAccessRule : currentRule,
         ),
@@ -258,7 +258,7 @@ function BudgetAccessPage(props) {
         </div>
       </div>
 
-      <DataTableBudgetAccessRules
+      {/* <DataTableFrpDocumentsTypeRules
         rows={budgetAccessRules}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
@@ -269,34 +269,34 @@ function BudgetAccessPage(props) {
           updatingStatusIds.has(String(budgetAccessRule?.id))
         }
         onStatusChange={handleRuleStatusChange}
-      />
+      /> */}
 
-      <DialogEditBudgetAccesRules
-        key={selectedBudgetAccessRule?.id ?? 'budget-access-edit-dialog'}
+      {/* <DialogEditBudgetAccesRules
+        key={selectedFrpDocumentsTypeRule?.id ?? 'budget-access-edit-dialog'}
         isOpen={isEditDialogOpen}
-        title={`Edit ${getRuleLabel(selectedBudgetAccessRule)}`}
-        budgetAccessRule={selectedBudgetAccessRule}
+        title={`Edit ${getRuleLabel(selectedFrpDocumentsTypeRule)}`}
+        budgetAccessRule={selectedFrpDocumentsTypeRule}
         onClose={closeEditDialog}
         onUpdated={handleRuleUpdated}
-      />
+      /> */}
 
-      <DialogDelete
+      {/* <DialogDelete
         isOpen={isDeleteDialogOpen}
         eyebrow="Budget Access"
-        title={`Delete ${getRuleLabel(selectedBudgetAccessRule)}`}
+        title={`Delete ${getRuleLabel(selectedFrpDocumentsTypeRule)}`}
         user={
-          selectedBudgetAccessRule
+          selectedFrpDocumentsTypeRule
             ? {
-                ...selectedBudgetAccessRule,
-                name: getRuleLabel(selectedBudgetAccessRule),
+                ...selectedFrpDocumentsTypeRule,
+                name: getRuleLabel(selectedFrpDocumentsTypeRule),
               }
             : null
         }
         onClose={closeDeleteDialog}
         onConfirm={handleRuleDelete}
-      />
+      /> */}
     </section>
   )
 }
 
-export default BudgetAccessPage
+export default FrpDocumentsTypePage
