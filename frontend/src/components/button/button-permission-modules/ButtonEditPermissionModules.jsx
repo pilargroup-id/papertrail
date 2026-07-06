@@ -1,6 +1,6 @@
 import { Edit03 } from '../../layoute/TemplateIcons.jsx'
 
-function ButtonEditRpPaymentCategories({
+function ButtonEditPermissionModules({
   label = 'Edit',
   icon: Icon = Edit03,
   size = 16,
@@ -25,4 +25,4 @@ function ButtonEditRpPaymentCategories({
   )
 }
 
-export default ButtonEditRpPaymentCategories
+export default ButtonEditPermissionModules

@@ -562,6 +562,31 @@ export function BudgetAccess(props) {
   )
 }
 
+export function Permission(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="10 12 12 14 16 10" />
+    </IconBase>
+  )
+}
+
+export function Config(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="1.5" />
+      <path d="M12 1v6" />
+      <path d="M12 17v6" />
+      <path d="M4.22 4.22l4.24 4.24" />
+      <path d="M15.54 15.54l4.24 4.24" />
+      <path d="M1 12h6" />
+      <path d="M17 12h6" />
+      <path d="M4.22 19.78l4.24-4.24" />
+      <path d="M15.54 8.46l4.24-4.24" />
+    </IconBase>
+  )
+}
+
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

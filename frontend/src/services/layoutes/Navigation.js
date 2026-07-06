@@ -13,6 +13,8 @@ import {
   Budgets,
   BudgetType,
   BudgetAccess,
+  Permission,
+  Config,
 } from '../../components/layoute/TemplateIcons.jsx'
 
 export const defaultNavigationPath = '/forms'
@@ -40,6 +42,11 @@ export const implementedNavigationPaths = [
   // SETTINGS
   '/Master/Rp-destination-departments',
   '/Master/Rp-checker-rules',
+  '/Master/Rp-payment-categories',
+
+  // PERMISSION
+  '/Master/permission-modules',
+  
 
   '/Page1',
   '/Page2',
@@ -161,6 +168,25 @@ export const primaryNavigationItems = [
         id: 'rp-checker-rules',
         label: 'Checker Rules (Rp)',
         href: '/Master/Rp-checker-rules',
+      },
+      {
+        id: 'rp-payment-categories',
+        label: 'Categories Payment (Rp)',
+        href: '/Master/Rp-payment-categories',
+
+      }
+    ]
+  },
+   {
+    id: 'permission',
+    label: 'Permission',
+    href: '/Master',
+    icon: Permission,
+    children: [
+      {
+        id: 'permission-modules',
+        label: 'Modules',
+        href: '/Master/permission-modules',
       }
     ]
   },

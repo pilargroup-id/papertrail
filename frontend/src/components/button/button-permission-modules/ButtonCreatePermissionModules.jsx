@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import DialogCreateRpPaymentCategories from '../../Dialog/dialog-rp-payment-categories/DialogCreateRpPaymentCategories'
+import DialogCreatePermissionModule from '../../Dialog/dialog-permission-modules/DialogCreatePermissionModules.jsx'
 
 const buttonClassNames = {
   create: 'dashboard-popup__button dashboard-popup__button--primary',
@@ -10,8 +10,8 @@ const buttonClassNames = {
   pagination: 'users-table-pagination__button',
 }
 
-function ButtonCreateRpDestinationsDepartments({
-  children = 'Create Rp Destinations Departments',
+function ButtonCreatePermissionModule({
+  children = 'Create User Module Permission',
   className = '',
   variant = 'accordion',
   tone = 'default',
@@ -58,7 +58,7 @@ function ButtonCreateRpDestinationsDepartments({
         {children}
       </button>
 
-      <DialogCreateRpPaymentCategories
+      <DialogCreatePermissionModule
         {...dialogProps}
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
@@ -67,4 +67,4 @@ function ButtonCreateRpDestinationsDepartments({
   )
 }
 
-export default ButtonCreateRpDestinationsDepartments
+export default ButtonCreatePermissionModule

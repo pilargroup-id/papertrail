@@ -30,6 +30,10 @@ import PaymentMethods from '../pages/master/document-setting/payment-methods/Pay
 // Config
 import RpDestinationsDepartments from '../pages/master/config/rp-destination-departments/RpDestinationsDepartments.jsx';
 import RpCheckerRules from '../pages/master/config/rp-checker-rules/RpCheckerRules.jsx';
+import RpPaymentCategories from '../pages/master/config/rp-payment-categories/RpPaymentCategories.jsx';
+
+// Permission
+import PermissionModules from '../pages/master/permission/permission-modules/PermissionModules.jsx';
 
 import IconsPage from '../pages/icons/IconsPage.jsx';
 import FormsPage from '../pages/forms/FormsPage.jsx';
@@ -68,6 +72,9 @@ export default function RouteConfig() {
         {/* Config */}
         <Route path="Master/Rp-destination-departments" element={<RpDestinationsDepartments/>} />
         <Route path="Master/Rp-checker-rules" element={<RpCheckerRules/>} />
+        <Route path="Master/Rp-payment-categories" element={<RpPaymentCategories/>} />
+        {/* Permission */}
+        <Route path="Master/permission-modules" element={<PermissionModules/>} />
 
       </Route>
     </Routes>

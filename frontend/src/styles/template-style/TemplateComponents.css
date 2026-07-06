@@ -4558,6 +4558,14 @@ select {
   width: min(100%, 860px);
 }
 
+.entity-form-popup.entity-form-popup--rp-payment-categories {
+  width: min(100%, 960px);
+}
+
+.entity-form-popup.entity-form-popup--permission-modules {
+  width: min(100%, 920px);
+}
+
 .entity-form-popup.entity-form-popup--budget .dashboard-popup__body {
   max-height: min(76vh, 680px);
   overflow-y: auto;
@@ -4574,6 +4582,14 @@ select {
 
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--vendor-banks {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--permission-modules {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--rp-payment-categories {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .register-user-popup--users {
@@ -5527,6 +5543,14 @@ select {
   }
 
   .entity-form-popup .register-user-popup__grid.register-user-popup__grid--vendor-banks {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--permission-modules {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--rp-payment-categories {
     grid-template-columns: 1fr;
   }
 }
