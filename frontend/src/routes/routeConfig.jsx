@@ -23,7 +23,13 @@ import BudgetTypePage from '../pages/master/budgets/budget-type/BudgetTypePage.j
 import BudgetAccessPage from '../pages/master/budgets/budget-access/BudgetAccessPage.jsx';
 
 // Document Management
-import FrpDocumentsType from '../pages/master/Documents/FrpDocumentsType.jsx';
+import FrpDocumentsType from '../pages/master/document-setting/frp-document-types/FrpDocumentsType.jsx';
+import ExternalDocumentTypes from '../pages/master/document-setting/external-document-types/ExternalDocumentTypes.jsx';
+import PaymentMethods from '../pages/master/document-setting/payment-methods/PaymentMethods.jsx';
+
+// Config
+import RpDestinationsDepartments from '../pages/master/config/rp-destination-departments/RpDestinationsDepartments.jsx';
+
 
 import IconsPage from '../pages/icons/IconsPage.jsx';
 import FormsPage from '../pages/forms/FormsPage.jsx';
@@ -55,6 +61,12 @@ export default function RouteConfig() {
         <Route path="Master/Budgets" element={<BudgetPages />} />
         <Route path="Master/Budget-type" element={<BudgetTypePage/>} />
         <Route path="Master/Budget-access" element={<BudgetAccessPage/>} />
+        {/* Documents Management  */}
+        <Route path="Master/Frp-docs-type" element={<FrpDocumentsType/>} />
+        <Route path="Master/External-document-Types" element={<ExternalDocumentTypes/>} />
+        <Route path="Master/Payment-methods" element={<PaymentMethods/>} />
+        {/* Config */}
+        <Route path="Master/Rp-destination-departments" element={<RpDestinationsDepartments/>} />
 
       </Route>
     </Routes>

@@ -1,5 +1,5 @@
 import DataTableAction, { DataTableStatus } from '../../DataTableAction.jsx'
-import ButtonEditBudgetAccess from '../../../button/button-budget-access/ButtonEditBudgetAccess.jsx'
+import ButtonEditExternalDocumentTypes from '../../../button/button-external-document-types/ButtonEditExternalDocumentTypes.jsx'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -21,16 +21,16 @@ function formatDateTime(value) {
   }).format(date)
 }
 
-function getFrpDocumentTypeStatusLabel(frpDocumentType) {
-  return Number(frpDocumentType?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
+function getFrpDocumentTypeStatusLabel(externalDocumentTypes) {
+  return Number(externalDocumentTypes?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
 }
 
-function getFrpDocumentTypeStatusVariant(frpDocumentType) {
-  return Number(frpDocumentType?.is_active) === 1 ? 'active' : 'inactive'
+function getFrpDocumentTypeStatusVariant(externalDocumentTypes) {
+  return Number(externalDocumentTypes?.is_active) === 1 ? 'active' : 'inactive'
 }
 
-function getIsFrpDocumentTypeActive(frpDocumentType) {
-  return Number(frpDocumentType?.is_active) === 1
+function getIsFrpDocumentTypeActive(externalDocumentTypes) {
+  return Number(externalDocumentTypes?.is_active) === 1
 }
 
 function joinClassNames(...classNames) {
@@ -97,22 +97,22 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   }
 }
 
-function renderFrpDocumentTypeStatus(frpDocumentType, index, {
+function renderFrpDocumentTypeStatus(externalDocumentTypes, index, {
   isStatusUpdating,
   onStatusChange,
   SwitchComponent,
 }) {
-  const isActive = getIsFrpDocumentTypeActive(frpDocumentType)
+  const isActive = getIsFrpDocumentTypeActive(externalDocumentTypes)
   const isUpdating =
     typeof isStatusUpdating === 'function'
-      ? Boolean(isStatusUpdating(frpDocumentType, index))
+      ? Boolean(isStatusUpdating(externalDocumentTypes, index))
       : false
-  const isDisabled = frpDocumentType?.id === undefined || frpDocumentType?.id === null || isUpdating
-  const statusLabel = getFrpDocumentTypeStatusLabel(frpDocumentType)
+  const isDisabled = externalDocumentTypes?.id === undefined || externalDocumentTypes?.id === null || isUpdating
+  const statusLabel = getFrpDocumentTypeStatusLabel(externalDocumentTypes)
   const statusPill = (
     <DataTableStatus
       className="banks-status-toggle__pill"
-      variant={getFrpDocumentTypeStatusVariant(frpDocumentType)}
+      variant={getFrpDocumentTypeStatusVariant(externalDocumentTypes)}
     >
       {statusLabel}
     </DataTableStatus>
@@ -126,11 +126,11 @@ function renderFrpDocumentTypeStatus(frpDocumentType, index, {
           label={statusPill}
           checked={isActive}
           disabled={isDisabled}
-          aria-label={`Ubah status FRP document type ${frpDocumentType?.code ?? frpDocumentType?.id ?? index}`}
+          aria-label={`Ubah status FRP document type ${externalDocumentTypes?.code ?? externalDocumentTypes?.id ?? index}`}
           onClick={(event) => event.stopPropagation()}
           onChange={(event) => {
             event.stopPropagation()
-            onStatusChange?.(frpDocumentType, event.target.checked ? 1 : 0, index)
+            onStatusChange?.(externalDocumentTypes, event.target.checked ? 1 : 0, index)
           }}
         />
       ) : (
@@ -140,7 +140,7 @@ function renderFrpDocumentTypeStatus(frpDocumentType, index, {
   )
 }
 
-const columnsFrpDocumentsType = [
+const columnsExternalDocumentTypes = [
   {
     key: 'code',
     header: 'Code',
@@ -194,11 +194,11 @@ const columnsFrpDocumentsType = [
   },
 ]
 
-function DataTableFrpDocumentsType({
+function DataTableExternalDocumentTypes({
   rows = [],
-  columns = columnsFrpDocumentsType,
+  columns = columnsExternalDocumentTypes,
   actions,
-  getRowId = (frpDocumentType, index) => frpDocumentType?.id ?? index,
+  getRowId = (externalDocumentTypes, index) => externalDocumentTypes?.id ?? index,
   tableLabel = 'FRP document types table',
   emptyMessage = 'Belum ada data.',
   isStatusUpdating,
@@ -217,8 +217,8 @@ function DataTableFrpDocumentsType({
         column.key === 'status'
           ? {
               ...column,
-              render: (frpDocumentType, index) =>
-                renderFrpDocumentTypeStatus(frpDocumentType, index, {
+              render: (externalDocumentTypes, index) =>
+                renderFrpDocumentTypeStatus(externalDocumentTypes, index, {
                   isStatusUpdating,
                   onStatusChange,
                   SwitchComponent,
@@ -234,8 +234,8 @@ function DataTableFrpDocumentsType({
           header: {
             ...(mobileCard?.header ?? {}),
             status: {
-              label: (frpDocumentType) => getFrpDocumentTypeStatusLabel(frpDocumentType),
-              variant: (frpDocumentType) => getFrpDocumentTypeStatusVariant(frpDocumentType),
+              label: (externalDocumentTypes) => getFrpDocumentTypeStatusLabel(externalDocumentTypes),
+              variant: (externalDocumentTypes) => getFrpDocumentTypeStatusVariant(externalDocumentTypes),
               ...(mobileCard?.header?.status ?? {}),
             },
           },
@@ -246,7 +246,7 @@ function DataTableFrpDocumentsType({
       ? {
           key: 'edit',
           label: 'Edit FRP Document Type',
-          buttonComponent: ButtonEditBudgetAccess,
+          buttonComponent: ButtonEditExternalDocumentTypes,
           onClick: onEdit,
         }
       : null,
@@ -278,4 +278,4 @@ function DataTableFrpDocumentsType({
   )
 }
 
-export default DataTableFrpDocumentsType
+export default DataTableExternalDocumentTypes

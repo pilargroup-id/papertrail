@@ -1,5 +1,5 @@
 import DataTableAction, { DataTableStatus } from '../../DataTableAction.jsx'
-import ButtonEditBudgetAccess from '../../../button/button-budget-access/ButtonEditBudgetAccess.jsx'
+import ButtonEditPaymentMethods from '../../../button/button-payment-methods/ButtonEditPaymentMethods.jsx'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -21,16 +21,16 @@ function formatDateTime(value) {
   }).format(date)
 }
 
-function getFrpDocumentTypeStatusLabel(frpDocumentType) {
-  return Number(frpDocumentType?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
+function getFrpDocumentTypeStatusLabel(paymentMethods) {
+  return Number(paymentMethods?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
 }
 
-function getFrpDocumentTypeStatusVariant(frpDocumentType) {
-  return Number(frpDocumentType?.is_active) === 1 ? 'active' : 'inactive'
+function getFrpDocumentTypeStatusVariant(paymentMethods) {
+  return Number(paymentMethods?.is_active) === 1 ? 'active' : 'inactive'
 }
 
-function getIsFrpDocumentTypeActive(frpDocumentType) {
-  return Number(frpDocumentType?.is_active) === 1
+function getIsFrpDocumentTypeActive(paymentMethods) {
+  return Number(paymentMethods?.is_active) === 1
 }
 
 function joinClassNames(...classNames) {
@@ -97,22 +97,22 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   }
 }
 
-function renderFrpDocumentTypeStatus(frpDocumentType, index, {
+function renderFrpDocumentTypeStatus(paymentMethods, index, {
   isStatusUpdating,
   onStatusChange,
   SwitchComponent,
 }) {
-  const isActive = getIsFrpDocumentTypeActive(frpDocumentType)
+  const isActive = getIsFrpDocumentTypeActive(paymentMethods)
   const isUpdating =
     typeof isStatusUpdating === 'function'
-      ? Boolean(isStatusUpdating(frpDocumentType, index))
+      ? Boolean(isStatusUpdating(paymentMethods, index))
       : false
-  const isDisabled = frpDocumentType?.id === undefined || frpDocumentType?.id === null || isUpdating
-  const statusLabel = getFrpDocumentTypeStatusLabel(frpDocumentType)
+  const isDisabled = paymentMethods?.id === undefined || paymentMethods?.id === null || isUpdating
+  const statusLabel = getFrpDocumentTypeStatusLabel(paymentMethods)
   const statusPill = (
     <DataTableStatus
       className="banks-status-toggle__pill"
-      variant={getFrpDocumentTypeStatusVariant(frpDocumentType)}
+      variant={getFrpDocumentTypeStatusVariant(paymentMethods)}
     >
       {statusLabel}
     </DataTableStatus>
@@ -126,11 +126,11 @@ function renderFrpDocumentTypeStatus(frpDocumentType, index, {
           label={statusPill}
           checked={isActive}
           disabled={isDisabled}
-          aria-label={`Ubah status FRP document type ${frpDocumentType?.code ?? frpDocumentType?.id ?? index}`}
+          aria-label={`Ubah status FRP document type ${paymentMethods?.code ?? paymentMethods?.id ?? index}`}
           onClick={(event) => event.stopPropagation()}
           onChange={(event) => {
             event.stopPropagation()
-            onStatusChange?.(frpDocumentType, event.target.checked ? 1 : 0, index)
+            onStatusChange?.(paymentMethods, event.target.checked ? 1 : 0, index)
           }}
         />
       ) : (
@@ -140,7 +140,7 @@ function renderFrpDocumentTypeStatus(frpDocumentType, index, {
   )
 }
 
-const columnsFrpDocumentsType = [
+const columnsPaymentMethods = [
   {
     key: 'code',
     header: 'Code',
@@ -194,12 +194,12 @@ const columnsFrpDocumentsType = [
   },
 ]
 
-function DataTableFrpDocumentsType({
+function DataTablePaymentMethod({
   rows = [],
-  columns = columnsFrpDocumentsType,
+  columns = columnsPaymentMethods,
   actions,
-  getRowId = (frpDocumentType, index) => frpDocumentType?.id ?? index,
-  tableLabel = 'FRP document types table',
+  getRowId = (paymentMethods, index) => paymentMethods?.id ?? index,
+  tableLabel = 'Payment Methods Table',
   emptyMessage = 'Belum ada data.',
   isStatusUpdating,
   onEdit,
@@ -217,8 +217,8 @@ function DataTableFrpDocumentsType({
         column.key === 'status'
           ? {
               ...column,
-              render: (frpDocumentType, index) =>
-                renderFrpDocumentTypeStatus(frpDocumentType, index, {
+              render: (paymentMethods, index) =>
+                renderFrpDocumentTypeStatus(paymentMethods, index, {
                   isStatusUpdating,
                   onStatusChange,
                   SwitchComponent,
@@ -234,8 +234,8 @@ function DataTableFrpDocumentsType({
           header: {
             ...(mobileCard?.header ?? {}),
             status: {
-              label: (frpDocumentType) => getFrpDocumentTypeStatusLabel(frpDocumentType),
-              variant: (frpDocumentType) => getFrpDocumentTypeStatusVariant(frpDocumentType),
+              label: (paymentMethods) => getFrpDocumentTypeStatusLabel(paymentMethods),
+              variant: (paymentMethods) => getFrpDocumentTypeStatusVariant(paymentMethods),
               ...(mobileCard?.header?.status ?? {}),
             },
           },
@@ -245,8 +245,8 @@ function DataTableFrpDocumentsType({
     typeof onEdit === 'function'
       ? {
           key: 'edit',
-          label: 'Edit FRP Document Type',
-          buttonComponent: ButtonEditBudgetAccess,
+          label: 'Edit Edit Payment Methods',
+          buttonComponent: ButtonEditPaymentMethods,
           onClick: onEdit,
         }
       : null,
@@ -278,4 +278,4 @@ function DataTableFrpDocumentsType({
   )
 }
 
-export default DataTableFrpDocumentsType
+export default DataTablePaymentMethod

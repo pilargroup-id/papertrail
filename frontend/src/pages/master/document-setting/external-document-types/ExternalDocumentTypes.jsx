@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import api from '../../../../services/api.js'
 
-import DialogDelete from '../../../components/Dialog/DialogDelete.jsx'
-import DialogEditBudgetAccesRules from '../../../components/Dialog/dialog-budget-access/DialogEditBudgetAccess.jsx'
-import ButtonCreateBudgetAccesRules from '../../../components/button/button-budget-access/ButtonCreateBudgetAccess.jsx'
-import Switch from '../../../components/forms/Switch.jsx'
-import DataTableFrpDocumentsType from '../../../components/table/master-table/frp-documents/DataTableFrpDocumentsType.jsx'
-import api from '../../../services/api.js'
+import Switch from '../../../../components/forms/Switch.jsx'
+import DataTableExternalDocumentTypes from '../../../../components/table/master-table/external-documents/DataTableExternalDocumentTypes.jsx'
+
+import DialogEditExternalDocumentsType from '../../../../components/Dialog/dialog-external-document-types/DialogEditExternalDocumentsType.jsx'
+
+import ButtonCreateExternalDocumentsType from '../../../../components/button/button-external-document-types/ButtonCreateExternalDocumentTypes.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -46,10 +47,9 @@ function getRuleFromResponse(response) {
 
 function getRuleLabel(rule) {
   return [
-    rule?.module,
-    rule?.access_type,
-    rule?.department_name_snapshot ?? rule?.department_id,
-  ].filter(Boolean).join(' - ') || 'budget access rule ini'
+    rule?.code,
+    rule?.name,
+  ].filter(Boolean).join(' - ') || 'FRP document type ini'
 }
 
 function updateRuleStatus(budgetAccessRules, budgetAccessRuleId, isActive, updatedRule) {
@@ -77,18 +77,17 @@ function updateRuleRecord(budgetAccessRules, budgetAccessRuleId, updatedRule) {
   )
 }
 
-function FrpDocumentsTypePage(props) {
+function ExternalDocumentTypes(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
-  const pageTitle = activePage?.title ?? 'Budget Access'
+  const pageTitle = activePage?.title ?? 'FRP Document Types'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [budgetAccessRules, setFrpDocumentsTypeRules] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedFrpDocumentsTypeRule, setSelectedFrpDocumentsTypeRule] = useState(null)
 
@@ -100,7 +99,7 @@ function FrpDocumentsTypePage(props) {
       setErrorMessage('')
 
       try {
-        const response = await api.budgetAccessRules.list(
+        const response = await api.externalDocumentTypes.list(
           {
             page: 1,
             limit: 100,
@@ -118,7 +117,7 @@ function FrpDocumentsTypePage(props) {
         }
 
         setFrpDocumentsTypeRules([])
-        setErrorMessage(error.message || 'Gagal memuat data Budget Access.')
+        setErrorMessage(error.message || 'Gagal memuat data FRP document types.')
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false)
@@ -145,16 +144,6 @@ function FrpDocumentsTypePage(props) {
     setSelectedFrpDocumentsTypeRule(null)
   }
 
-  const openDeleteDialog = (budgetAccessRule) => {
-    setSelectedFrpDocumentsTypeRule(budgetAccessRule)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const closeDeleteDialog = () => {
-    setIsDeleteDialogOpen(false)
-    setSelectedFrpDocumentsTypeRule(null)
-  }
-
   const handleRuleUpdated = async (response) => {
     const updatedRule = getRuleFromResponse(response)
 
@@ -167,26 +156,6 @@ function FrpDocumentsTypePage(props) {
     }
 
     closeEditDialog()
-  }
-
-  const handleRuleDelete = async (budgetAccessRule) => {
-    const budgetAccessRuleId = budgetAccessRule?.id
-
-    if (budgetAccessRuleId === undefined || budgetAccessRuleId === null) {
-      return
-    }
-
-    setErrorMessage('')
-
-    try {
-      await api.budgetAccessRules.remove(budgetAccessRuleId)
-      setFrpDocumentsTypeRules((currentRules) =>
-        currentRules.filter((currentRule) => String(currentRule?.id) !== String(budgetAccessRuleId)),
-      )
-      closeDeleteDialog()
-    } catch (error) {
-      setErrorMessage(error.message || 'Gagal menghapus Budget Access Rule.')
-    }
   }
 
   const handleRuleStatusChange = async (budgetAccessRule, nextIsActive) => {
@@ -206,7 +175,7 @@ function FrpDocumentsTypePage(props) {
     )
 
     try {
-      const response = await api.budgetAccessRules.updateStatus(budgetAccessRuleId, normalizedIsActive)
+      const response = await api.externalDocumentTypes.updateStatus(budgetAccessRuleId, normalizedIsActive)
       const updatedRule = getRuleFromResponse(response)
 
       if (updatedRule) {
@@ -220,7 +189,7 @@ function FrpDocumentsTypePage(props) {
           String(currentRule?.id) === budgetAccessRuleIdKey ? budgetAccessRule : currentRule,
         ),
       )
-      setErrorMessage(error.message || 'Gagal memperbarui status Budget Access Rule.')
+      setErrorMessage(error.message || 'Gagal memperbarui status FRP document type.')
     } finally {
       setUpdatingStatusIds((currentIds) => {
         const nextIds = new Set(currentIds)
@@ -232,7 +201,7 @@ function FrpDocumentsTypePage(props) {
   }
 
   const emptyMessage = isLoading
-    ? 'Memuat data Budget Access...'
+    ? 'Memuat data FRP document types...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.')
 
   return (
@@ -247,56 +216,39 @@ function FrpDocumentsTypePage(props) {
         </div>
 
         <div className="users-table-card__actions">
-          <ButtonCreateBudgetAccesRules
+          <ButtonCreateExternalDocumentsType
             variant="create"
             dialogProps={{
               onCreated: handleRuleCreated,
             }}
           >
             Create
-          </ButtonCreateBudgetAccesRules>
+          </ButtonCreateExternalDocumentsType>
         </div>
       </div>
 
-      {/* <DataTableFrpDocumentsTypeRules
+      <DataTableExternalDocumentTypes
         rows={budgetAccessRules}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
         onEdit={openEditDialog}
-        onDelete={openDeleteDialog}
         isStatusUpdating={(budgetAccessRule) =>
           updatingStatusIds.has(String(budgetAccessRule?.id))
         }
         onStatusChange={handleRuleStatusChange}
-      /> */}
+      />
 
-      {/* <DialogEditBudgetAccesRules
-        key={selectedFrpDocumentsTypeRule?.id ?? 'budget-access-edit-dialog'}
+      <DialogEditExternalDocumentsType
+        key={selectedFrpDocumentsTypeRule?.id ?? 'frp-document-type-edit-dialog'}
         isOpen={isEditDialogOpen}
         title={`Edit ${getRuleLabel(selectedFrpDocumentsTypeRule)}`}
-        budgetAccessRule={selectedFrpDocumentsTypeRule}
+        frpDocumentType={selectedFrpDocumentsTypeRule}
         onClose={closeEditDialog}
         onUpdated={handleRuleUpdated}
-      /> */}
-
-      {/* <DialogDelete
-        isOpen={isDeleteDialogOpen}
-        eyebrow="Budget Access"
-        title={`Delete ${getRuleLabel(selectedFrpDocumentsTypeRule)}`}
-        user={
-          selectedFrpDocumentsTypeRule
-            ? {
-                ...selectedFrpDocumentsTypeRule,
-                name: getRuleLabel(selectedFrpDocumentsTypeRule),
-              }
-            : null
-        }
-        onClose={closeDeleteDialog}
-        onConfirm={handleRuleDelete}
-      /> */}
+      />
     </section>
   )
 }
 
-export default FrpDocumentsTypePage
+export default ExternalDocumentTypes

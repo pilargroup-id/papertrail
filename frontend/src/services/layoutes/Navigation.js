@@ -34,6 +34,11 @@ export const implementedNavigationPaths = [
 
   // DOCUMENT MANAGEMENT
   '/Master/Frp-docs-type',
+  '/Master/External-document-types',
+  '/Master/Payment-methods',
+
+  // SETTINGS
+  '/Master/Rp-destination-departments',
 
   '/Page1',
   '/Page2',
@@ -120,13 +125,39 @@ export const primaryNavigationItems = [
         children: [
           {
             id: 'frp-docs-type',
-            label: 'Frp Docs Type',
-            href: 'Master/Frp-docs-type',
+            label: 'Doc Types (FRP)',
+            href: '/Master/Frp-docs-type',
+            icon: Folder,
+          },
+          {
+            id: 'external-document-types',
+            label: 'Doc Types (Ext)',
+            href: '/Master/External-document-types',
+            icon: Folder,
+          },
+          {
+            id: 'payment-methods',
+            label: 'Payment Methods',
+            href: '/Master/Payment-methods',
             icon: Folder,
           },
         ]
       }
     ],
+  },
+  {
+    id: 'config',
+    label: 'Config',
+    href: '/Master',
+    icon: Settings01,
+    children: [
+      {
+        id: 'rp-destination-departments',
+        label: 'RP Destinations',
+        href: '/Master/Rp-destination-departments',
+        icon: MoreHorizontal,
+      }
+    ]
   },
   {
     id: 'table',
