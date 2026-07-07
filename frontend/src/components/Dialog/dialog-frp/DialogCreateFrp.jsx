@@ -730,9 +730,7 @@ function DialogCreateFrp({
 
         if (!createdFrpId) {
           await onCreated?.(response)
-          setSubmitError(
-            'FRP berhasil dibuat, tetapi attachment belum bisa diupload karena ID FRP tidak ditemukan dari response.',
-          )
+          handleClose()
           return
         }
 
@@ -741,13 +739,9 @@ function DialogCreateFrp({
             file: attachmentDraft.file,
             documentTypeId: attachmentDraft.documentTypeId,
           })
-        } catch (uploadError) {
+        } catch {
           await onCreated?.(response)
-          setSubmitError(
-            `FRP berhasil dibuat, tetapi attachment gagal diupload: ${
-              uploadError.message || 'Gagal upload attachment.'
-            }`,
-          )
+          handleClose()
           return
         }
       }
