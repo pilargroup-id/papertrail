@@ -4,23 +4,9 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
-import TextArea from '../../forms/TextArea.jsx'
-import TextField from '../../forms/TextField.jsx'
-import Dropdown from '../../forms/dropdown/Dropdown.jsx'
-import DropdownCheckBox from '../../forms/dropdown/DropdownCheckBox.jsx'
-import DropdownSearch from '../../forms/dropdown/DropdownSearch.jsx'
-import {
-  Banks,
-  Calendar01,
-  Code,
-  CreditCard,
-  FileText01,
-  Plus,
-  Table01,
-  Trash03,
-  TrendingUp,
-  UserBank,
-} from '../../layoute/TemplateIcons.jsx'
+import TabsInformation from './tabs-create-frp/TabsInformation.jsx'
+import TabsItems from './tabs-create-frp/TabsItems.jsx'
+import TabsVendor from './tabs-create-frp/TabsVendor.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -58,12 +44,11 @@ const createInitialFormValues = () => ({
   notes: '',
 })
 
-const currencyOptions = [
-  { value: 'IDR', label: 'IDR' },
-  { value: 'USD', label: 'USD' },
-  { value: 'SGD', label: 'SGD' },
-  { value: 'EUR', label: 'EUR' },
-]
+const initialRequesterInfo = {
+  company: '',
+  division: '',
+  request_by: '',
+}
 
 const frpTabs = [
   {
@@ -108,12 +93,6 @@ function getFirstValue(source, keys, fallback = '') {
   }
 
   return source[matchedKey]
-}
-
-function toNumber(value) {
-  const normalizedValue = Number(value)
-
-  return Number.isFinite(normalizedValue) ? normalizedValue : 0
 }
 
 function mapVendorOptions(vendors) {
@@ -186,6 +165,34 @@ function mapBudgetOptions(budgets) {
   })
 }
 
+function getAuthUser(response) {
+  return response?.data?.data ?? response?.data ?? response ?? {}
+}
+
+function getPrimaryItem(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return null
+  }
+
+  return items.find((item) => Number(item?.is_primary) === 1) || items[0]
+}
+
+function getUserRequesterInfo(user = {}) {
+  const primaryCompany = getPrimaryItem(user.companies)
+  const primaryDepartment = getPrimaryItem(user.departments)
+  const companyCode = user.company_code ?? primaryCompany?.code
+  const companyName = user.company ?? primaryCompany?.name ?? primaryCompany?.company_name
+  const departmentCode = user.department_code ?? primaryDepartment?.code
+  const departmentName =
+    user.department ?? primaryDepartment?.name ?? primaryDepartment?.department_name
+
+  return {
+    company: [companyCode, companyName].filter(Boolean).join(' - '),
+    division: [departmentCode, departmentName].filter(Boolean).join(' - '),
+    request_by: user.name ?? user.full_name ?? user.username ?? '',
+  }
+}
+
 function DialogCreateFrp({
   isOpen = false,
   eyebrow = 'Form request payment',
@@ -204,6 +211,7 @@ function DialogCreateFrp({
   const [paymentMethodOptions, setPaymentMethodOptions] = useState([])
   const [frpDocumentTypeOptions, setFrpDocumentTypeOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
+  const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
 
@@ -219,6 +227,7 @@ function DialogCreateFrp({
     setPaymentMethodOptions([])
     setFrpDocumentTypeOptions([])
     setBudgetOptions([])
+    setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
   }
@@ -329,6 +338,7 @@ function DialogCreateFrp({
 
       try {
         const [
+          authResponse,
           vendorsResponse,
           vendorBanksResponse,
           externalDocumentTypesResponse,
@@ -336,6 +346,9 @@ function DialogCreateFrp({
           frpDocumentTypesResponse,
           budgetsResponse,
         ] = await Promise.all([
+          api.auth.me({
+            signal: controller.signal,
+          }),
           api.vendors.list(
             {
               page: 1,
@@ -397,7 +410,9 @@ function DialogCreateFrp({
             },
           ),
         ])
+        const authUser = getAuthUser(authResponse)
 
+        setRequesterInfo(getUserRequesterInfo(authUser))
         setVendorOptions(mapVendorOptions(getRowsFromResponse(vendorsResponse)))
         setVendorBankOptions(mapVendorBankOptions(getRowsFromResponse(vendorBanksResponse)))
         setExternalDocumentTypeOptions(
@@ -421,6 +436,7 @@ function DialogCreateFrp({
         setPaymentMethodOptions([])
         setFrpDocumentTypeOptions([])
         setBudgetOptions([])
+        setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat pilihan FRP.')
       } finally {
         if (!controller.signal.aborted) {
@@ -609,325 +625,50 @@ function DialogCreateFrp({
     value: String(option.value),
   }))
 
-  const renderInformasiPanel = () => (
-    <div className="register-user-popup__grid register-user-popup__grid--frp register-user-popup__grid--frp-three">
-      <div className="register-user-popup__field">
-        <TextField
-          label="FRP Date"
-          type="date"
-          value={formValues.frp_date}
-          leftIcon={Calendar01}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.frp_date}
-          onChange={(event) => updateValue('frp_date', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <Dropdown
-          label="Currency"
-          value={formValues.currency_code}
-          options={currencyOptions}
-          placeholder="Pilih currency"
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.currency_code}
-          onChange={(value) => updateValue('currency_code', value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Exchange Rate"
-          value={formValues.exchange_rate}
-          placeholder="Input exchange rate"
-          leftIcon={TrendingUp}
-          type="number"
-          min="0"
-          step="0.0001"
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.exchange_rate}
-          onChange={(event) => updateValue('exchange_rate', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Internal PO Number"
-          value={formValues.internal_po_number}
-          placeholder="PO-TEST-001"
-          leftIcon={Code}
-          disabled={isFormDisabled}
-          error={fieldErrors.internal_po_number}
-          onChange={(event) => updateValue('internal_po_number', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field register-user-popup__field--full">
-        <TextArea
-          label="Description"
-          value={formValues.description}
-          placeholder="Pembayaran invoice vendor"
-          rows={4}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.description}
-          onChange={(event) => updateValue('description', event.target.value)}
-        />
-      </div>
-    </div>
-  )
-
-  const renderVendorPanel = () => (
-    <div className="register-user-popup__grid register-user-popup__grid--frp register-user-popup__grid--frp-three">
-      <div className="register-user-popup__field">
-        <DropdownSearch
-          label="Vendor"
-          value={formValues.vendor_id}
-          options={vendorOptions}
-          placeholder={isOptionsLoading ? 'Memuat vendor...' : 'Pilih vendor'}
-          searchPlaceholder="Cari vendor..."
-          emptyMessage="Vendor aktif tidak ditemukan."
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.vendor_id}
-          onChange={(value) => {
-            updateValue('vendor_id', value)
-            updateValue('vendor_bank_account_id', '')
-          }}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <DropdownSearch
-          label="Vendor Bank Account"
-          value={formValues.vendor_bank_account_id}
-          options={filteredVendorBankOptions}
-          placeholder={isOptionsLoading ? 'Memuat rekening...' : 'Pilih rekening vendor'}
-          searchPlaceholder="Cari rekening vendor..."
-          emptyMessage="Rekening vendor aktif tidak ditemukan."
-          disabled={isFormDisabled}
-          error={fieldErrors.vendor_bank_account_id}
-          onChange={handleVendorBankChange}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <DropdownSearch
-          label="External Document Type"
-          value={formValues.external_document_type_id}
-          options={externalDocumentTypeOptions}
-          placeholder={isOptionsLoading ? 'Memuat document type...' : 'Pilih document type'}
-          searchPlaceholder="Cari document type..."
-          emptyMessage="External document type aktif tidak ditemukan."
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.external_document_type_id}
-          onChange={(value) => updateValue('external_document_type_id', value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="External Document Number"
-          value={formValues.external_document_number}
-          placeholder="INV-TEST-001"
-          leftIcon={FileText01}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.external_document_number}
-          onChange={(event) => updateValue('external_document_number', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <DropdownSearch
-          label="Payment Method"
-          value={formValues.payment_method_id}
-          options={paymentMethodOptions}
-          placeholder={isOptionsLoading ? 'Memuat payment method...' : 'Pilih payment method'}
-          searchPlaceholder="Cari payment method..."
-          emptyMessage="Payment method aktif tidak ditemukan."
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.payment_method_id}
-          onChange={(value) => updateValue('payment_method_id', value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Payment Date"
-          type="date"
-          value={formValues.payment_date}
-          leftIcon={Calendar01}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.payment_date}
-          onChange={(event) => updateValue('payment_date', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Destination Bank"
-          value={formValues.destination_bank_name}
-          placeholder="BCA"
-          leftIcon={Banks}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.destination_bank_name}
-          onChange={(event) => updateValue('destination_bank_name', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Destination Account"
-          value={formValues.destination_bank_account}
-          placeholder="1234567890"
-          leftIcon={CreditCard}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.destination_bank_account}
-          onChange={(event) => updateValue('destination_bank_account', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Destination Account Name"
-          value={formValues.destination_bank_account_name}
-          placeholder="PT Vendor Testing"
-          leftIcon={UserBank}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.destination_bank_account_name}
-          onChange={(event) => updateValue('destination_bank_account_name', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <DropdownCheckBox
-          label="Required Documents"
-          options={frpDocumentTypeDropdownOptions}
-          value={formValues.document_type_ids.map(String)}
-          placeholder={isOptionsLoading ? 'Memuat document...' : 'Pilih required documents'}
-          searchPlaceholder="Cari required documents..."
-          emptyMessage="FRP document type aktif tidak ditemukan."
-          disabled={isFormDisabled}
-          error={fieldErrors.document_type_ids}
-          onChange={(value) => updateValue('document_type_ids', value.map(String))}
-        />
-      </div>
-    </div>
-  )
-
-  const renderItemsPanel = () => (
-    <div className="frp-dialog__items">
-      {formValues.items.map((item, index) => {
-        const quantity = toNumber(item.quantity)
-        const unitPrice = toNumber(item.unit_price)
-        const amount = quantity * unitPrice
-
-        return (
-          <div className="frp-dialog__item" key={`frp-item-${index}`}>
-            <div className="frp-dialog__item-header">
-              <strong>Item {index + 1}</strong>
-              <button
-                type="button"
-                className="frp-dialog__icon-button"
-                aria-label={`Hapus item ${index + 1}`}
-                disabled={isFormDisabled || formValues.items.length === 1}
-                onClick={() => removeItem(index)}
-              >
-                <Trash03 size={16} />
-              </button>
-            </div>
-
-            <div className="register-user-popup__grid register-user-popup__grid--frp">
-              <div className="register-user-popup__field register-user-popup__field--full">
-                <DropdownSearch
-                  label="Budget"
-                  value={item.budget_id}
-                  options={budgetOptions}
-                  placeholder={isOptionsLoading ? 'Memuat budget...' : 'Pilih budget'}
-                  searchPlaceholder="Cari budget..."
-                  emptyMessage="Budget aktif tidak ditemukan."
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.budget_id`]}
-                  onChange={(value) => updateItemValue(index, 'budget_id', value)}
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Quantity"
-                  value={item.quantity}
-                  placeholder="1"
-                  leftIcon={Table01}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.quantity`]}
-                  onChange={(event) => updateItemValue(index, 'quantity', event.target.value)}
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Unit Price"
-                  value={item.unit_price}
-                  placeholder="100000"
-                  leftIcon={TrendingUp}
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.unit_price`]}
-                  onChange={(event) => updateItemValue(index, 'unit_price', event.target.value)}
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Amount"
-                  value={Number.isFinite(amount) ? amount : 0}
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-              <div className="register-user-popup__field register-user-popup__field--full">
-                <TextArea
-                  label="Memo"
-                  value={item.memo}
-                  placeholder="Pembayaran invoice vendor"
-                  rows={3}
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.memo`]}
-                  onChange={(event) => updateItemValue(index, 'memo', event.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        )
-      })}
-
-      <button
-        type="button"
-        className="dashboard-popup__button dashboard-popup__button--secondary frp-dialog__add-item"
-        disabled={isFormDisabled}
-        onClick={addItem}
-      >
-        <Plus size={16} />
-        Add Item
-      </button>
-      {fieldErrors.items ? <p className="form-control__message">{fieldErrors.items}</p> : null}
-    </div>
-  )
-
   const renderActivePanel = () => {
     if (activeTab === 'information') {
-      return renderInformasiPanel()
+      return (
+        <TabsInformation
+          requesterInfo={requesterInfo}
+          isOptionsLoading={isOptionsLoading}
+          isFormDisabled={isFormDisabled}
+          formValues={formValues}
+          fieldErrors={fieldErrors}
+          updateValue={updateValue}
+        />
+      )
     }
 
     if (activeTab === 'vendor') {
-      return renderVendorPanel()
+      return (
+        <TabsVendor
+          formValues={formValues}
+          fieldErrors={fieldErrors}
+          isOptionsLoading={isOptionsLoading}
+          isFormDisabled={isFormDisabled}
+          vendorOptions={vendorOptions}
+          filteredVendorBankOptions={filteredVendorBankOptions}
+          externalDocumentTypeOptions={externalDocumentTypeOptions}
+          paymentMethodOptions={paymentMethodOptions}
+          frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+          updateValue={updateValue}
+          handleVendorBankChange={handleVendorBankChange}
+        />
+      )
     }
 
-    return renderItemsPanel()
+    return (
+      <TabsItems
+        formValues={formValues}
+        fieldErrors={fieldErrors}
+        isOptionsLoading={isOptionsLoading}
+        isFormDisabled={isFormDisabled}
+        budgetOptions={budgetOptions}
+        updateItemValue={updateItemValue}
+        removeItem={removeItem}
+        addItem={addItem}
+      />
+    )
   }
 
   const dialogNode = (

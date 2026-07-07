@@ -4615,6 +4615,16 @@ select {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-information {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-information
+  .register-user-popup__field--frp-division-wide {
+  grid-column: auto;
+}
+
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--permission-modules {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -5785,6 +5795,16 @@ select {
 
   .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-three {
     grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-information {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-information
+    .register-user-popup__field--frp-division-wide {
+    grid-column: auto;
   }
 
   .entity-form-popup .register-user-popup__grid.register-user-popup__grid--permission-modules {
