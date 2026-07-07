@@ -1,26 +1,19 @@
 import {
   LogOutLeft01,
-  Table01,
-  Chart01,
   Folder,
-  TrendingUp,
-  MoreHorizontal,
   Users01,
   Settings01,
   Banks,
-  CreditCard,
   UserBank,
   Budgets,
   BudgetType,
   BudgetAccess,
   Permission,
-  Config,
 } from '../../components/layoute/TemplateIcons.jsx'
 
 export const defaultNavigationPath = '/forms'
 
 export const implementedNavigationPaths = [
-  '/icons',
   '/forms',
   '/Master',
 
@@ -46,24 +39,10 @@ export const implementedNavigationPaths = [
 
   // PERMISSION
   '/Master/permission-modules',
-  
 
-  '/Page1',
-  '/Page2',
-  '/Page3',
-  '/Table',
-  '/TableActions',
-  '/users',
-  '/Chart',
 ]
 
 export const primaryNavigationItems = [
-  {
-    id: 'icons',
-    label: 'Icons',
-    href: '/icons',
-    icon: MoreHorizontal,
-  },
   {
     id: 'forms',
     label: 'Forms',
@@ -177,7 +156,7 @@ export const primaryNavigationItems = [
       }
     ]
   },
-   {
+  {
     id: 'permission',
     label: 'Permission',
     href: '/Master',
@@ -190,38 +169,6 @@ export const primaryNavigationItems = [
       }
     ]
   },
-  {
-    id: 'table',
-    label: 'Table',
-    icon: Table01,
-    icon: Folder,
-    children: [
-      {
-        id: 'page1',
-        label: 'Data Table',
-        href: '/Page1',
-        icon: Table01,
-      },
-      {
-        id: 'page2',
-        label: 'Data Table Actions',
-        href: '/Page2',
-        icon: Table01,
-      },
-      {
-        id: 'page3',
-        label: 'Data Table Accordion',
-        href: '/Page3',
-        icon: Table01,
-      },
-    ],
-  },
-  {
-    id: 'chart',
-    label: 'Chart',
-    href: '/Chart',
-    icon: Chart01,
-  }
 ]
 
 export const secondaryNavigationItems = [

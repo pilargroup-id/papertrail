@@ -286,17 +286,17 @@ function Sidebar({
       </nav>
 
       <div className="sidebar-bottom">
-        {secondaryItems.map((item) => (
-          <SidebarNavItem
-            key={getItemKey(item)}
-            item={item}
-            selectedPath={activePath}
-            collapsed={collapsed}
-            onSelect={handleSelect}
-            expandedGroups={visibleExpandedGroups}
-            onToggleGroup={handleToggleGroup}
-          />
-        ))}
+          {secondaryItems.map((item) => (
+            <SidebarNavItem
+              key={getItemKey(item)}
+              item={item}
+              selectedPath={activePath}
+              collapsed={collapsed}
+              onSelect={handleSelect}
+              expandedGroups={visibleExpandedGroups}
+              onToggleGroup={handleToggleGroup}
+            />
+          ))}
       </div>
 
       <div className="sidebar-copyright" aria-label="Copyright">
