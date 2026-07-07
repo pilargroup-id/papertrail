@@ -4617,7 +4617,7 @@ select {
 
 .entity-form-popup
   .register-user-popup__grid.register-user-popup__grid--frp-budget-row {
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.65fr) minmax(0, 0.65fr);
 }
 
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-vendor {

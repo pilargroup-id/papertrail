@@ -105,6 +105,9 @@ function TabsItems({
                   readOnly
                 />
               </div>
+            </div>
+
+            <div className="register-user-popup__grid register-user-popup__grid--frp-three">
               <div className="register-user-popup__field">
                 <TextField
                   label="Quantity"
