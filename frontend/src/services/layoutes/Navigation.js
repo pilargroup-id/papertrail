@@ -1,6 +1,5 @@
 import {
   LogOutLeft01,
-  Folder,
   Users01,
   Settings01,
   Banks,
@@ -55,7 +54,7 @@ export const primaryNavigationItems = [
     id: 'frp',
     label: 'Frp',
     href: '/frp',
-    icon: '/FileText01'
+    icon: FileText01,
   },
   {
     id: 'master',
@@ -116,7 +115,7 @@ export const primaryNavigationItems = [
     ],
   },
     {
-    id: 'config',
+    id: 'config-frp',
     label: 'Config Frp',
     href: '/Master',
     icon: Settings01,
@@ -140,7 +139,7 @@ export const primaryNavigationItems = [
     ]
   },
   {
-    id: 'config',
+    id: 'config-rp',
     label: 'Config Rp',
     href: '/Master',
     icon: Settings01,

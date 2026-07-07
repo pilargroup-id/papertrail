@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { Check, ChevronDown } from '../../layoute/TemplateIcons.jsx'
+import { Check, ChevronDown, SearchMd } from '../../layoute/TemplateIcons.jsx'
 
 function normalizeOption(option) {
   if (typeof option === 'string' || typeof option === 'number') {
@@ -22,6 +22,8 @@ function DropdownCheckBox({
   options = [],
   value = [],
   placeholder = 'Pilih beberapa data',
+  searchPlaceholder = 'Cari data...',
+  emptyMessage = 'Data tidak ditemukan.',
   disabled = false,
   required = false,
   className = '',
@@ -32,6 +34,7 @@ function DropdownCheckBox({
   const buttonId = id ?? `dropdown-checkbox-${generatedId}`
   const menuId = `${buttonId}-menu`
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const rootRef = useRef(null)
   const menuRef = useRef(null)
   const triggerRef = useRef(null)
@@ -43,6 +46,20 @@ function DropdownCheckBox({
   const messageId = message ? `${buttonId}-message` : undefined
   const hasError = Boolean(error)
 
+  const filteredOptions = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return normalizedOptions
+    }
+
+    return normalizedOptions.filter((option) =>
+      [option.label, option.description]
+        .filter(Boolean)
+        .some((text) => String(text).toLowerCase().includes(normalizedQuery)),
+    )
+  }, [normalizedOptions, query])
+
   useEffect(() => {
     const handlePointerDown = (event) => {
       if (
@@ -50,6 +67,7 @@ function DropdownCheckBox({
         !menuRef.current?.contains(event.target)
       ) {
         setOpen(false)
+        setQuery('')
       }
     }
 
@@ -162,7 +180,13 @@ function DropdownCheckBox({
         aria-invalid={hasError || undefined}
         aria-describedby={messageId}
         disabled={disabled}
-        onClick={() => setOpen((currentValue) => !currentValue)}
+        onClick={() => {
+          if (open) {
+            setQuery('')
+          }
+
+          setOpen((currentValue) => !currentValue)
+        }}
       >
         <span className={selectedOptions.length > 0 ? 'form-dropdown__value' : 'form-dropdown__placeholder'}>
           {selectedOptions.length > 0
@@ -183,41 +207,54 @@ function DropdownCheckBox({
               aria-multiselectable="true"
               style={menuStyle}
             >
+              <div className="form-dropdown__search">
+                <SearchMd className="form-dropdown__search-icon" size={17} />
+                <input
+                  className="form-dropdown__search-input"
+                  type="search"
+                  value={query}
+                  placeholder={searchPlaceholder}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </div>
+
               {selectedOptions.length > 0 ? (
                 <button className="form-dropdown__clear-action" type="button" onClick={() => updateSelectedValues([])}>
                   Clear selected
                 </button>
               ) : null}
 
-              {normalizedOptions.length > 0 ? (
-                normalizedOptions.map((option) => {
-                  const selected = selectedValues.includes(option.value)
+              <div className="form-dropdown__items">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((option) => {
+                    const selected = selectedValues.includes(option.value)
 
-                  return (
-                    <button
-                      className={`form-dropdown__item form-dropdown__item--checkbox${
-                        selected ? ' form-dropdown__item--selected' : ''
-                      }`}
-                      type="button"
-                      role="option"
-                      aria-selected={selected}
-                      disabled={option.disabled}
-                      key={option.value}
-                      onClick={() => toggleOption(option)}
-                    >
-                      <span className="form-dropdown__checkbox-mark" aria-hidden="true">
-                        {selected ? <Check size={14} /> : null}
-                      </span>
-                      <span className="form-dropdown__item-copy">
-                        <span>{option.label}</span>
-                        {option.description ? <small>{option.description}</small> : null}
-                      </span>
-                    </button>
-                  )
-                })
-              ) : (
-                <div className="form-dropdown__empty">Tidak ada data.</div>
-              )}
+                    return (
+                      <button
+                        className={`form-dropdown__item form-dropdown__item--checkbox${
+                          selected ? ' form-dropdown__item--selected' : ''
+                        }`}
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        disabled={option.disabled}
+                        key={option.value}
+                        onClick={() => toggleOption(option)}
+                      >
+                        <span className="form-dropdown__checkbox-mark" aria-hidden="true">
+                          {selected ? <Check size={14} /> : null}
+                        </span>
+                        <span className="form-dropdown__item-copy">
+                          <span>{option.label}</span>
+                          {option.description ? <small>{option.description}</small> : null}
+                        </span>
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="form-dropdown__empty">{emptyMessage}</div>
+                )}
+              </div>
             </div>,
             document.body,
           )

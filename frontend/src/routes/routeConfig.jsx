@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
 
 // =========MASTER PAGES=========
+// frp
+import FrpPage from '../pages/frp/FrpPage.jsx';
 
 // Vendor Management
 import VendorPage from '../pages/master/vendors/vendor/VendorPage.jsx';
@@ -36,6 +38,8 @@ export default function RouteConfig() {
         <Route index element={<FormsPage />} />
         <Route path="forms" element={<FormsPage />} />
         <Route path="Forms" element={<FormsPage />} />
+
+        <Route path="frp" element={<FrpPage />} />
 
         {/* master pages */}
 

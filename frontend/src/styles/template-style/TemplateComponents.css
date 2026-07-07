@@ -4575,10 +4575,24 @@ select {
   width: min(100%, 920px);
 }
 
+.entity-form-popup.entity-form-popup--frp {
+  width: min(100%, 1180px);
+}
+
 .entity-form-popup.entity-form-popup--budget .dashboard-popup__body {
   max-height: min(76vh, 680px);
   overflow-y: auto;
   scrollbar-gutter: stable;
+}
+
+.entity-form-popup.entity-form-popup--frp .dashboard-popup__body {
+  max-height: min(78vh, 720px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.entity-form-popup.entity-form-popup--frp .dashboard-popup__body::-webkit-scrollbar {
+  display: none;
 }
 
 .entity-form-popup .register-user-popup__layout {
@@ -4591,6 +4605,14 @@ select {
 
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--vendor-banks {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--permission-modules {
@@ -4614,6 +4636,225 @@ select {
 
 .register-user-popup__form {
   display: grid;
+}
+
+.frp-dialog__tabs-shell {
+  padding: 0.35rem 0.35rem 0;
+  border: 1px solid rgba(26, 42, 87, 0.09);
+  border-radius: 20px 20px 0 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(242, 248, 247, 0.94));
+  margin-bottom: 1rem;
+}
+
+.frp-dialog__tabs {
+  min-height: 52px;
+}
+
+.frp-dialog__tabs .MuiTabs-list {
+  gap: 0.5rem;
+}
+
+.frp-dialog__mui-tab {
+  min-height: 52px;
+  border-radius: 14px 14px 0 0;
+  color: #607089;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.frp-dialog__mui-tab.Mui-selected {
+  color: #18786e;
+  background: rgba(24, 120, 110, 0.08);
+}
+
+.frp-dialog__mui-tab.Mui-focusVisible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(24, 120, 110, 0.28);
+}
+
+.frp-dialog__mui-tab:not(.Mui-selected):hover {
+  background: rgba(24, 120, 110, 0.04);
+}
+
+.frp-dialog__panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 1px solid rgba(26, 42, 87, 0.09);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(24, 120, 110, 0.08), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 252, 0.98));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.frp-dialog__panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.frp-dialog__panel-eyebrow {
+  margin: 0;
+  color: #18786e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.frp-dialog__panel-title {
+  margin: 0.3rem 0 0;
+  color: var(--primary-blue);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.frp-dialog__placeholder {
+  display: grid;
+  gap: 1rem;
+}
+
+.frp-dialog__placeholder-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(24, 120, 110, 0.12);
+  border-radius: 18px;
+  background: rgba(24, 120, 110, 0.05);
+}
+
+.frp-dialog__placeholder-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #18786e;
+  flex-shrink: 0;
+}
+
+.frp-dialog__placeholder-copy {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.frp-dialog__placeholder-copy h3,
+.frp-dialog__placeholder-copy p,
+.frp-dialog__placeholder-card strong,
+.frp-dialog__placeholder-card p {
+  margin: 0;
+}
+
+.frp-dialog__placeholder-copy h3,
+.frp-dialog__placeholder-card strong {
+  color: var(--primary-blue);
+}
+
+.frp-dialog__placeholder-copy p,
+.frp-dialog__placeholder-card p {
+  color: #607089;
+  line-height: 1.55;
+}
+
+.frp-dialog__placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.frp-dialog__placeholder-card {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px dashed rgba(26, 42, 87, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.frp-dialog__documents,
+.frp-dialog__items {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.frp-dialog__document-helper {
+  margin: 0.3rem 0 0;
+  color: #607089;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.frp-dialog__document-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.frp-dialog__item {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(26, 42, 87, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.frp-dialog__item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.frp-dialog__item-header strong {
+  color: var(--primary-blue);
+  font-size: 0.95rem;
+}
+
+.frp-dialog__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(217, 45, 32, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #b42318;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.frp-dialog__icon-button:hover:not(:disabled) {
+  border-color: rgba(217, 45, 32, 0.4);
+  background: rgba(254, 243, 242, 0.92);
+}
+
+.frp-dialog__icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.frp-dialog__add-item {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .register-user-popup__layout {
@@ -5555,11 +5796,36 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-three {
+    grid-template-columns: 1fr;
+  }
+
   .entity-form-popup .register-user-popup__grid.register-user-popup__grid--permission-modules {
     grid-template-columns: 1fr;
   }
 
   .entity-form-popup .register-user-popup__grid.register-user-popup__grid--rp-payment-categories {
+    grid-template-columns: 1fr;
+  }
+
+  .frp-dialog__tabs-shell {
+    padding: 0.25rem 0.25rem 0;
+  }
+
+  .frp-dialog__tabs .MuiTabs-list,
+  .frp-dialog__placeholder-grid {
+    gap: 0.4rem;
+  }
+
+  .frp-dialog__placeholder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .frp-dialog__document-list {
     grid-template-columns: 1fr;
   }
 }

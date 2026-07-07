@@ -129,6 +129,31 @@ const resolveToken = (tokenFromRequest) => {
   return normalizeAuthToken(authToken) || (shouldUseStoredAuthToken() ? getStoredAuthToken() : null);
 };
 
+const uploadFileToSignedUrl = async (
+  uploadUrl,
+  file,
+  {
+    method = 'PUT',
+    headers = {},
+    signal,
+  } = {},
+) => {
+  const response = await fetch(uploadUrl, {
+    method,
+    headers,
+    body: file,
+    signal,
+  });
+
+  if (!response.ok) {
+    throw new ApiError('Failed to upload file to storage', {
+      status: response.status,
+    });
+  }
+
+  return true;
+};
+
 const createResource = (path) => ({
   list: (params, options) => api.get(path, { ...options, params }),
   detail: (id, params, options) =>
@@ -146,6 +171,115 @@ const createReadOnlyResource = (path, baseUrlGetter = getApiBaseUrl) => ({
       params,
       baseUrl: baseUrlGetter(),
     }),
+});
+
+const normalizePayloadItems = (payload, key) => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.[key])) {
+    return payload[key];
+  }
+
+  return payload === undefined ? [] : [payload];
+};
+
+const createFrpResource = (path) => ({
+  ...createResource(path),
+  approve: (id, data = {}, options) => api.post(`${path}/${id}/approve`, data, options),
+  reject: (id, data = {}, options) => api.post(`${path}/${id}/reject`, data, options),
+  revert: (id, data = {}, options) => api.post(`${path}/${id}/revert`, data, options),
+  attachments: {
+    signUpload: (id, files, options) =>
+      api.post(
+        `${path}/${id}/attachments/sign-upload`,
+        {
+          files: normalizePayloadItems(files, 'files'),
+        },
+        options,
+      ),
+    confirm: (id, attachments, options) =>
+      api.post(
+        `${path}/${id}/attachments/confirm`,
+        {
+          attachments: normalizePayloadItems(attachments, 'attachments'),
+        },
+        options,
+      ),
+    cancel: (id, attachmentId, options) =>
+      api.post(`${path}/${id}/attachments/${attachmentId}/cancel`, undefined, options),
+    downloadUrl: (id, attachmentId, options) =>
+      api.get(`${path}/${id}/attachments/${attachmentId}/download-url`, options),
+    uploadToStorage: uploadFileToSignedUrl,
+    upload: async (
+      id,
+      {
+        file,
+        documentTypeId,
+        checksum = null,
+        signal,
+        signOptions,
+        uploadOptions,
+        confirmOptions,
+      },
+    ) => {
+      if (!file) {
+        throw new ApiError('File is required for FRP attachment upload');
+      }
+
+      if (documentTypeId === undefined || documentTypeId === null || documentTypeId === '') {
+        throw new ApiError('documentTypeId is required for FRP attachment upload');
+      }
+
+      const signResponse = await api.frp.attachments.signUpload(
+        id,
+        {
+          document_type_id: documentTypeId,
+          original_file_name: file?.name,
+          mime_type: file?.type,
+          file_size: file?.size,
+        },
+        {
+          ...signOptions,
+          signal: signOptions?.signal ?? signal,
+        },
+      );
+
+      const uploadItem = signResponse?.data?.items?.[0];
+
+      if (!uploadItem?.upload_url) {
+        throw new ApiError('Failed to generate upload URL', {
+          data: signResponse,
+        });
+      }
+
+      await uploadFileToSignedUrl(uploadItem.upload_url, file, {
+        method: uploadItem.method || uploadOptions?.method || 'PUT',
+        headers: uploadItem.headers || uploadOptions?.headers || {},
+        signal: uploadOptions?.signal ?? signal,
+      });
+
+      const confirmResponse = await api.frp.attachments.confirm(
+        id,
+        {
+          attachment_id: uploadItem.attachment_id,
+          checksum,
+        },
+        {
+          ...confirmOptions,
+          signal: confirmOptions?.signal ?? signal,
+        },
+      );
+
+      return {
+        signResponse,
+        uploadItem,
+        confirmResponse,
+        confirmedAttachment: confirmResponse?.data?.items?.[0] ?? null,
+      };
+    },
+  },
 });
 
 const request = async (
@@ -266,6 +400,11 @@ const api = {
   auth: {
     me: (options) => api.get('/auth/me', options),
   },
+
+  // =====================
+  // frp
+  // =====================
+  frp: createFrpResource('/frp'),
 
   // =====================
   // Master - Vendor Management
