@@ -1,4 +1,5 @@
 const DEFAULT_API_BASE_URL = '/api';
+const PILARGROUP_API_BASE_URL_ENV_KEY = 'VITE_PILARGROUP_API_BASE_URL';
 const AUTH_TOKEN_STORAGE_KEYS = [
   'papertrail.auth.token',
   'token',
@@ -9,6 +10,10 @@ const AUTH_TOKEN_STORAGE_KEYS = [
 const normalizeBaseUrl = (url) => url.replace(/\/+$/, '');
 const shouldUseStoredAuthToken = () =>
   import.meta.env.VITE_USE_STORED_AUTH_TOKEN !== 'false';
+const getApiBaseUrl = () =>
+  normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL);
+const getPilarGroupApiBaseUrl = () =>
+  normalizeBaseUrl(import.meta.env[PILARGROUP_API_BASE_URL_ENV_KEY] || getApiBaseUrl());
 
 const normalizeAuthToken = (value) => {
   if (!value) {
@@ -134,6 +139,15 @@ const createResource = (path) => ({
   remove: (id, options) => api.delete(`${path}/${id}`, options),
 });
 
+const createReadOnlyResource = (path, baseUrlGetter = getApiBaseUrl) => ({
+  list: (params, options) =>
+    api.get(path, {
+      ...options,
+      params,
+      baseUrl: baseUrlGetter(),
+    }),
+});
+
 const request = async (
   path,
   {
@@ -144,13 +158,12 @@ const request = async (
     token,
     signal,
     responseType = 'json',
+    baseUrl,
   } = {},
 ) => {
-  const baseUrl = normalizeBaseUrl(
-    import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
-  );
+  const resolvedBaseUrl = normalizeBaseUrl(baseUrl || getApiBaseUrl());
 
-  const url = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}${buildQueryString(params)}`;
+  const url = `${resolvedBaseUrl}${path.startsWith('/') ? path : `/${path}`}${buildQueryString(params)}`;
   const resolvedToken = resolveToken(token);
 
   const requestHeaders = {
@@ -206,9 +219,11 @@ const request = async (
 
 const api = {
   get baseUrl() {
-    return normalizeBaseUrl(
-      import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
-    );
+    return getApiBaseUrl();
+  },
+
+  get pilarGroupBaseUrl() {
+    return getPilarGroupApiBaseUrl();
   },
 
   setToken(token) {
@@ -297,12 +312,23 @@ const api = {
   // =====================
   businessUnits: {
     list: (params, options) =>
-      api.get('/directory/business-units', { ...options, params }),
+      api.get('/directory/business-units', {
+        ...options,
+        params,
+        baseUrl: getPilarGroupApiBaseUrl(),
+      }),
     departments: (businessUnitId, params, options) =>
       api.get(`/directory/business-units/${businessUnitId}/departments`, {
         ...options,
         params,
+        baseUrl: getPilarGroupApiBaseUrl(),
       }),
+  },
+
+  directory: {
+    departments: createReadOnlyResource('/internal/directory/departments'),
+    companies: createReadOnlyResource('/internal/directory/companies'),
+    users: createReadOnlyResource('/internal/directory/users'),
   },
 };
 

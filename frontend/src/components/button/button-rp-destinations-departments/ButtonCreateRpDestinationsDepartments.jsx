@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import DialogCreateRpPaymentCategories from '../../Dialog/dialog-rp-payment-categories/DialogCreateRpPaymentCategories'
+import DialogCreateRpDestionationsDepartments from '../../Dialog/dialog-rp-destinations-departments/DialogCreateRpDestinationsDepartments.jsx'
 
 const buttonClassNames = {
   create: 'dashboard-popup__button dashboard-popup__button--primary',
@@ -58,7 +58,7 @@ function ButtonCreateRpDestinationsDepartments({
         {children}
       </button>
 
-      <DialogCreateRpPaymentCategories
+      <DialogCreateRpDestionationsDepartments
         {...dialogProps}
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}

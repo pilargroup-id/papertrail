@@ -269,6 +269,11 @@ select {
   scrollbar-gutter: stable;
 }
 
+.sidebar-nav > *,
+.sidebar-bottom > * {
+  flex-shrink: 0;
+}
+
 .sidebar-bottom {
   gap: 4px;
   flex-shrink: 0;

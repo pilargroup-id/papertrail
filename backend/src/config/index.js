@@ -26,6 +26,7 @@ const config = {
 
   pilargroup: {
     url: (process.env.PILARGROUP_URL || 'https://pilargroup.id').replace(/\/+$/, ''),
+    internalSyncSecret: process.env.INTERNAL_SYNC_SECRET,
   },
 
   cors: {
@@ -49,6 +50,11 @@ const config = {
 
 if (!config.jwt.secret) {
   console.error('[config] JWT_SECRET is not set. Exiting.');
+  process.exit(1);
+}
+
+if (!config.pilargroup.internalSyncSecret) {
+  console.error('[config] INTERNAL_SYNC_SECRET is not set. Exiting.');
   process.exit(1);
 }
 

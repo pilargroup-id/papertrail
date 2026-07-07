@@ -9,6 +9,7 @@ import {
   BudgetType,
   BudgetAccess,
   Permission,
+  FileText01,
 } from '../../components/layoute/TemplateIcons.jsx'
 
 export const defaultNavigationPath = '/forms'
@@ -16,6 +17,7 @@ export const defaultNavigationPath = '/forms'
 export const implementedNavigationPaths = [
   '/forms',
   '/Master',
+  '/frp',
 
   // VENDOR MANAGEMENT
   '/Master/Vendor',
@@ -48,6 +50,12 @@ export const primaryNavigationItems = [
     label: 'Forms',
     href: '/forms',
     icon: Users01,
+  },
+  {
+    id: 'frp',
+    label: 'Frp',
+    href: '/frp',
+    icon: '/FileText01'
   },
   {
     id: 'master',
@@ -104,37 +112,36 @@ export const primaryNavigationItems = [
             icon: BudgetAccess,
           }
         ]
-      },
-      {
-        id: 'document',
-        label: 'Document',
-        icon: Folder,
-        children: [
-          {
-            id: 'frp-docs-type',
-            label: 'Doc Types (FRP)',
-            href: '/Master/Frp-docs-type',
-            icon: Folder,
-          },
-          {
-            id: 'external-document-types',
-            label: 'Doc Types (Ext)',
-            href: '/Master/External-document-types',
-            icon: Folder,
-          },
-          {
-            id: 'payment-methods',
-            label: 'Payment Methods',
-            href: '/Master/Payment-methods',
-            icon: Folder,
-          },
-        ]
       }
     ],
   },
+    {
+    id: 'config',
+    label: 'Config Frp',
+    href: '/Master',
+    icon: Settings01,
+    children: [
+      {
+        id: 'frp-docs-type',
+        label: 'Doc Types (FRP)',
+        href: '/Master/Frp-docs-type',
+      },
+      {
+        id: 'external-document-types',
+        label: 'Doc Types (Ext)',
+        href: '/Master/External-document-types',
+      },
+      {
+        id: 'payment-methods',
+        label: 'Payment Methods',
+        href: '/Master/Payment-methods',
+ 
+      },
+    ]
+  },
   {
     id: 'config',
-    label: 'Config',
+    label: 'Config Rp',
     href: '/Master',
     icon: Settings01,
     children: [

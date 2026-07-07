@@ -3,8 +3,24 @@ export const initialRpDestinationDepartmentFormValues = {
   is_short_flow_allowed: 0,
 }
 
-export function getAuthUser(response) {
-  return response?.data?.data ?? response?.data ?? response ?? {}
+export function getRowsFromResponse(response) {
+  if (Array.isArray(response)) {
+    return response
+  }
+
+  if (Array.isArray(response?.data)) {
+    return response.data
+  }
+
+  if (Array.isArray(response?.data?.data)) {
+    return response.data.data
+  }
+
+  if (Array.isArray(response?.rows)) {
+    return response.rows
+  }
+
+  return []
 }
 
 export function getFirstValue(source, keys, fallback = '') {
