@@ -69,17 +69,14 @@ const frpTabs = [
   {
     id: 'information',
     label: 'Information',
-    description: 'Data utama request payment',
   },
   {
     id: 'vendor',
     label: 'Vendor',
-    description: 'Vendor, rekening tujuan, dan dokumen',
   },
   {
     id: 'items',
     label: 'Items',
-    description: 'Rincian budget dan nilai pembayaran',
   },
 ]
 
@@ -602,7 +599,6 @@ function DialogCreateFrp({
   }
 
   const isFormDisabled = isSubmitting || isOptionsLoading
-  const activeTabConfig = frpTabs.find((tab) => tab.id === activeTab) ?? frpTabs[0]
   const filteredVendorBankOptions = formValues.vendor_id
     ? vendorBankOptions.filter(
         (option) => !option.vendorId || String(option.vendorId) === String(formValues.vendor_id),
@@ -967,12 +963,12 @@ function DialogCreateFrp({
                       variant="fullWidth"
                       className="frp-dialog__tabs"
                       sx={{
-                        minHeight: 52,
+                        minHeight: 44,
                         '& .MuiTabs-flexContainer': {
-                          gap: '0.5rem',
+                          gap: '0.4rem',
                         },
                         '& .MuiTabs-indicator': {
-                          height: 3,
+                          height: 2,
                           borderRadius: 999,
                           backgroundColor: '#18786e',
                         },
@@ -988,12 +984,12 @@ function DialogCreateFrp({
                           disableRipple
                           className="frp-dialog__mui-tab"
                           sx={{
-                            minHeight: 52,
-                            borderRadius: '14px 14px 0 0',
+                            minHeight: 44,
+                            borderRadius: '10px 10px 0 0',
                             color: '#607089',
-                            fontSize: '0.92rem',
+                            fontSize: '0.86rem',
                             fontWeight: 700,
-                            letterSpacing: '0.01em',
+                            letterSpacing: 0,
                             textTransform: 'none',
                             transition: 'background-color 0.2s ease, color 0.2s ease',
                             '&.Mui-selected': {
@@ -1008,17 +1004,10 @@ function DialogCreateFrp({
 
                   <div
                     className="frp-dialog__panel"
-                    id={`frp-panel-${activeTabConfig.id}`}
+                    id={`frp-panel-${activeTab}`}
                     role="tabpanel"
-                    aria-labelledby={`frp-tab-${activeTabConfig.id}`}
+                    aria-labelledby={`frp-tab-${activeTab}`}
                   >
-                    <div className="frp-dialog__panel-header">
-                      <div>
-                        <p className="frp-dialog__panel-eyebrow">{activeTabConfig.label}</p>
-                        <h3 className="frp-dialog__panel-title">{activeTabConfig.description}</h3>
-                      </div>
-                    </div>
-
                     {renderActivePanel()}
                   </div>
 
