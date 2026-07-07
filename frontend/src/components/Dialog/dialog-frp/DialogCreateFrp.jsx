@@ -44,6 +44,12 @@ const createInitialFormValues = () => ({
   notes: '',
 })
 
+const createInitialAttachmentDraft = () => ({
+  file: null,
+  previewUrl: '',
+  documentTypeId: '',
+})
+
 const initialRequesterInfo = {
   company: '',
   division: '',
@@ -169,6 +175,10 @@ function getAuthUser(response) {
   return response?.data?.data ?? response?.data ?? response ?? {}
 }
 
+function getCreatedFrpId(response) {
+  return response?.data?.id ?? response?.data?.data?.id ?? response?.id ?? ''
+}
+
 function getPrimaryItem(items) {
   if (!Array.isArray(items) || items.length === 0) {
     return null
@@ -214,6 +224,7 @@ function DialogCreateFrp({
   const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
+  const [attachmentDraft, setAttachmentDraft] = useState(createInitialAttachmentDraft)
 
   const resetDialogState = () => {
     setFormValues(createInitialFormValues())
@@ -230,6 +241,7 @@ function DialogCreateFrp({
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
+    setAttachmentDraft(createInitialAttachmentDraft())
   }
 
   const handleClose = () => {
@@ -258,6 +270,95 @@ function DialogCreateFrp({
         [fieldName]: '',
       }
     })
+  }
+
+  const updateDocumentTypeIds = (value) => {
+    const normalizedValue = value.map(String)
+
+    updateValue('document_type_ids', normalizedValue)
+    setAttachmentDraft((currentDraft) => {
+      const currentDocumentTypeId = String(currentDraft.documentTypeId || '')
+
+      if (normalizedValue.length === 0) {
+        return currentDraft
+      }
+
+      if (currentDocumentTypeId && normalizedValue.includes(currentDocumentTypeId)) {
+        return currentDraft
+      }
+
+      return {
+        ...currentDraft,
+        documentTypeId: normalizedValue[0] || '',
+      }
+    })
+  }
+
+  const updateAttachmentDocumentType = (value) => {
+    setAttachmentDraft((currentDraft) => ({
+      ...currentDraft,
+      documentTypeId: value,
+    }))
+
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      attachment_document_type_id: '',
+    }))
+  }
+
+  const updateAttachmentFile = (file) => {
+    const maxFileSize = 10 * 1024 * 1024
+
+    if (!file) {
+      setAttachmentDraft((currentDraft) => ({
+        ...currentDraft,
+        file: null,
+        previewUrl: '',
+      }))
+      return
+    }
+
+    if (file.size > maxFileSize) {
+      setFieldErrors((currentErrors) => ({
+        ...currentErrors,
+        attachment_file: 'Ukuran attachment maksimal 10 MB.',
+      }))
+      return
+    }
+
+    setAttachmentDraft((currentDraft) => ({
+      ...currentDraft,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      documentTypeId:
+        currentDraft.documentTypeId || formValues.document_type_ids.map(String)[0] || '',
+    }))
+
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      attachment_file: '',
+    }))
+  }
+
+  const removeAttachmentDraft = () => {
+    setAttachmentDraft((currentDraft) => ({
+      ...currentDraft,
+      file: null,
+      previewUrl: '',
+    }))
+
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      attachment_file: '',
+    }))
+  }
+
+  const previewAttachmentDraft = () => {
+    if (!attachmentDraft.previewUrl) {
+      return
+    }
+
+    window.open(attachmentDraft.previewUrl, '_blank', 'noopener,noreferrer')
   }
 
   const updateItemValue = (index, fieldName, value) => {
@@ -460,6 +561,16 @@ function DialogCreateFrp({
     }
   }, [isOpen])
 
+  useEffect(() => {
+    const previewUrl = attachmentDraft.previewUrl
+
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [attachmentDraft.previewUrl])
+
   const handleSubmit = async (event) => {
     event.preventDefault()
 
@@ -526,6 +637,10 @@ function DialogCreateFrp({
       nextFieldErrors.destination_bank_account_name = 'Destination account name wajib diisi.'
     }
 
+    if (attachmentDraft.file && !attachmentDraft.documentTypeId) {
+      nextFieldErrors.attachment_document_type_id = 'Attachment document type wajib dipilih.'
+    }
+
     normalizedItems.forEach((item, index) => {
       if (!item.budget_id) {
         nextFieldErrors[`items.${index}.budget_id`] = 'Budget wajib dipilih.'
@@ -562,7 +677,9 @@ function DialogCreateFrp({
         nextFieldErrors.payment_date ||
         nextFieldErrors.destination_bank_name ||
         nextFieldErrors.destination_bank_account ||
-        nextFieldErrors.destination_bank_account_name
+        nextFieldErrors.destination_bank_account_name ||
+        nextFieldErrors.attachment_document_type_id ||
+        nextFieldErrors.attachment_file
       ) {
         setActiveTab('vendor')
       } else {
@@ -597,6 +714,33 @@ function DialogCreateFrp({
         notes: formValues.notes.trim(),
       })
 
+      if (attachmentDraft.file) {
+        const createdFrpId = getCreatedFrpId(response)
+
+        if (!createdFrpId) {
+          await onCreated?.(response)
+          setSubmitError(
+            'FRP berhasil dibuat, tetapi attachment belum bisa diupload karena ID FRP tidak ditemukan dari response.',
+          )
+          return
+        }
+
+        try {
+          await api.frp.attachments.upload(createdFrpId, {
+            file: attachmentDraft.file,
+            documentTypeId: attachmentDraft.documentTypeId,
+          })
+        } catch (uploadError) {
+          await onCreated?.(response)
+          setSubmitError(
+            `FRP berhasil dibuat, tetapi attachment gagal diupload: ${
+              uploadError.message || 'Gagal upload attachment.'
+            }`,
+          )
+          return
+        }
+      }
+
       await onCreated?.(response)
       handleClose()
     } catch (error) {
@@ -624,6 +768,13 @@ function DialogCreateFrp({
     ...option,
     value: String(option.value),
   }))
+  const selectedFrpDocumentTypeIds = formValues.document_type_ids.map(String)
+  const attachmentDocumentTypeOptions =
+    selectedFrpDocumentTypeIds.length > 0
+      ? frpDocumentTypeDropdownOptions.filter((option) =>
+          selectedFrpDocumentTypeIds.includes(String(option.value)),
+        )
+      : frpDocumentTypeDropdownOptions
 
   const renderActivePanel = () => {
     if (activeTab === 'information') {
@@ -651,7 +802,14 @@ function DialogCreateFrp({
           externalDocumentTypeOptions={externalDocumentTypeOptions}
           paymentMethodOptions={paymentMethodOptions}
           frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+          attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
+          attachmentDraft={attachmentDraft}
           updateValue={updateValue}
+          updateDocumentTypeIds={updateDocumentTypeIds}
+          updateAttachmentDocumentType={updateAttachmentDocumentType}
+          updateAttachmentFile={updateAttachmentFile}
+          removeAttachmentDraft={removeAttachmentDraft}
+          previewAttachmentDraft={previewAttachmentDraft}
           handleVendorBankChange={handleVendorBankChange}
         />
       )

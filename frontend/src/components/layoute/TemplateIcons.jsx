@@ -525,7 +525,7 @@ export function UserBank(props) {
 
 export function Budgets(props) {
   return (
-    <IconBase {...props}>
+  <IconBase {...props}>
       <rect x="3" y="6" width="18" height="12" rx="2" />
       <circle cx="12" cy="12" r="3" />
       <path d="M7 12h.01" />

@@ -4705,7 +4705,9 @@ select {
 .frp-dialog__panel {
   display: grid;
   gap: 0.85rem;
+  min-height: min(540px, calc(78vh - 10rem));
   padding: 0;
+  align-content: start;
 }
 
 .frp-dialog__placeholder {
@@ -4848,6 +4850,135 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+}
+
+.register-user-popup__field--frp-attachment {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.frp-dialog__attachment-upload .form-upload__dropzone {
+  min-height: 146px;
+}
+
+.frp-dialog__attachment-preview {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid rgba(26, 42, 87, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.frp-dialog__attachment-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.frp-dialog__attachment-file {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.frp-dialog__attachment-file-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: rgba(24, 120, 110, 0.1);
+  color: #18786e;
+}
+
+.frp-dialog__attachment-file strong,
+.frp-dialog__attachment-file span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frp-dialog__attachment-file strong {
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+}
+
+.frp-dialog__attachment-file span {
+  color: #607089;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.frp-dialog__attachment-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.frp-dialog__preview-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(24, 120, 110, 0.18);
+  border-radius: 8px;
+  background: rgba(240, 253, 249, 0.92);
+  color: #18786e;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.frp-dialog__preview-button:hover:not(:disabled) {
+  border-color: rgba(24, 120, 110, 0.38);
+  background: rgba(223, 248, 242, 0.96);
+}
+
+.frp-dialog__preview-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.frp-dialog__attachment-media {
+  width: 100%;
+  max-height: 260px;
+  border: 1px solid rgba(26, 42, 87, 0.08);
+  border-radius: 10px;
+  background: #f8fafc;
+  object-fit: contain;
+}
+
+.frp-dialog__attachment-media--pdf {
+  height: 260px;
+}
+
+.frp-dialog__attachment-fallback {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  padding: 0.75rem;
+  border: 1px dashed rgba(26, 42, 87, 0.14);
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.9);
+  color: #607089;
+  font-size: 0.84rem;
 }
 
 .register-user-popup__layout {
@@ -5830,6 +5961,15 @@ select {
 
   .frp-dialog__document-list {
     grid-template-columns: 1fr;
+  }
+
+  .frp-dialog__attachment-preview-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .frp-dialog__attachment-actions {
+    justify-content: flex-end;
   }
 }
 
