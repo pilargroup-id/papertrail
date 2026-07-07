@@ -953,62 +953,64 @@ function DialogCreateFrp({
             <div className="register-user-popup__layout">
               <div className="register-user-popup__main">
                 <div className="register-user-popup__form">
-                  <div className="frp-dialog__tabs-shell">
-                    <Tabs
-                      value={activeTab}
-                      onChange={handleTabChange}
-                      textColor="secondary"
-                      indicatorColor="secondary"
-                      aria-label="FRP tabs"
-                      variant="fullWidth"
-                      className="frp-dialog__tabs"
-                      sx={{
-                        minHeight: 44,
-                        '& .MuiTabs-flexContainer': {
-                          gap: '0.4rem',
-                        },
-                        '& .MuiTabs-indicator': {
-                          height: 2,
-                          borderRadius: 999,
-                          backgroundColor: '#18786e',
-                        },
-                      }}
-                    >
-                      {frpTabs.map((tab) => (
-                        <Tab
-                          key={tab.id}
-                          id={`frp-tab-${tab.id}`}
-                          aria-controls={`frp-panel-${tab.id}`}
-                          value={tab.id}
-                          label={tab.label}
-                          disableRipple
-                          className="frp-dialog__mui-tab"
-                          sx={{
-                            minHeight: 44,
-                            borderRadius: '10px 10px 0 0',
-                            color: '#607089',
-                            fontSize: '0.86rem',
-                            fontWeight: 700,
-                            letterSpacing: 0,
-                            textTransform: 'none',
-                            transition: 'background-color 0.2s ease, color 0.2s ease',
-                            '&.Mui-selected': {
-                              color: '#18786e',
-                              backgroundColor: 'rgba(24, 120, 110, 0.08)',
-                            },
-                          }}
-                        />
-                      ))}
-                    </Tabs>
-                  </div>
+                  <div className="frp-dialog__tabbed-container">
+                    <div className="frp-dialog__tabs-shell">
+                      <Tabs
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        textColor="secondary"
+                        indicatorColor="secondary"
+                        aria-label="FRP tabs"
+                        variant="fullWidth"
+                        className="frp-dialog__tabs"
+                        sx={{
+                          minHeight: 44,
+                          '& .MuiTabs-flexContainer': {
+                            gap: '0.4rem',
+                          },
+                          '& .MuiTabs-indicator': {
+                            height: 2,
+                            borderRadius: 999,
+                            backgroundColor: '#18786e',
+                          },
+                        }}
+                      >
+                        {frpTabs.map((tab) => (
+                          <Tab
+                            key={tab.id}
+                            id={`frp-tab-${tab.id}`}
+                            aria-controls={`frp-panel-${tab.id}`}
+                            value={tab.id}
+                            label={tab.label}
+                            disableRipple
+                            className="frp-dialog__mui-tab"
+                            sx={{
+                              minHeight: 44,
+                              borderRadius: '10px 10px 0 0',
+                              color: '#607089',
+                              fontSize: '0.86rem',
+                              fontWeight: 700,
+                              letterSpacing: 0,
+                              textTransform: 'none',
+                              transition: 'background-color 0.2s ease, color 0.2s ease',
+                              '&.Mui-selected': {
+                                color: '#18786e',
+                                backgroundColor: 'rgba(24, 120, 110, 0.08)',
+                              },
+                            }}
+                          />
+                        ))}
+                      </Tabs>
+                    </div>
 
-                  <div
-                    className="frp-dialog__panel"
-                    id={`frp-panel-${activeTab}`}
-                    role="tabpanel"
-                    aria-labelledby={`frp-tab-${activeTab}`}
-                  >
-                    {renderActivePanel()}
+                    <div
+                      className="frp-dialog__panel"
+                      id={`frp-panel-${activeTab}`}
+                      role="tabpanel"
+                      aria-labelledby={`frp-tab-${activeTab}`}
+                    >
+                      {renderActivePanel()}
+                    </div>
                   </div>
 
                   {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
