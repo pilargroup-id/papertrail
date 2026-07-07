@@ -1,5 +1,6 @@
-import DataTableAction, { DataTableStatus } from '../DataTableAction.jsx'
+import DataTableAccordion, { DataTableStatus } from '../DataTableAccordion.jsx'
 import ButtonEditFrp from '../../button/button-frp/ButtonEditFrp.jsx'
+import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -21,24 +22,48 @@ function formatDateTime(value) {
   }).format(date)
 }
 
-function getBanksStatusLabel(frp) {
-  return Number(frp?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return '-'
+  }
+
+  return `Rp ${new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numberValue)}`
 }
 
-function getBanksStatusVariant(frp) {
-  return Number(frp?.is_active) === 1 ? 'active' : 'inactive'
+function getFrpStatusValue(frp) {
+  return String(frp?.status ?? '').trim().toUpperCase()
 }
 
-function getIsBanksActive(frp) {
-  return Number(frp?.is_active) === 1
+function getFrpStatusLabel(frp) {
+  const status = getFrpStatusValue(frp)
+
+  if (!status) {
+    return '-'
+  }
+
+  return status
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
 
-function getVendorBankPrimaryLabel(frp) {
-  return Number(frp?.is_primary) === 1 ? 'Primary' : 'Secondary'
-}
-
-function getVendorBankPrimaryVariant(frp) {
-  return Number(frp?.is_primary) === 1 ? 'active' : 'inactive'
+function getFrpStatusVariant(frp) {
+  switch (getFrpStatusValue(frp)) {
+    case 'PENDING':
+      return 'pending'
+    case 'APPROVED':
+      return 'active'
+    case 'REJECTED':
+      return 'inactive'
+    default:
+      return 'default'
+  }
 }
 
 function joinClassNames(...classNames) {
@@ -110,17 +135,17 @@ function renderBanksStatus(frp, index, {
   onStatusChange,
   SwitchComponent,
 }) {
-  const isActive = getIsBanksActive(frp)
+  const isActive = getFrpStatusValue(frp) === 'APPROVED'
   const isUpdating =
     typeof isStatusUpdating === 'function'
       ? Boolean(isStatusUpdating(frp, index))
       : false
   const isDisabled = frp?.id === undefined || frp?.id === null || isUpdating
-  const statusLabel = getBanksStatusLabel(frp)
+  const statusLabel = getFrpStatusLabel(frp)
   const statusPill = (
     <DataTableStatus
       className="banks-status-toggle__pill"
-      variant={getBanksStatusVariant(frp)}
+      variant={getFrpStatusVariant(frp)}
     >
       {statusLabel}
     </DataTableStatus>
@@ -134,7 +159,7 @@ function renderBanksStatus(frp, index, {
           label={statusPill}
           checked={isActive}
           disabled={isDisabled}
-          aria-label={`Ubah status banks ${frp?.name ?? frp?.id ?? index}`}
+          aria-label={`Ubah status FRP ${frp?.frp_number ?? frp?.id ?? index}`}
           onClick={(event) => event.stopPropagation()}
           onChange={(event) => {
             event.stopPropagation()
@@ -149,60 +174,52 @@ function renderBanksStatus(frp, index, {
 }
 
 const columnsDataTableBanks = [{
-    key: 'vendor_name',
+    key: 'frpNumber',
+    header: 'FRP Number',
+    accessor: 'frp_number',
+    type: 'identity',
+    subtitleAccessor: (frp) => `Date: ${formatDateTime(frp?.created_at)}`,
+    minWidth: 260,
+  },
+  {
+    key: 'requestor',
+    header: 'Request by',
+    accessor: 'requested_by_name',
+    type: 'identity',
+    subtitleAccessor: (frp) => `Division  : ${frp?.department_name_snapshot ?? '-'}`,
+    minWidth: 260,
+  },
+  {
+    key: 'vendor',
     header: 'Vendor',
-    accessor: 'vendor_name',
-    type: 'identity',
-    subtitleAccessor: (frp) => `Vendor ID: ${frp?.vendor_id ?? '-'}`,
-    minWidth: 260,
-  },
-  {
-    key: 'bank_name',
-    header: 'Bank',
-    accessor: 'bank_name',
-    type: 'identity',
-    subtitleAccessor: (frp) => `Code: ${frp?.bank_code ?? '-'}`,
-    minWidth: 260,
-  },
-  {
-    key: 'account_number',
-    header: 'Account Number',
-    accessor: 'account_number',
+    accessor: 'vendor_name_snapshot',
     nowrap: true,
+    type: 'identity',
     minWidth: 180,
   },
   {
-    key: 'account_name',
-    header: 'Account Name',
-    accessor: 'account_name',
-    minWidth: 220,
+    key: 'totalAmount',
+    header: 'Total Amount',
+    accessor: 'total_amount',
+    format: formatRupiah,
+    minWidth: 180,
   },
   {
-    key: 'is_primary',
-    header: 'Primary',
-    accessor: getVendorBankPrimaryLabel,
-    type: 'status',
-    variantAccessor: getVendorBankPrimaryVariant,
-    nowrap: true,
+    key: 'description',
+    header: 'Description',
+    accessor: 'description',
+    minWidth: 220,
   },
   {
     key: 'status',
     header: 'Status',
-    accessor: getBanksStatusLabel,
+    accessor: getFrpStatusLabel,
     type: 'status',
-    variantAccessor: getBanksStatusVariant,
+    variantAccessor: getFrpStatusVariant,
     nowrap: true,
   },
   {
-    key: 'created_at',
-    header: 'Created At',
-    accessor: 'created_at',
-    format: formatDateTime,
-    nowrap: true,
-    minWidth: 170,
-  },
-  {
-    key: 'updated_at',
+    key: 'updatedAt',
     header: 'Updated At',
     accessor: 'updated_at',
     format: formatDateTime,
@@ -211,24 +228,26 @@ const columnsDataTableBanks = [{
   },
 ]
 
-function DataTableVendorBanks({
+function DataTableFrp({
   rows = [],
   columns = columnsDataTableBanks,
   actions,
   getRowId = (frp, index) => frp?.id ?? index,
-  tableLabel = 'Vendor bank accounts table',
+  tableLabel = 'FRP table',
   emptyMessage = 'Belum ada data.',
   isStatusUpdating,
   onEdit,
+  onDetails,
   onStatusChange,
   SwitchComponent,
+  enableStatusSwitch = false,
   mobileCard,
   className,
   tableWrapperStyle,
   ...props
 }) {
   const shouldRenderStatusSwitch =
-    typeof onStatusChange === 'function' && typeof SwitchComponent === 'function'
+    enableStatusSwitch && typeof onStatusChange === 'function' && typeof SwitchComponent === 'function'
   const resolvedColumns = shouldRenderStatusSwitch
     ? columns.map((column) =>
         column.key === 'status'
@@ -251,8 +270,8 @@ function DataTableVendorBanks({
           header: {
             ...(mobileCard?.header ?? {}),
             status: {
-              label: (frp) => getBanksStatusLabel(frp),
-              variant: (frp) => getBanksStatusVariant(frp),
+              label: (frp) => getFrpStatusLabel(frp),
+              variant: (frp) => getFrpStatusVariant(frp),
               ...(mobileCard?.header?.status ?? {}),
             },
           },
@@ -262,11 +281,18 @@ function DataTableVendorBanks({
     typeof onEdit === 'function'
       ? {
           key: 'edit',
-          label: 'Edit Vendor Banks',
+          label: 'Edit FRP',
           buttonComponent: ButtonEditFrp,
           onClick: onEdit,
         }
       : null,
+    {
+      key: 'details',
+      label: 'Details FRP',
+      buttonComponent: ButtonDetailsFrp,
+      onClick: typeof onDetails === 'function' ? onDetails : undefined,
+      stopPropagation: typeof onDetails === 'function' ? undefined : false,
+    },
   ].filter(Boolean)
   const resolvedActions = Array.isArray(actions) ? actions : defaultActions
   const autoFitColumnCount = resolvedColumns.length + (resolvedActions.length > 0 ? 1 : 0)
@@ -274,7 +300,7 @@ function DataTableVendorBanks({
   const autoFitColumns = resolvedColumns.map((column) => scaleTableColumn(column, autoFitScale))
 
   return (
-    <DataTableAction
+    <DataTableAccordion
       rows={rows}
       columns={autoFitColumns}
       actions={resolvedActions}
@@ -295,4 +321,4 @@ function DataTableVendorBanks({
   )
 }
 
-export default DataTableVendorBanks
+export default DataTableFrp

@@ -587,6 +587,20 @@ export function Config(props) {
   )
 }
 
+export function Details(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 8h8" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+      <circle cx="6" cy="8" r=".5" />
+      <circle cx="6" cy="12" r=".5" />
+      <circle cx="6" cy="16" r=".5" />
+    </IconBase>
+  )
+}
+
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

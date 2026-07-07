@@ -30,6 +30,10 @@ function isActionDisabled(action, row, index) {
 }
 
 function getActionButton(action) {
+  if (typeof action.buttonComponent === 'function') {
+    return action.buttonComponent
+  }
+
   const actionKey = String(action.key ?? action.label ?? '').toLowerCase()
 
   if (actionKey === 'edit') {
@@ -114,7 +118,10 @@ function DataTableAccordion({
                 const buttonKey = action.key ?? `${buttonLabel}-${actionIndex}`
                 const isDisabled = isActionDisabled(action, row, index)
                 const handleClick = (event) => {
-                  event.stopPropagation()
+                  if (action.stopPropagation !== false) {
+                    event.stopPropagation()
+                  }
+
                   action.onClick?.(row, index, event)
                 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
-import DataTableFrpPage from '../../components/table/frp/DataTableFrp.jsx';
+import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
 
 // Button Vendor
 import Switch from '../../components/forms/Switch.jsx';
@@ -98,7 +98,7 @@ function FrpPage(props) {
       setErrorMessage('')
 
       try {
-        const response = await api.rpCheckerRules.list(
+        const response = await api.frp.list(
           {
             page: 1,
             limit: 100,
@@ -177,7 +177,7 @@ function FrpPage(props) {
     setErrorMessage('')
 
     try {
-      await api.rpCheckerRules.updateStatus(rpCheckerRuleId, 0)
+      await api.frp.updateStatus(rpCheckerRuleId, 0)
       setBudgetType((currentRules) =>
         currentRules.filter((currentRule) => String(currentRule?.id) !== String(rpCheckerRuleId)),
       )
@@ -204,7 +204,7 @@ function FrpPage(props) {
     )
 
     try {
-      const response = await api.rpCheckerRules.updateStatus(frpId, normalizedIsActive)
+      const response = await api.frp.updateStatus(frpId, normalizedIsActive)
       const updatedVendor = getVendorFromResponse(response)
 
       if (updatedVendor) {
@@ -256,7 +256,7 @@ function FrpPage(props) {
         </div>
       </div>
 
-      {/* <DataTablefrp
+      <DataTableFrp
         rows={frp}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
@@ -265,7 +265,7 @@ function FrpPage(props) {
         onDelete={openDeleteDialog}
         isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
         onStatusChange={handleVendorStatusChange}
-      /> */}
+      />
 
       {/* <DialogEditfrp
         isOpen={isEditDialogOpen}
