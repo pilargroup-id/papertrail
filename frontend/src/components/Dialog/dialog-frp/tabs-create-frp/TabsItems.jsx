@@ -9,6 +9,30 @@ function toNumber(value) {
   return Number.isFinite(normalizedValue) ? normalizedValue : 0
 }
 
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(numberValue)
+}
+
+function getSelectedBudgetOption(budgetOptions, budgetId) {
+  return budgetOptions.find((option) => String(option.value) === String(budgetId))
+}
+
+function getBudgetMetaValue(option, metaKey) {
+  const value = option?.meta?.[metaKey]
+
+  return value === undefined || value === null || value === '' ? '' : value
+}
+
 function TabsItems({
   formValues,
   fieldErrors,
@@ -25,6 +49,11 @@ function TabsItems({
         const quantity = toNumber(item.quantity)
         const unitPrice = toNumber(item.unit_price)
         const amount = quantity * unitPrice
+        const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
+        const budgetAmount = formatRupiah(getBudgetMetaValue(selectedBudgetOption, 'budgetAmount'))
+        const budgetRemaining = formatRupiah(
+          getBudgetMetaValue(selectedBudgetOption, 'budgetRemaining'),
+        )
 
         return (
           <div className="frp-dialog__item" key={`frp-item-${index}`}>
@@ -41,8 +70,8 @@ function TabsItems({
               </button>
             </div>
 
-            <div className="register-user-popup__grid register-user-popup__grid--frp">
-              <div className="register-user-popup__field register-user-popup__field--full">
+            <div className="register-user-popup__grid register-user-popup__grid--frp-three register-user-popup__grid--frp-budget-row">
+              <div className="register-user-popup__field frp-dialog__budget-field">
                 <DropdownSearch
                   label="Budget"
                   value={item.budget_id}
@@ -54,6 +83,26 @@ function TabsItems({
                   disabled={isFormDisabled}
                   error={fieldErrors[`items.${index}.budget_id`]}
                   onChange={(value) => updateItemValue(index, 'budget_id', value)}
+                />
+              </div>
+              <div className="register-user-popup__field">
+                <TextField
+                  label="Budget Amount"
+                  value={budgetAmount}
+                  placeholder="-"
+                  leftIcon={TrendingUp}
+                  disabled
+                  readOnly
+                />
+              </div>
+              <div className="register-user-popup__field">
+                <TextField
+                  label="Budget Remaining"
+                  value={budgetRemaining}
+                  placeholder="-"
+                  leftIcon={TrendingUp}
+                  disabled
+                  readOnly
                 />
               </div>
               <div className="register-user-popup__field">

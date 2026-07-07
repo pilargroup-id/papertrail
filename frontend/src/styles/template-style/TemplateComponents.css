@@ -4615,14 +4615,65 @@ select {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-budget-row {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) minmax(0, 1.2fr);
+}
+
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-vendor {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-information {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .entity-form-popup
   .register-user-popup__grid.register-user-popup__grid--frp-information
-  .register-user-popup__field--frp-division-wide {
-  grid-column: auto;
+  > .register-user-popup__field {
+  grid-column: span 3;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-information
+  > .register-user-popup__field--frp-third {
+  grid-column: span 4;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-information
+  > .register-user-popup__field--frp-half {
+  grid-column: span 6;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-information
+  > .register-user-popup__field--full {
+  grid-column: 1 / -1;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-vendor
+  > .register-user-popup__field {
+  grid-column: span 4;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-vendor
+  > .register-user-popup__field--frp-half {
+  grid-column: span 6;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-vendor
+  > .register-user-popup__field--frp-quarter {
+  grid-column: span 3;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-vendor
+  > .register-user-popup__field--full {
+  grid-column: 1 / -1;
 }
 
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--permission-modules {
@@ -4816,6 +4867,16 @@ select {
 .frp-dialog__item-header strong {
   color: var(--primary-blue);
   font-size: 0.95rem;
+}
+
+.frp-dialog__budget-field .form-dropdown__trigger {
+  min-width: 0;
+}
+
+.frp-dialog__budget-field .form-dropdown__value,
+.frp-dialog__budget-field .form-dropdown__placeholder {
+  display: block;
+  max-width: 100%;
 }
 
 .frp-dialog__icon-button {
@@ -5928,13 +5989,46 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-budget-row {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-vendor {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-vendor
+    > .register-user-popup__field,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-vendor
+    > .register-user-popup__field--frp-half,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-vendor
+    > .register-user-popup__field--frp-quarter,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-vendor
+    > .register-user-popup__field--full {
+    grid-column: auto;
+  }
+
   .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-information {
     grid-template-columns: 1fr;
   }
 
   .entity-form-popup
     .register-user-popup__grid.register-user-popup__grid--frp-information
-    .register-user-popup__field--frp-division-wide {
+    > .register-user-popup__field,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-information
+    > .register-user-popup__field--frp-third,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-information
+    > .register-user-popup__field--frp-half,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-information
+    > .register-user-popup__field--full {
     grid-column: auto;
   }
 

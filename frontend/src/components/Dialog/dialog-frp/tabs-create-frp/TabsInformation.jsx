@@ -1,14 +1,15 @@
 import TextArea from '../../../forms/TextArea.jsx'
 import TextField from '../../../forms/TextField.jsx'
-import Dropdown from '../../../forms/dropdown/Dropdown.jsx'
-import { Banks, Calendar01, Code, Table01, TrendingUp, Users01 } from '../../../layoute/TemplateIcons.jsx'
-
-const currencyOptions = [
-  { value: 'IDR', label: 'IDR' },
-  { value: 'USD', label: 'USD' },
-  { value: 'SGD', label: 'SGD' },
-  { value: 'EUR', label: 'EUR' },
-]
+import DropdownCheckBox from '../../../forms/dropdown/DropdownCheckBox.jsx'
+import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
+import {
+  Banks,
+  Calendar01,
+  Code,
+  FileText01,
+  Table01,
+  Users01,
+} from '../../../layoute/TemplateIcons.jsx'
 
 function TabsInformation({
   requesterInfo,
@@ -16,7 +17,13 @@ function TabsInformation({
   isFormDisabled,
   formValues,
   fieldErrors,
+  externalDocumentTypeOptions,
+  frpDocumentTypeDropdownOptions,
+  attachmentDocumentTypeOptions,
+  attachmentDraft,
   updateValue,
+  updateDocumentTypeIds,
+  updateAttachmentDocumentType,
 }) {
   return (
     <div className="register-user-popup__grid register-user-popup__grid--frp register-user-popup__grid--frp-information">
@@ -30,7 +37,7 @@ function TabsInformation({
           tabIndex={-1}
         />
       </div>
-      <div className="register-user-popup__field register-user-popup__field--frp-division-wide">
+      <div className="register-user-popup__field">
         <TextField
           label="Division"
           value={requesterInfo.division}
@@ -62,7 +69,7 @@ function TabsInformation({
           onChange={(event) => updateValue('frp_date', event.target.value)}
         />
       </div>
-      <div className="register-user-popup__field">
+      <div className="register-user-popup__field register-user-popup__field--frp-third">
         <TextField
           label="Internal PO Number"
           value={formValues.internal_po_number}
@@ -73,31 +80,56 @@ function TabsInformation({
           onChange={(event) => updateValue('internal_po_number', event.target.value)}
         />
       </div>
-      <div className="register-user-popup__field">
-        <Dropdown
-          label="Currency"
-          value={formValues.currency_code}
-          options={currencyOptions}
-          placeholder="Pilih currency"
+      <div className="register-user-popup__field register-user-popup__field--frp-third">
+        <DropdownSearch
+          label="External Document Type"
+          value={formValues.external_document_type_id}
+          options={externalDocumentTypeOptions}
+          placeholder={isOptionsLoading ? 'Memuat document type...' : 'Pilih document type'}
+          searchPlaceholder="Cari document type..."
+          emptyMessage="External document type aktif tidak ditemukan."
           required
           disabled={isFormDisabled}
-          error={fieldErrors.currency_code}
-          onChange={(value) => updateValue('currency_code', value)}
+          error={fieldErrors.external_document_type_id}
+          onChange={(value) => updateValue('external_document_type_id', value)}
         />
       </div>
-      <div className="register-user-popup__field">
+      <div className="register-user-popup__field register-user-popup__field--frp-third">
         <TextField
-          label="Exchange Rate"
-          value={formValues.exchange_rate}
-          placeholder="Input exchange rate"
-          leftIcon={TrendingUp}
-          type="number"
-          min="0"
-          step="0.0001"
+          label="External Document Number"
+          value={formValues.external_document_number}
+          placeholder="INV-TEST-001"
+          leftIcon={FileText01}
           required
           disabled={isFormDisabled}
-          error={fieldErrors.exchange_rate}
-          onChange={(event) => updateValue('exchange_rate', event.target.value)}
+          error={fieldErrors.external_document_number}
+          onChange={(event) => updateValue('external_document_number', event.target.value)}
+        />
+      </div>
+      <div className="register-user-popup__field register-user-popup__field--frp-half">
+        <DropdownCheckBox
+          label="Required Documents"
+          options={frpDocumentTypeDropdownOptions}
+          value={formValues.document_type_ids.map(String)}
+          placeholder={isOptionsLoading ? 'Memuat document...' : 'Pilih required documents'}
+          searchPlaceholder="Cari required documents..."
+          emptyMessage="FRP document type aktif tidak ditemukan."
+          disabled={isFormDisabled}
+          error={fieldErrors.document_type_ids}
+          onChange={(value) => updateDocumentTypeIds(value.map(String))}
+        />
+      </div>
+      <div className="register-user-popup__field register-user-popup__field--frp-half">
+        <DropdownSearch
+          label="Attachment Document Type"
+          value={attachmentDraft.documentTypeId}
+          options={attachmentDocumentTypeOptions}
+          placeholder={isOptionsLoading ? 'Memuat document...' : 'Pilih document type'}
+          searchPlaceholder="Cari document type..."
+          emptyMessage="FRP document type aktif tidak ditemukan."
+          disabled={isFormDisabled}
+          error={fieldErrors.attachment_document_type_id}
+          onChange={updateAttachmentDocumentType}
         />
       </div>
       <div className="register-user-popup__field register-user-popup__field--full">

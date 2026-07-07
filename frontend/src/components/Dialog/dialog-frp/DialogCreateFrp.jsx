@@ -152,21 +152,32 @@ function mapCodeNameOptions(rows, fallbackName) {
   })
 }
 
-function mapBudgetOptions(budgets) {
-  return budgets.map((budget) => {
-    const id = getFirstValue(budget, ['id', 'budget_id'])
-    const code = getFirstValue(budget, ['budget_code', 'code'])
-    const projectName = getFirstValue(budget, ['project_name', 'name'], `Budget #${id ?? '-'}`)
-    const remaining = getFirstValue(budget, ['budget_remaining', 'remaining_amount'])
-    const labelParts = [code, projectName]
-
-    if (remaining !== '') {
-      labelParts.push(`Remaining ${remaining}`)
-    }
+function mapNameOptions(rows, fallbackName) {
+  return rows.map((row) => {
+    const id = getFirstValue(row, ['id'])
+    const name = getFirstValue(row, ['name'], `${fallbackName} #${id ?? '-'}`)
 
     return {
       value: id,
-      label: labelParts.filter(Boolean).join(' - '),
+      label: name,
+    }
+  })
+}
+
+function mapBudgetOptions(budgets) {
+  return budgets.map((budget) => {
+    const id = getFirstValue(budget, ['id', 'budget_id'])
+    const projectName = getFirstValue(budget, ['project_name', 'name'], `Budget #${id ?? '-'}`)
+    const budgetAmount = getFirstValue(budget, ['budget_amount', 'amount'])
+    const remaining = getFirstValue(budget, ['budget_remaining', 'remaining_amount'])
+
+    return {
+      value: id,
+      label: projectName,
+      meta: {
+        budgetAmount,
+        budgetRemaining: remaining,
+      },
     }
   })
 }
@@ -523,7 +534,7 @@ function DialogCreateFrp({
           mapCodeNameOptions(getRowsFromResponse(paymentMethodsResponse), 'Payment method'),
         )
         setFrpDocumentTypeOptions(
-          mapCodeNameOptions(getRowsFromResponse(frpDocumentTypesResponse), 'FRP document'),
+          mapNameOptions(getRowsFromResponse(frpDocumentTypesResponse), 'FRP document'),
         )
         setBudgetOptions(mapBudgetOptions(getRowsFromResponse(budgetsResponse)))
       } catch (error) {
@@ -665,20 +676,20 @@ function DialogCreateFrp({
       if (
         nextFieldErrors.frp_date ||
         nextFieldErrors.description ||
-        nextFieldErrors.currency_code ||
-        nextFieldErrors.exchange_rate
+        nextFieldErrors.external_document_type_id ||
+        nextFieldErrors.external_document_number ||
+        nextFieldErrors.attachment_document_type_id
       ) {
         setActiveTab('information')
       } else if (
         nextFieldErrors.vendor_id ||
-        nextFieldErrors.external_document_type_id ||
-        nextFieldErrors.external_document_number ||
         nextFieldErrors.payment_method_id ||
         nextFieldErrors.payment_date ||
+        nextFieldErrors.currency_code ||
+        nextFieldErrors.exchange_rate ||
         nextFieldErrors.destination_bank_name ||
         nextFieldErrors.destination_bank_account ||
         nextFieldErrors.destination_bank_account_name ||
-        nextFieldErrors.attachment_document_type_id ||
         nextFieldErrors.attachment_file
       ) {
         setActiveTab('vendor')
@@ -785,7 +796,13 @@ function DialogCreateFrp({
           isFormDisabled={isFormDisabled}
           formValues={formValues}
           fieldErrors={fieldErrors}
+          externalDocumentTypeOptions={externalDocumentTypeOptions}
+          frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+          attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
           updateValue={updateValue}
+          updateDocumentTypeIds={updateDocumentTypeIds}
+          updateAttachmentDocumentType={updateAttachmentDocumentType}
+          attachmentDraft={attachmentDraft}
         />
       )
     }
@@ -799,14 +816,9 @@ function DialogCreateFrp({
           isFormDisabled={isFormDisabled}
           vendorOptions={vendorOptions}
           filteredVendorBankOptions={filteredVendorBankOptions}
-          externalDocumentTypeOptions={externalDocumentTypeOptions}
           paymentMethodOptions={paymentMethodOptions}
-          frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
-          attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
           attachmentDraft={attachmentDraft}
           updateValue={updateValue}
-          updateDocumentTypeIds={updateDocumentTypeIds}
-          updateAttachmentDocumentType={updateAttachmentDocumentType}
           updateAttachmentFile={updateAttachmentFile}
           removeAttachmentDraft={removeAttachmentDraft}
           previewAttachmentDraft={previewAttachmentDraft}

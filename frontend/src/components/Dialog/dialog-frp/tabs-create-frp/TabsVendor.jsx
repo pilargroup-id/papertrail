@@ -1,5 +1,5 @@
 import TextField from '../../../forms/TextField.jsx'
-import DropdownCheckBox from '../../../forms/dropdown/DropdownCheckBox.jsx'
+import Dropdown from '../../../forms/dropdown/Dropdown.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
 import {
   Banks,
@@ -7,10 +7,18 @@ import {
   CreditCard,
   Eye,
   FileText01,
+  TrendingUp,
   Trash03,
   Upload,
   UserBank,
 } from '../../../layoute/TemplateIcons.jsx'
+
+const currencyOptions = [
+  { value: 'IDR', label: 'IDR' },
+  { value: 'USD', label: 'USD' },
+  { value: 'SGD', label: 'SGD' },
+  { value: 'EUR', label: 'EUR' },
+]
 
 function formatFileSize(size) {
   if (!Number.isFinite(size) || size <= 0) {
@@ -47,14 +55,9 @@ function TabsVendor({
   isFormDisabled,
   vendorOptions,
   filteredVendorBankOptions,
-  externalDocumentTypeOptions,
   paymentMethodOptions,
-  frpDocumentTypeDropdownOptions,
-  attachmentDocumentTypeOptions,
   attachmentDraft,
   updateValue,
-  updateDocumentTypeIds,
-  updateAttachmentDocumentType,
   updateAttachmentFile,
   removeAttachmentDraft,
   previewAttachmentDraft,
@@ -63,8 +66,8 @@ function TabsVendor({
   const attachmentPreviewType = getAttachmentPreviewType(attachmentDraft.file)
 
   return (
-    <div className="register-user-popup__grid register-user-popup__grid--frp register-user-popup__grid--frp-three">
-      <div className="register-user-popup__field">
+    <div className="register-user-popup__grid register-user-popup__grid--frp register-user-popup__grid--frp-vendor">
+      <div className="register-user-popup__field register-user-popup__field--frp-half">
         <DropdownSearch
           label="Vendor"
           value={formValues.vendor_id}
@@ -81,7 +84,7 @@ function TabsVendor({
           }}
         />
       </div>
-      <div className="register-user-popup__field">
+      <div className="register-user-popup__field register-user-popup__field--frp-half">
         <DropdownSearch
           label="Vendor Bank Account"
           value={formValues.vendor_bank_account_id}
@@ -92,58 +95,6 @@ function TabsVendor({
           disabled={isFormDisabled}
           error={fieldErrors.vendor_bank_account_id}
           onChange={handleVendorBankChange}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <DropdownSearch
-          label="External Document Type"
-          value={formValues.external_document_type_id}
-          options={externalDocumentTypeOptions}
-          placeholder={isOptionsLoading ? 'Memuat document type...' : 'Pilih document type'}
-          searchPlaceholder="Cari document type..."
-          emptyMessage="External document type aktif tidak ditemukan."
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.external_document_type_id}
-          onChange={(value) => updateValue('external_document_type_id', value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="External Document Number"
-          value={formValues.external_document_number}
-          placeholder="INV-TEST-001"
-          leftIcon={FileText01}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.external_document_number}
-          onChange={(event) => updateValue('external_document_number', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <DropdownSearch
-          label="Payment Method"
-          value={formValues.payment_method_id}
-          options={paymentMethodOptions}
-          placeholder={isOptionsLoading ? 'Memuat payment method...' : 'Pilih payment method'}
-          searchPlaceholder="Cari payment method..."
-          emptyMessage="Payment method aktif tidak ditemukan."
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.payment_method_id}
-          onChange={(value) => updateValue('payment_method_id', value)}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Payment Date"
-          type="date"
-          value={formValues.payment_date}
-          leftIcon={Calendar01}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.payment_date}
-          onChange={(event) => updateValue('payment_date', event.target.value)}
         />
       </div>
       <div className="register-user-popup__field">
@@ -182,30 +133,57 @@ function TabsVendor({
           onChange={(event) => updateValue('destination_bank_account_name', event.target.value)}
         />
       </div>
-      <div className="register-user-popup__field">
-        <DropdownCheckBox
-          label="Required Documents"
-          options={frpDocumentTypeDropdownOptions}
-          value={formValues.document_type_ids.map(String)}
-          placeholder={isOptionsLoading ? 'Memuat document...' : 'Pilih required documents'}
-          searchPlaceholder="Cari required documents..."
-          emptyMessage="FRP document type aktif tidak ditemukan."
+      <div className="register-user-popup__field register-user-popup__field--frp-quarter">
+        <DropdownSearch
+          label="Payment Method"
+          value={formValues.payment_method_id}
+          options={paymentMethodOptions}
+          placeholder={isOptionsLoading ? 'Memuat payment method...' : 'Pilih payment method'}
+          searchPlaceholder="Cari payment method..."
+          emptyMessage="Payment method aktif tidak ditemukan."
+          required
           disabled={isFormDisabled}
-          error={fieldErrors.document_type_ids}
-          onChange={(value) => updateDocumentTypeIds(value.map(String))}
+          error={fieldErrors.payment_method_id}
+          onChange={(value) => updateValue('payment_method_id', value)}
         />
       </div>
-      <div className="register-user-popup__field">
-        <DropdownSearch
-          label="Attachment Document Type"
-          value={attachmentDraft.documentTypeId}
-          options={attachmentDocumentTypeOptions}
-          placeholder={isOptionsLoading ? 'Memuat document...' : 'Pilih document type'}
-          searchPlaceholder="Cari document type..."
-          emptyMessage="FRP document type aktif tidak ditemukan."
+      <div className="register-user-popup__field register-user-popup__field--frp-quarter">
+        <TextField
+          label="Payment Date"
+          type="date"
+          value={formValues.payment_date}
+          leftIcon={Calendar01}
+          required
           disabled={isFormDisabled}
-          error={fieldErrors.attachment_document_type_id}
-          onChange={updateAttachmentDocumentType}
+          error={fieldErrors.payment_date}
+          onChange={(event) => updateValue('payment_date', event.target.value)}
+        />
+      </div>
+      <div className="register-user-popup__field register-user-popup__field--frp-quarter">
+        <Dropdown
+          label="Currency"
+          value={formValues.currency_code}
+          options={currencyOptions}
+          placeholder="Pilih currency"
+          required
+          disabled={isFormDisabled}
+          error={fieldErrors.currency_code}
+          onChange={(value) => updateValue('currency_code', value)}
+        />
+      </div>
+      <div className="register-user-popup__field register-user-popup__field--frp-quarter">
+        <TextField
+          label="Exchange Rate"
+          value={formValues.exchange_rate}
+          placeholder="Input exchange rate"
+          leftIcon={TrendingUp}
+          type="number"
+          min="0"
+          step="0.0001"
+          required
+          disabled={isFormDisabled}
+          error={fieldErrors.exchange_rate}
+          onChange={(event) => updateValue('exchange_rate', event.target.value)}
         />
       </div>
       <div className="register-user-popup__field register-user-popup__field--full register-user-popup__field--frp-attachment">
