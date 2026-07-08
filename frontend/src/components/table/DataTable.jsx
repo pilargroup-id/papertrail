@@ -663,7 +663,7 @@ function DataTable({
   const [expandedRowKey, setExpandedRowKey] = useState(null)
   const [localPage, setLocalPage] = useState(1)
   const [localPageSize, setLocalPageSize] = useState(
-    getDefaultPaginationConfig(pagination).pageSize ?? 5,
+    getDefaultPaginationConfig(pagination).pageSize ?? 25,
   )
   const hasDetail = Boolean(detail)
   const detailToggleInFirstCell =

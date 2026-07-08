@@ -50,7 +50,7 @@ function PaginationTable({
   totalRows = 0,
   currentPage = 1,
   totalPages = 1,
-  pageSize = 5,
+  pageSize = 25,
   pageSizeOptions = [25, 50, 100, 250],
   pageSizeLabel = 'Rows per page',
   pageSizeAriaLabel = 'Jumlah baris per halaman',
