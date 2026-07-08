@@ -40,7 +40,6 @@ export default function RouteConfig() {
         <Route path="Forms" element={<FormsPage />} />
 
         <Route path="frp" element={<FrpPage />} />
-
         {/* master pages */}
 
         {/* Vendor Management */}

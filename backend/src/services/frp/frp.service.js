@@ -450,23 +450,6 @@ function sumTotalAmount(items = []) {
   return items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 }
 
-async function assertRequiredAttachmentsUploaded(conn, frpRequestId) {
-  const missingDocuments = await frpAttachmentModel.getMissingRequiredAttachments(
-    conn,
-    frpRequestId
-  );
-
-  if (!missingDocuments.length) {
-    return;
-  }
-
-  const missingNames = missingDocuments
-    .map((document) => document.document_name_snapshot || document.document_code_snapshot || document.document_type_id)
-    .join(', ');
-
-  throw new Error(`Required attachment is not complete: ${missingNames}`);
-}
-
 async function cancelAttachmentsByRemovedDocumentTypes(
   conn,
   frpRequestId,
@@ -903,14 +886,12 @@ async function approveFrp(id, user = {}, body = {}, req = null) {
     }
 
     if (isFrpCreator(user, frp)) {
-    throw new Error('You cannot approve your own FRP');
+      throw new Error('You cannot approve your own FRP');
     }
 
     if (!canApproveFrp(user, frp)) {
-    throw new Error('Only manager from requester department can approve this FRP');
+      throw new Error('Only manager from requester department can approve this FRP');
     }
-
-    await assertRequiredAttachmentsUploaded(conn, id);
 
     const items = await frpModel.getFrpItems(conn, id);
 

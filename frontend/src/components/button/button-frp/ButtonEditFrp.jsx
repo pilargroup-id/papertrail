@@ -8,7 +8,10 @@ function ButtonEditFrp({
   type = 'button',
   ...buttonProps
 }) {
-  const buttonClassName = ['users-table__icon-button users-table__icon-button--pagination-card', className]
+  const buttonClassName = [
+    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--edit',
+    className,
+  ]
     .filter(Boolean)
     .join(' ')
 

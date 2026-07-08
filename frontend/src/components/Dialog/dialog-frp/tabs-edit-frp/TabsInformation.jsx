@@ -112,6 +112,17 @@ function TabsInformation({
           onChange={(event) => updateValue('description', event.target.value)}
         />
       </div>
+      <div className="register-user-popup__field register-user-popup__field--full">
+        <TextArea
+          label="Notes"
+          value={formValues.notes}
+          placeholder="Update FRP setelah revert"
+          rows={3}
+          disabled={isFormDisabled}
+          error={fieldErrors.notes}
+          onChange={(event) => updateValue('notes', event.target.value)}
+        />
+      </div>
     </div>
   )
 }

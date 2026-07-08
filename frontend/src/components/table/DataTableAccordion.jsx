@@ -1,6 +1,7 @@
 import CreateButton from '../button/ButtonCreate.jsx'
 import ButtonDelete from '../button/ButtonDelete.jsx'
 import ButtonEdit from '../button/ButtonEdit.jsx'
+import ButtonAttachmentsFrp from '../button/button-frp/ButtonAttachmentsFrp.jsx'
 import DataTable from './DataTable.jsx'
 
 export {
@@ -42,6 +43,10 @@ function getActionButton(action) {
 
   if (actionKey === 'delete' || action.variant === 'danger') {
     return ButtonDelete
+  }
+
+  if (actionKey === 'attachment' || actionKey === 'attachments') {
+    return ButtonAttachmentsFrp
   }
 
   return null

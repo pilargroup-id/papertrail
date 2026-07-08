@@ -1,15 +1,15 @@
-import { Eye } from '../../layoute/TemplateIcons.jsx'
+import { Reject } from '../../layoute/TemplateIcons.jsx'
 
-function ButtonDetailsFrp({
-  label = 'Detail',
-  icon: Icon = Eye,
+function ButtonRejectFrp({
+  label = 'Reject',
+  icon: Icon = Reject,
   size = 16,
   className = '',
   type = 'button',
   ...buttonProps
 }) {
   const buttonClassName = [
-    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--details',
+    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--reject',
     className,
   ]
     .filter(Boolean)
@@ -28,4 +28,4 @@ function ButtonDetailsFrp({
   )
 }
 
-export default ButtonDetailsFrp
+export default ButtonRejectFrp

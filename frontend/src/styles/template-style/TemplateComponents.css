@@ -2790,6 +2790,257 @@ select {
   border-radius: 10px;
 }
 
+.users-table-wrapper.frp-table--actions .frp-table__approval-cell,
+.users-table-wrapper.frp-table--actions .frp-table__action-cell {
+  padding-inline: 0.55rem;
+  vertical-align: middle;
+}
+
+.users-table-wrapper.frp-table--actions .frp-table__approval-cell {
+  border-right: 1px solid rgba(26, 42, 87, 0.06);
+}
+
+.users-table-wrapper.frp-table--actions .frp-table__button-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.38rem;
+}
+
+.users-table-wrapper.frp-table--actions .frp-table__action-cell > .frp-icon-button {
+  vertical-align: middle;
+}
+
+.users-table-wrapper.frp-table--actions .frp-table__action-cell > .frp-icon-button + .frp-icon-button {
+  margin-left: 0.38rem;
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button,
+.frp-accordion-detail .frp-icon-button {
+  width: max(var(--vendor-banks-table-icon-size, 36px), 34px);
+  height: max(var(--vendor-banks-table-icon-size, 36px), 34px);
+  min-width: max(var(--vendor-banks-table-icon-size, 36px), 34px);
+  border-radius: 999px;
+  color: var(--frp-icon-color, var(--primary-blue));
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86)),
+    var(--frp-icon-bg, rgba(26, 42, 87, 0.08));
+  border-color: var(--frp-icon-border, rgba(26, 42, 87, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 7px 16px var(--frp-icon-shadow, rgba(26, 42, 87, 0.08));
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button:hover,
+.frp-accordion-detail .frp-icon-button:hover {
+  color: var(--frp-icon-hover-color, var(--frp-icon-color, var(--primary-blue)));
+  background: var(--frp-icon-hover-bg, #fff);
+  border-color: var(--frp-icon-hover-border, var(--frp-icon-border, rgba(26, 42, 87, 0.18)));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 10px 22px var(--frp-icon-hover-shadow, rgba(26, 42, 87, 0.12));
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button:focus-visible,
+.frp-accordion-detail .frp-icon-button:focus-visible {
+  box-shadow:
+    0 0 0 4px var(--frp-icon-focus, rgba(42, 157, 143, 0.14)),
+    0 10px 22px var(--frp-icon-hover-shadow, rgba(26, 42, 87, 0.12));
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--approval {
+  --frp-icon-color: #15803d;
+  --frp-icon-bg: rgba(34, 197, 94, 0.13);
+  --frp-icon-border: rgba(34, 197, 94, 0.3);
+  --frp-icon-shadow: rgba(21, 128, 61, 0.12);
+  --frp-icon-hover-bg: #ecfdf3;
+  --frp-icon-hover-border: rgba(34, 197, 94, 0.46);
+  --frp-icon-hover-shadow: rgba(21, 128, 61, 0.18);
+  --frp-icon-focus: rgba(34, 197, 94, 0.18);
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--reject {
+  --frp-icon-color: #b42318;
+  --frp-icon-bg: rgba(239, 68, 68, 0.12);
+  --frp-icon-border: rgba(239, 68, 68, 0.3);
+  --frp-icon-shadow: rgba(180, 35, 24, 0.1);
+  --frp-icon-hover-bg: #fff1f3;
+  --frp-icon-hover-border: rgba(239, 68, 68, 0.44);
+  --frp-icon-hover-shadow: rgba(180, 35, 24, 0.16);
+  --frp-icon-focus: rgba(239, 68, 68, 0.16);
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--revert {
+  --frp-icon-color: #b45309;
+  --frp-icon-bg: rgba(245, 158, 11, 0.14);
+  --frp-icon-border: rgba(245, 158, 11, 0.34);
+  --frp-icon-shadow: rgba(180, 83, 9, 0.1);
+  --frp-icon-hover-bg: #fffbeb;
+  --frp-icon-hover-border: rgba(245, 158, 11, 0.5);
+  --frp-icon-hover-shadow: rgba(180, 83, 9, 0.16);
+  --frp-icon-focus: rgba(245, 158, 11, 0.18);
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--edit {
+  --frp-icon-color: #1d4ed8;
+  --frp-icon-bg: rgba(59, 130, 246, 0.12);
+  --frp-icon-border: rgba(59, 130, 246, 0.28);
+  --frp-icon-shadow: rgba(29, 78, 216, 0.1);
+  --frp-icon-hover-bg: #eff6ff;
+  --frp-icon-hover-border: rgba(59, 130, 246, 0.44);
+  --frp-icon-hover-shadow: rgba(29, 78, 216, 0.16);
+  --frp-icon-focus: rgba(59, 130, 246, 0.16);
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--details {
+  --frp-icon-color: #0f766e;
+  --frp-icon-bg: rgba(20, 184, 166, 0.12);
+  --frp-icon-border: rgba(20, 184, 166, 0.3);
+  --frp-icon-shadow: rgba(15, 118, 110, 0.1);
+  --frp-icon-hover-bg: #ecfeff;
+  --frp-icon-hover-border: rgba(20, 184, 166, 0.44);
+  --frp-icon-hover-shadow: rgba(15, 118, 110, 0.16);
+  --frp-icon-focus: rgba(20, 184, 166, 0.16);
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--attachments,
+.frp-accordion-detail .frp-icon-button--attachments {
+  --frp-icon-color: #7c3aed;
+  --frp-icon-bg: rgba(124, 58, 237, 0.12);
+  --frp-icon-border: rgba(124, 58, 237, 0.3);
+  --frp-icon-shadow: rgba(109, 40, 217, 0.1);
+  --frp-icon-hover-bg: #f5f3ff;
+  --frp-icon-hover-border: rgba(124, 58, 237, 0.44);
+  --frp-icon-hover-shadow: rgba(109, 40, 217, 0.16);
+  --frp-icon-focus: rgba(124, 58, 237, 0.16);
+}
+
+.frp-accordion-detail {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: -0.35rem;
+}
+
+.frp-accordion-detail__attachments {
+  display: grid;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.frp-accordion-detail__attachment-copy span {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.frp-accordion-detail__attachment-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.65rem;
+}
+
+.frp-accordion-detail__attachment-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid rgba(26, 42, 87, 0.08);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.frp-accordion-detail__attachment-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.frp-accordion-detail__attachment-copy {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.frp-accordion-detail__attachment-copy strong,
+.frp-accordion-detail__attachment-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frp-accordion-detail__attachment-copy strong {
+  color: #172554;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.frp-accordion-detail__attachment-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.frp-accordion-detail .frp-icon-button {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 999px;
+}
+
+.frp-accordion-detail .frp-icon-button.frp-accordion-detail__attachment-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  gap: 0.65rem;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.frp-accordion-detail .frp-icon-button.frp-accordion-detail__attachment-button svg {
+  flex: 0 0 auto;
+}
+
+.frp-accordion-detail .users-table-layout {
+  display: block;
+}
+
+.frp-accordion-detail .users-table-wrapper {
+  border: 1px solid rgba(26, 42, 87, 0.08);
+  border-radius: 12px;
+  box-shadow: none;
+  overflow-x: auto;
+}
+
+.frp-accordion-detail .users-table {
+  min-width: 1180px;
+}
+
+.frp-accordion-detail .users-table__header-cell,
+.frp-accordion-detail .users-table__cell {
+  padding: 0.72rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+.frp-accordion-detail .users-table__name {
+  font-size: 0.88rem;
+}
+
+.frp-accordion-detail .users-table__meta {
+  font-size: 0.68rem;
+}
+
 .users-table-wrapper.vendor-banks-table--auto-fit .banks-status-toggle__switch {
   width: fit-content;
   display: inline-flex;
@@ -4628,6 +4879,10 @@ select {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-attachment {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
 .entity-form-popup
   .register-user-popup__grid.register-user-popup__grid--frp-information
   > .register-user-popup__field {
@@ -4648,6 +4903,18 @@ select {
 
 .entity-form-popup
   .register-user-popup__grid.register-user-popup__grid--frp-information
+  > .register-user-popup__field--full {
+  grid-column: 1 / -1;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-attachment
+  > .register-user-popup__field--frp-half {
+  grid-column: span 6;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-attachment
   > .register-user-popup__field--full {
   grid-column: 1 / -1;
 }
@@ -4740,17 +5007,17 @@ select {
 }
 
 .frp-dialog__mui-tab.Mui-selected {
-  color: #18786e;
-  background: rgba(24, 120, 110, 0.08);
+  color: var(--primary-blue);
+  background: rgba(26, 42, 87, 0.08);
 }
 
 .frp-dialog__mui-tab.Mui-focusVisible {
   outline: none;
-  box-shadow: inset 0 0 0 1px rgba(24, 120, 110, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(26, 42, 87, 0.28);
 }
 
 .frp-dialog__mui-tab:not(.Mui-selected):hover {
-  background: rgba(24, 120, 110, 0.04);
+  background: rgba(26, 42, 87, 0.04);
 }
 
 .frp-dialog__panel {
@@ -4869,6 +5136,12 @@ select {
   font-size: 0.95rem;
 }
 
+.frp-dialog__items-attachments {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
 .frp-dialog__budget-field .form-dropdown__trigger {
   min-width: 0;
 }
@@ -4920,6 +5193,12 @@ select {
 
 .frp-dialog__attachment-upload .form-upload__dropzone {
   min-height: 146px;
+}
+
+.frp-dialog__attachment-preview-list {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .frp-dialog__attachment-preview {
@@ -6017,6 +6296,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-attachment {
+    grid-template-columns: 1fr;
+  }
+
   .entity-form-popup
     .register-user-popup__grid.register-user-popup__grid--frp-information
     > .register-user-popup__field,
@@ -6028,6 +6311,15 @@ select {
     > .register-user-popup__field--frp-half,
   .entity-form-popup
     .register-user-popup__grid.register-user-popup__grid--frp-information
+    > .register-user-popup__field--full {
+    grid-column: auto;
+  }
+
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-attachment
+    > .register-user-popup__field--frp-half,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-attachment
     > .register-user-popup__field--full {
     grid-column: auto;
   }

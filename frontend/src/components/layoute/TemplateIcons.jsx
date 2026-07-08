@@ -601,6 +601,34 @@ export function Details(props) {
   )
 }
 
+// ICON APPROVAL
+export function Approve(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="8 12 11 15 16 9" />
+    </IconBase>
+  )
+}
+
+export function Reject(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 9l6 6" />
+      <path d="M15 9l-6 6" />
+    </IconBase>
+  )
+}
+
+export function Revert(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 7v6h6" />
+      <path d="M3 13a8 8 0 1 0 2-5.3" />
+    </IconBase>
+  )
+}
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

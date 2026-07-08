@@ -17,6 +17,7 @@ export const implementedNavigationPaths = [
   '/forms',
   '/Master',
   '/frp',
+  '/rp',
 
   // VENDOR MANAGEMENT
   '/Master/Vendor',

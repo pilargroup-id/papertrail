@@ -1,15 +1,15 @@
-import { Eye } from '../../layoute/TemplateIcons.jsx'
+import { Revert } from '../../layoute/TemplateIcons.jsx'
 
-function ButtonDetailsFrp({
-  label = 'Detail',
-  icon: Icon = Eye,
+function ButtonRevertFrp({
+  label = 'Revert',
+  icon: Icon = Revert,
   size = 16,
   className = '',
   type = 'button',
   ...buttonProps
 }) {
   const buttonClassName = [
-    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--details',
+    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--revert',
     className,
   ]
     .filter(Boolean)
@@ -28,4 +28,4 @@ function ButtonDetailsFrp({
   )
 }
 
-export default ButtonDetailsFrp
+export default ButtonRevertFrp

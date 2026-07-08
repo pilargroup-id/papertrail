@@ -2,89 +2,17 @@ import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
-import TextField from '../../forms/TextField.jsx'
 import DropdownSearch from '../../forms/dropdown/DropdownSearch.jsx'
 import DropdownCheckBox from '../../forms/dropdown/DropdownCheckbox.jsx'
-import { FileText01, Users01 } from '../../layoute/TemplateIcons.jsx'
-
-const initialFormValues = {
-  user_id: '',
-  username_snapshot: '',
-  name_snapshot: '',
-  module_id: '',
-  access: [],
-}
-
-const permissionAccessOptions = [
-  {
-    value: 'can_view',
-    label: 'View',
-    description: 'Izinkan user melihat data pada module ini.',
-  },
-  {
-    value: 'can_create',
-    label: 'Create',
-    description: 'Izinkan user membuat data baru pada module ini.',
-  },
-  {
-    value: 'can_update',
-    label: 'Update',
-    description: 'Izinkan user mengubah data pada module ini.',
-  },
-  {
-    value: 'can_deactivate',
-    label: 'Deactivate',
-    description: 'Izinkan user menonaktifkan data pada module ini.',
-  },
-]
-
-function getPermissionPayloadFromAccess(selectedAccessValues) {
-  return permissionAccessOptions.reduce((payload, option) => {
-    payload[option.value] = selectedAccessValues.includes(option.value) ? 1 : 0
-    return payload
-  }, {})
-}
-
-function getAccessErrorMessage(errors) {
-  return (
-    errors?.can_view ||
-    errors?.can_create ||
-    errors?.can_update ||
-    errors?.can_deactivate ||
-    ''
-  )
-}
-
-function getRowsFromResponse(response) {
-  if (Array.isArray(response)) {
-    return response
-  }
-
-  if (Array.isArray(response?.data)) {
-    return response.data
-  }
-
-  if (Array.isArray(response?.data?.data)) {
-    return response.data.data
-  }
-
-  if (Array.isArray(response?.rows)) {
-    return response.rows
-  }
-
-  return []
-}
-
-function mapPermissionModuleOptions(permissionModules) {
-  return permissionModules.map((permissionModule) => ({
-    value: permissionModule?.id,
-    label:
-      [permissionModule?.module_code, permissionModule?.module_name]
-        .filter(Boolean)
-        .join(' - ') || `Permission Module #${permissionModule?.id ?? '-'}`,
-    meta: permissionModule,
-  }))
-}
+import {
+  getAccessErrorMessage,
+  getPermissionPayloadFromAccess,
+  getRowsFromResponse,
+  initialPermissionModuleFormValues,
+  mapPermissionModuleOptions,
+  mapUserOptions,
+  permissionAccessOptions,
+} from './permissionModuleFormUtils.js'
 
 function DialogCreatePermissionModule({
   isOpen = false,
@@ -93,19 +21,21 @@ function DialogCreatePermissionModule({
   onClose,
   onCreated,
 }) {
-  const [formValues, setFormValues] = useState(initialFormValues)
+  const [formValues, setFormValues] = useState(initialPermissionModuleFormValues)
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [userOptions, setUserOptions] = useState([])
   const [permissionModuleOptions, setPermissionModuleOptions] = useState([])
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
 
   const resetDialogState = useCallback(() => {
-    setFormValues(initialFormValues)
+    setFormValues(initialPermissionModuleFormValues)
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
+    setUserOptions([])
     setPermissionModuleOptions([])
     setIsOptionsLoading(false)
     setOptionsError('')
@@ -134,6 +64,22 @@ function DialogCreatePermissionModule({
     })
   }
 
+  const updateUserSelection = (value, option) => {
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      user_id: value ?? '',
+      username_snapshot: option?.meta?.username ?? '',
+      name_snapshot: option?.meta?.name ?? '',
+    }))
+
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      user_id: '',
+      username_snapshot: '',
+      name_snapshot: '',
+    }))
+  }
+
   useEffect(() => {
     if (!isOpen) {
       return undefined
@@ -146,23 +92,32 @@ function DialogCreatePermissionModule({
       setOptionsError('')
 
       try {
-        const response = await api.permissionModules.list(
-          {
-            is_active: 1,
-          },
-          {
+        const [permissionModuleResponse, userResponse] = await Promise.all([
+          api.permissionModules.list(
+            {
+              is_active: 1,
+            },
+            {
+              signal: controller.signal,
+            },
+          ),
+          api.directory.users.list(undefined, {
             signal: controller.signal,
-          },
-        )
+          }),
+        ])
 
-        setPermissionModuleOptions(mapPermissionModuleOptions(getRowsFromResponse(response)))
+        setPermissionModuleOptions(
+          mapPermissionModuleOptions(getRowsFromResponse(permissionModuleResponse)),
+        )
+        setUserOptions(mapUserOptions(getRowsFromResponse(userResponse)))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
+        setUserOptions([])
         setPermissionModuleOptions([])
-        setOptionsError(error.message || 'Gagal memuat daftar permission module.')
+        setOptionsError(error.message || 'Gagal memuat pilihan user atau permission module.')
       } finally {
         if (!controller.signal.aborted) {
           setIsOptionsLoading(false)
@@ -188,26 +143,24 @@ function DialogCreatePermissionModule({
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const normalizedUserId = formValues.user_id.trim()
-    const normalizedUsername = formValues.username_snapshot.trim()
-    const normalizedName = formValues.name_snapshot.trim()
+    const normalizedUserId = String(formValues.user_id ?? '').trim()
+    const normalizedUsername = String(formValues.username_snapshot ?? '').trim()
+    const normalizedName = String(formValues.name_snapshot ?? '').trim()
     const normalizedModuleId = Number(formValues.module_id)
     const normalizedAccess = Array.isArray(formValues.access) ? formValues.access : []
     const nextFieldErrors = {}
 
     if (!normalizedUserId) {
-      nextFieldErrors.user_id = 'User ID wajib diisi.'
+      nextFieldErrors.user_id = 'User wajib dipilih.'
+    } else if (normalizedUserId.length > 36) {
+      nextFieldErrors.user_id = 'User ID maksimal 36 karakter.'
     }
 
-    if (!normalizedUsername) {
-      nextFieldErrors.username_snapshot = 'Username wajib diisi.'
-    } else if (normalizedUsername.length > 100) {
+    if (normalizedUsername.length > 100) {
       nextFieldErrors.username_snapshot = 'Username maksimal 100 karakter.'
     }
 
-    if (!normalizedName) {
-      nextFieldErrors.name_snapshot = 'Nama wajib diisi.'
-    } else if (normalizedName.length > 255) {
+    if (normalizedName.length > 255) {
       nextFieldErrors.name_snapshot = 'Nama maksimal 255 karakter.'
     }
 
@@ -282,40 +235,22 @@ function DialogCreatePermissionModule({
               <div className="register-user-popup__main">
                 <div className="register-user-popup__form">
                   <div className="register-user-popup__grid register-user-popup__grid--permission-modules">
-                    <div className="register-user-popup__field">
-                      <TextField
-                        label="User ID"
+                    <div className="register-user-popup__field register-user-popup__field--full">
+                      <DropdownSearch
+                        label="User"
                         value={formValues.user_id}
-                        placeholder="Input user ID"
-                        leftIcon={Users01}
+                        options={userOptions}
+                        placeholder={isOptionsLoading ? 'Memuat user...' : 'Pilih user'}
+                        searchPlaceholder="Cari user..."
+                        emptyMessage="User tidak ditemukan."
                         required
                         disabled={isFormDisabled}
-                        error={fieldErrors.user_id}
-                        onChange={(event) => updateValue('user_id', event.target.value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <TextField
-                        label="Username"
-                        value={formValues.username_snapshot}
-                        placeholder="Input username"
-                        leftIcon={Users01}
-                        required
-                        disabled={isFormDisabled}
-                        error={fieldErrors.username_snapshot}
-                        onChange={(event) => updateValue('username_snapshot', event.target.value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <TextField
-                        label="Full Name"
-                        value={formValues.name_snapshot}
-                        placeholder="Input full name"
-                        leftIcon={FileText01}
-                        required
-                        disabled={isFormDisabled}
-                        error={fieldErrors.name_snapshot}
-                        onChange={(event) => updateValue('name_snapshot', event.target.value)}
+                        error={
+                          fieldErrors.user_id ||
+                          fieldErrors.username_snapshot ||
+                          fieldErrors.name_snapshot
+                        }
+                        onChange={updateUserSelection}
                       />
                     </div>
                     <div className="register-user-popup__field">

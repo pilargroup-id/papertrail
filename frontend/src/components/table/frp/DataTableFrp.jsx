@@ -2,6 +2,11 @@ import DataTableAccordion, { DataTableStatus } from '../DataTableAccordion.jsx'
 import ButtonEditFrp from '../../button/button-frp/ButtonEditFrp.jsx'
 import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 
+import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
+import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
+import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
+import { frpAccordionDetail } from './DetailAccordionFrp.jsx'
+
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
 
@@ -173,6 +178,41 @@ function renderBanksStatus(frp, index, {
   )
 }
 
+function renderApprovalActions(frp, index, {
+  onApproval,
+  onReject,
+  onRevert,
+  canApprove: canApproveAction,
+}) {
+  const canApprove =
+    getFrpStatusValue(frp) === 'PENDING' &&
+    typeof onApproval === 'function' &&
+    (typeof canApproveAction !== 'function' || canApproveAction(frp, index))
+  const handleActionClick = (handler) => (event) => {
+    event.stopPropagation()
+    handler?.(frp, index, event)
+  }
+
+  return (
+    <div className="frp-table__button-group frp-table__button-group--approval">
+      {canApprove ? (
+        <ButtonApprovalFrp
+          label="Approval"
+          onClick={handleActionClick(onApproval)}
+        />
+      ) : null}
+      <ButtonRejectFrp
+        label="Reject"
+        onClick={handleActionClick(onReject)}
+      />
+      <ButtonRevertFrp
+        label="Revert"
+        onClick={handleActionClick(onRevert)}
+      />
+    </div>
+  )
+}
+
 const columnsDataTableBanks = [{
     key: 'frpNumber',
     header: 'FRP Number',
@@ -238,10 +278,15 @@ function DataTableFrp({
   isStatusUpdating,
   onEdit,
   onDetails,
+  onApproval,
+  onReject,
+  onRevert,
+  canApprove,
   onStatusChange,
   SwitchComponent,
   enableStatusSwitch = false,
   mobileCard,
+  detail = frpAccordionDetail,
   className,
   tableWrapperStyle,
   ...props
@@ -277,6 +322,25 @@ function DataTableFrp({
           },
         }
       : mobileCard
+  const approvalColumn = {
+    key: 'approval',
+    header: 'Approval',
+    headerClassName: 'users-table__action-header',
+    cellClassName: 'users-table__action-cell frp-table__approval-cell',
+    cellStyle: {
+      width: '1%',
+      minWidth: Math.max(118, Math.round(146 * getAutoFitScale(resolvedColumns.length + 2))),
+      whiteSpace: 'nowrap',
+    },
+    render: (frp, index) =>
+      renderApprovalActions(frp, index, {
+        onApproval,
+        onReject,
+        onRevert,
+        canApprove,
+      }),
+  }
+
   const defaultActions = [
     typeof onEdit === 'function'
       ? {
@@ -294,10 +358,14 @@ function DataTableFrp({
       stopPropagation: typeof onDetails === 'function' ? undefined : false,
     },
   ].filter(Boolean)
+
+  //For Action
   const resolvedActions = Array.isArray(actions) ? actions : defaultActions
-  const autoFitColumnCount = resolvedColumns.length + (resolvedActions.length > 0 ? 1 : 0)
+  const autoFitColumnCount = resolvedColumns.length + 1 + (resolvedActions.length > 0 ? 1 : 0)
   const autoFitScale = getAutoFitScale(autoFitColumnCount)
-  const autoFitColumns = resolvedColumns.map((column) => scaleTableColumn(column, autoFitScale))
+  const autoFitColumns = [...resolvedColumns, approvalColumn].map((column) =>
+    scaleTableColumn(column, autoFitScale),
+  )
 
   return (
     <DataTableAccordion
@@ -306,15 +374,17 @@ function DataTableFrp({
       actions={resolvedActions}
       useDefaultActions={false}
       getRowId={getRowId}
+      detail={detail}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
       mobileCard={resolvedMobileCard}
+      actionCellClassName="users-table__action-cell frp-table__action-cell"
       actionCellStyle={{
         width: '1%',
-        minWidth: Math.max(32, Math.round(48 * autoFitScale)),
+        minWidth: Math.max(78, Math.round(92 * autoFitScale)),
         whiteSpace: 'nowrap',
       }}
-      className={joinClassNames('vendor-banks-table--auto-fit', className)}
+      className={joinClassNames('vendor-banks-table--auto-fit frp-table--actions', className)}
       tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle)}
       {...props}
     />

@@ -3,10 +3,13 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
 
-// Button Vendor
+// Button Frp
 import Switch from '../../components/forms/Switch.jsx';
 import ButtonCreateFrp from '../../components/button/button-frp/ButtonCreateFrp.jsx'
-import DialogEditRpCheckerRules from '../../components/Dialog/dialog-rp-checker-rules/DialogEditRpCheckerRules.jsx';
+
+// Dialog Frp
+import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
+import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -44,11 +47,119 @@ function getVendorFromResponse(response) {
   ) ?? null
 }
 
-function getRpCheckerRuleLabel(rule) {
-  return [
-    rule?.department_name_snapshot ?? rule?.destination_department_rule_id,
-    rule?.job_position,
-  ].filter(Boolean).join(' - ') || 'RP checker rule ini'
+function getFrpFromResponse(response) {
+  const candidates = [
+    response?.data?.data,
+    response?.data,
+    response,
+  ]
+
+  return candidates.find(
+    (candidate) =>
+      candidate &&
+      typeof candidate === 'object' &&
+      !Array.isArray(candidate) &&
+      ('id' in candidate || 'status' in candidate),
+  ) ?? null
+}
+
+function getFrpEditLabel(frp) {
+  return frp?.frp_number ?? frp?.id ?? 'FRP ini'
+}
+
+function getFirstValue(source, keys, fallback = '') {
+  const matchedKey = keys.find((key) => source?.[key] !== undefined && source?.[key] !== null)
+
+  if (!matchedKey) {
+    return fallback
+  }
+
+  return source[matchedKey]
+}
+
+function getFrpStatusValue(frp) {
+  return String(frp?.status ?? '').trim().toUpperCase()
+}
+
+function getCurrentUserId(user) {
+  return getFirstValue(user, ['id', 'user_id', 'userId'], '')
+}
+
+function getFrpRequesterId(frp) {
+  return getFirstValue(
+    frp,
+    ['requested_by_user_id', 'requested_by_id', 'created_by_user_id', 'created_by'],
+    '',
+  )
+}
+
+function getUserDepartmentIds(user) {
+  const departments = Array.isArray(user?.departments) ? user.departments : []
+  const departmentIds = departments
+    .map((department) => getFirstValue(department, ['id', 'department_id', 'departmentId'], ''))
+    .filter((departmentId) => departmentId !== '')
+
+  const primaryDepartmentId = getFirstValue(user, ['department_id', 'departmentId'], '')
+
+  return primaryDepartmentId === '' ? departmentIds : [primaryDepartmentId, ...departmentIds]
+}
+
+function isManagerUser(user) {
+  const explicitManagerFlag = getFirstValue(user, ['is_manager', 'isManager'], null)
+
+  if (explicitManagerFlag !== null) {
+    return ['1', 'true', 'yes'].includes(String(explicitManagerFlag).trim().toLowerCase())
+  }
+
+  const roleText = [
+    user?.job_position,
+    user?.jobPosition,
+    user?.job_level,
+    user?.jobLevel,
+    user?.role,
+    user?.userRole,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+
+  return roleText ? roleText.includes('manager') : null
+}
+
+function canCurrentUserApproveFrp(frp, currentUser) {
+  if (getFrpStatusValue(frp) !== 'PENDING') {
+    return false
+  }
+
+  if (!currentUser) {
+    return true
+  }
+
+  const isManager = isManagerUser(currentUser)
+
+  if (isManager === false) {
+    return false
+  }
+
+  const currentUserId = getCurrentUserId(currentUser)
+  const requesterId = getFrpRequesterId(frp)
+
+  if (currentUserId !== '' && requesterId !== '' && String(currentUserId) === String(requesterId)) {
+    return false
+  }
+
+  const frpDepartmentId = getFirstValue(frp, ['department_id', 'departmentId'], '')
+  const userDepartmentIds = getUserDepartmentIds(currentUser)
+
+  if (
+    frpDepartmentId !== '' &&
+    userDepartmentIds.length > 0 &&
+    !userDepartmentIds.some((departmentId) => String(departmentId) === String(frpDepartmentId))
+  ) {
+    return false
+  }
+
+  return true
 }
 
 function updateVendorStatus(frp, frpId, isActive, updatedBudgetType) {
@@ -80,6 +191,7 @@ function FrpPage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
+  const currentUser = props.currentUser ?? outletContext.currentUser ?? null
   const pageTitle = activePage?.title ?? 'RP Checker Rules'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [frp, setBudgetType] = useState([])
@@ -87,8 +199,12 @@ function FrpPage(props) {
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
+  const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
+  const [approveError, setApproveError] = useState('')
+  const [isApproving, setIsApproving] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -143,14 +259,20 @@ function FrpPage(props) {
     setSelectedBudgetType(null)
   }
 
-  const openDeleteDialog = (frp) => {
-    setSelectedBudgetType(frp)
-    setIsDeleteDialogOpen(true)
+  const openApproveDialog = (frp) => {
+    setSelectedApprovalFrp(frp)
+    setApproveError('')
+    setIsApproveDialogOpen(true)
   }
 
-  const closeDeleteDialog = () => {
-    setIsDeleteDialogOpen(false)
-    setSelectedBudgetType(null)
+  const closeApproveDialog = () => {
+    if (isApproving) {
+      return
+    }
+
+    setIsApproveDialogOpen(false)
+    setSelectedApprovalFrp(null)
+    setApproveError('')
   }
 
   const handleVendorUpdated = async (response) => {
@@ -167,23 +289,36 @@ function FrpPage(props) {
     closeEditDialog()
   }
 
-  const handleRpCheckerRuleDelete = async (rpCheckerRule) => {
-    const rpCheckerRuleId = rpCheckerRule?.id
+  const handleFrpApproved = async ({ frp: targetFrp, notes }) => {
+    const target = targetFrp ?? selectedApprovalFrp
+    const frpId = target?.id
 
-    if (rpCheckerRuleId === undefined || rpCheckerRuleId === null) {
+    if (frpId === undefined || frpId === null) {
+      setApproveError('ID FRP tidak tersedia.')
       return
     }
 
-    setErrorMessage('')
+    setApproveError('')
+    setIsApproving(true)
 
     try {
-      await api.frp.updateStatus(rpCheckerRuleId, 0)
-      setBudgetType((currentRules) =>
-        currentRules.filter((currentRule) => String(currentRule?.id) !== String(rpCheckerRuleId)),
-      )
-      closeDeleteDialog()
+      const response = await api.frp.approve(frpId, {
+        notes: notes || 'Approve FRP',
+      })
+      const approvedFrp = getFrpFromResponse(response)
+
+      if (approvedFrp) {
+        setBudgetType((currentFrp) => updateVendorRecord(currentFrp, frpId, approvedFrp))
+      } else {
+        setReloadToken((currentValue) => currentValue + 1)
+      }
+
+      setIsApproveDialogOpen(false)
+      setSelectedApprovalFrp(null)
     } catch (error) {
-      setErrorMessage(error.message || 'Gagal menonaktifkan RP checker rule.')
+      setApproveError(error.message || 'Gagal approve FRP.')
+    } finally {
+      setIsApproving(false)
     }
   }
 
@@ -262,18 +397,30 @@ function FrpPage(props) {
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
         onEdit={openEditDialog}
-        onDelete={openDeleteDialog}
+        onApproval={openApproveDialog}
+        canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
         isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
         onStatusChange={handleVendorStatusChange}
       />
 
-      {/* <DialogEditfrp
+      <DialogEditFrp
         isOpen={isEditDialogOpen}
-        title={`Edit ${getRpCheckerRuleLabel(selectedBudgetType)}`}
-        rpCheckerRule={selectedBudgetType}
+        title={`Edit ${getFrpEditLabel(selectedBudgetType)}`}
+        frp={selectedBudgetType}
         onClose={closeEditDialog}
         onUpdated={handleVendorUpdated}
-      /> */}
+      />
+
+      <DialogApproveFrp
+        key={selectedApprovalFrp?.id ?? 'approve-frp'}
+        isOpen={isApproveDialogOpen}
+        title={`Approve ${getFrpEditLabel(selectedApprovalFrp)}`}
+        frp={selectedApprovalFrp}
+        isSubmitting={isApproving}
+        submitError={approveError}
+        onClose={closeApproveDialog}
+        onApprove={handleFrpApproved}
+      />
     </section>
 
   )

@@ -1,15 +1,16 @@
-import { Eye } from '../../layoute/TemplateIcons.jsx'
+import { Download } from '../../layoute/TemplateIcons.jsx'
 
-function ButtonDetailsFrp({
-  label = 'Detail',
-  icon: Icon = Eye,
+function ButtonAttachmentsFrp({
+  label = 'Attachment',
+  icon: Icon = Download,
   size = 16,
   className = '',
+  children,
   type = 'button',
   ...buttonProps
 }) {
   const buttonClassName = [
-    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--details',
+    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--attachments',
     className,
   ]
     .filter(Boolean)
@@ -24,8 +25,9 @@ function ButtonDetailsFrp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {children}
     </button>
   )
 }
 
-export default ButtonDetailsFrp
+export default ButtonAttachmentsFrp
