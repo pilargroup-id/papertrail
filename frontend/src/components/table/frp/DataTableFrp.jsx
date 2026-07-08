@@ -183,11 +183,18 @@ function renderApprovalActions(frp, index, {
   onReject,
   onRevert,
   canApprove: canApproveAction,
+  canReject: canRejectAction,
 }) {
+  const isPending = getFrpStatusValue(frp) === 'PENDING'
   const canApprove =
-    getFrpStatusValue(frp) === 'PENDING' &&
+    isPending &&
     typeof onApproval === 'function' &&
     (typeof canApproveAction !== 'function' || canApproveAction(frp, index))
+  const canReject =
+    isPending &&
+    typeof onReject === 'function' &&
+    (typeof canRejectAction !== 'function' || canRejectAction(frp, index))
+  const canRevert = getFrpStatusValue(frp) === 'APPROVED' && typeof onRevert === 'function'
   const handleActionClick = (handler) => (event) => {
     event.stopPropagation()
     handler?.(frp, index, event)
@@ -201,14 +208,18 @@ function renderApprovalActions(frp, index, {
           onClick={handleActionClick(onApproval)}
         />
       ) : null}
-      <ButtonRejectFrp
-        label="Reject"
-        onClick={handleActionClick(onReject)}
-      />
-      <ButtonRevertFrp
-        label="Revert"
-        onClick={handleActionClick(onRevert)}
-      />
+      {canReject ? (
+        <ButtonRejectFrp
+          label="Reject"
+          onClick={handleActionClick(onReject)}
+        />
+      ) : null}
+      {canRevert ? (
+        <ButtonRevertFrp
+          label="Revert"
+          onClick={handleActionClick(onRevert)}
+        />
+      ) : null}
     </div>
   )
 }
@@ -282,6 +293,7 @@ function DataTableFrp({
   onReject,
   onRevert,
   canApprove,
+  canReject,
   onStatusChange,
   SwitchComponent,
   enableStatusSwitch = false,
@@ -338,6 +350,7 @@ function DataTableFrp({
         onReject,
         onRevert,
         canApprove,
+        canReject,
       }),
   }
 

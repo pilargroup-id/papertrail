@@ -10,6 +10,7 @@ import ButtonCreateFrp from '../../components/button/button-frp/ButtonCreateFrp.
 // Dialog Frp
 import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
 import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
+import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -200,11 +201,15 @@ function FrpPage(props) {
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
+  const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [approveError, setApproveError] = useState('')
+  const [rejectError, setRejectError] = useState('')
   const [isApproving, setIsApproving] = useState(false)
+  const [isRejecting, setIsRejecting] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -275,6 +280,22 @@ function FrpPage(props) {
     setApproveError('')
   }
 
+  const openRejectDialog = (frp) => {
+    setSelectedRejectFrp(frp)
+    setRejectError('')
+    setIsRejectDialogOpen(true)
+  }
+
+  const closeRejectDialog = () => {
+    if (isRejecting) {
+      return
+    }
+
+    setIsRejectDialogOpen(false)
+    setSelectedRejectFrp(null)
+    setRejectError('')
+  }
+
   const handleVendorUpdated = async (response) => {
     const updatedVendor = getVendorFromResponse(response)
 
@@ -319,6 +340,39 @@ function FrpPage(props) {
       setApproveError(error.message || 'Gagal approve FRP.')
     } finally {
       setIsApproving(false)
+    }
+  }
+
+  const handleFrpRejected = async ({ frp: targetFrp, reason }) => {
+    const target = targetFrp ?? selectedRejectFrp
+    const frpId = target?.id
+
+    if (frpId === undefined || frpId === null) {
+      setRejectError('ID FRP tidak tersedia.')
+      return
+    }
+
+    setRejectError('')
+    setIsRejecting(true)
+
+    try {
+      const response = await api.frp.reject(frpId, {
+        reason,
+      })
+      const rejectedFrp = getFrpFromResponse(response)
+
+      if (rejectedFrp) {
+        setBudgetType((currentFrp) => updateVendorRecord(currentFrp, frpId, rejectedFrp))
+      } else {
+        setReloadToken((currentValue) => currentValue + 1)
+      }
+
+      setIsRejectDialogOpen(false)
+      setSelectedRejectFrp(null)
+    } catch (error) {
+      setRejectError(error.message || 'Gagal reject FRP.')
+    } finally {
+      setIsRejecting(false)
     }
   }
 
@@ -398,7 +452,9 @@ function FrpPage(props) {
         SwitchComponent={Switch}
         onEdit={openEditDialog}
         onApproval={openApproveDialog}
+        onReject={openRejectDialog}
         canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
+        canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
         isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
         onStatusChange={handleVendorStatusChange}
       />
@@ -420,6 +476,17 @@ function FrpPage(props) {
         submitError={approveError}
         onClose={closeApproveDialog}
         onApprove={handleFrpApproved}
+      />
+
+      <DialogRejectFrp
+        key={selectedRejectFrp?.id ?? 'reject-frp'}
+        isOpen={isRejectDialogOpen}
+        title={`Reject ${getFrpEditLabel(selectedRejectFrp)}`}
+        frp={selectedRejectFrp}
+        isSubmitting={isRejecting}
+        submitError={rejectError}
+        onClose={closeRejectDialog}
+        onReject={handleFrpRejected}
       />
     </section>
 
