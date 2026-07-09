@@ -82,10 +82,6 @@ function findOption(options, value) {
   return options.find((option) => String(option.value) === String(value))
 }
 
-function getAuthUser(response) {
-  return response?.data?.data ?? response?.data ?? response ?? {}
-}
-
 function mapCompanyOptions(companies) {
   return companies.map((company) => {
     const id = getFirstValue(company, ['id', 'company_id', 'business_unit_id', 'uuid'])
@@ -134,30 +130,16 @@ function mapDepartmentOptions(departments) {
   })
 }
 
-function mapClassOptions(user) {
-  const departments = Array.isArray(user?.departments) ? user.departments : []
-  const classItems =
-    departments.length > 0
-      ? departments
-      : [
-          {
-            id: user?.department_id,
-            name: user?.department_class ?? user?.department,
-            class: user?.department_class ?? user?.department,
-            code: user?.department_code,
-            is_primary: 1,
-          },
-        ].filter((department) => department.id || department.name || department.class)
-
+function mapClassOptions(departments) {
   const uniqueOptions = new Map()
 
-  classItems.forEach((department) => {
-    const id = getFirstValue(department, ['id', 'department_id', 'uuid'], user?.department_id)
-    const code = getFirstValue(department, ['code', 'department_code'], user?.department_code)
+  departments.forEach((department) => {
+    const id = getFirstValue(department, ['id', 'department_id', 'uuid'])
+    const code = getFirstValue(department, ['code', 'department_code'])
     const className = getFirstValue(
       department,
       ['class', 'department_class', 'class_name', 'name', 'department_name'],
-      user?.department_class ?? user?.department ?? `Class #${id ?? '-'}`,
+      `Class #${id ?? '-'}`,
     )
     const optionKey = `${id}-${className}`
 
@@ -267,12 +249,13 @@ function DialogCreateBudgets({
       setOptionsError('')
 
       try {
-        const [authResponse, budgetTypesResponse] = await Promise.all([
-          api.auth.me(
-            {
-              signal: controller.signal,
-            },
-          ),
+        const [companiesResponse, departmentsResponse, budgetTypesResponse] = await Promise.all([
+          api.directory.companies.list(undefined, {
+            signal: controller.signal,
+          }),
+          api.directory.departments.list(undefined, {
+            signal: controller.signal,
+          }),
           api.budgetTypes.list(
             {
               page: 1,
@@ -284,24 +267,11 @@ function DialogCreateBudgets({
             },
           ),
         ])
-        const authUser = getAuthUser(authResponse)
-        const nextCompanyOptions = mapCompanyOptions(
-          Array.isArray(authUser?.companies) ? authUser.companies : [],
-        )
-        const nextDepartmentOptions = mapDepartmentOptions(
-          Array.isArray(authUser?.departments)
-            ? authUser.departments
-            : [
-                {
-                  id: authUser?.department_id,
-                  name: authUser?.department,
-                  class: authUser?.department_class,
-                  code: authUser?.department_code,
-                  is_primary: 1,
-                },
-              ].filter((department) => department.id || department.name),
-        )
-        const nextClassOptions = mapClassOptions(authUser)
+        const companies = getRowsFromResponse(companiesResponse)
+        const departments = getRowsFromResponse(departmentsResponse)
+        const nextCompanyOptions = mapCompanyOptions(companies)
+        const nextDepartmentOptions = mapDepartmentOptions(departments)
+        const nextClassOptions = mapClassOptions(departments)
         const primaryCompany = nextCompanyOptions.find((option) => option.isPrimary)
         const primaryDepartment = nextDepartmentOptions.find((option) => option.isPrimary)
         const primaryClass = nextClassOptions.find((option) => option.isPrimary)
@@ -476,7 +446,7 @@ function DialogCreateBudgets({
       <div
         className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget"
         role="dialog"
-        aria-modal="true"
+      aria-modal="true"
         aria-labelledby="dialog-create-budget-title"
         onClick={(event) => event.stopPropagation()}
       >
@@ -509,7 +479,7 @@ function DialogCreateBudgets({
                     </div>
                     <div className="register-user-popup__field">
                       <TextField
-                        label="Project Name"
+                        label="Budget Name"
                         value={formValues.project_name}
                         placeholder="Input project name"
                         leftIcon={FileText01}

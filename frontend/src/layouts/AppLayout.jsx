@@ -57,6 +57,7 @@ function AppLayout({
     userRole: '',
   })
   const [currentUser, setCurrentUser] = useState(null)
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
 
   const resolvedActivePath = activePath ?? location.pathname
   const resolvedActivePage = pageDetails[resolvedActivePath] ?? activePage ?? defaultActivePage
@@ -96,6 +97,10 @@ function AppLayout({
           userRole: '',
         })
         setCurrentUser(null)
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsAuthLoading(false)
+        }
       }
     }
 
@@ -161,6 +166,7 @@ function AppLayout({
                   lastUpdated,
                   searchQuery,
                   currentUser,
+                  isAuthLoading,
                   onDataChange: handleRefresh,
                 }}
               />

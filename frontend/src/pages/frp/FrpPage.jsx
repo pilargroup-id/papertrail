@@ -66,6 +66,27 @@ function getFrpFromResponse(response) {
   ) ?? null
 }
 
+function getFirstValue(source, keys, fallback = '') {
+  const matchedKey = keys.find(
+    (key) => source?.[key] !== undefined && source?.[key] !== null && source?.[key] !== '',
+  )
+
+  return matchedKey ? source[matchedKey] : fallback
+}
+
+function getAuthDepartmentId(user) {
+  const departments = Array.isArray(user?.departments) ? user.departments : []
+  const primaryDepartment =
+    departments.find((department) => Number(department?.is_primary) === 1) ||
+    departments[0] ||
+    null
+
+  return (
+    getFirstValue(user, ['department_id', 'departmentId']) ||
+    getFirstValue(primaryDepartment, ['department_id', 'departmentId', 'id'])
+  )
+}
+
 function getFrpEditLabel(frp) {
   return frp?.frp_number ?? frp?.id ?? 'FRP ini'
 }
@@ -100,6 +121,9 @@ function FrpPage(props) {
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
   const currentUser = props.currentUser ?? outletContext.currentUser ?? null
+  const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
+  const authDepartmentId = getAuthDepartmentId(currentUser)
+  const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
   const pageTitle = activePage?.title ?? 'RP Checker Rules'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [frp, setBudgetType] = useState([])
@@ -121,6 +145,10 @@ function FrpPage(props) {
   const [isRejecting, setIsRejecting] = useState(false)
 
   useEffect(() => {
+    if (!shouldLoadFrp) {
+      return undefined
+    }
+
     const controller = new AbortController()
 
     async function loadVendors() {
@@ -132,7 +160,8 @@ function FrpPage(props) {
           {
             page: 1,
             limit: 100,
-            q: searchQuery,
+            search: searchQuery,
+            department_id: authDepartmentId,
           },
           {
             signal: controller.signal,
@@ -157,7 +186,7 @@ function FrpPage(props) {
     loadVendors()
 
     return () => controller.abort()
-  }, [searchQuery, reloadToken])
+  }, [authDepartmentId, shouldLoadFrp, searchQuery, reloadToken])
 
   const handleFrpCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
@@ -369,9 +398,16 @@ function FrpPage(props) {
     }
   }
 
-  const emptyMessage = isLoading
+  const authGateMessage = isAuthLoading
+    ? 'Memuat profil auth...'
+    : !currentUser
+      ? 'Profil auth tidak tersedia.'
+      : authDepartmentId === ''
+        ? 'Department auth tidak tersedia.'
+        : ''
+  const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP checker rules...'
-    : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.')
+    : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.'))
 
   return (
     <section
@@ -397,7 +433,7 @@ function FrpPage(props) {
       </div>
 
       <DataTableFrp
-        rows={frp}
+        rows={shouldLoadFrp ? frp : []}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
