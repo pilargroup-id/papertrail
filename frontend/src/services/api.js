@@ -444,7 +444,15 @@ const api = {
       api.get(`/master/permission-modules/${id}`, { ...options, params }),
   },
 
+  permissionModulesGroupByUser : {
+    list: (params, options) =>
+      api.get('/master/user-module-permissions/grouped-by-user', {...options, params }),
+    detail: (id, params, options) =>
+      api.get(`/master/permission-modules/grouped-by-user/${id}`, { ...options, params }),  
+  },
+
   userModulePermissions: createResource('/master/user-module-permissions'),
+  userModulePermissionsGroupByUser: createResource('/master/user-module-permissions/grouped-by-user'),
 
   // =====================
   // Utility - Business Units (from PilarGroup)

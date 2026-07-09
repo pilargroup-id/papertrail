@@ -1,6 +1,6 @@
-import DataTableAction, { DataTableStatus } from '../../DataTableAction.jsx'
+import DataTableAccordion, { DataTableStatus } from '../../DataTableAccordion.jsx'
+import DataTable from '../../DataTable.jsx'
 import ButtonEditPermissionModules from '../../../button/button-permission-modules/ButtonEditPermissionModules.jsx'
-
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -23,10 +23,24 @@ function formatDateTime(value) {
 }
 
 function getUserModulePermissionStatusLabel(permissionModule) {
+  const permissions = getPermissionItems(permissionModule)
+
+  if (permissions.length > 0) {
+    const activeCount = permissions.filter(getIsUserModulePermissionActive).length
+
+    return `${activeCount}/${permissions.length} Aktif`
+  }
+
   return Number(permissionModule?.is_active) === 1 ? 'Aktif' : 'Nonaktif'
 }
 
 function getUserModulePermissionStatusVariant(permissionModule) {
+  const permissions = getPermissionItems(permissionModule)
+
+  if (permissions.length > 0) {
+    return permissions.some(getIsUserModulePermissionActive) ? 'active' : 'inactive'
+  }
+
   return Number(permissionModule?.is_active) === 1 ? 'active' : 'inactive'
 }
 
@@ -66,10 +80,65 @@ function getPermissionModuleSubtitle(permissionModule) {
   ].filter(Boolean).join(' | ')
 }
 
+function getPermissionModuleGroup(permissionModule) {
+  return (
+    permissionModule?.module_group ??
+    permissionModule?.module?.module_group ??
+    permissionModule?.permission_module?.module_group ??
+    '-'
+  )
+}
+
+function getPermissionItems(permissionModule) {
+  return Array.isArray(permissionModule?.permissions) ? permissionModule.permissions : []
+}
+
+function getPermissionUserName(permissionModule) {
+  return (
+    permissionModule?.name_snapshot ??
+    permissionModule?.user?.name_snapshot ??
+    permissionModule?.user?.name ??
+    permissionModule?.username_snapshot ??
+    permissionModule?.user_id
+  )
+}
+
+function getFirstPermissionValue(permissionModule, keys) {
+  const permissions = getPermissionItems(permissionModule)
+  const candidates = [permissionModule, ...permissions]
+
+  for (const candidate of candidates) {
+    const matchedKey = keys.find(
+      (key) => candidate?.[key] !== undefined && candidate?.[key] !== null && candidate?.[key] !== '',
+    )
+
+    if (matchedKey) {
+      return candidate[matchedKey]
+    }
+  }
+
+  return undefined
+}
+
+function getPermissionCreatedBy(permissionModule) {
+  return getFirstPermissionValue(permissionModule, ['created_by_name', 'created_by_user_id']) ?? '-'
+}
+
+function getPermissionCreatedAt(permissionModule) {
+  return getFirstPermissionValue(permissionModule, ['created_at'])
+}
+
+function getPermissionUpdatedAt(permissionModule) {
+  return getFirstPermissionValue(permissionModule, ['updated_at'])
+}
+
 function getUserPermissionSubtitle(permissionModule) {
+  const permissions = getPermissionItems(permissionModule)
+
   return [
     permissionModule?.username_snapshot,
-    permissionModule?.user_id,
+    permissions.length > 0 ? `${permissions.length} permissions` : null,
+    // permissionModule?.user_id,
   ].filter(Boolean).join(' | ')
 }
 
@@ -153,13 +222,23 @@ function renderUserModulePermissionStatus(permissionModule, index, {
   onStatusChange,
   SwitchComponent,
 }) {
+  const permissions = getPermissionItems(permissionModule)
+  const statusLabel = getUserModulePermissionStatusLabel(permissionModule)
+
+  if (permissions.length > 0) {
+    return (
+      <DataTableStatus variant={getUserModulePermissionStatusVariant(permissionModule)}>
+        {statusLabel}
+      </DataTableStatus>
+    )
+  }
+
   const isActive = getIsUserModulePermissionActive(permissionModule)
   const isUpdating =
     typeof isStatusUpdating === 'function'
       ? Boolean(isStatusUpdating(permissionModule, index))
       : false
   const isDisabled = permissionModule?.id === undefined || permissionModule?.id === null || isUpdating
-  const statusLabel = getUserModulePermissionStatusLabel(permissionModule)
   const statusPill = (
     <DataTableStatus
       className="banks-status-toggle__pill"
@@ -191,33 +270,142 @@ function renderUserModulePermissionStatus(permissionModule, index, {
   )
 }
 
+function renderPermissionModulesTable(permissionModule, {
+  isStatusUpdating,
+  onStatusChange,
+  shouldRenderStatusSwitch,
+  SwitchComponent,
+}) {
+  const permissions = getPermissionItems(permissionModule)
+  const rows = permissions.length > 0 ? permissions : [permissionModule]
+  const columns = [
+    {
+      key: 'module',
+      header: 'Module',
+      accessor: getPermissionModuleName,
+      type: 'identity',
+      minWidth: 230,
+      subtitleAccessor: getPermissionModuleSubtitle,
+    },
+    {
+      key: 'group',
+      header: 'Group',
+      accessor: getPermissionModuleGroup,
+      minWidth: 120,
+      nowrap: true,
+    },
+    {
+      key: 'access',
+      header: 'Access',
+      accessor: getPermissionActions,
+      type: 'chips',
+      minWidth: 220,
+    },
+    {
+      key: 'active_status',
+      header: 'Active Status',
+      render: (permission, index) =>
+        shouldRenderStatusSwitch
+          ? renderUserModulePermissionStatus(permission, index, {
+              isStatusUpdating,
+              onStatusChange,
+              SwitchComponent,
+            })
+          : (
+              <DataTableStatus variant={getUserModulePermissionStatusVariant(permission)}>
+                {getIsUserModulePermissionActive(permission) ? 'Active' : 'Inactive'}
+              </DataTableStatus>
+            ),
+      minWidth: 140,
+      nowrap: true,
+    },
+  ]
+
+  return (
+    <DataTable
+      rows={rows}
+      columns={columns}
+      getRowId={(permission, index) => permission?.id ?? permission?.module_id ?? index}
+      tableLabel={`${getPermissionUserName(permissionModule) ?? 'User'} permissions`}
+      emptyMessage="Belum ada permission."
+      pagination={false}
+      mobileCard={false}
+      className="permission-modules-accordion-table vendor-banks-table--auto-fit"
+      tableWrapperStyle={{
+        '--vendor-banks-table-cell-padding-block': '0.72rem',
+        '--vendor-banks-table-cell-padding-inline': '0.78rem',
+        '--vendor-banks-table-header-font-size': '0.68rem',
+        '--vendor-banks-table-body-font-size': '0.82rem',
+        '--vendor-banks-table-name-font-size': '0.86rem',
+        '--vendor-banks-table-meta-font-size': '0.64rem',
+        '--vendor-banks-table-avatar-size': '32px',
+        '--vendor-banks-table-identity-min-width': '180px',
+        '--vendor-banks-table-status-min-width': '76px',
+        '--vendor-banks-table-icon-size': '32px',
+        '--vendor-banks-table-switch-width': '38px',
+        '--vendor-banks-table-switch-height': '22px',
+        '--vendor-banks-table-switch-thumb': '16px',
+        '--vendor-banks-table-switch-thumb-translate': '16px',
+      }}
+    />
+  )
+}
+
+function getPermissionModulesDetail({
+  isStatusUpdating,
+  onStatusChange,
+  shouldRenderStatusSwitch,
+  SwitchComponent,
+}) {
+  return {
+    columnLabel: 'Permissions',
+    eyebrow: 'User permissions',
+    title: (permissionModule) => getPermissionUserName(permissionModule) ?? 'User Permission',
+    description: (permissionModule) => {
+      const permissions = getPermissionItems(permissionModule)
+
+      if (permissions.length === 0) {
+        return getPermissionModuleSubtitle(permissionModule)
+      }
+
+      const activeCount = permissions.filter(getIsUserModulePermissionActive).length
+
+      return `${permissions.length} module permissions, ${activeCount} aktif`
+    },
+    render: (permissionModule) =>
+      renderPermissionModulesTable(permissionModule, {
+        isStatusUpdating,
+        onStatusChange,
+        shouldRenderStatusSwitch,
+        SwitchComponent,
+      }),
+  }
+}
+
 const columnsPermissionModules = [
   {
     key: 'user',
     header: 'User',
-    accessor: (permissionModule) =>
-      permissionModule?.name_snapshot ??
-      permissionModule?.username_snapshot ??
-      permissionModule?.user_id,
+    accessor: getPermissionUserName,
     type: 'identity',
     minWidth: 260,
     subtitleAccessor: getUserPermissionSubtitle,
   },
-  {
-    key: 'module',
-    header: 'Module',
-    accessor: getPermissionModuleName,
-    type: 'identity',
-    minWidth: 260,
-    subtitleAccessor: getPermissionModuleSubtitle,
-  },
-  {
-    key: 'access',
-    header: 'Access',
-    accessor: getPermissionActions,
-    type: 'chips',
-    minWidth: 240,
-  },
+  // {
+  //   key: 'module',
+  //   header: 'Module',
+  //   accessor: getPermissionModuleName,
+  //   type: 'identity',
+  //   minWidth: 260,
+  //   subtitleAccessor: getPermissionModuleSubtitle,
+  // },
+  // {
+  //   key: 'access',
+  //   header: 'Access',
+  //   accessor: getPermissionActions,
+  //   type: 'chips',
+  //   minWidth: 240,
+  // },
   {
     key: 'status',
     header: 'Status',
@@ -227,9 +415,15 @@ const columnsPermissionModules = [
     nowrap: true,
   },
   {
+    key: 'created_by',
+    header: 'Created By',
+    accessor: getPermissionCreatedBy,
+    minWidth: 170,
+  },
+  {
     key: 'created_at',
     header: 'Created At',
-    accessor: 'created_at',
+    accessor: getPermissionCreatedAt,
     format: formatDateTime,
     nowrap: true,
     minWidth: 170,
@@ -237,7 +431,7 @@ const columnsPermissionModules = [
   {
     key: 'updated_at',
     header: 'Updated At',
-    accessor: 'updated_at',
+    accessor: getPermissionUpdatedAt,
     format: formatDateTime,
     nowrap: true,
     minWidth: 170,
@@ -248,7 +442,9 @@ function DataTablePermissionModules({
   rows = [],
   columns = columnsPermissionModules,
   actions,
-  getRowId = (permissionModule, index) => permissionModule?.id ?? index,
+  detail,
+  getRowId = (permissionModule, index) =>
+    permissionModule?.id ?? permissionModule?.user_id ?? permissionModule?.username_snapshot ?? index,
   tableLabel = 'User Module Permissions Table',
   emptyMessage = 'Belum ada data.',
   isStatusUpdating,
@@ -278,9 +474,23 @@ function DataTablePermissionModules({
       )
     : columns
   const resolvedMobileCard =
-    shouldRenderStatusSwitch && mobileCard !== false
+    mobileCard !== false
       ? {
           ...(mobileCard ?? {}),
+          rows: mobileCard?.rows ?? [
+            {
+              key: 'created_at',
+              label: 'Created At',
+              value: (permissionModule) => formatDateTime(getPermissionCreatedAt(permissionModule)),
+            },
+            {
+              key: 'updated_at',
+              label: 'Updated At',
+              value: (permissionModule) => formatDateTime(getPermissionUpdatedAt(permissionModule)),
+            },
+          ],
+          sections: mobileCard?.sections ?? false,
+          expandableTitle: mobileCard?.expandableTitle ?? 'Permissions',
           header: {
             ...(mobileCard?.header ?? {}),
             status: {
@@ -303,19 +513,27 @@ function DataTablePermissionModules({
     },
   ]
   const resolvedActions = Array.isArray(actions) ? actions : defaultActions
+  const resolvedDetail = detail ?? getPermissionModulesDetail({
+    isStatusUpdating,
+    onStatusChange,
+    shouldRenderStatusSwitch,
+    SwitchComponent,
+  })
   const autoFitColumnCount = resolvedColumns.length + (resolvedActions.length > 0 ? 1 : 0)
   const autoFitScale = getAutoFitScale(autoFitColumnCount)
   const autoFitColumns = resolvedColumns.map((column) => scaleTableColumn(column, autoFitScale))
 
   return (
-    <DataTableAction
+    <DataTableAccordion
       rows={rows}
       columns={autoFitColumns}
       actions={resolvedActions}
+      showAccordionActions={false}
       useDefaultActions={false}
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
+      detail={resolvedDetail}
       mobileCard={resolvedMobileCard}
       actionCellStyle={{
         width: '1%',

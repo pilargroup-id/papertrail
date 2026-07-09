@@ -59,28 +59,63 @@ function getRuleLabel(rule) {
 }
 
 function updateRuleStatus(permissionModules, permissionModulesId, isActive, updatedRule) {
+  const permissionModulesIdKey = String(permissionModulesId)
+
   return permissionModules.map((permissionModule) => {
-    if (String(permissionModule?.id) !== String(permissionModulesId)) {
+    if (String(permissionModule?.id) === permissionModulesIdKey) {
+      return {
+        ...permissionModule,
+        ...(updatedRule ?? {}),
+        is_active: updatedRule?.is_active ?? isActive,
+      }
+    }
+
+    if (!Array.isArray(permissionModule?.permissions)) {
       return permissionModule
     }
 
     return {
       ...permissionModule,
-      ...(updatedRule ?? {}),
-      is_active: updatedRule?.is_active ?? isActive,
+      permissions: permissionModule.permissions.map((permission) =>
+        String(permission?.id) === permissionModulesIdKey
+          ? {
+              ...permission,
+              ...(updatedRule ?? {}),
+              is_active: updatedRule?.is_active ?? isActive,
+            }
+          : permission,
+      ),
     }
   })
 }
 
 function updateRuleRecord(permissionModules, permissionModulesId, updatedRule) {
-  return permissionModules.map((permissionModule) =>
-    String(permissionModule?.id) === String(permissionModulesId)
-      ? {
-          ...permissionModule,
-          ...updatedRule,
-        }
-      : permissionModule,
-  )
+  const permissionModulesIdKey = String(permissionModulesId)
+
+  return permissionModules.map((permissionModule) => {
+    if (String(permissionModule?.id) === permissionModulesIdKey) {
+      return {
+        ...permissionModule,
+        ...updatedRule,
+      }
+    }
+
+    if (!Array.isArray(permissionModule?.permissions)) {
+      return permissionModule
+    }
+
+    return {
+      ...permissionModule,
+      permissions: permissionModule.permissions.map((permission) =>
+        String(permission?.id) === permissionModulesIdKey
+          ? {
+              ...permission,
+              ...updatedRule,
+            }
+          : permission,
+      ),
+    }
+  })
 }
 
 function PermissionModules(props) {
@@ -108,7 +143,7 @@ function PermissionModules(props) {
       setErrorMessage('')
 
       try {
-        const response = await api.userModulePermissions.list(
+        const response = await api.userModulePermissionsGroupByUser.list(
           {
             page: 1,
             limit: 100,
@@ -156,11 +191,15 @@ function PermissionModules(props) {
   const handleRuleUpdated = async (response) => {
     const updatedRule = getRuleFromResponse(response)
 
-    if (updatedRule?.id !== undefined && updatedRule?.id !== null) {
+    if (Array.isArray(response)) {
+      setReloadToken((currentValue) => currentValue + 1)
+    } else if (updatedRule?.id !== undefined && updatedRule?.id !== null) {
       setPermissionModules((currentRules) =>
         updateRuleRecord(currentRules, updatedRule.id, updatedRule),
       )
     } else if (selectedPermissionModule?.id !== undefined && selectedPermissionModule?.id !== null) {
+      setReloadToken((currentValue) => currentValue + 1)
+    } else {
       setReloadToken((currentValue) => currentValue + 1)
     }
 
@@ -197,9 +236,7 @@ function PermissionModules(props) {
       }
     } catch (error) {
       setPermissionModules((currentRules) =>
-        currentRules.map((currentRule) =>
-          String(currentRule?.id) === permissionModulesIdKey ? permissionModule : currentRule,
-        ),
+        updateRuleRecord(currentRules, permissionModulesId, permissionModule),
       )
       setErrorMessage(error.message || 'Gagal memperbarui status user module permission.')
     } finally {

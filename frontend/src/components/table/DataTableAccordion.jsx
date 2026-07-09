@@ -94,6 +94,7 @@ function DataTableAccordion({
   actions = [],
   detail,
   mobileCard,
+  showAccordionActions = true,
   actionColumnLabel = 'Action',
   actionColumnKey = 'action',
   actionCellClassName = 'users-table__action-cell',
@@ -163,6 +164,7 @@ function DataTableAccordion({
       {...props}
       detail={resolvedDetail}
       detailTogglePlacement="first-cell"
+      actions={showAccordionActions ? resolvedActions : []}
       mobileCard={
         mobileCard === false
           ? false
