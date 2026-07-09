@@ -48,16 +48,6 @@ function assertRequired(value, message) {
   }
 }
 
-function getPrimaryDepartment(user = {}) {
-  const departments = Array.isArray(user.departments) ? user.departments : [];
-
-  return (
-    departments.find((item) => Number(item.is_primary) === 1) ||
-    departments[0] ||
-    null
-  );
-}
-
 function getPrimaryCompany(user = {}) {
   const companies = Array.isArray(user.companies) ? user.companies : [];
 
@@ -86,14 +76,131 @@ function getUserDepartmentIds(user = {}) {
   return [...new Set(ids.filter(Boolean))];
 }
 
-function buildRequesterCompanyDepartmentSnapshot(user = {}) {
-  const primaryDepartment = getPrimaryDepartment(user);
-  const primaryCompany = getPrimaryCompany(user);
+function getUserDepartmentContexts(user = {}) {
+  const contexts = [];
 
-  const departmentId = user.department_id ?? primaryDepartment?.id ?? null;
-  const departmentName = user.department ?? primaryDepartment?.name ?? null;
-  const departmentClass = user.department_class ?? primaryDepartment?.class ?? null;
-  const departmentCode = user.department_code ?? primaryDepartment?.code ?? null;
+  if (user.context_department_id || user.department_id) {
+    const departmentId = Number(user.context_department_id || user.department_id);
+    const classDepartmentId = Number(user.class_department_id || departmentId);
+
+    contexts.push({
+      department_id: departmentId,
+      department_name: user.context_department_name || user.department || null,
+      department_class: user.context_department_class || user.department_class || user.department || null,
+      department_code: user.context_department_code || user.department_code || null,
+
+      class_department_id: classDepartmentId,
+      class_name: user.class_name || user.context_department_name || user.department || null,
+      class_class: user.class_class || user.context_department_class || user.department_class || user.department || null,
+      class_code: user.class_code || user.context_department_code || user.department_code || null,
+    });
+  }
+
+  const departments = Array.isArray(user.departments) ? user.departments : [];
+
+  departments.forEach((department) => {
+    const departmentId = Number(department.department_id || department.id || 0);
+    const classDepartmentId = Number(department.class_department_id || department.id || departmentId);
+
+    if (!departmentId || !classDepartmentId) {
+      return;
+    }
+
+    contexts.push({
+      department_id: departmentId,
+      department_name: department.department_name || department.name || null,
+      department_class: department.department_class || department.class || null,
+      department_code: department.department_code || department.code || null,
+
+      class_department_id: classDepartmentId,
+      class_name: department.class_name || department.name || null,
+      class_class: department.class_class || department.class || null,
+      class_code: department.class_code || department.code || null,
+    });
+  });
+
+  const uniqueMap = new Map();
+
+  contexts
+    .filter((context) => context.department_id && context.class_department_id)
+    .forEach((context) => {
+      uniqueMap.set(
+        `${context.department_id}:${context.class_department_id}`,
+        context
+      );
+    });
+
+  return [...uniqueMap.values()];
+}
+
+function resolveRequesterDepartmentContext(user = {}, body = {}) {
+  const contexts = getUserDepartmentContexts(user);
+
+  if (!contexts.length) {
+    throw new Error('User department is required');
+  }
+
+  const selectedDepartmentId = body.department_id
+    ? Number(body.department_id)
+    : null;
+
+  const selectedClassDepartmentId = body.class_department_id
+    ? Number(body.class_department_id)
+    : null;
+
+  if (!selectedDepartmentId && contexts.length === 1) {
+    return contexts[0];
+  }
+
+  if (!selectedDepartmentId) {
+    throw new Error('Department is required for multi-department user');
+  }
+
+  if (!selectedClassDepartmentId) {
+    const sameDepartmentContexts = contexts.filter((context) => {
+      return Number(context.department_id) === selectedDepartmentId;
+    });
+
+    if (sameDepartmentContexts.length === 1) {
+      return sameDepartmentContexts[0];
+    }
+
+    throw new Error('Class department is required for selected department');
+  }
+
+  const matchedContext = contexts.find((context) => {
+    return (
+      Number(context.department_id) === selectedDepartmentId &&
+      Number(context.class_department_id) === selectedClassDepartmentId
+    );
+  });
+
+  if (!matchedContext) {
+    throw new Error('Selected department/class is not assigned to current user');
+  }
+
+  return matchedContext;
+}
+
+function userHasDepartmentClassScope(user = {}, departmentId, classDepartmentId = null) {
+  const contexts = getUserDepartmentContexts(user);
+
+  return contexts.some((context) => {
+    if (Number(context.department_id) !== Number(departmentId)) {
+      return false;
+    }
+
+    if (!classDepartmentId) {
+      return true;
+    }
+
+    return Number(context.class_department_id) === Number(classDepartmentId);
+  });
+}
+
+function buildRequesterCompanyDepartmentSnapshot(user = {}, body = {}) {
+  const primaryCompany = getPrimaryCompany(user);
+  const selectedContext = resolveRequesterDepartmentContext(user, body);
 
   const companyId = user.company_id ?? primaryCompany?.id ?? null;
   const companyCode = user.company_code ?? primaryCompany?.code ?? null;
@@ -104,15 +211,15 @@ function buildRequesterCompanyDepartmentSnapshot(user = {}) {
     company_code_snapshot: companyCode,
     company_name_snapshot: companyName,
 
-    department_id: departmentId,
-    department_name_snapshot: departmentName,
-    department_class_snapshot: departmentClass,
-    department_code_snapshot: departmentCode,
+    department_id: selectedContext.department_id,
+    department_name_snapshot: selectedContext.department_name,
+    department_class_snapshot: selectedContext.department_class,
+    department_code_snapshot: selectedContext.department_code,
 
-    class_department_id: departmentId,
-    class_name_snapshot: departmentName,
-    class_class_snapshot: departmentClass,
-    class_code_snapshot: departmentCode,
+    class_department_id: selectedContext.class_department_id,
+    class_name_snapshot: selectedContext.class_name,
+    class_class_snapshot: selectedContext.class_class,
+    class_code_snapshot: selectedContext.class_code,
   };
 }
 
@@ -154,20 +261,6 @@ function userHasCompanyScope(user = {}, companyId) {
   return companies.some((company) => String(company.id || '') === String(companyId));
 }
 
-function userHasDepartmentScope(user = {}, departmentId) {
-  if (!departmentId) {
-    return false;
-  }
-
-  if (String(user.department_id || '') === String(departmentId)) {
-    return true;
-  }
-
-  const departments = Array.isArray(user.departments) ? user.departments : [];
-
-  return departments.some((department) => String(department.id || '') === String(departmentId));
-}
-
 function canViewAllFrp(user = {}) {
   return isUserInItDepartment(user);
 }
@@ -184,8 +277,8 @@ function canViewFrpByHeader(user = {}, frp = {}) {
   if (
     isManagerLevel(user) &&
     userHasCompanyScope(user, frp.company_id) &&
-    userHasDepartmentScope(user, frp.department_id)
-  ) {
+    userHasDepartmentClassScope(user, frp.department_id, frp.class_department_id)
+    ) {
     return true;
   }
 
@@ -255,7 +348,7 @@ function canApproveFrp(user = {}, frp = {}) {
 
   return (
     userHasCompanyScope(user, frp.company_id) &&
-    userHasDepartmentScope(user, frp.department_id)
+    userHasDepartmentClassScope(user, frp.department_id, frp.class_department_id)
   );
 }
 
@@ -278,7 +371,7 @@ function canRevertFrp(user = {}, frp = {}) {
 
   return (
     userHasCompanyScope(user, frp.company_id) &&
-    userHasDepartmentScope(user, frp.department_id)
+    userHasDepartmentClassScope(user, frp.department_id, frp.class_department_id)
   );
 }
 
@@ -301,13 +394,16 @@ function buildActorLogPayload(user = {}) {
 
 function buildListAccessQuery(user = {}) {
   const departmentIds = getUserDepartmentIds(user);
+  const departmentContexts = getUserDepartmentContexts(user);
 
   return {
     canViewAll: canViewAllFrp(user),
     userId: user.id || null,
     managerCompanyId: isManagerLevel(user) ? user.company_id || null : null,
     managerDepartmentIds: isManagerLevel(user) ? departmentIds : [],
+    managerDepartmentContexts: isManagerLevel(user) ? departmentContexts : [],
     budgetDepartmentIds: departmentIds,
+    budgetDepartmentContexts: departmentContexts,
   };
 }
 
@@ -535,7 +631,8 @@ async function createFrp(body = {}, user = {}, req = null) {
     await conn.beginTransaction();
 
     const userSnapshot = buildUserSnapshot(user);
-    const headerSnapshot = buildRequesterCompanyDepartmentSnapshot(user);
+    const headerSnapshot = buildRequesterCompanyDepartmentSnapshot(user, body);
+    const userDepartmentContexts = getUserDepartmentContexts(user);
 
     if (!headerSnapshot.company_id) {
       throw new Error('Company is required');
@@ -634,6 +731,7 @@ async function createFrp(body = {}, user = {}, req = null) {
         sourceItemId: item.id,
         header: headerSnapshot,
         user,
+        userDepartmentContexts,
         notes: `Reserve budget for ${frpNumber}`,
       });
     }
@@ -695,6 +793,7 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
   validateUpdatePayload(body);
 
   const conn = await frpModel.db.getConnection();
+  const userDepartmentContexts = getUserDepartmentContexts(user);
 
   try {
     await conn.beginTransaction();
@@ -791,6 +890,7 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
         sourceItemId: newItem.id,
         header: headerSnapshot,
         user,
+        userDepartmentContexts,
         notes: `Reserve updated budget for ${frp.frp_number}`,
       });
     }
