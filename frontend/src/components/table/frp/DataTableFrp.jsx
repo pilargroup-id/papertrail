@@ -8,6 +8,7 @@ import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
 import {
   canAccessFrpButton,
   canCurrentUserApproveFrp,
+  canCurrentUserEditFrp,
   canCurrentUserRejectFrp,
   canCurrentUserRevertFrp,
 } from './frp-button-access.js'
@@ -356,7 +357,7 @@ function DataTableFrp({
           key: 'edit',
           label: 'Edit FRP',
           buttonComponent: ButtonEditFrp,
-          hidden: () => !canAccessFrpButton(currentUser, 'edit'),
+          hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser),
           onClick: onEdit,
         }
       : null,

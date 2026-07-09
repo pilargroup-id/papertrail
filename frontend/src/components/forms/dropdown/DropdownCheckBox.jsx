@@ -14,6 +14,10 @@ function normalizeOption(option) {
   return option
 }
 
+function getOptionRenderKey(option, index) {
+  return `${String(option?.value ?? option?.label ?? 'option')}-${index}`
+}
+
 function DropdownCheckBox({
   id,
   label,
@@ -226,7 +230,7 @@ function DropdownCheckBox({
 
               <div className="form-dropdown__items">
                 {filteredOptions.length > 0 ? (
-                  filteredOptions.map((option) => {
+                  filteredOptions.map((option, index) => {
                     const selected = selectedValues.includes(option.value)
 
                     return (
@@ -238,7 +242,7 @@ function DropdownCheckBox({
                         role="option"
                         aria-selected={selected}
                         disabled={option.disabled}
-                        key={option.value}
+                        key={getOptionRenderKey(option, index)}
                         onClick={() => toggleOption(option)}
                       >
                         <span className="form-dropdown__checkbox-mark" aria-hidden="true">

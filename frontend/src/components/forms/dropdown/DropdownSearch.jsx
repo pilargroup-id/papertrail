@@ -14,6 +14,10 @@ function normalizeOption(option) {
   return option
 }
 
+function getOptionRenderKey(option, index) {
+  return `${String(option?.value ?? option?.label ?? 'option')}-${index}`
+}
+
 function DropdownSearch({
   id,
   label,
@@ -182,7 +186,7 @@ function DropdownSearch({
 
               <div className="form-dropdown__items">
                 {filteredOptions.length > 0 ? (
-                  filteredOptions.map((option) => {
+                  filteredOptions.map((option, index) => {
                     const selected = option.value === value
 
                     return (
@@ -192,7 +196,7 @@ function DropdownSearch({
                         role="option"
                         aria-selected={selected}
                         disabled={option.disabled}
-                        key={option.value}
+                        key={getOptionRenderKey(option, index)}
                         onClick={() => {
                           onChange?.(option.value, option)
                           setOpen(false)

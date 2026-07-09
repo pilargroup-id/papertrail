@@ -4,6 +4,7 @@ export const initialPermissionModuleFormValues = {
   name_snapshot: '',
   module_id: '',
   access: [],
+  module_access: {},
 }
 
 export const permissionAccessOptions = [

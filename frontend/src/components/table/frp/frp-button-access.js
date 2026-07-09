@@ -169,7 +169,7 @@ export function canAccessFrpButton(user, action) {
   const normalizedAction = normalizeAction(action)
 
   if (accessRole === 'manager') {
-    return ['approve', 'reject', 'revert'].includes(normalizedAction)
+    return ['approve', 'reject', 'revert', 'details'].includes(normalizedAction)
   }
 
   if (accessRole === 'staff_it') {
@@ -206,6 +206,18 @@ export function canCurrentUserApproveFrp(frp, currentUser) {
 
 export function canCurrentUserRejectFrp(frp, currentUser) {
   return canCurrentUserApproveFrp(frp, currentUser)
+}
+
+export function canCurrentUserEditFrp(frp, currentUser) {
+  if (!canAccessFrpButton(currentUser, 'edit')) {
+    return false
+  }
+
+  if (isItStaffUser(currentUser) && getFrpStatusValue(frp) === 'APPROVED') {
+    return false
+  }
+
+  return true
 }
 
 export function canCurrentUserRevertFrp(frp, currentUser) {

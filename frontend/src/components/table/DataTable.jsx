@@ -129,6 +129,26 @@ function getColumnKey(column, index) {
   return `column-${index}`
 }
 
+function getUniqueRowRenderKeys(rows, getRowId) {
+  const rowKeys = rows.map((row, index) => String(getRowId(row, index)))
+  const keyCounts = rowKeys.reduce((counts, rowKey) => {
+    counts.set(rowKey, (counts.get(rowKey) ?? 0) + 1)
+    return counts
+  }, new Map())
+  const keyOccurrences = new Map()
+
+  return rowKeys.map((rowKey) => {
+    if ((keyCounts.get(rowKey) ?? 0) <= 1) {
+      return rowKey
+    }
+
+    const occurrence = keyOccurrences.get(rowKey) ?? 0
+    keyOccurrences.set(rowKey, occurrence + 1)
+
+    return `${rowKey}-${occurrence}`
+  })
+}
+
 function formatColumnText(value, column, row, index) {
   if (typeof column.format === 'function') {
     return column.format(value, row, index)
@@ -699,6 +719,7 @@ function DataTable({
     : null
   const resolvedEmptyMessage = emptyMessage ?? tableMessage ?? 'Belum ada data.'
   const colSpan = columns.length + (showDetailColumn ? 1 : 0)
+  const rowRenderKeys = getUniqueRowRenderKeys(displayRows, getRowId)
 
   const handleToggleRow = (rowKey) => {
     if (!hasDetail) {
@@ -825,6 +846,7 @@ function DataTable({
               displayRows.map((row, index) => {
                 const rowId = getRowId(row, index)
                 const rowKey = String(rowId)
+                const rowRenderKey = rowRenderKeys[index] ?? rowKey
                 const safeRowId = sanitizeId(rowKey)
                 const isExpanded = visibleExpandedRowKey === rowKey
                 const isRowInteractive = hasDetail || typeof onRowClick === 'function'
@@ -843,7 +865,7 @@ function DataTable({
                   .join(' ')
 
                 return (
-                  <Fragment key={rowKey}>
+                  <Fragment key={rowRenderKey}>
                     <tr
                       className={rowClassName}
                       onClick={
@@ -1013,6 +1035,7 @@ function DataTable({
             >
               {displayRows.map((row, index) => {
                 const rowKey = String(getRowId(row, index))
+                const rowRenderKey = rowRenderKeys[index] ?? rowKey
                 const cardProps = buildMobileCardProps({
                   mobileCard,
                   row,
@@ -1025,7 +1048,7 @@ function DataTable({
                   defaultSurface: mobileCardSurface,
                 })
 
-                return <DetailCard key={rowKey} {...cardProps} />
+                return <DetailCard key={rowRenderKey} {...cardProps} />
               })}
             </div>
           ) : (

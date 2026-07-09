@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
+import { Check } from '../../layoute/TemplateIcons.jsx'
 import DropdownSearch from '../../forms/dropdown/DropdownSearch.jsx'
-import DropdownCheckBox from '../../forms/dropdown/DropdownCheckbox.jsx'
 import {
   getAccessErrorMessage,
   getPermissionPayloadFromAccess,
@@ -13,6 +13,78 @@ import {
   mapUserOptions,
   permissionAccessOptions,
 } from './permissionModuleFormUtils.js'
+
+const permissionModuleTabs = [
+  {
+    id: 'vendor',
+    label: 'Vendor',
+    groupMatches: ['vendor'],
+    moduleMatches: ['vendor', 'bank', 'vendor bank', 'vendor bank account'],
+  },
+  {
+    id: 'budget',
+    label: 'Budget',
+    groupMatches: ['budget'],
+    moduleMatches: ['budget', 'budget type', 'budget access', 'budget access rule'],
+  },
+  {
+    id: 'document',
+    label: 'Document',
+    groupMatches: ['document'],
+    moduleMatches: ['frp document', 'frp document type', 'external document', 'external document type'],
+  },
+  {
+    id: 'payment',
+    label: 'Payment',
+    groupMatches: ['payment'],
+    moduleMatches: ['payment method', 'rp payment category', 'payment category'],
+  },
+  {
+    id: 'permission',
+    label: 'Permission',
+    groupMatches: ['permission'],
+    moduleMatches: ['master permission', 'master permission module', 'permission module', 'permission management'],
+  },
+]
+
+function normalizeModuleText(value) {
+  return String(value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function getPermissionModuleSearchText(option) {
+  return normalizeModuleText(
+    [
+      option?.label,
+      option?.meta?.module_code,
+      option?.meta?.module_name,
+      option?.meta?.description,
+    ].filter(Boolean).join(' '),
+  )
+}
+
+function getPermissionModuleGroupText(option) {
+  return normalizeModuleText(option?.meta?.module_group)
+}
+
+function optionMatchesPermissionModuleTab(option, tab) {
+  const groupText = getPermissionModuleGroupText(option)
+  const searchText = getPermissionModuleSearchText(option)
+  const matchesGroup = tab.groupMatches.some((group) => groupText.includes(normalizeModuleText(group)))
+  const matchesModule = tab.moduleMatches.some((moduleName) =>
+    searchText.includes(normalizeModuleText(moduleName)),
+  )
+
+  return matchesGroup || matchesModule
+}
+
+function getSelectedPermissionModuleEntries(moduleAccessMap) {
+  return Object.entries(moduleAccessMap ?? {}).filter(
+    ([, accessValues]) => Array.isArray(accessValues) && accessValues.length > 0,
+  )
+}
 
 function DialogCreatePermissionModule({
   isOpen = false,
@@ -29,6 +101,7 @@ function DialogCreatePermissionModule({
   const [permissionModuleOptions, setPermissionModuleOptions] = useState([])
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
+  const [activeModuleTab, setActiveModuleTab] = useState(permissionModuleTabs[0].id)
 
   const resetDialogState = useCallback(() => {
     setFormValues(initialPermissionModuleFormValues)
@@ -39,6 +112,7 @@ function DialogCreatePermissionModule({
     setPermissionModuleOptions([])
     setIsOptionsLoading(false)
     setOptionsError('')
+    setActiveModuleTab(permissionModuleTabs[0].id)
   }, [])
 
   const handleClose = useCallback(() => {
@@ -46,22 +120,37 @@ function DialogCreatePermissionModule({
     onClose?.()
   }, [onClose, resetDialogState])
 
-  const updateValue = (fieldName, value) => {
-    setFormValues((currentValues) => ({
-      ...currentValues,
-      [fieldName]: value,
-    }))
+  const updatePermissionModuleAccess = (moduleId, accessValue, checked) => {
+    setFormValues((currentValues) => {
+      const normalizedModuleId = String(moduleId ?? '')
+      const currentModuleAccess = currentValues.module_access ?? {}
+      const currentAccess = Array.isArray(currentModuleAccess[normalizedModuleId])
+        ? currentModuleAccess[normalizedModuleId]
+        : []
+      const nextAccess = checked
+        ? [...new Set([...currentAccess, accessValue])]
+        : currentAccess.filter((value) => value !== accessValue)
+      const nextModuleAccess = {
+        ...currentModuleAccess,
+      }
 
-    setFieldErrors((currentErrors) => {
-      if (!currentErrors[fieldName]) {
-        return currentErrors
+      if (nextAccess.length > 0) {
+        nextModuleAccess[normalizedModuleId] = nextAccess
+      } else {
+        delete nextModuleAccess[normalizedModuleId]
       }
 
       return {
-        ...currentErrors,
-        [fieldName]: '',
+        ...currentValues,
+        module_access: nextModuleAccess,
       }
     })
+
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      module_id: '',
+      access: '',
+    }))
   }
 
   const updateUserSelection = (value, option) => {
@@ -77,6 +166,21 @@ function DialogCreatePermissionModule({
       user_id: '',
       username_snapshot: '',
       name_snapshot: '',
+    }))
+  }
+
+  const handleModuleTabChange = (tabId) => {
+    const nextTab = permissionModuleTabs.find((tab) => tab.id === tabId)
+
+    if (!nextTab) {
+      return
+    }
+
+    setActiveModuleTab(tabId)
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      module_id: '',
+      access: '',
     }))
   }
 
@@ -146,8 +250,9 @@ function DialogCreatePermissionModule({
     const normalizedUserId = String(formValues.user_id ?? '').trim()
     const normalizedUsername = String(formValues.username_snapshot ?? '').trim()
     const normalizedName = String(formValues.name_snapshot ?? '').trim()
-    const normalizedModuleId = Number(formValues.module_id)
-    const normalizedAccess = Array.isArray(formValues.access) ? formValues.access : []
+    const selectedPermissionModuleEntries = getSelectedPermissionModuleEntries(
+      formValues.module_access,
+    )
     const nextFieldErrors = {}
 
     if (!normalizedUserId) {
@@ -164,8 +269,8 @@ function DialogCreatePermissionModule({
       nextFieldErrors.name_snapshot = 'Nama maksimal 255 karakter.'
     }
 
-    if (!Number.isInteger(normalizedModuleId) || normalizedModuleId <= 0) {
-      nextFieldErrors.module_id = 'Permission module wajib dipilih.'
+    if (selectedPermissionModuleEntries.length === 0) {
+      nextFieldErrors.module_id = 'Minimal satu permission module wajib dipilih.'
     }
 
     if (Object.keys(nextFieldErrors).length > 0) {
@@ -178,15 +283,27 @@ function DialogCreatePermissionModule({
     setIsSubmitting(true)
 
     try {
-      const response = await api.userModulePermissions.create({
-        user_id: normalizedUserId,
-        username_snapshot: normalizedUsername,
-        name_snapshot: normalizedName,
-        module_id: normalizedModuleId,
-        ...getPermissionPayloadFromAccess(normalizedAccess),
-      })
+      const responses = []
 
-      await onCreated?.(response)
+      for (const [moduleId, accessValues] of selectedPermissionModuleEntries) {
+        const normalizedModuleId = Number(moduleId)
+
+        if (!Number.isInteger(normalizedModuleId) || normalizedModuleId <= 0) {
+          throw new Error('Permission module tidak valid.')
+        }
+
+        const response = await api.userModulePermissions.create({
+          user_id: normalizedUserId,
+          username_snapshot: normalizedUsername,
+          name_snapshot: normalizedName,
+          module_id: normalizedModuleId,
+          ...getPermissionPayloadFromAccess(accessValues),
+        })
+
+        responses.push(response)
+      }
+
+      await onCreated?.(responses)
       handleClose()
     } catch (error) {
       if (error?.data?.errors) {
@@ -205,11 +322,32 @@ function DialogCreatePermissionModule({
     }
   }
 
+  const isFormDisabled = isSubmitting || isOptionsLoading
+  const selectedModuleAccess = formValues.module_access ?? {}
+  const selectedPermissionModuleCount = getSelectedPermissionModuleEntries(selectedModuleAccess).length
+  const activePermissionModuleTab =
+    permissionModuleTabs.find((tab) => tab.id === activeModuleTab) ?? permissionModuleTabs[0]
+  const permissionModuleTabCounts = useMemo(
+    () =>
+      permissionModuleTabs.reduce((counts, tab) => {
+        counts[tab.id] = permissionModuleOptions.filter((option) =>
+          optionMatchesPermissionModuleTab(option, tab),
+        ).length
+        return counts
+      }, {}),
+    [permissionModuleOptions],
+  )
+  const visiblePermissionModuleOptions = useMemo(
+    () =>
+      permissionModuleOptions.filter((option) =>
+        optionMatchesPermissionModuleTab(option, activePermissionModuleTab),
+      ),
+    [activePermissionModuleTab, permissionModuleOptions],
+  )
+
   if (!isOpen || typeof document === 'undefined') {
     return null
   }
-
-  const isFormDisabled = isSubmitting || isOptionsLoading
 
   const dialogNode = (
     <div className="dashboard-popup-overlay" role="presentation" onClick={handleClose}>
@@ -253,32 +391,161 @@ function DialogCreatePermissionModule({
                         onChange={updateUserSelection}
                       />
                     </div>
-                    <div className="register-user-popup__field">
-                      <DropdownSearch
-                        label="Permission Module"
-                        value={formValues.module_id}
-                        options={permissionModuleOptions}
-                        placeholder={
-                          isOptionsLoading ? 'Memuat permission module...' : 'Pilih permission module'
-                        }
-                        searchPlaceholder="Cari permission module..."
-                        emptyMessage="Permission module aktif tidak ditemukan."
-                        required
-                        disabled={isFormDisabled}
-                        error={fieldErrors.module_id}
-                        onChange={(value) => updateValue('module_id', value)}
-                      />
-                    </div>
                     <div className="register-user-popup__field register-user-popup__field--full">
-                      <DropdownCheckBox
-                        label="Access"
-                        options={permissionAccessOptions}
-                        value={formValues.access}
-                        placeholder="Pilih access"
-                        disabled={isFormDisabled}
-                        error={fieldErrors.access}
-                        onChange={(value) => updateValue('access', value)}
-                      />
+                      <div
+                        className={[
+                          'permission-module-access-table',
+                          fieldErrors.module_id || fieldErrors.access
+                            ? 'permission-module-access-table--error'
+                            : '',
+                          isFormDisabled ? 'permission-module-access-table--disabled' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      >
+                        <div className="permission-module-access-table__label-row">
+                          <label className="form-control__label">
+                            <span>Permission Module Access</span>
+                            <span className="form-control__required">*</span>
+                          </label>
+                          <span className="permission-module-access-table__selection-count">
+                            {selectedPermissionModuleCount} selected
+                          </span>
+                        </div>
+                        <div
+                          className="permission-module-access-table__tabs"
+                          role="tablist"
+                          aria-label="Klasifikasi permission module"
+                        >
+                          {permissionModuleTabs.map((tab) => {
+                            const isActiveTab = tab.id === activeModuleTab
+
+                            return (
+                              <button
+                                className={
+                                  isActiveTab
+                                    ? 'permission-module-access-table__tab permission-module-access-table__tab--active'
+                                    : 'permission-module-access-table__tab'
+                                }
+                                type="button"
+                                role="tab"
+                                aria-selected={isActiveTab}
+                                key={tab.id}
+                                disabled={isFormDisabled}
+                                onClick={() => handleModuleTabChange(tab.id)}
+                              >
+                                <span>{tab.label}</span>
+                                <span className="permission-module-access-table__tab-count">
+                                  {permissionModuleTabCounts[tab.id] ?? 0}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <div className="permission-module-access-table__shell">
+                          <table
+                            className="permission-module-access-table__table"
+                            aria-label="Permission module access"
+                          >
+                            <thead>
+                              <tr>
+                                <th scope="col">Permission Module</th>
+                                {permissionAccessOptions.map((option) => (
+                                  <th scope="col" key={option.value}>
+                                    {option.value === 'can_deactivate' ? 'Deactive' : option.label}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {visiblePermissionModuleOptions.length > 0 ? (
+                                visiblePermissionModuleOptions.map((option) => {
+                                  const moduleId = String(option.value ?? '')
+                                  const moduleAccessValues = Array.isArray(
+                                    selectedModuleAccess[moduleId],
+                                  )
+                                    ? selectedModuleAccess[moduleId]
+                                    : []
+                                  const isSelected = moduleAccessValues.length > 0
+                                  const moduleCode = option.meta?.module_code
+                                  const moduleName = option.meta?.module_name
+                                  const fallbackLabel = option.label || `Permission Module #${moduleId || '-'}`
+
+                                  return (
+                                    <tr
+                                      className={
+                                        isSelected
+                                          ? 'permission-module-access-table__row permission-module-access-table__row--selected'
+                                          : 'permission-module-access-table__row'
+                                      }
+                                      key={moduleId || fallbackLabel}
+                                    >
+                                      <th scope="row">
+                                        <div className="permission-module-access-table__module-button">
+                                          <span className="permission-module-access-table__module-name">
+                                            {moduleName || fallbackLabel}
+                                          </span>
+                                          {moduleCode ? (
+                                            <span className="permission-module-access-table__module-code">
+                                              {moduleCode}
+                                            </span>
+                                          ) : null}
+                                        </div>
+                                      </th>
+                                      {permissionAccessOptions.map((accessOption) => {
+                                        const checked = moduleAccessValues.includes(accessOption.value)
+
+                                        return (
+                                          <td key={accessOption.value}>
+                                            <label className="permission-module-access-table__checkbox">
+                                              <input
+                                                className="form-choice__input"
+                                                type="checkbox"
+                                                checked={checked}
+                                                disabled={isFormDisabled}
+                                                aria-label={`${accessOption.label} access untuk ${
+                                                  moduleName || fallbackLabel
+                                                }`}
+                                                onChange={(event) => {
+                                                  updatePermissionModuleAccess(
+                                                    option.value,
+                                                    accessOption.value,
+                                                    event.target.checked,
+                                                  )
+                                                }}
+                                                onClick={(event) => event.stopPropagation()}
+                                              />
+                                              <span className="form-choice__box" aria-hidden="true">
+                                                <Check size={14} />
+                                              </span>
+                                            </label>
+                                          </td>
+                                        )
+                                      })}
+                                    </tr>
+                                  )
+                                })
+                              ) : (
+                                <tr>
+                                  <td
+                                    className="permission-module-access-table__empty"
+                                    colSpan={permissionAccessOptions.length + 1}
+                                  >
+                                    {isOptionsLoading
+                                      ? 'Memuat permission module...'
+                                      : `Permission module ${activePermissionModuleTab.label} tidak ditemukan.`}
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                        {fieldErrors.module_id || fieldErrors.access ? (
+                          <p className="form-control__message">
+                            {fieldErrors.module_id || fieldErrors.access}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
 
