@@ -14,8 +14,12 @@ const defaultActivePage = {
   detail: 'Halaman default.',
 }
 
+function extractAuthUser(authResponse) {
+  return authResponse?.data?.data ?? authResponse?.data ?? authResponse?.result ?? authResponse ?? {}
+}
+
 function extractAuthProfile(authResponse) {
-  const authData = authResponse?.data ?? authResponse?.result ?? authResponse ?? {}
+  const authData = extractAuthUser(authResponse)
 
   return {
     userName:
@@ -52,6 +56,7 @@ function AppLayout({
     userName: '',
     userRole: '',
   })
+  const [currentUser, setCurrentUser] = useState(null)
 
   const resolvedActivePath = activePath ?? location.pathname
   const resolvedActivePage = pageDetails[resolvedActivePath] ?? activePage ?? defaultActivePage
@@ -77,8 +82,10 @@ function AppLayout({
         const authResponse = await api.auth.me({
           signal: controller.signal,
         })
+        const authUser = extractAuthUser(authResponse)
 
-        setAuthProfile(extractAuthProfile(authResponse))
+        setAuthProfile(extractAuthProfile(authUser))
+        setCurrentUser(authUser)
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -88,6 +95,7 @@ function AppLayout({
           userName: '',
           userRole: '',
         })
+        setCurrentUser(null)
       }
     }
 
@@ -152,6 +160,7 @@ function AppLayout({
                   activePath: resolvedActivePath,
                   lastUpdated,
                   searchQuery,
+                  currentUser,
                   onDataChange: handleRefresh,
                 }}
               />

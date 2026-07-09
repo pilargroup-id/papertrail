@@ -2917,14 +2917,132 @@ select {
 
 .frp-accordion-detail {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.95rem;
   margin-top: -0.35rem;
+}
+
+.frp-accordion-detail__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.frp-accordion-detail__items {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.frp-accordion-detail__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.frp-accordion-detail__section-header h4 {
+  margin: 0;
+  color: #172554;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.frp-accordion-detail__section-header span {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.frp-accordion-detail__card {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 0.9rem;
+  border: 1px solid rgba(26, 42, 87, 0.1);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(26, 42, 87, 0.06);
+}
+
+.frp-accordion-detail__card--wide {
+  width: 100%;
+}
+
+.frp-accordion-detail__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(26, 42, 87, 0.08);
+}
+
+.frp-accordion-detail__card-header h4 {
+  margin: 0;
+  color: #172554;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.frp-accordion-detail__field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.frp-accordion-detail__field-grid--attachment {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.frp-accordion-detail__field-grid--document {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.frp-accordion-detail__field-grid--summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.frp-accordion-detail__field {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+  padding: 0.62rem 0.7rem;
+  border: 1px solid rgba(26, 42, 87, 0.08);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.frp-accordion-detail__field--wide {
+  grid-column: span 2;
+}
+
+.frp-accordion-detail__field span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.frp-accordion-detail__field strong {
+  min-width: 0;
+  color: #172554;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .frp-accordion-detail__attachments {
   display: grid;
   gap: 0.7rem;
   min-width: 0;
+}
+
+.frp-accordion-detail__attachment-label {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
 .frp-accordion-detail__attachment-copy span {
@@ -2987,6 +3105,17 @@ select {
   font-weight: 700;
 }
 
+.frp-accordion-detail__attachment-empty {
+  margin: 0;
+  padding: 0.68rem 0.75rem;
+  border: 1px dashed rgba(26, 42, 87, 0.16);
+  border-radius: 8px;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .frp-accordion-detail .frp-icon-button {
   width: 34px;
   height: 34px;
@@ -3027,10 +3156,32 @@ select {
   min-width: 1180px;
 }
 
+.frp-details-popup .frp-accordion-detail__table .users-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
 .frp-accordion-detail .users-table__header-cell,
 .frp-accordion-detail .users-table__cell {
   padding: 0.72rem 0.85rem;
   font-size: 0.82rem;
+}
+
+.frp-details-popup .frp-accordion-detail__table .users-table__header-cell,
+.frp-details-popup .frp-accordion-detail__table .users-table__cell {
+  padding: 0.62rem 0.6rem;
+}
+
+.frp-details-popup .frp-accordion-detail__table .users-table__cell {
+  min-width: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frp-details-popup .frp-accordion-detail__table .users-table__header-cell {
+  min-width: 0 !important;
+  white-space: normal;
 }
 
 .frp-accordion-detail .users-table__name {
@@ -3039,6 +3190,34 @@ select {
 
 .frp-accordion-detail .users-table__meta {
   font-size: 0.68rem;
+}
+
+@media (max-width: 720px) {
+  .frp-accordion-detail__cards,
+  .frp-accordion-detail__field-grid,
+  .frp-accordion-detail__field-grid--document {
+    grid-template-columns: 1fr;
+  }
+
+  .frp-accordion-detail__card {
+    padding: 0.78rem;
+  }
+}
+
+@media (max-width: 960px) {
+  .frp-accordion-detail__field-grid--summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .frp-accordion-detail__field-grid--summary .frp-accordion-detail__field--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .frp-accordion-detail__field-grid--summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 .users-table-wrapper.vendor-banks-table--auto-fit .banks-status-toggle__switch {

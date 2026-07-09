@@ -1,11 +1,16 @@
-import DataTableAccordion, { DataTableStatus } from '../DataTableAccordion.jsx'
+import DataTableAction, { DataTableStatus } from '../DataTableAction.jsx'
 import ButtonEditFrp from '../../button/button-frp/ButtonEditFrp.jsx'
 import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 
 import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
 import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
-import { frpAccordionDetail } from './DetailAccordionFrp.jsx'
+import {
+  canAccessFrpButton,
+  canCurrentUserApproveFrp,
+  canCurrentUserRejectFrp,
+  canCurrentUserRevertFrp,
+} from './frp-button-access.js'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -178,49 +183,31 @@ function renderBanksStatus(frp, index, {
   )
 }
 
-function renderApprovalActions(frp, index, {
-  onApproval,
-  onReject,
-  onRevert,
-  canApprove: canApproveAction,
-  canReject: canRejectAction,
-}) {
+function isApproveActionHidden(frp, index, currentUser, canApproveAction) {
   const isPending = getFrpStatusValue(frp) === 'PENDING'
-  const canApprove =
-    isPending &&
-    typeof onApproval === 'function' &&
-    (typeof canApproveAction !== 'function' || canApproveAction(frp, index))
-  const canReject =
-    isPending &&
-    typeof onReject === 'function' &&
-    (typeof canRejectAction !== 'function' || canRejectAction(frp, index))
-  const canRevert = getFrpStatusValue(frp) === 'APPROVED' && typeof onRevert === 'function'
-  const handleActionClick = (handler) => (event) => {
-    event.stopPropagation()
-    handler?.(frp, index, event)
-  }
 
-  return (
-    <div className="frp-table__button-group frp-table__button-group--approval">
-      {canApprove ? (
-        <ButtonApprovalFrp
-          label="Approval"
-          onClick={handleActionClick(onApproval)}
-        />
-      ) : null}
-      {canReject ? (
-        <ButtonRejectFrp
-          label="Reject"
-          onClick={handleActionClick(onReject)}
-        />
-      ) : null}
-      {canRevert ? (
-        <ButtonRevertFrp
-          label="Revert"
-          onClick={handleActionClick(onRevert)}
-        />
-      ) : null}
-    </div>
+  return !(
+    isPending &&
+    canCurrentUserApproveFrp(frp, currentUser) &&
+    (typeof canApproveAction !== 'function' || canApproveAction(frp, index))
+  )
+}
+
+function isRejectActionHidden(frp, index, currentUser, canRejectAction) {
+  const isPending = getFrpStatusValue(frp) === 'PENDING'
+
+  return !(
+    isPending &&
+    canCurrentUserRejectFrp(frp, currentUser) &&
+    (typeof canRejectAction !== 'function' || canRejectAction(frp, index))
+  )
+}
+
+function isRevertActionHidden(frp, index, currentUser, canRevertAction) {
+  return !(
+    getFrpStatusValue(frp) === 'APPROVED' &&
+    canCurrentUserRevertFrp(frp, currentUser) &&
+    (typeof canRevertAction !== 'function' || canRevertAction(frp, index))
   )
 }
 
@@ -294,11 +281,12 @@ function DataTableFrp({
   onRevert,
   canApprove,
   canReject,
+  canRevert,
+  currentUser,
   onStatusChange,
   SwitchComponent,
   enableStatusSwitch = false,
   mobileCard,
-  detail = frpAccordionDetail,
   className,
   tableWrapperStyle,
   ...props
@@ -334,67 +322,78 @@ function DataTableFrp({
           },
         }
       : mobileCard
-  const approvalColumn = {
-    key: 'approval',
-    header: 'Approval',
-    headerClassName: 'users-table__action-header',
-    cellClassName: 'users-table__action-cell frp-table__approval-cell',
-    cellStyle: {
-      width: '1%',
-      minWidth: Math.max(118, Math.round(146 * getAutoFitScale(resolvedColumns.length + 2))),
-      whiteSpace: 'nowrap',
-    },
-    render: (frp, index) =>
-      renderApprovalActions(frp, index, {
-        onApproval,
-        onReject,
-        onRevert,
-        canApprove,
-        canReject,
-      }),
-  }
 
   const defaultActions = [
+    typeof onApproval === 'function'
+      ? {
+          key: 'approval',
+          label: 'Approval',
+          buttonComponent: ButtonApprovalFrp,
+          hidden: (frp, index) => isApproveActionHidden(frp, index, currentUser, canApprove),
+          onClick: onApproval,
+        }
+      : null,
+    typeof onReject === 'function'
+      ? {
+          key: 'reject',
+          label: 'Reject',
+          buttonComponent: ButtonRejectFrp,
+          hidden: (frp, index) => isRejectActionHidden(frp, index, currentUser, canReject),
+          onClick: onReject,
+        }
+      : null,
+    typeof onRevert === 'function'
+      ? {
+          key: 'revert',
+          label: 'Revert',
+          buttonComponent: ButtonRevertFrp,
+          hidden: (frp, index) => isRevertActionHidden(frp, index, currentUser, canRevert),
+          onClick: onRevert,
+        }
+      : null,
     typeof onEdit === 'function'
       ? {
           key: 'edit',
           label: 'Edit FRP',
           buttonComponent: ButtonEditFrp,
+          hidden: () => !canAccessFrpButton(currentUser, 'edit'),
           onClick: onEdit,
         }
       : null,
-    {
-      key: 'details',
-      label: 'Details FRP',
-      buttonComponent: ButtonDetailsFrp,
-      onClick: typeof onDetails === 'function' ? onDetails : undefined,
-      stopPropagation: typeof onDetails === 'function' ? undefined : false,
-    },
+    typeof onDetails === 'function'
+      ? {
+          key: 'details',
+          label: 'Details FRP',
+          buttonComponent: ButtonDetailsFrp,
+          hidden: () => !canAccessFrpButton(currentUser, 'details'),
+          onClick: onDetails,
+        }
+      : null,
   ].filter(Boolean)
 
   //For Action
   const resolvedActions = Array.isArray(actions) ? actions : defaultActions
-  const autoFitColumnCount = resolvedColumns.length + 1 + (resolvedActions.length > 0 ? 1 : 0)
+  const autoFitColumnCount =
+    resolvedColumns.length + (resolvedActions.length > 0 ? 1 : 0)
   const autoFitScale = getAutoFitScale(autoFitColumnCount)
-  const autoFitColumns = [...resolvedColumns, approvalColumn].map((column) =>
+  const autoFitColumns = resolvedColumns.map((column) =>
     scaleTableColumn(column, autoFitScale),
   )
 
   return (
-    <DataTableAccordion
+    <DataTableAction
       rows={rows}
       columns={autoFitColumns}
       actions={resolvedActions}
       useDefaultActions={false}
       getRowId={getRowId}
-      detail={detail}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
       mobileCard={resolvedMobileCard}
       actionCellClassName="users-table__action-cell frp-table__action-cell"
       actionCellStyle={{
         width: '1%',
-        minWidth: Math.max(78, Math.round(92 * autoFitScale)),
+        minWidth: Math.max(118, Math.round(146 * autoFitScale)),
         whiteSpace: 'nowrap',
       }}
       className={joinClassNames('vendor-banks-table--auto-fit frp-table--actions', className)}

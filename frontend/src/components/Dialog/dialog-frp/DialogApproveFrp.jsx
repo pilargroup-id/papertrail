@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import TextArea from '../../forms/TextArea.jsx'
-import { XClose } from '../../layoute/TemplateIcons.jsx'
 
 function DialogApproveFrp({
   isOpen = false,
@@ -82,16 +81,6 @@ function DialogApproveFrp({
                 {title}
               </h2>
             </div>
-
-            <button
-              type="button"
-              className="dashboard-popup__close"
-              aria-label="Tutup dialog"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              <XClose size={18} />
-            </button>
           </div>
 
           <div className="dashboard-popup__body">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
+import { canCurrentUserApproveFrp } from '../../components/table/frp/frp-button-access.js';
 
 // Button Frp
 import Switch from '../../components/forms/Switch.jsx';
@@ -11,6 +12,7 @@ import ButtonCreateFrp from '../../components/button/button-frp/ButtonCreateFrp.
 import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
 import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
+import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -68,101 +70,6 @@ function getFrpEditLabel(frp) {
   return frp?.frp_number ?? frp?.id ?? 'FRP ini'
 }
 
-function getFirstValue(source, keys, fallback = '') {
-  const matchedKey = keys.find((key) => source?.[key] !== undefined && source?.[key] !== null)
-
-  if (!matchedKey) {
-    return fallback
-  }
-
-  return source[matchedKey]
-}
-
-function getFrpStatusValue(frp) {
-  return String(frp?.status ?? '').trim().toUpperCase()
-}
-
-function getCurrentUserId(user) {
-  return getFirstValue(user, ['id', 'user_id', 'userId'], '')
-}
-
-function getFrpRequesterId(frp) {
-  return getFirstValue(
-    frp,
-    ['requested_by_user_id', 'requested_by_id', 'created_by_user_id', 'created_by'],
-    '',
-  )
-}
-
-function getUserDepartmentIds(user) {
-  const departments = Array.isArray(user?.departments) ? user.departments : []
-  const departmentIds = departments
-    .map((department) => getFirstValue(department, ['id', 'department_id', 'departmentId'], ''))
-    .filter((departmentId) => departmentId !== '')
-
-  const primaryDepartmentId = getFirstValue(user, ['department_id', 'departmentId'], '')
-
-  return primaryDepartmentId === '' ? departmentIds : [primaryDepartmentId, ...departmentIds]
-}
-
-function isManagerUser(user) {
-  const explicitManagerFlag = getFirstValue(user, ['is_manager', 'isManager'], null)
-
-  if (explicitManagerFlag !== null) {
-    return ['1', 'true', 'yes'].includes(String(explicitManagerFlag).trim().toLowerCase())
-  }
-
-  const roleText = [
-    user?.job_position,
-    user?.jobPosition,
-    user?.job_level,
-    user?.jobLevel,
-    user?.role,
-    user?.userRole,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-
-  return roleText ? roleText.includes('manager') : null
-}
-
-function canCurrentUserApproveFrp(frp, currentUser) {
-  if (getFrpStatusValue(frp) !== 'PENDING') {
-    return false
-  }
-
-  if (!currentUser) {
-    return true
-  }
-
-  const isManager = isManagerUser(currentUser)
-
-  if (isManager === false) {
-    return false
-  }
-
-  const currentUserId = getCurrentUserId(currentUser)
-  const requesterId = getFrpRequesterId(frp)
-
-  if (currentUserId !== '' && requesterId !== '' && String(currentUserId) === String(requesterId)) {
-    return false
-  }
-
-  const frpDepartmentId = getFirstValue(frp, ['department_id', 'departmentId'], '')
-  const userDepartmentIds = getUserDepartmentIds(currentUser)
-
-  if (
-    frpDepartmentId !== '' &&
-    userDepartmentIds.length > 0 &&
-    !userDepartmentIds.some((departmentId) => String(departmentId) === String(frpDepartmentId))
-  ) {
-    return false
-  }
-
-  return true
-}
-
 function updateVendorStatus(frp, frpId, isActive, updatedBudgetType) {
   return frp.map((frp) => {
     if (String(frp?.id) !== String(frpId)) {
@@ -200,10 +107,12 @@ function FrpPage(props) {
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
+  const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
   const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [approveError, setApproveError] = useState('')
@@ -262,6 +171,16 @@ function FrpPage(props) {
   const closeEditDialog = () => {
     setIsEditDialogOpen(false)
     setSelectedBudgetType(null)
+  }
+
+  const openDetailsDialog = (frp) => {
+    setSelectedDetailsFrp(frp)
+    setIsDetailsDialogOpen(true)
+  }
+
+  const closeDetailsDialog = () => {
+    setIsDetailsDialogOpen(false)
+    setSelectedDetailsFrp(null)
   }
 
   const openApproveDialog = (frp) => {
@@ -376,6 +295,38 @@ function FrpPage(props) {
     }
   }
 
+  const handleFrpReverted = async (targetFrp) => {
+    const frpId = targetFrp?.id
+
+    if (frpId === undefined || frpId === null) {
+      setErrorMessage('ID FRP tidak tersedia.')
+      return
+    }
+
+    const frpLabel = getFrpEditLabel(targetFrp)
+
+    if (typeof window !== 'undefined' && !window.confirm(`Revert ${frpLabel}?`)) {
+      return
+    }
+
+    setErrorMessage('')
+
+    try {
+      const response = await api.frp.revert(frpId, {
+        reason: `Revert ${frpLabel}`,
+      })
+      const revertedFrp = getFrpFromResponse(response)
+
+      if (revertedFrp) {
+        setBudgetType((currentFrp) => updateVendorRecord(currentFrp, frpId, revertedFrp))
+      } else {
+        setReloadToken((currentValue) => currentValue + 1)
+      }
+    } catch (error) {
+      setErrorMessage(error.message || 'Gagal revert FRP.')
+    }
+  }
+
   const handleVendorStatusChange = async (frp, nextIsActive) => {
     const frpId = frp?.id
 
@@ -451,8 +402,11 @@ function FrpPage(props) {
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
         onEdit={openEditDialog}
+        onDetails={openDetailsDialog}
         onApproval={openApproveDialog}
         onReject={openRejectDialog}
+        onRevert={handleFrpReverted}
+        currentUser={currentUser}
         canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
         canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
         isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
@@ -465,6 +419,13 @@ function FrpPage(props) {
         frp={selectedBudgetType}
         onClose={closeEditDialog}
         onUpdated={handleVendorUpdated}
+      />
+
+      <DialogDetailsFrp
+        isOpen={isDetailsDialogOpen}
+        title={`Detail ${getFrpEditLabel(selectedDetailsFrp)}`}
+        frp={selectedDetailsFrp}
+        onClose={closeDetailsDialog}
       />
 
       <DialogApproveFrp
