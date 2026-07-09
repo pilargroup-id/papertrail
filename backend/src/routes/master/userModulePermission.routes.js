@@ -11,6 +11,18 @@ router.get(
 );
 
 router.get(
+  '/grouped-by-user',
+  requireModulePermission('MASTER_PERMISSION', 'view'),
+  UserModulePermissionController.groupedByUser
+);
+
+router.get(
+  '/grouped-by-module',
+  requireModulePermission('MASTER_PERMISSION', 'view'),
+  UserModulePermissionController.groupedByModule
+);
+
+router.get(
   '/:id',
   requireModulePermission('MASTER_PERMISSION', 'view'),
   UserModulePermissionController.show

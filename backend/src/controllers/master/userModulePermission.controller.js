@@ -11,6 +11,26 @@ async function index(req, res, next) {
   }
 }
 
+async function groupedByUser(req, res, next) {
+  try {
+    const result = await UserModulePermissionService.getUserModulePermissionsGroupedByUser(req.query);
+
+    return R.ok(res, result, 'User module permissions grouped by user retrieved');
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function groupedByModule(req, res, next) {
+  try {
+    const result = await UserModulePermissionService.getUserModulePermissionsGroupedByModule(req.query);
+
+    return R.ok(res, result, 'User module permissions grouped by module retrieved');
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function show(req, res, next) {
   try {
     const permission = await UserModulePermissionService.getUserModulePermissionById(req.params.id);
@@ -61,6 +81,8 @@ async function updateStatus(req, res, next) {
 
 module.exports = {
   index,
+  groupedByUser,
+  groupedByModule,
   show,
   store,
   update,

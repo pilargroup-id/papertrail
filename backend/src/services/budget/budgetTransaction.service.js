@@ -39,6 +39,57 @@ function isSameDepartmentAndClass(budget, header) {
   );
 }
 
+function normalizeBudgetAccessContexts(contexts = []) {
+  if (!Array.isArray(contexts)) {
+    return [];
+  }
+
+  const normalized = [];
+
+  contexts.forEach((context) => {
+    const departmentId = Number(context.department_id || context.id || 0);
+    const classDepartmentId = Number(
+      context.class_department_id ||
+      context.class_id ||
+      context.department_class_id ||
+      departmentId
+    );
+
+    if (!departmentId || !classDepartmentId) {
+      return;
+    }
+
+    normalized.push({
+      department_id: departmentId,
+      class_department_id: classDepartmentId,
+    });
+  });
+
+  const uniqueMap = new Map();
+
+  normalized.forEach((context) => {
+    uniqueMap.set(
+      `${context.department_id}:${context.class_department_id}`,
+      context
+    );
+  });
+
+  return [...uniqueMap.values()];
+}
+
+function isBudgetMatchedWithContext(budget, context) {
+  return (
+    Number(budget.department_id) === Number(context.department_id) &&
+    Number(budget.class_department_id) === Number(context.class_department_id)
+  );
+}
+
+function isBudgetOwnedByUserContexts(budget, userDepartmentContexts = []) {
+  const contexts = normalizeBudgetAccessContexts(userDepartmentContexts);
+
+  return contexts.some((context) => isBudgetMatchedWithContext(budget, context));
+}
+
 async function hasCrossBudgetAccess(conn, module, departmentId) {
   const [rows] = await conn.query(
     `
@@ -56,7 +107,13 @@ async function hasCrossBudgetAccess(conn, module, departmentId) {
   return rows.length > 0;
 }
 
-async function assertBudgetCanBeUsedByHeader(conn, budget, header, sourceModule) {
+async function assertBudgetCanBeUsedByHeader(
+  conn,
+  budget,
+  header,
+  sourceModule,
+  userDepartmentContexts = []
+) {
   if (isSameDepartmentAndClass(budget, header)) {
     return;
   }
@@ -131,6 +188,7 @@ async function reserveBudget(conn, payload = {}) {
     header,
     user,
     notes,
+    userDepartmentContexts = [],
   } = payload;
 
   const budget = await getBudgetForUpdate(conn, budgetId);
@@ -140,7 +198,15 @@ async function reserveBudget(conn, payload = {}) {
   }
 
   assertBudgetActive(budget);
-  await assertBudgetCanBeUsedByHeader(conn, budget, header, sourceModule);
+
+  await assertBudgetCanBeUsedByHeader(
+    conn,
+    budget,
+    header,
+    sourceModule,
+    userDepartmentContexts
+  );
+
   assertEnoughBudget(budget, amount);
 
   const balanceBefore = Number(budget.budget_remaining || 0);

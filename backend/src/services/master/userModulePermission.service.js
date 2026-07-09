@@ -97,6 +97,78 @@ function validateStatusPayload(payload = {}) {
   return { is_active: isActive };
 }
 
+function groupRowsByUser(rows = []) {
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    if (!grouped.has(row.user_id)) {
+      grouped.set(row.user_id, {
+        user_id: row.user_id,
+        username_snapshot: row.username_snapshot,
+        name_snapshot: row.name_snapshot,
+        permissions: [],
+      });
+    }
+
+    grouped.get(row.user_id).permissions.push({
+      id: row.id,
+      module_id: row.module_id,
+      module_code: row.module_code,
+      module_name: row.module_name,
+      module_group: row.module_group,
+      can_view: row.can_view,
+      can_create: row.can_create,
+      can_update: row.can_update,
+      can_deactivate: row.can_deactivate,
+      is_active: row.is_active,
+      created_by_user_id: row.created_by_user_id,
+      created_by_name: row.created_by_name,
+      updated_by_user_id: row.updated_by_user_id,
+      updated_by_name: row.updated_by_name,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    });
+  });
+
+  return Array.from(grouped.values());
+}
+
+function groupRowsByModule(rows = []) {
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    if (!grouped.has(row.module_id)) {
+      grouped.set(row.module_id, {
+        module_id: row.module_id,
+        module_code: row.module_code,
+        module_name: row.module_name,
+        module_group: row.module_group,
+        users: [],
+      });
+    }
+
+    grouped.get(row.module_id).users.push({
+      id: row.id,
+      user_id: row.user_id,
+      username_snapshot: row.username_snapshot,
+      name_snapshot: row.name_snapshot,
+      can_view: row.can_view,
+      can_create: row.can_create,
+      can_update: row.can_update,
+      can_deactivate: row.can_deactivate,
+      is_active: row.is_active,
+      created_by_user_id: row.created_by_user_id,
+      created_by_name: row.created_by_name,
+      updated_by_user_id: row.updated_by_user_id,
+      updated_by_name: row.updated_by_name,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    });
+  });
+
+  return Array.from(grouped.values());
+}
+
 async function ensureModuleExists(moduleId, connection) {
   const module = await PermissionModuleModel.findById(moduleId, connection);
 
@@ -138,6 +210,18 @@ async function ensureUniqueUserModule(userId, moduleId, ignoredId = null, connec
 
 async function getUserModulePermissions(query = {}) {
   return UserModulePermissionModel.findAll(query);
+}
+
+async function getUserModulePermissionsGroupedByUser(query = {}) {
+  const rows = await UserModulePermissionModel.findForGrouping(query);
+
+  return groupRowsByUser(rows);
+}
+
+async function getUserModulePermissionsGroupedByModule(query = {}) {
+  const rows = await UserModulePermissionModel.findForGrouping(query);
+
+  return groupRowsByModule(rows);
 }
 
 async function getUserModulePermissionById(id) {
@@ -304,6 +388,8 @@ async function updateUserModulePermissionStatus(id, payload, req) {
 
 module.exports = {
   getUserModulePermissions,
+  getUserModulePermissionsGroupedByUser,
+  getUserModulePermissionsGroupedByModule,
   getUserModulePermissionById,
   createUserModulePermission,
   updateUserModulePermission,

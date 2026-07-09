@@ -30,7 +30,32 @@ function buildAccessFilters(query = {}) {
     params.push(access.userId);
   }
 
-  if (access.managerCompanyId && Array.isArray(access.managerDepartmentIds) && access.managerDepartmentIds.length) {
+  if (
+    access.managerCompanyId &&
+    Array.isArray(access.managerDepartmentContexts) &&
+    access.managerDepartmentContexts.length
+  ) {
+    const contextWhere = access.managerDepartmentContexts
+      .map(() => '(fr.department_id = ? AND fr.class_department_id = ?)')
+      .join(' OR ');
+
+    orWhere.push(`
+      (
+        fr.company_id = ?
+        AND (${contextWhere})
+      )
+    `);
+
+    params.push(access.managerCompanyId);
+
+    access.managerDepartmentContexts.forEach((context) => {
+      params.push(context.department_id, context.class_department_id);
+    });
+  } else if (
+    access.managerCompanyId &&
+    Array.isArray(access.managerDepartmentIds) &&
+    access.managerDepartmentIds.length
+  ) {
     const departmentPlaceholders = access.managerDepartmentIds.map(() => '?').join(', ');
 
     orWhere.push(`

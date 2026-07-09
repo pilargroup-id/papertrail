@@ -40,15 +40,8 @@ function buildListFilters(query = {}) {
   };
 }
 
-async function findAll(query = {}) {
-  const page = Math.max(parseInt(query.page, 10) || 1, 1);
-  const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 100);
-  const offset = (page - 1) * limit;
-
-  const { whereSql, values } = buildListFilters(query);
-
-  const [rows] = await db.query(
-    `SELECT
+function getBaseSelectQuery(whereSql = '') {
+  return `SELECT
        ump.id,
        ump.user_id,
        ump.username_snapshot,
@@ -70,7 +63,18 @@ async function findAll(query = {}) {
        ump.updated_at
      FROM user_module_permissions ump
      INNER JOIN master_permission_modules mpm ON mpm.id = ump.module_id
-     ${whereSql}
+     ${whereSql}`;
+}
+
+async function findAll(query = {}) {
+  const page = Math.max(parseInt(query.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 100);
+  const offset = (page - 1) * limit;
+
+  const { whereSql, values } = buildListFilters(query);
+
+  const [rows] = await db.query(
+    `${getBaseSelectQuery(whereSql)}
      ORDER BY ump.name_snapshot ASC, mpm.sort_order ASC
      LIMIT ? OFFSET ?`,
     [...values, limit, offset]
@@ -95,6 +99,18 @@ async function findAll(query = {}) {
       totalPages: Math.ceil(total / limit) || 1,
     },
   };
+}
+
+async function findForGrouping(query = {}) {
+  const { whereSql, values } = buildListFilters(query);
+
+  const [rows] = await db.query(
+    `${getBaseSelectQuery(whereSql)}
+     ORDER BY ump.name_snapshot ASC, mpm.module_group ASC, mpm.sort_order ASC, mpm.module_name ASC`,
+    values
+  );
+
+  return rows;
 }
 
 async function findById(id, connection = db) {
@@ -245,6 +261,7 @@ async function updateStatus(id, data, connection = db) {
 
 module.exports = {
   findAll,
+  findForGrouping,
   findById,
   findByUserAndModule,
   create,
