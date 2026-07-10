@@ -284,7 +284,6 @@ function HeaderMobile({
           {hasNotification ? (
             <MobileButtonFilterFrp
               label={notificationProps.ariaLabel ?? 'Filter'}
-              onClick={() => setIsNotificationModalOpen(true)}
             />
           ) : null}
 

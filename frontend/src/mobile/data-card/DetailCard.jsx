@@ -108,6 +108,7 @@ export default function DetailCard({
   defaultExpanded = false,
   surface = 'card',
   onClick,
+  expandableOnClick,
 }) {
   const metadataItems = Array.isArray(metadata.items)
     ? metadata.items.filter((item) => item?.value !== undefined && item?.value !== null && item?.value !== '')
@@ -126,6 +127,8 @@ export default function DetailCard({
           : null,
       ].filter(Boolean)
   const hasExpandableContent = Boolean(expandableContent) || sections.length > 0
+  const hasExpandableAction = typeof expandableOnClick === 'function'
+  const hasExpandableControl = hasExpandableContent || hasExpandableAction
   const isInteractive = typeof onClick === 'function'
   const headerStartActions = actions.filter((action) => action.mobilePlacement === 'header-start')
   const cardActions = actions.filter((action) => action.mobilePlacement !== 'header-start')
@@ -244,52 +247,68 @@ export default function DetailCard({
         </div>
       ) : null}
 
-      {hasExpandableContent ? (
-        <details
-          className="detail-card-mobile__panel detail-card-mobile__details"
-          open={defaultExpanded}
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <summary className="detail-card-mobile__summary">
+      {hasExpandableControl ? (
+        hasExpandableAction ? (
+          <button
+            className="detail-card-mobile__panel detail-card-mobile__details detail-card-mobile__summary detail-card-mobile__summary--button"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              expandableOnClick(event)
+            }}
+          >
             <span>{expandableTitle}</span>
             <span className="detail-card-mobile__summary-icon" aria-hidden="true">
-              v
+              &gt;
             </span>
-          </summary>
+          </button>
+        ) : (
+          <details
+            className="detail-card-mobile__panel detail-card-mobile__details"
+            open={defaultExpanded}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <summary className="detail-card-mobile__summary">
+              <span>{expandableTitle}</span>
+              <span className="detail-card-mobile__summary-icon" aria-hidden="true">
+                v
+              </span>
+            </summary>
 
-          <div className="detail-card-mobile__details-content">
-            {expandableContent ? (
-              <div className="detail-card-mobile__expandable-copy">{expandableContent}</div>
-            ) : null}
+            <div className="detail-card-mobile__details-content">
+              {expandableContent ? (
+                <div className="detail-card-mobile__expandable-copy">{expandableContent}</div>
+              ) : null}
 
-            {sections.length > 0 ? (
-              <div className="detail-card-mobile__sections">
-                {sections.map((section, sectionIndex) => (
-                  <section
-                    className={joinClassNames(
-                      'detail-card-mobile__section',
-                      section.wide ? 'detail-card-mobile__section--wide' : '',
-                    )}
-                    key={section.key ?? `section-${sectionIndex}`}
-                  >
-                    {section.title ? (
-                      <p className="detail-card-mobile__section-title">{section.title}</p>
-                    ) : null}
+              {sections.length > 0 ? (
+                <div className="detail-card-mobile__sections">
+                  {sections.map((section, sectionIndex) => (
+                    <section
+                      className={joinClassNames(
+                        'detail-card-mobile__section',
+                        section.wide ? 'detail-card-mobile__section--wide' : '',
+                      )}
+                      key={section.key ?? `section-${sectionIndex}`}
+                    >
+                      {section.title ? (
+                        <p className="detail-card-mobile__section-title">{section.title}</p>
+                      ) : null}
 
-                    <dl className="detail-card-mobile__fields">
-                      {(section.fields ?? []).map((field, fieldIndex) => (
-                        <Fragment key={field.key ?? `field-${fieldIndex}`}>
-                          <DetailCardField field={field} emptyLabel={emptyLabel} />
-                        </Fragment>
-                      ))}
-                    </dl>
-                  </section>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </details>
+                      <dl className="detail-card-mobile__fields">
+                        {(section.fields ?? []).map((field, fieldIndex) => (
+                          <Fragment key={field.key ?? `field-${fieldIndex}`}>
+                            <DetailCardField field={field} emptyLabel={emptyLabel} />
+                          </Fragment>
+                        ))}
+                      </dl>
+                    </section>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </details>
+        )
       ) : null}
 
       {cardActions.length > 0 ? (

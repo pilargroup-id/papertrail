@@ -301,6 +301,7 @@ function DataTableFrp({
     formatRupiah,
     getFrpStatusLabel,
     getFrpStatusVariant,
+    onMoreInfo: mobileCard?.onMoreInfo,
   })
   const baseMobileCard =
     mobileCard === false
@@ -394,6 +395,7 @@ function DataTableFrp({
           key: 'details',
           label: 'Details FRP',
           buttonComponent: ButtonDetailsFrp,
+          mobileHidden: true,
           hidden: () => !canAccessFrpButton(currentUser, 'details'),
           onClick: onDetails,
         }

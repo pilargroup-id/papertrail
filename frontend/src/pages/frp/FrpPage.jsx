@@ -15,6 +15,7 @@ import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFr
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
+import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -149,6 +150,7 @@ function FrpPage(props) {
   const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
   const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
+  const [selectedMobileDetailsFrp, setSelectedMobileDetailsFrp] = useState(null)
   const [approveError, setApproveError] = useState('')
   const [rejectError, setRejectError] = useState('')
   const [isApproving, setIsApproving] = useState(false)
@@ -220,6 +222,14 @@ function FrpPage(props) {
   const closeDetailsDialog = () => {
     setIsDetailsDialogOpen(false)
     setSelectedDetailsFrp(null)
+  }
+
+  const openMobileDetailsPage = (frp) => {
+    setSelectedMobileDetailsFrp(frp)
+  }
+
+  const closeMobileDetailsPage = () => {
+    setSelectedMobileDetailsFrp(null)
   }
 
   const openApproveDialog = (frp) => {
@@ -453,28 +463,37 @@ function FrpPage(props) {
         </div>
       </div>
 
-      <DataTableFrp
-        rows={shouldLoadFrp ? visibleFrp : []}
-        tableLabel={`${pageTitle} table`}
-        emptyMessage={filteredEmptyMessage}
-        SwitchComponent={Switch}
-        onEdit={openEditDialog}
-        onDetails={openDetailsDialog}
-        onApproval={openApproveDialog}
-        onReject={openRejectDialog}
-        onRevert={handleFrpReverted}
-        currentUser={currentUser}
-        canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
-        canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
-        isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
-        onStatusChange={handleVendorStatusChange}
-      />
+      <MobileScreenDetailFrp frp={selectedMobileDetailsFrp} onBack={closeMobileDetailsPage} />
 
-      <MobileButtonCreate
-        dialogProps={{
-          onCreated: handleFrpCreated,
-        }}
-      />
+      <div className={selectedMobileDetailsFrp ? 'frp-page__mobile-list--hidden' : ''}>
+        <DataTableFrp
+          rows={shouldLoadFrp ? visibleFrp : []}
+          tableLabel={`${pageTitle} table`}
+          emptyMessage={filteredEmptyMessage}
+          SwitchComponent={Switch}
+          onEdit={openEditDialog}
+          onDetails={openDetailsDialog}
+          onApproval={openApproveDialog}
+          onReject={openRejectDialog}
+          onRevert={handleFrpReverted}
+          currentUser={currentUser}
+          canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
+          canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
+          isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
+          onStatusChange={handleVendorStatusChange}
+          mobileCard={{
+            onMoreInfo: openMobileDetailsPage,
+          }}
+        />
+      </div>
+
+      {!selectedMobileDetailsFrp ? (
+        <MobileButtonCreate
+          dialogProps={{
+            onCreated: handleFrpCreated,
+          }}
+        />
+      ) : null}
 
       <DialogEditFrp
         isOpen={isEditDialogOpen}

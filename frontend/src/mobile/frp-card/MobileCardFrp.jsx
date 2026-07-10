@@ -11,6 +11,7 @@ function createMobileCardFrp({
   formatRupiah,
   getFrpStatusLabel,
   getFrpStatusVariant,
+  onMoreInfo,
 } = {}) {
   return {
     className: 'frp-mobile-card',
@@ -65,6 +66,7 @@ function createMobileCardFrp({
       },
     ],
     expandableTitle: 'More Info',
+    expandableOnClick: typeof onMoreInfo === 'function' ? onMoreInfo : undefined,
     defaultExpanded: false,
     metadata: { items: [] },
   }

@@ -446,7 +446,11 @@ function resolveMobileCardActions(actionsConfig, row, index, defaultActions) {
         : defaultActions
 
   return sourceActions
-    .filter((action) => !resolveActionFlag(action?.hidden, row, index))
+    .filter(
+      (action) =>
+        !resolveActionFlag(action?.hidden, row, index) &&
+        !resolveActionFlag(action?.mobileHidden, row, index),
+    )
     .map((action) => ({
       key: action.key ?? action.label,
       label: resolveResponsiveValue(action.label ?? action.key ?? 'Action', row, index),
@@ -598,6 +602,10 @@ function buildMobileCardProps({
     expandableContent:
       resolveResponsiveValue(mobileCardConfig.expandableContent, row, index) ??
       (typeof detail?.render === 'function' ? detail.render(row, index) : null),
+    expandableOnClick:
+      typeof mobileCardConfig.expandableOnClick === 'function'
+        ? (event) => mobileCardConfig.expandableOnClick(row, index, event)
+        : undefined,
     actions: resolveMobileCardActions(
       mobileCardConfig.actions,
       row,
