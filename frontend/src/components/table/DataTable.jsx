@@ -452,6 +452,9 @@ function resolveMobileCardActions(actionsConfig, row, index, defaultActions) {
       label: resolveResponsiveValue(action.label ?? action.key ?? 'Action', row, index),
       variant: resolveResponsiveValue(action.variant, row, index),
       icon: action.icon,
+      buttonComponent: action.buttonComponent,
+      mobileButtonComponent: action.mobileButtonComponent,
+      mobilePlacement: resolveResponsiveValue(action.mobilePlacement, row, index),
       disabled: resolveActionFlag(action.disabled, row, index),
       onClick: (event) => action.onClick?.(row, index, event),
     }))

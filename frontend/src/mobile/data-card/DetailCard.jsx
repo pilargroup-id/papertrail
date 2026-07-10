@@ -9,6 +9,10 @@ function joinClassNames(...classNames) {
 }
 
 function getActionButton(action) {
+  if (typeof action.mobileButtonComponent === 'function') {
+    return action.mobileButtonComponent
+  }
+
   if (typeof action.buttonComponent === 'function') {
     return action.buttonComponent
   }
@@ -123,6 +127,8 @@ export default function DetailCard({
       ].filter(Boolean)
   const hasExpandableContent = Boolean(expandableContent) || sections.length > 0
   const isInteractive = typeof onClick === 'function'
+  const headerStartActions = actions.filter((action) => action.mobilePlacement === 'header-start')
+  const cardActions = actions.filter((action) => action.mobilePlacement !== 'header-start')
   const rootClassName = joinClassNames(
     'detail-card-mobile',
     surface === 'embedded' ? 'detail-card-mobile--embedded' : '',
@@ -149,11 +155,51 @@ export default function DetailCard({
       role={isInteractive ? 'button' : undefined}
       tabIndex={isInteractive ? 0 : undefined}
     >
-      {(header.id || header.type || header.status?.label) && (
+      {(header.id || header.type || header.status?.label || headerStartActions.length > 0) && (
         <div className="detail-card-mobile__panel detail-card-mobile__header">
-          <div className="detail-card-mobile__header-copy">
-            {header.id ? <p className="detail-card-mobile__eyebrow">{header.id}</p> : null}
-            {header.type ? <p className="detail-card-mobile__type">{header.type}</p> : null}
+          <div className="detail-card-mobile__header-content">
+            {headerStartActions.length > 0 ? (
+              <div className="detail-card-mobile__header-actions">
+                {headerStartActions.map((action, index) => {
+                  const Icon = action.icon
+                  const buttonLabel = action.label ?? action.key ?? 'Action'
+                  const ActionButton = getActionButton(action)
+                  const buttonKey = action.key ?? `${buttonLabel}-${index}`
+                  const handleClick = (event) => {
+                    event.stopPropagation()
+                    action.onClick?.(event)
+                  }
+
+                  return ActionButton ? (
+                    <ActionButton
+                      key={buttonKey}
+                      icon={Icon}
+                      disabled={action.disabled}
+                      label={buttonLabel}
+                      onClick={handleClick}
+                    />
+                  ) : (
+                    <CreateButton
+                      key={buttonKey}
+                      variant="icon"
+                      tone={action.variant === 'danger' ? 'danger' : 'default'}
+                      type="button"
+                      disabled={action.disabled}
+                      aria-label={buttonLabel}
+                      title={buttonLabel}
+                      onClick={handleClick}
+                    >
+                      {Icon ? <Icon size={16} aria-hidden="true" /> : buttonLabel}
+                    </CreateButton>
+                  )
+                })}
+              </div>
+            ) : null}
+
+            <div className="detail-card-mobile__header-copy">
+              {header.id ? <p className="detail-card-mobile__eyebrow">{header.id}</p> : null}
+              {header.type ? <p className="detail-card-mobile__type">{header.type}</p> : null}
+            </div>
           </div>
 
           {header.status?.label ? (
@@ -246,9 +292,9 @@ export default function DetailCard({
         </details>
       ) : null}
 
-      {actions.length > 0 ? (
+      {cardActions.length > 0 ? (
         <div className="detail-card-mobile__panel detail-card-mobile__actions">
-          {actions.map((action, index) => {
+          {cardActions.map((action, index) => {
             const Icon = action.icon
             const buttonLabel = action.label ?? action.key ?? 'Action'
             const ActionButton = getActionButton(action)

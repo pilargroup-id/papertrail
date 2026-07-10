@@ -1,16 +1,15 @@
-import { Edit03 } from '../../../components/layoute/TemplateIcons.jsx'
+import { Filter } from '../../../components/layoute/TemplateIcons.jsx'
 
-function MobileButtonEditFrp({
-  label = 'Edit',
-  icon: Icon = Edit03,
-  size = 13,
+function MobileButtonFilterFrp({
+  label = 'Filter',
+  icon: Icon = Filter,
+  size = 16,
   className = '',
   type = 'button',
-  bareIcon = 'true',
   ...buttonProps
 }) {
   const buttonClassName = [
-    'frp-bare-icon-button frp-icon-button--mobile-edit',
+    'header-icon-button header-icon-button--compact',
     className,
   ]
     .filter(Boolean)
@@ -29,5 +28,4 @@ function MobileButtonEditFrp({
   )
 }
 
-export default MobileButtonEditFrp
-``
+export default MobileButtonFilterFrp

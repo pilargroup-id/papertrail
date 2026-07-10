@@ -7,6 +7,7 @@ import { canCurrentUserApproveFrp } from '../../components/table/frp/frp-button-
 // Button Frp
 import Switch from '../../components/forms/Switch.jsx';
 import ButtonCreateFrp from '../../components/button/button-frp/ButtonCreateFrp.jsx'
+import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreate.jsx'
 
 // Dialog Frp
 import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
@@ -431,7 +432,7 @@ function FrpPage(props) {
 
   return (
     <section
-      className="dashboard-panel users-table-card parents-table-card"
+      className="dashboard-panel users-table-card parents-table-card frp-page"
       aria-label={pageTitle}
     >
       <div className="users-table-card__header">
@@ -440,7 +441,7 @@ function FrpPage(props) {
           <h1 className="dashboard-panel__title">{pageTitle}</h1>
         </div>
 
-        <div className="users-table-card__actions">
+        <div className="users-table-card__actions frp-page__desktop-actions">
           <ButtonCreateFrp
             variant="create"
             dialogProps={{
@@ -467,6 +468,12 @@ function FrpPage(props) {
         canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
         isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
         onStatusChange={handleVendorStatusChange}
+      />
+
+      <MobileButtonCreate
+        dialogProps={{
+          onCreated: handleFrpCreated,
+        }}
       />
 
       <DialogEditFrp

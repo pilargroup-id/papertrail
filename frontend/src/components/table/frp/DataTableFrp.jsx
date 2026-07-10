@@ -6,6 +6,7 @@ import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
 import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
 import createMobileCardFrp from '../../../mobile/frp-card/MobileCardFrp.jsx'
+import MobileButtonEditFrp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
 import {
   canAccessFrpButton,
   canCurrentUserApproveFrp,
@@ -382,6 +383,8 @@ function DataTableFrp({
           key: 'edit',
           label: 'Edit FRP',
           buttonComponent: ButtonEditFrp,
+          mobileButtonComponent: MobileButtonEditFrp,
+          mobilePlacement: 'header-start',
           hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser),
           onClick: onEdit,
         }

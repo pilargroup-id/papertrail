@@ -2,13 +2,13 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import {
-  Bell04,
   ChevronDown,
   Menu01,
   RefreshCw05,
   SearchMd,
   XClose,
 } from '../../components/layoute/TemplateIcons.jsx'
+import MobileButtonFilterFrp from '../mobile-button/frp/MobileButtonFilterFrp.jsx'
 import {
   ALL_DEPARTMENTS_FILTER_ID,
   ALL_DEPARTMENTS_FILTER_LABEL,
@@ -252,61 +252,52 @@ function HeaderMobile({
             {renderBreadcrumb()}
           </nav>
 
-          {hasSearch || hasNotification || onRefresh || showMenuButton ? (
-            <div className="header-toolbar">
-              {showMenuButton ? (
-                <button
-                  type="button"
-                  className="header-menu-button header-menu-button--toolbar"
-                  aria-label="Open sidebar"
-                  onClick={onMenuToggle}
-                >
-                  <Menu01 size={20} />
-                </button>
-              ) : null}
+          {showMenuButton ? (
+            <button
+              type="button"
+              className="header-menu-button header-menu-button--toolbar"
+              aria-label="Open sidebar"
+              onClick={onMenuToggle}
+            >
+              <Menu01 size={20} />
+            </button>
+          ) : null}
 
-              {hasSearch ? (
-                <label
-                  className="header-search header-search--compact"
-                  aria-label={searchProps.ariaLabel ?? 'Search'}
-                >
-                  <SearchMd size={16} className="header-search__icon header-search__icon--compact" />
-                  <input
-                    type="search"
-                    className="header-search__input header-search__input--compact"
-                    value={searchProps.value ?? ''}
-                    placeholder={searchProps.placeholder ?? 'Search...'}
-                    onChange={searchProps.onChange}
-                    aria-label={searchProps.ariaLabel ?? 'Search'}
-                    autoComplete="off"
-                  />
-                </label>
-              ) : null}
+          {hasSearch ? (
+            <label
+              className="header-search header-search--compact"
+              aria-label={searchProps.ariaLabel ?? 'Search'}
+            >
+              <SearchMd size={16} className="header-search__icon header-search__icon--compact" />
+              <input
+                type="search"
+                className="header-search__input header-search__input--compact"
+                value={searchProps.value ?? ''}
+                placeholder={searchProps.placeholder ?? 'Search...'}
+                onChange={searchProps.onChange}
+                aria-label={searchProps.ariaLabel ?? 'Search'}
+                autoComplete="off"
+              />
+            </label>
+          ) : null}
 
-              {hasNotification ? (
-                <button
-                  type="button"
-                  className="header-icon-button header-icon-button--compact"
-                  aria-label={notificationProps.ariaLabel ?? 'Open notifications'}
-                  title={notificationProps.ariaLabel ?? 'Open notifications'}
-                  onClick={() => setIsNotificationModalOpen(true)}
-                >
-                  <Bell04 size={16} />
-                </button>
-              ) : null}
+          {hasNotification ? (
+            <MobileButtonFilterFrp
+              label={notificationProps.ariaLabel ?? 'Filter'}
+              onClick={() => setIsNotificationModalOpen(true)}
+            />
+          ) : null}
 
-              {onRefresh ? (
-                <button
-                  type="button"
-                  className="header-icon-button header-icon-button--compact"
-                  aria-label="Refresh dashboard"
-                  title="Refresh dashboard"
-                  onClick={onRefresh}
-                >
-                  <RefreshCw05 size={16} />
-                </button>
-              ) : null}
-            </div>
+          {onRefresh ? (
+            <button
+              type="button"
+              className="header-icon-button header-icon-button--compact"
+              aria-label="Refresh dashboard"
+              title="Refresh dashboard"
+              onClick={onRefresh}
+            >
+              <RefreshCw05 size={16} />
+            </button>
           ) : null}
         </div>
 

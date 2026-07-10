@@ -186,8 +186,8 @@ function AppLayout({
             onChange: (event) => handleSearchChange(event.target.value),
           }}
           notificationProps={{
-            ariaLabel: 'Open notifications',
-            modalTitle: 'Notifications',
+            ariaLabel: 'Filter',
+            modalTitle: 'Filter',
           }}
           onRefresh={handleRefresh}
           headerTabs={mobileHeaderTabs}
