@@ -13,6 +13,7 @@ import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
 import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
+import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -91,6 +92,10 @@ function getFrpEditLabel(frp) {
   return frp?.frp_number ?? frp?.id ?? 'FRP ini'
 }
 
+function getFrpStatusValue(frp) {
+  return String(frp?.status ?? '').trim().toUpperCase()
+}
+
 function updateVendorStatus(frp, frpId, isActive, updatedBudgetType) {
   return frp.map((frp) => {
     if (String(frp?.id) !== String(frpId)) {
@@ -121,6 +126,10 @@ function FrpPage(props) {
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
   const currentUser = props.currentUser ?? outletContext.currentUser ?? null
+  const mobileFrpStatusFilter =
+    props.mobileFrpStatusFilter ??
+    outletContext.mobileFrpStatusFilter ??
+    FRP_MOBILE_STATUS_ALL
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
@@ -408,6 +417,17 @@ function FrpPage(props) {
   const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP checker rules...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.'))
+  const visibleFrp =
+    mobileFrpStatusFilter === FRP_MOBILE_STATUS_ALL
+      ? frp
+      : frp.filter((frpItem) => getFrpStatusValue(frpItem) === mobileFrpStatusFilter)
+  const filteredEmptyMessage =
+    !authGateMessage &&
+    !isLoading &&
+    !errorMessage &&
+    mobileFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
+      ? `Belum ada FRP berstatus ${mobileFrpStatusFilter.toLowerCase()}.`
+      : emptyMessage
 
   return (
     <section
@@ -433,9 +453,9 @@ function FrpPage(props) {
       </div>
 
       <DataTableFrp
-        rows={shouldLoadFrp ? frp : []}
+        rows={shouldLoadFrp ? visibleFrp : []}
         tableLabel={`${pageTitle} table`}
-        emptyMessage={emptyMessage}
+        emptyMessage={filteredEmptyMessage}
         SwitchComponent={Switch}
         onEdit={openEditDialog}
         onDetails={openDetailsDialog}

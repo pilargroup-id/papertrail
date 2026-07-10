@@ -5,6 +5,10 @@ import BackgroundMain from '../components/layoute/BackgroundMain.jsx'
 import Header from '../components/layoute/Header.jsx'
 import Sidebar from '../components/layoute/Sidebar.jsx'
 import { pageDetails } from '../dummy/pageDetails.js'
+import createMobileFrpHeaderTabs, {
+  FRP_MOBILE_STATUS_ALL,
+} from '../mobile/mobile-button/frp/MobileTabsFrp.jsx'
+import HeaderMobile from '../mobile/layoutes-mobile/HeaderMobile.jsx'
 import api from '../services/api.js'
 
 const defaultActivePage = {
@@ -51,6 +55,7 @@ function AppLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
+  const [mobileFrpStatusFilter, setMobileFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
   const [lastUpdated, setLastUpdated] = useState(() => new Date())
   const [authProfile, setAuthProfile] = useState({
     userName: '',
@@ -74,6 +79,13 @@ function AppLayout({
     .join(' ')
 
   const isMyTicketsPage = resolvedActivePath === '/MyTickets'
+  const isFrpPage = resolvedActivePath.toLowerCase() === '/frp'
+  const mobileHeaderTabs = isFrpPage
+    ? createMobileFrpHeaderTabs({
+        activeStatus: mobileFrpStatusFilter,
+        onStatusChange: setMobileFrpStatusFilter,
+      })
+    : undefined
 
   useEffect(() => {
     const controller = new AbortController()
@@ -109,6 +121,12 @@ function AppLayout({
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    if (!isFrpPage) {
+      setMobileFrpStatusFilter(FRP_MOBILE_STATUS_ALL)
+    }
+  }, [isFrpPage])
+
   return (
     <div className={shellClassName}>
       <BackgroundMain />
@@ -131,8 +149,30 @@ function AppLayout({
       />
 
       <div className="dashboard-stage">
-        <Header
-          title="Papertrail"
+        <div className="dashboard-header-desktop">
+          <Header
+            title="Papertrail"
+            showMenuButton
+            onMenuToggle={() => setMobileSidebarOpen(true)}
+            breadcrumb={[
+              { label: 'Papertrail', href: '#' },
+              { label: resolvedPageTitle, href: '#', active: true },
+            ]}
+            searchProps={{
+              value: searchQuery,
+              placeholder: isSearchTable ? 'Cari data table...' : 'Search Data...',
+              ariaLabel: isSearchTable ? 'Cari data table' : 'Search legal tickets',
+              onChange: (event) => handleSearchChange(event.target.value),
+            }}
+            notificationProps={{
+              ariaLabel: 'Open notifications',
+              modalTitle: 'Notifications',
+            }}
+            onRefresh={handleRefresh}
+          />
+        </div>
+
+        <HeaderMobile
           showMenuButton
           onMenuToggle={() => setMobileSidebarOpen(true)}
           breadcrumb={[
@@ -150,6 +190,7 @@ function AppLayout({
             modalTitle: 'Notifications',
           }}
           onRefresh={handleRefresh}
+          headerTabs={mobileHeaderTabs}
         />
 
         <main className={`dashboard-main${isMyTicketsPage ? ' dashboard-main--mytickets' : ''}`}>
@@ -167,6 +208,7 @@ function AppLayout({
                   searchQuery,
                   currentUser,
                   isAuthLoading,
+                  mobileFrpStatusFilter,
                   onDataChange: handleRefresh,
                 }}
               />

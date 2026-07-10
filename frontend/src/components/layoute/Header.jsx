@@ -109,7 +109,7 @@ function Header({
     return () => {
       window.removeEventListener('mousedown', handlePointerDown)
       window.removeEventListener('keydown', handleKeyDown)
-    }
+    } 
   }, [isDepartmentDropdownOpen])
 
   useLayoutEffect(() => {

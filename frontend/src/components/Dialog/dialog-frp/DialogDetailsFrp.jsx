@@ -223,6 +223,12 @@ function isAttachmentReady(attachment) {
   return !uploadStatus || uploadStatus === 'UPLOADED'
 }
 
+function isAttachmentVisible(attachment) {
+  const uploadStatus = String(attachment?.upload_status ?? attachment?.status ?? '').toUpperCase()
+
+  return uploadStatus !== 'CANCELED'
+}
+
 function getDocumentName(document) {
   if (typeof document === 'string' || typeof document === 'number') {
     return String(document)
@@ -436,7 +442,7 @@ function DialogDetailsFrp({
 
         setFrpDetail(getFrpDetailFromResponse(response))
         setItems(getFrpItemsFromResponse(response))
-        setAttachments(getFrpAttachmentsFromResponse(response).filter(isAttachmentReady))
+        setAttachments(getFrpAttachmentsFromResponse(response).filter(isAttachmentVisible))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -469,6 +475,15 @@ function DialogDetailsFrp({
 
     if (!attachmentId || !frpId) {
       setAttachmentErrorMessage('Attachment tidak dapat dibuka.')
+      return
+    }
+
+    if (!isAttachmentReady(attachment)) {
+      setAttachmentErrorMessage(
+        `Attachment belum siap dipreview. Status upload: ${formatStatusLabel(
+          getFirstValue(attachment, ['upload_status', 'status'], 'PENDING'),
+        )}.`,
+      )
       return
     }
 
@@ -714,11 +729,18 @@ function DialogDetailsFrp({
                       {attachments.map((attachment, index) => {
                         const attachmentId = getAttachmentId(attachment) ?? index
                         const attachmentName = getAttachmentName(attachment)
+                        const attachmentStatus = getFirstValue(
+                          attachment,
+                          ['upload_status', 'status'],
+                          '',
+                        )
                         const attachmentMeta = [
                           getAttachmentDocumentTypeName(attachment),
+                          attachmentStatus ? `Status: ${formatStatusLabel(attachmentStatus)}` : '',
                           attachment?.mime_type,
                           formatFileSize(attachment?.file_size),
                         ].filter((value) => value && value !== '-')
+                        const isReady = isAttachmentReady(attachment)
                         const isDownloading = downloadingAttachmentId === attachmentId
 
                         return (
@@ -727,7 +749,7 @@ function DialogDetailsFrp({
                             className="frp-accordion-detail__attachment-button"
                             icon={Eye}
                             label={`Preview attachment ${attachmentName}`}
-                            disabled={isDownloading}
+                            disabled={isDownloading || !isReady}
                             onClick={(event) => handleAttachmentClick(attachment, event)}
                           >
                             <span className="frp-accordion-detail__attachment-copy">

@@ -5,6 +5,7 @@ import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
 import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
+import createMobileCardFrp from '../../../mobile/frp-card/MobileCardFrp.jsx'
 import {
   canAccessFrpButton,
   canCurrentUserApproveFrp,
@@ -294,6 +295,30 @@ function DataTableFrp({
 }) {
   const shouldRenderStatusSwitch =
     enableStatusSwitch && typeof onStatusChange === 'function' && typeof SwitchComponent === 'function'
+  const defaultMobileCard = createMobileCardFrp({
+    formatDateTime,
+    formatRupiah,
+    getFrpStatusLabel,
+    getFrpStatusVariant,
+  })
+  const baseMobileCard =
+    mobileCard === false
+      ? false
+      : {
+          ...defaultMobileCard,
+          ...(mobileCard ?? {}),
+          header: {
+            ...(defaultMobileCard.header ?? {}),
+            ...(mobileCard?.header ?? {}),
+            status: {
+              ...(defaultMobileCard.header?.status ?? {}),
+              ...(mobileCard?.header?.status ?? {}),
+            },
+          },
+          rows: mobileCard?.rows ?? defaultMobileCard.rows,
+          sections: mobileCard?.sections ?? defaultMobileCard.sections,
+          metadata: mobileCard?.metadata ?? defaultMobileCard.metadata,
+        }
   const resolvedColumns = shouldRenderStatusSwitch
     ? columns.map((column) =>
         column.key === 'status'
@@ -310,19 +335,19 @@ function DataTableFrp({
       )
     : columns
   const resolvedMobileCard =
-    shouldRenderStatusSwitch && mobileCard !== false
+    shouldRenderStatusSwitch && baseMobileCard !== false
       ? {
-          ...(mobileCard ?? {}),
+          ...(baseMobileCard ?? {}),
           header: {
-            ...(mobileCard?.header ?? {}),
+            ...(baseMobileCard?.header ?? {}),
             status: {
               label: (frp) => getFrpStatusLabel(frp),
               variant: (frp) => getFrpStatusVariant(frp),
-              ...(mobileCard?.header?.status ?? {}),
+              ...(baseMobileCard?.header?.status ?? {}),
             },
           },
         }
-      : mobileCard
+      : baseMobileCard
 
   const defaultActions = [
     typeof onApproval === 'function'

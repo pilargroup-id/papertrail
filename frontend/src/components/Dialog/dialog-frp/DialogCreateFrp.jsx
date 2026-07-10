@@ -768,10 +768,9 @@ function DialogCreateFrp({
               }),
             ),
           )
-        } catch {
-          await onCreated?.(response)
-          handleClose()
-          return
+        } catch (error) {
+          setActiveTab('attachment')
+          throw new Error(error.message || 'FRP berhasil dibuat, tetapi attachment gagal diupload.')
         }
       }
 
