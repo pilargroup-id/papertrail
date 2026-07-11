@@ -668,6 +668,23 @@ width: var(--sidebar-collapsed-width);
   flex-shrink: 0;
 }
 
+.header-menu-button--plain {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.header-menu-button--plain:hover {
+  background: transparent;
+}
+
+.header-menu-button--plain:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.72);
+  outline-offset: 2px;
+}
+
 .header-title-block {
   display: grid;
   gap: 0.35rem;
@@ -802,6 +819,18 @@ width: var(--sidebar-collapsed-width);
   width: 36px;
   height: 36px;
   border-radius: 10px;
+}
+
+.header-icon-button--plain {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.header-icon-button--plain:hover {
+  border-color: transparent;
+  background: transparent;
 }
 
 .header-modal-overlay {
@@ -6709,15 +6738,24 @@ width: var(--sidebar-collapsed-width);
     display: none;
   }
 
+  .mobile-header-tabs-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    margin: 0.55rem -1rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
   .mobile-header-tabs {
     display: flex;
     align-items: flex-end;
     gap: 1.1rem;
-    min-height: 44px;
-    margin: 0.55rem -1rem 0;
-    padding: 0 1rem;
+    min-width: 0;
+    flex: 1 1 auto;
+    align-self: stretch;
+    padding: 0 0 0 1rem;
     overflow-x: auto;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
     scrollbar-width: none;
   }
 
@@ -6773,6 +6811,32 @@ width: var(--sidebar-collapsed-width);
   .mobile-header-tabs__button.active::after {
     opacity: 1;
     transform: scaleX(1);
+  }
+
+  .mobile-header-tabs__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    flex: 0 0 auto;
+    padding: 0 0.85rem 0 0;
+  }
+
+  .mobile-header-tabs__action {
+    width: 32px;
+    height: 32px;
+    color: rgba(255, 255, 255, 0.86);
+  }
+
+  .mobile-header-tabs__action:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .mobile-header-tabs__action:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.72);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 
   .breadcrumb-dropdown {

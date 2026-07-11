@@ -182,6 +182,31 @@ function HeaderMobile({
         )
       : null
 
+  const renderHeaderActions = (isTabsAction = false) => (
+    <>
+      {hasNotification ? (
+        <MobileButtonFilterFrp
+          label={notificationProps.ariaLabel ?? 'Filter'}
+          className={isTabsAction ? 'header-icon-button--plain mobile-header-tabs__action' : ''}
+        />
+      ) : null}
+
+      {onRefresh ? (
+        <button
+          type="button"
+          className={`header-icon-button header-icon-button--compact${
+            isTabsAction ? ' header-icon-button--plain mobile-header-tabs__action' : ''
+          }`}
+          aria-label="Refresh dashboard"
+          title="Refresh dashboard"
+          onClick={onRefresh}
+        >
+          <RefreshCw05 size={16} />
+        </button>
+      ) : null}
+    </>
+  )
+
   const renderBreadcrumb = () => {
     if (!departmentFilterProps) {
       return breadcrumb.map((item, index) => (
@@ -255,7 +280,7 @@ function HeaderMobile({
           {showMenuButton ? (
             <button
               type="button"
-              className="header-menu-button header-menu-button--toolbar"
+              className="header-menu-button header-menu-button--toolbar header-menu-button--plain"
               aria-label="Open sidebar"
               onClick={onMenuToggle}
             >
@@ -281,46 +306,38 @@ function HeaderMobile({
             </label>
           ) : null}
 
-          {hasNotification ? (
-            <MobileButtonFilterFrp
-              label={notificationProps.ariaLabel ?? 'Filter'}
-            />
-          ) : null}
-
-          {onRefresh ? (
-            <button
-              type="button"
-              className="header-icon-button header-icon-button--compact"
-              aria-label="Refresh dashboard"
-              title="Refresh dashboard"
-              onClick={onRefresh}
-            >
-              <RefreshCw05 size={16} />
-            </button>
-          ) : null}
+          {!hasHeaderTabs ? renderHeaderActions() : null}
         </div>
 
         {hasHeaderTabs ? (
-          <nav
-            className="mobile-header-tabs"
-            aria-label={headerTabs.ariaLabel ?? 'Header tabs'}
-          >
-            {headerTabs.tabs.map((tab) => {
-              const isActive = String(tab.id) === String(headerTabs.activeTabId)
+          <div className="mobile-header-tabs-row">
+            <nav
+              className="mobile-header-tabs"
+              aria-label={headerTabs.ariaLabel ?? 'Header tabs'}
+            >
+              {headerTabs.tabs.map((tab) => {
+                const isActive = String(tab.id) === String(headerTabs.activeTabId)
 
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={`mobile-header-tabs__button${isActive ? ' active' : ''}`}
-                  aria-current={isActive ? 'page' : undefined}
-                  onClick={() => headerTabs.onTabChange?.(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
-          </nav>
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`mobile-header-tabs__button${isActive ? ' active' : ''}`}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => headerTabs.onTabChange?.(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </nav>
+
+            {hasNotification || onRefresh ? (
+              <div className="mobile-header-tabs__actions">
+                {renderHeaderActions(true)}
+              </div>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
