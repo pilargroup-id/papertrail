@@ -441,7 +441,7 @@ function resolveMobileCardMetadata(metadataConfig, row, index) {
 function resolveMobileCardActions(actionsConfig, row, index, defaultActions) {
   const sourceActions =
     typeof actionsConfig === 'function'
-      ? actionsConfig(row, index) ?? defaultActions
+      ? actionsConfig(row, index, defaultActions) ?? defaultActions
       : Array.isArray(actionsConfig)
         ? actionsConfig
         : defaultActions

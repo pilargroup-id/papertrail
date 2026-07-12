@@ -47,6 +47,18 @@ function getActionButton(action) {
   return null
 }
 
+function getMobileCardActions(mobileCard, resolvedActions) {
+  if (mobileCard?.actions === undefined) {
+    return resolvedActions
+  }
+
+  if (typeof mobileCard.actions === 'function') {
+    return (row, index) => mobileCard.actions(row, index, resolvedActions)
+  }
+
+  return mobileCard.actions
+}
+
 function DataTableAction({
   columns = [],
   actions = [],
@@ -120,7 +132,7 @@ function DataTableAction({
           ? false
           : {
               ...(mobileCard ?? {}),
-              actions: mobileCard?.actions ?? resolvedActions,
+              actions: getMobileCardActions(mobileCard, resolvedActions),
             }
       }
       columns={actionColumn ? [...columns, actionColumn] : columns}

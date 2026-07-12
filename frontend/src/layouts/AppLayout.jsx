@@ -56,6 +56,7 @@ function AppLayout({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const [mobileFrpStatusFilter, setMobileFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
+  const [isMobileHeaderHidden, setIsMobileHeaderHidden] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(() => new Date())
   const [authProfile, setAuthProfile] = useState({
     userName: '',
@@ -173,21 +174,23 @@ function AppLayout({
           />
         </div>
 
-        <HeaderMobile
-          showMenuButton
-          onMenuToggle={() => setMobileSidebarOpen(true)}
-          breadcrumb={[
-            { label: 'Papertrail', href: '#' },
-            { label: resolvedPageTitle, href: '#', active: true },
-          ]}
-          searchProps={searchProps}
-          notificationProps={{
-            ariaLabel: 'Filter',
-            modalTitle: 'Filter',
-          }}
-          onRefresh={handleRefresh}
-          headerTabs={mobileHeaderTabs}
-        />
+        {!isMobileHeaderHidden ? (
+          <HeaderMobile
+            showMenuButton
+            onMenuToggle={() => setMobileSidebarOpen(true)}
+            breadcrumb={[
+              { label: 'Papertrail', href: '#' },
+              { label: resolvedPageTitle, href: '#', active: true },
+            ]}
+            searchProps={searchProps}
+            notificationProps={{
+              ariaLabel: 'Filter',
+              modalTitle: 'Filter',
+            }}
+            onRefresh={handleRefresh}
+            headerTabs={mobileHeaderTabs}
+          />
+        ) : null}
 
         <main className={`dashboard-main${isMyTicketsPage ? ' dashboard-main--mytickets' : ''}`}>
           <div
@@ -205,6 +208,7 @@ function AppLayout({
                   currentUser,
                   isAuthLoading,
                   mobileFrpStatusFilter,
+                  setMobileHeaderHidden: setIsMobileHeaderHidden,
                   searchProps,
                   onDataChange: handleRefresh,
                 }}

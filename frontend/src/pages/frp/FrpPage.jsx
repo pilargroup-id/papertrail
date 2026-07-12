@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
-import { canCurrentUserApproveFrp } from '../../components/table/frp/frp-button-access.js';
+import {
+  canCurrentUserApproveFrp,
+  canCurrentUserEditFrp,
+} from '../../components/table/frp/frp-button-access.js';
 
 // Button Frp
 import Switch from '../../components/forms/Switch.jsx';
@@ -16,6 +19,8 @@ import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
 import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
+import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
+import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
 
 function getRowsFromResponse(response) {
@@ -130,6 +135,7 @@ function FrpPage(props) {
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
   const searchProps = props.searchProps ?? outletContext.searchProps
   const currentUser = props.currentUser ?? outletContext.currentUser ?? null
+  const setMobileHeaderHidden = props.setMobileHeaderHidden ?? outletContext.setMobileHeaderHidden
   const mobileFrpStatusFilter =
     props.mobileFrpStatusFilter ??
     outletContext.mobileFrpStatusFilter ??
@@ -153,10 +159,20 @@ function FrpPage(props) {
   const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedMobileDetailsFrp, setSelectedMobileDetailsFrp] = useState(null)
+  const [selectedMobileEditFrp, setSelectedMobileEditFrp] = useState(null)
+  const [isMobileCreateScreenOpen, setIsMobileCreateScreenOpen] = useState(false)
   const [approveError, setApproveError] = useState('')
   const [rejectError, setRejectError] = useState('')
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
+
+  useEffect(() => {
+    setMobileHeaderHidden?.(isMobileCreateScreenOpen || Boolean(selectedMobileEditFrp))
+
+    return () => {
+      setMobileHeaderHidden?.(false)
+    }
+  }, [isMobileCreateScreenOpen, selectedMobileEditFrp, setMobileHeaderHidden])
 
   useEffect(() => {
     if (!shouldLoadFrp) {
@@ -227,11 +243,32 @@ function FrpPage(props) {
   }
 
   const openMobileDetailsPage = (frp) => {
+    setSelectedMobileEditFrp(null)
     setSelectedMobileDetailsFrp(frp)
   }
 
   const closeMobileDetailsPage = () => {
     setSelectedMobileDetailsFrp(null)
+  }
+
+  const openMobileCreatePage = () => {
+    setSelectedMobileDetailsFrp(null)
+    setSelectedMobileEditFrp(null)
+    setIsMobileCreateScreenOpen(true)
+  }
+
+  const closeMobileCreatePage = () => {
+    setIsMobileCreateScreenOpen(false)
+  }
+
+  const openMobileEditPage = (frp) => {
+    setSelectedMobileDetailsFrp(null)
+    setIsMobileCreateScreenOpen(false)
+    setSelectedMobileEditFrp(frp)
+  }
+
+  const closeMobileEditPage = () => {
+    setSelectedMobileEditFrp(null)
   }
 
   const openApproveDialog = (frp) => {
@@ -275,9 +312,12 @@ function FrpPage(props) {
       )
     } else if (selectedBudgetType?.id !== undefined && selectedBudgetType?.id !== null) {
       setReloadToken((currentValue) => currentValue + 1)
+    } else if (selectedMobileEditFrp?.id !== undefined && selectedMobileEditFrp?.id !== null) {
+      setReloadToken((currentValue) => currentValue + 1)
     }
 
     closeEditDialog()
+    closeMobileEditPage()
   }
 
   const handleFrpApproved = async ({ frp: targetFrp, notes }) => {
@@ -465,20 +505,32 @@ function FrpPage(props) {
         </div>
       </div>
 
-      {!selectedMobileDetailsFrp ? (
+      {!selectedMobileDetailsFrp && !selectedMobileEditFrp && !isMobileCreateScreenOpen ? (
         <SearchFrp searchProps={searchProps}>
           <MobileButtonCreate
             label="Create"
-            dialogProps={{
-              onCreated: handleFrpCreated,
-            }}
+            onClick={openMobileCreatePage}
           />
         </SearchFrp>
       ) : null}
 
       <MobileScreenDetailFrp frp={selectedMobileDetailsFrp} onBack={closeMobileDetailsPage} />
+      <MobileScreenCreateFrp
+        isOpen={isMobileCreateScreenOpen}
+        mode="screen"
+        onClose={closeMobileCreatePage}
+        onCreated={handleFrpCreated}
+      />
+      <MobileScreenEditFrp
+        isOpen={Boolean(selectedMobileEditFrp)}
+        mode="screen"
+        title={`Edit ${getFrpEditLabel(selectedMobileEditFrp)}`}
+        frp={selectedMobileEditFrp}
+        onClose={closeMobileEditPage}
+        onUpdated={handleVendorUpdated}
+      />
 
-      <div className={selectedMobileDetailsFrp ? 'frp-page__mobile-list--hidden' : ''}>
+      <div className={selectedMobileDetailsFrp || selectedMobileEditFrp || isMobileCreateScreenOpen ? 'frp-page__mobile-list--hidden' : ''}>
         <DataTableFrp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}
@@ -496,6 +548,17 @@ function FrpPage(props) {
           onStatusChange={handleVendorStatusChange}
           mobileCard={{
             onMoreInfo: openMobileDetailsPage,
+            actions: (_row, _index, defaultActions = []) =>
+              defaultActions.map((action) =>
+                action.key === 'edit'
+                  ? {
+                      ...action,
+                      hidden: false,
+                      disabled: (frp) => !canCurrentUserEditFrp(frp, currentUser),
+                      onClick: openMobileEditPage,
+                    }
+                  : action,
+              ),
           }}
         />
       </div>

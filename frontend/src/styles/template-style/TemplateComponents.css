@@ -648,8 +648,8 @@ width: var(--sidebar-collapsed-width);
 .mobile-header-logo {
   display: block;
   flex: 0 0 auto;
-  width: auto;
-  height: 36px;
+  width: clamp(112px, 14vw, 148px);
+  height: auto;
   margin-left: auto;
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.22));
@@ -6906,11 +6906,13 @@ width: var(--sidebar-collapsed-width);
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    min-height: 44px;
   }
 
   .mobile-header-logo {
-    height: 32px;
-    max-width: 54px;
+    width: clamp(112px, 34vw, 142px);
+    height: auto;
+    max-width: 42vw;
   }
 
   .header-left .header-menu-button {
@@ -7178,7 +7180,217 @@ width: var(--sidebar-collapsed-width);
   .frp-mobile-detail-page {
     display: grid;
     gap: 0.9rem;
-    padding: 0.2rem 0 5.5rem;
+    padding: 0.2rem 0 6.6rem;
+  }
+
+  .frp-mobile-create-page {
+    gap: 0.75rem;
+    padding-top: 0;
+  }
+
+  .frp-mobile-create-page__header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 58px;
+    margin: -0.2rem -0.1rem 0;
+    padding: 0.45rem 0.1rem 0.6rem;
+    border-bottom: 1px solid rgba(26, 42, 87, 0.08);
+    background: rgba(246, 248, 252, 0.96);
+    backdrop-filter: blur(12px);
+  }
+
+  .frp-mobile-create-page__back {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(26, 42, 87, 0.12);
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--primary-blue);
+    box-shadow: 0 8px 18px rgba(16, 28, 54, 0.08);
+    cursor: pointer;
+  }
+
+  .frp-mobile-create-page__back:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
+  .frp-mobile-create-page__heading {
+    min-width: 0;
+  }
+
+  .frp-mobile-create-page__eyebrow {
+    margin: 0 0 0.16rem;
+    color: #68758a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .frp-mobile-create-page__title {
+    margin: 0;
+    color: var(--primary-blue);
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .frp-mobile-create-page__form {
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .frp-mobile-create-page__form-node {
+    display: grid;
+    min-width: 0;
+  }
+
+  .frp-mobile-create-page__body {
+    display: grid;
+    gap: 0.85rem;
+    padding: 0;
+    background: transparent;
+  }
+
+  .frp-mobile-create-page__body .register-user-popup__layout,
+  .frp-mobile-create-page__body .register-user-popup__main,
+  .frp-mobile-create-page__body .register-user-popup__form {
+    min-width: 0;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__tabbed-container {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__tabbed-container--mobile-create {
+    gap: 0.75rem;
+    padding: 0 0 0.45rem;
+    background: transparent;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__tabs-shell {
+    position: sticky;
+    top: 58px;
+    z-index: 15;
+    margin: 0 -0.1rem;
+    padding: 0.46rem 0.1rem 0.58rem;
+    border: 0;
+    border-bottom: 1px solid rgba(26, 42, 87, 0.08);
+    border-radius: 0;
+    background: rgba(246, 248, 252, 0.96);
+    backdrop-filter: blur(12px);
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__tabs {
+    width: 100%;
+    min-height: 38px;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__tabs .MuiTabs-scroller {
+    overflow-x: auto !important;
+    scrollbar-width: none;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__tabs .MuiTabs-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__tabs .MuiTabs-list {
+    width: max-content;
+    gap: 0.35rem;
+    padding: 0 0.15rem;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__mui-tab {
+    border: 1px solid rgba(26, 42, 87, 0.1);
+    background: rgba(255, 255, 255, 0.72);
+    line-height: 1.15;
+    white-space: nowrap;
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__mui-tab.Mui-selected {
+    border-color: rgba(26, 42, 87, 0.16);
+  }
+
+  .frp-mobile-create-page__body .frp-dialog__panel {
+    min-height: auto;
+    padding: 0 0.1rem;
+  }
+
+  .frp-mobile-create-page__body .register-user-popup__grid {
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .frp-mobile-create-page__body .register-user-popup__field,
+  .frp-mobile-create-page__body .register-user-popup__field--frp-third,
+  .frp-mobile-create-page__body .register-user-popup__field--frp-half,
+  .frp-mobile-create-page__body .register-user-popup__field--frp-quarter,
+  .frp-mobile-create-page__body .register-user-popup__field--full {
+    grid-column: auto !important;
+    min-width: 0;
+  }
+
+  .frp-mobile-create-page__actions {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 0.7rem;
+    padding: 0.75rem max(1rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-right));
+    border-top: 1px solid rgba(26, 42, 87, 0.08);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 -12px 28px rgba(16, 28, 54, 0.1);
+  }
+
+  .frp-mobile-create-page__button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.72rem 0.9rem;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .frp-mobile-create-page__button--secondary {
+    border: 1px solid rgba(26, 42, 87, 0.14);
+    background: #ffffff;
+    color: var(--primary-blue);
+  }
+
+  .frp-mobile-create-page__button--primary {
+    border: 1px solid rgba(24, 120, 110, 0.28);
+    background: var(--primary-blue);
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(26, 42, 87, 0.18);
+  }
+
+  .frp-mobile-create-page__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+    box-shadow: none;
   }
 
   .frp-mobile-detail-page__topbar {

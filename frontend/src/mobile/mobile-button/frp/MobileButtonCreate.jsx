@@ -1,13 +1,14 @@
-import ButtonCreateFrp from '../../../components/button/button-frp/ButtonCreateFrp.jsx'
 import { ExternalLink } from '../../../components/layoute/TemplateIcons.jsx'
 
 function MobileButtonCreate({
   label = 'Create',
   className = '',
-  dialogProps = {},
+  type = 'button',
   ...buttonProps
 }) {
   const buttonClassName = [
+    'dashboard-popup__button',
+    'dashboard-popup__button--primary',
     'frp-mobile-create-fab',
     className,
   ]
@@ -15,17 +16,16 @@ function MobileButtonCreate({
     .join(' ')
 
   return (
-    <ButtonCreateFrp
-      variant="create"
+    <button
+      type={type}
       className={buttonClassName}
       aria-label={label}
       title={label}
-      dialogProps={dialogProps}
       {...buttonProps}
     >
       <span className="frp-mobile-create-fab__label">{label}</span>
       <ExternalLink size={16} aria-hidden="true" />
-    </ButtonCreateFrp>
+    </button>
   )
 }
 
