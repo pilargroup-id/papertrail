@@ -86,6 +86,12 @@ function AppLayout({
         onStatusChange: setMobileFrpStatusFilter,
       })
     : undefined
+  const searchProps = {
+    value: searchQuery,
+    placeholder: isSearchTable ? 'Cari data table...' : 'Search Data...',
+    ariaLabel: isSearchTable ? 'Cari data table' : 'Search legal tickets',
+    onChange: (event) => handleSearchChange(event.target.value),
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -158,12 +164,7 @@ function AppLayout({
               { label: 'Papertrail', href: '#' },
               { label: resolvedPageTitle, href: '#', active: true },
             ]}
-            searchProps={{
-              value: searchQuery,
-              placeholder: isSearchTable ? 'Cari data table...' : 'Search Data...',
-              ariaLabel: isSearchTable ? 'Cari data table' : 'Search legal tickets',
-              onChange: (event) => handleSearchChange(event.target.value),
-            }}
+            searchProps={searchProps}
             notificationProps={{
               ariaLabel: 'Open notifications',
               modalTitle: 'Notifications',
@@ -179,12 +180,7 @@ function AppLayout({
             { label: 'Papertrail', href: '#' },
             { label: resolvedPageTitle, href: '#', active: true },
           ]}
-          searchProps={{
-            value: searchQuery,
-            placeholder: isSearchTable ? 'Cari data table...' : 'Search Data...',
-            ariaLabel: isSearchTable ? 'Cari data table' : 'Search legal tickets',
-            onChange: (event) => handleSearchChange(event.target.value),
-          }}
+          searchProps={searchProps}
           notificationProps={{
             ariaLabel: 'Filter',
             modalTitle: 'Filter',
@@ -209,6 +205,7 @@ function AppLayout({
                   currentUser,
                   isAuthLoading,
                   mobileFrpStatusFilter,
+                  searchProps,
                   onDataChange: handleRefresh,
                 }}
               />

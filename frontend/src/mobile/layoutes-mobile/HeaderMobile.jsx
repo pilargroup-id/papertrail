@@ -9,6 +9,7 @@ import {
   XClose,
 } from '../../components/layoute/TemplateIcons.jsx'
 import MobileButtonFilterFrp from '../mobile-button/frp/MobileButtonFilterFrp.jsx'
+import logoPiagam from '../../images/logo-piagam2.svg'
 import {
   ALL_DEPARTMENTS_FILTER_ID,
   ALL_DEPARTMENTS_FILTER_LABEL,
@@ -288,7 +289,7 @@ function HeaderMobile({
             </button>
           ) : null}
 
-          {hasSearch ? (
+          {hasSearch && !hasHeaderTabs ? (
             <label
               className="header-search header-search--compact"
               aria-label={searchProps.ariaLabel ?? 'Search'}
@@ -307,6 +308,8 @@ function HeaderMobile({
           ) : null}
 
           {!hasHeaderTabs ? renderHeaderActions() : null}
+
+          <img src={logoPiagam} alt="Logo Piagam" className="mobile-header-logo" />
         </div>
 
         {hasHeaderTabs ? (

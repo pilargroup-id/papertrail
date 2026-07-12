@@ -16,6 +16,7 @@ import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
 import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
+import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -127,6 +128,7 @@ function FrpPage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
+  const searchProps = props.searchProps ?? outletContext.searchProps
   const currentUser = props.currentUser ?? outletContext.currentUser ?? null
   const mobileFrpStatusFilter =
     props.mobileFrpStatusFilter ??
@@ -463,6 +465,17 @@ function FrpPage(props) {
         </div>
       </div>
 
+      {!selectedMobileDetailsFrp ? (
+        <SearchFrp searchProps={searchProps}>
+          <MobileButtonCreate
+            label="Create"
+            dialogProps={{
+              onCreated: handleFrpCreated,
+            }}
+          />
+        </SearchFrp>
+      ) : null}
+
       <MobileScreenDetailFrp frp={selectedMobileDetailsFrp} onBack={closeMobileDetailsPage} />
 
       <div className={selectedMobileDetailsFrp ? 'frp-page__mobile-list--hidden' : ''}>
@@ -486,14 +499,6 @@ function FrpPage(props) {
           }}
         />
       </div>
-
-      {!selectedMobileDetailsFrp ? (
-        <MobileButtonCreate
-          dialogProps={{
-            onCreated: handleFrpCreated,
-          }}
-        />
-      ) : null}
 
       <DialogEditFrp
         isOpen={isEditDialogOpen}

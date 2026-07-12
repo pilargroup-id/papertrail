@@ -1,8 +1,8 @@
 import ButtonCreateFrp from '../../../components/button/button-frp/ButtonCreateFrp.jsx'
-import { Plus } from '../../../components/layoute/TemplateIcons.jsx'
+import { ExternalLink } from '../../../components/layoute/TemplateIcons.jsx'
 
 function MobileButtonCreate({
-  label = 'Create FRP',
+  label = 'Create',
   className = '',
   dialogProps = {},
   ...buttonProps
@@ -23,8 +23,8 @@ function MobileButtonCreate({
       dialogProps={dialogProps}
       {...buttonProps}
     >
-      <Plus size={24} aria-hidden="true" />
       <span className="frp-mobile-create-fab__label">{label}</span>
+      <ExternalLink size={16} aria-hidden="true" />
     </ButtonCreateFrp>
   )
 }

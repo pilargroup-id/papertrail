@@ -4,6 +4,7 @@ import CreateButton from '../button/ButtonCreate.jsx'
 import PaginationTable from '../forms/PaginationTable.jsx'
 import { ChevronDown, ChevronUp } from '../layoute/TemplateIcons.jsx'
 import DetailCard from '../../mobile/data-card/DetailCard.jsx'
+import MobilePagination from '../../mobile/layoutes-mobile/MobilePagination.jsx'
 
 function getInitials(value = '') {
   return String(value)
@@ -1069,28 +1070,43 @@ function DataTable({
       ) : null}
 
       {hasPagination ? (
-        <PaginationTable
-          id={idPrefix}
-          summary={paginationConfig.summary}
-          totalRows={totalRows}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          pageSize={effectivePageSize}
-          pageSizeOptions={paginationConfig.pageSizeOptions}
-          pageSizeLabel={paginationConfig.pageSizeLabel ?? 'Rows per page'}
-          pageSizeAriaLabel={
-            paginationConfig.pageSizeAriaLabel ?? 'Jumlah baris per halaman'
-          }
-          pageSizeSuffix={paginationConfig.pageSizeSuffix}
-          ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
-          items={paginationConfig.items}
-          previousLabel={paginationConfig.previousLabel ?? 'Previous'}
-          nextLabel={paginationConfig.nextLabel ?? 'Next'}
-          onPageSizeChange={handlePageSizeChange}
-          onPrevious={handlePreviousPage}
-          onNext={handleNextPage}
-          onSelectPage={handleSelectPage}
-        />
+        <>
+          <PaginationTable
+            id={idPrefix}
+            summary={paginationConfig.summary}
+            totalRows={totalRows}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={effectivePageSize}
+            pageSizeOptions={paginationConfig.pageSizeOptions}
+            pageSizeLabel={paginationConfig.pageSizeLabel ?? 'Rows per page'}
+            pageSizeAriaLabel={
+              paginationConfig.pageSizeAriaLabel ?? 'Jumlah baris per halaman'
+            }
+            pageSizeSuffix={paginationConfig.pageSizeSuffix}
+            ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
+            items={paginationConfig.items}
+            previousLabel={paginationConfig.previousLabel ?? 'Previous'}
+            nextLabel={paginationConfig.nextLabel ?? 'Next'}
+            onPageSizeChange={handlePageSizeChange}
+            onPrevious={handlePreviousPage}
+            onNext={handleNextPage}
+            onSelectPage={handleSelectPage}
+          />
+
+          <MobilePagination
+            summary={paginationConfig.summary}
+            totalRows={totalRows}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={effectivePageSize}
+            previousLabel={paginationConfig.mobilePreviousLabel ?? 'Prev'}
+            nextLabel={paginationConfig.mobileNextLabel ?? 'Next'}
+            ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
+            onPrevious={handlePreviousPage}
+            onNext={handleNextPage}
+          />
+        </>
       ) : null}
     </div>
   )
