@@ -53,6 +53,14 @@ function canManageAttachment(user = {}, frp = {}) {
   return String(frp.requested_by_user_id || '') === String(user.id || '');
 }
 
+function canMutateAttachmentByStatus(frp = {}) {
+  if (frp.status === 'PENDING') {
+    return true;
+  }
+
+  return frp.source_module === 'RP' && frp.status === 'APPROVED';
+}
+
 function getYearMonthParts(date = new Date()) {
   const year = String(date.getFullYear());
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -165,8 +173,8 @@ async function signUploadUrls(frpRequestId, body = {}, user = {}) {
       throw new Error('FRP request not found');
     }
 
-    if (frp.status !== 'PENDING') {
-      throw new Error('Attachments can only be added to PENDING FRP');
+    if (!canMutateAttachmentByStatus(frp)) {
+      throw new Error('Attachments can only be added to PENDING FRP or approved FRP from RP');
     }
 
     if (!canManageAttachment(user, frp)) {
@@ -286,8 +294,8 @@ async function confirmUploads(frpRequestId, body = {}, user = {}) {
       throw new Error('FRP request not found');
     }
 
-    if (frp.status !== 'PENDING') {
-      throw new Error('Attachments can only be confirmed on PENDING FRP');
+    if (!canMutateAttachmentByStatus(frp)) {
+      throw new Error('Attachments can only be confirmed on PENDING FRP or approved FRP from RP');
     }
 
     if (!canManageAttachment(user, frp)) {
@@ -356,8 +364,8 @@ async function cancelUpload(frpRequestId, attachmentId, user = {}) {
       throw new Error('FRP request not found');
     }
 
-    if (frp.status !== 'PENDING') {
-      throw new Error('Attachments can only be canceled on PENDING FRP');
+    if (!canMutateAttachmentByStatus(frp)) {
+      throw new Error('Attachments can only be canceled on PENDING FRP or approved FRP from RP');
     }
 
     if (!canManageAttachment(user, frp)) {
