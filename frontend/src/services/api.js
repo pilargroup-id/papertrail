@@ -49,6 +49,22 @@ const normalizeAuthToken = (value) => {
   return rawValue.replace(/^Bearer\s+/i, '').trim() || null;
 };
 
+const isBinaryBody = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  if (typeof Blob !== 'undefined' && value instanceof Blob) {
+    return true;
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return true;
+  }
+
+  return ArrayBuffer.isView(value);
+};
+
 const getStoredAuthToken = () => {
   if (typeof window === 'undefined') {
     return null;
@@ -185,6 +201,39 @@ const normalizePayloadItems = (payload, key) => {
   return payload === undefined ? [] : [payload];
 };
 
+const getResponseData = (response) => response?.data?.data ?? response?.data ?? response ?? {};
+
+const getResponseItems = (response) => {
+  const data = getResponseData(response);
+
+  if (Array.isArray(data?.items)) {
+    return data.items;
+  }
+
+  if (Array.isArray(response?.items)) {
+    return response.items;
+  }
+
+  return [];
+};
+
+const hasHeader = (headers, headerName) =>
+  Object.keys(headers).some((key) => key.toLowerCase() === headerName.toLowerCase());
+
+const getSignedUploadHeaders = (uploadItem, file, uploadOptions = {}) => {
+  const headers = {
+    ...(uploadOptions?.headers || {}),
+    ...(uploadItem?.headers || {}),
+  };
+
+  if (!hasHeader(headers, 'Content-Type')) {
+    headers['Content-Type'] =
+      uploadItem?.mime_type || file?.type || 'application/octet-stream';
+  }
+
+  return headers;
+};
+
 const createFrpResource = (path) => ({
   ...createResource(path),
   approve: (id, data = {}, options) => api.post(`${path}/${id}/approve`, data, options),
@@ -211,6 +260,14 @@ const createFrpResource = (path) => ({
       api.post(`${path}/${id}/attachments/${attachmentId}/cancel`, undefined, options),
     downloadUrl: (id, attachmentId, options) =>
       api.get(`${path}/${id}/attachments/${attachmentId}/download-url`, options),
+    uploadViaBackend: (id, attachmentId, file, options) =>
+      api.put(`${path}/${id}/attachments/${attachmentId}/upload`, file, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          ...(options?.headers || {}),
+        },
+      }),
     uploadToStorage: uploadFileToSignedUrl,
     upload: async (
       id,
@@ -246,7 +303,7 @@ const createFrpResource = (path) => ({
         },
       );
 
-      const uploadItem = signResponse?.data?.items?.[0];
+      const uploadItem = getResponseItems(signResponse)[0];
 
       if (!uploadItem?.upload_url) {
         throw new ApiError('Failed to generate upload URL', {
@@ -254,11 +311,17 @@ const createFrpResource = (path) => ({
         });
       }
 
-      await uploadFileToSignedUrl(uploadItem.upload_url, file, {
-        method: uploadItem.method || uploadOptions?.method || 'PUT',
-        headers: uploadItem.headers || uploadOptions?.headers || {},
-        signal: uploadOptions?.signal ?? signal,
-      });
+      try {
+        await uploadFileToSignedUrl(uploadItem.upload_url, file, {
+          method: uploadItem.method || uploadOptions?.method || 'PUT',
+          headers: getSignedUploadHeaders(uploadItem, file, uploadOptions),
+          signal: uploadOptions?.signal ?? signal,
+        });
+      } catch {
+        await api.frp.attachments.uploadViaBackend(id, uploadItem.attachment_id, file, {
+          signal,
+        });
+      }
 
       const confirmResponse = await api.frp.attachments.confirm(
         id,
@@ -276,7 +339,7 @@ const createFrpResource = (path) => ({
         signResponse,
         uploadItem,
         confirmResponse,
-        confirmedAttachment: confirmResponse?.data?.items?.[0] ?? null,
+        confirmedAttachment: getResponseItems(confirmResponse)[0] ?? null,
       };
     },
   },
@@ -304,8 +367,9 @@ const request = async (
     Accept: 'application/json',
     ...headers,
   };
+  const shouldSendRawBody = data instanceof FormData || isBinaryBody(data);
 
-  if (data !== undefined && !(data instanceof FormData)) {
+  if (data !== undefined && !shouldSendRawBody) {
     requestHeaders['Content-Type'] = 'application/json';
   }
 
@@ -319,7 +383,7 @@ const request = async (
     body:
       data === undefined
         ? undefined
-        : data instanceof FormData
+        : shouldSendRawBody
           ? data
           : JSON.stringify(data),
     signal,

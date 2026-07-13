@@ -6,7 +6,10 @@ import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
 import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
 import createMobileCardFrp from '../../../mobile/frp-card/MobileCardFrp.jsx'
+import MobileButtonApprovalFrp from '../../../mobile/mobile-button/frp/MobileButtonApprovalFrp.jsx'
 import MobileButtonEditFrp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
+import MobileButtonRejectFrp from '../../../mobile/mobile-button/frp/MobileButtonRejectFrp.jsx'
+import MobileButtonRevert from '../../../mobile/mobile-button/frp/MobileButtonRevert.jsx'
 import {
   canAccessFrpButton,
   canCurrentUserApproveFrp,
@@ -357,6 +360,7 @@ function DataTableFrp({
           key: 'approval',
           label: 'Approval',
           buttonComponent: ButtonApprovalFrp,
+          mobileButtonComponent: MobileButtonApprovalFrp,
           hidden: (frp, index) => isApproveActionHidden(frp, index, currentUser, canApprove),
           onClick: onApproval,
         }
@@ -366,6 +370,7 @@ function DataTableFrp({
           key: 'reject',
           label: 'Reject',
           buttonComponent: ButtonRejectFrp,
+          mobileButtonComponent: MobileButtonRejectFrp,
           hidden: (frp, index) => isRejectActionHidden(frp, index, currentUser, canReject),
           onClick: onReject,
         }
@@ -375,6 +380,7 @@ function DataTableFrp({
           key: 'revert',
           label: 'Revert',
           buttonComponent: ButtonRevertFrp,
+          mobileButtonComponent: MobileButtonRevert,
           hidden: (frp, index) => isRevertActionHidden(frp, index, currentUser, canRevert),
           onClick: onRevert,
         }

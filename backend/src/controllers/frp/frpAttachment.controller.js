@@ -29,6 +29,21 @@ async function confirmUploads(req, res, next) {
   }
 }
 
+async function uploadPendingAttachment(req, res, next) {
+  try {
+    const result = await frpAttachmentService.uploadPendingAttachment(
+      req.params.id,
+      req.params.attachmentId,
+      req.body,
+      req.user
+    );
+
+    return R.ok(res, result, 'FRP attachment uploaded');
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function cancelUpload(req, res, next) {
   try {
     const result = await frpAttachmentService.cancelUpload(
@@ -60,6 +75,7 @@ async function downloadUrl(req, res, next) {
 module.exports = {
   signUploadUrls,
   confirmUploads,
+  uploadPendingAttachment,
   cancelUpload,
   downloadUrl,
 };

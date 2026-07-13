@@ -8,6 +8,7 @@ const {
   generateSignedUploadUrl,
   generateSignedDownloadUrl,
   objectExists,
+  uploadObject,
   deleteObjectIfExists,
 } = require('../storage/gcsStorage.service');
 
@@ -344,6 +345,64 @@ async function confirmUploads(frpRequestId, body = {}, user = {}) {
   }
 }
 
+async function uploadPendingAttachment(frpRequestId, attachmentId, fileBuffer, user = {}) {
+  if (!Buffer.isBuffer(fileBuffer) || fileBuffer.length === 0) {
+    throw new Error('Attachment file is required');
+  }
+
+  const maxSize = maxAttachmentFileSizeMb * 1024 * 1024;
+
+  if (fileBuffer.length > maxSize) {
+    throw new Error(`File exceeds maximum size ${maxAttachmentFileSizeMb} MB`);
+  }
+
+  const conn = await frpModel.db.getConnection();
+
+  try {
+    const frp = await frpModel.getFrpHeaderById(conn, frpRequestId);
+
+    if (!frp) {
+      throw new Error('FRP request not found');
+    }
+
+    if (frp.status !== 'PENDING') {
+      throw new Error('Attachments can only be uploaded to PENDING FRP');
+    }
+
+    if (!canManageAttachment(user, frp)) {
+      throw new Error('You do not have permission to upload attachments to this FRP');
+    }
+
+    const attachment = await frpAttachmentModel.getAttachmentById(
+      conn,
+      attachmentId,
+      frpRequestId
+    );
+
+    if (!attachment) {
+      throw new Error('Attachment not found');
+    }
+
+    if (attachment.upload_status !== 'PENDING') {
+      throw new Error(`Attachment ${attachment.id} is not pending`);
+    }
+
+    if (Number(attachment.file_size || 0) !== fileBuffer.length) {
+      throw new Error('Attachment file size does not match signed upload metadata');
+    }
+
+    await uploadObject(attachment.object_path, fileBuffer, attachment.mime_type);
+
+    return {
+      attachment_id: attachment.id,
+      object_path: attachment.object_path,
+      file_size: fileBuffer.length,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
 async function cancelUpload(frpRequestId, attachmentId, user = {}) {
   const conn = await frpModel.db.getConnection();
 
@@ -446,6 +505,7 @@ async function getDownloadUrl(frpRequestId, attachmentId, user = {}) {
 module.exports = {
   signUploadUrls,
   confirmUploads,
+  uploadPendingAttachment,
   cancelUpload,
   getDownloadUrl,
 };

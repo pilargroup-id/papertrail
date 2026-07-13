@@ -44,6 +44,18 @@ async function objectExists(objectPath) {
   return exists;
 }
 
+async function uploadObject(objectPath, buffer, mimeType) {
+  await bucket.file(objectPath).save(buffer, {
+    contentType: mimeType,
+    resumable: false,
+    metadata: {
+      contentType: mimeType,
+    },
+  });
+
+  return true;
+}
+
 async function deleteObjectIfExists(objectPath) {
   const file = bucket.file(objectPath);
   const [exists] = await file.exists();
@@ -61,5 +73,6 @@ module.exports = {
   generateSignedUploadUrl,
   generateSignedDownloadUrl,
   objectExists,
+  uploadObject,
   deleteObjectIfExists,
 };

@@ -184,7 +184,7 @@ Frontend tidak upload file langsung ke backend. Flow upload:
 3. FE upload file langsung ke GCS pakai PUT upload_url
 4. FE confirm upload ke backend
 5. Backend cek object exists di GCS
-6. Backend update status attachment jadi UPLOADED
+6. Backend update status attachment 
 ```
 
 ### Attachment status

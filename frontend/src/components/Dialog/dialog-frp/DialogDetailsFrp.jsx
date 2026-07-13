@@ -5,7 +5,7 @@ import api from '../../../services/api.js'
 import DataTable from '../../table/DataTable.jsx'
 
 import ButtonAttachmentsFrp from '../../button/button-frp/ButtonAttachmentsFrp.jsx'
-import { Eye } from '../../layoute/TemplateIcons.jsx'
+import { Download } from '../../layoute/TemplateIcons.jsx'
 
 function isBlankValue(value) {
   return value === undefined || value === null || value === ''
@@ -127,6 +127,18 @@ function formatStatusLabel(value) {
     .join(' ')
 }
 
+function getAttachmentUploadStatus(attachment) {
+  const uploadStatus = String(attachment?.upload_status ?? '').toUpperCase()
+
+  if (uploadStatus) {
+    return uploadStatus
+  }
+
+  const fallbackStatus = String(attachment?.status ?? '').toUpperCase()
+
+  return ['PENDING', 'UPLOADED', 'CANCELED'].includes(fallbackStatus) ? fallbackStatus : ''
+}
+
 function getFrpDetailFromResponse(response) {
   const candidates = [
     response?.data?.data,
@@ -174,6 +186,16 @@ function getAttachmentId(attachment) {
   return attachment?.attachment_id ?? attachment?.id
 }
 
+function getAttachmentDownloadUrlFromResponse(response) {
+  return (
+    response?.data?.download_url ??
+    response?.data?.data?.download_url ??
+    response?.download_url ??
+    response?.data?.url ??
+    response?.url
+  )
+}
+
 function getAttachmentName(attachment) {
   return (
     attachment?.original_file_name ??
@@ -183,6 +205,48 @@ function getAttachmentName(attachment) {
     attachment?.document_type_name_snapshot ??
     'Attachment'
   )
+}
+
+function getSafeAttachmentFileName(fileName) {
+  const safeName = String(fileName || 'attachment')
+    .replace(/[\\/:*?"<>|]+/g, '_')
+    .trim()
+
+  return safeName || 'attachment'
+}
+
+function triggerAttachmentDownload(url, fileName, { openInNewTab = false } = {}) {
+  const link = document.createElement('a')
+
+  link.href = url
+  link.download = getSafeAttachmentFileName(fileName)
+
+  if (openInNewTab) {
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+  }
+
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+}
+
+async function downloadAttachmentFromUrl(downloadUrl, fileName) {
+  try {
+    const response = await fetch(downloadUrl)
+
+    if (!response.ok) {
+      throw new Error('Gagal mengunduh attachment dari storage.')
+    }
+
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+
+    triggerAttachmentDownload(objectUrl, fileName)
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0)
+  } catch {
+    triggerAttachmentDownload(downloadUrl, fileName, { openInNewTab: true })
+  }
 }
 
 function getAttachmentDocumentTypeName(attachment) {
@@ -218,13 +282,13 @@ function formatFileSize(value) {
 }
 
 function isAttachmentReady(attachment) {
-  const uploadStatus = String(attachment?.upload_status ?? attachment?.status ?? '').toUpperCase()
+  const uploadStatus = getAttachmentUploadStatus(attachment)
 
   return !uploadStatus || uploadStatus === 'UPLOADED'
 }
 
 function isAttachmentVisible(attachment) {
-  const uploadStatus = String(attachment?.upload_status ?? attachment?.status ?? '').toUpperCase()
+  const uploadStatus = getAttachmentUploadStatus(attachment)
 
   return uploadStatus !== 'CANCELED'
 }
@@ -480,8 +544,8 @@ function DialogDetailsFrp({
 
     if (!isAttachmentReady(attachment)) {
       setAttachmentErrorMessage(
-        `Attachment belum siap dipreview. Status upload: ${formatStatusLabel(
-          getFirstValue(attachment, ['upload_status', 'status'], 'PENDING'),
+        `Attachment belum siap di-download. Status upload: ${formatStatusLabel(
+          getAttachmentUploadStatus(attachment) || 'PENDING',
         )}.`,
       )
       return
@@ -492,15 +556,15 @@ function DialogDetailsFrp({
 
     try {
       const response = await api.frp.attachments.downloadUrl(frpId, attachmentId)
-      const downloadUrl = response?.data?.download_url ?? response?.download_url
+      const downloadUrl = getAttachmentDownloadUrlFromResponse(response)
 
       if (!downloadUrl) {
         throw new Error('URL attachment tidak tersedia.')
       }
 
-      window.open(downloadUrl, '_blank', 'noopener,noreferrer')
+      await downloadAttachmentFromUrl(downloadUrl, getAttachmentName(attachment))
     } catch (error) {
-      setAttachmentErrorMessage(error.message || 'Gagal membuka attachment.')
+      setAttachmentErrorMessage(error.message || 'Gagal men-download attachment.')
     } finally {
       setDownloadingAttachmentId(null)
     }
@@ -722,7 +786,7 @@ function DialogDetailsFrp({
 
                 <div className="frp-accordion-detail__attachments" aria-label="FRP attachments">
                   <span className="frp-accordion-detail__attachment-label">
-                    Preview Attachment
+                    Download Attachment
                   </span>
                   {attachments.length > 0 ? (
                     <div className="frp-accordion-detail__attachment-list">
@@ -740,16 +804,15 @@ function DialogDetailsFrp({
                           attachment?.mime_type,
                           formatFileSize(attachment?.file_size),
                         ].filter((value) => value && value !== '-')
-                        const isReady = isAttachmentReady(attachment)
                         const isDownloading = downloadingAttachmentId === attachmentId
 
                         return (
                           <ButtonAttachmentsFrp
                             key={attachmentId}
                             className="frp-accordion-detail__attachment-button"
-                            icon={Eye}
-                            label={`Preview attachment ${attachmentName}`}
-                            disabled={isDownloading || !isReady}
+                            icon={Download}
+                            label={`Download attachment ${attachmentName}`}
+                            disabled={isDownloading}
                             onClick={(event) => handleAttachmentClick(attachment, event)}
                           >
                             <span className="frp-accordion-detail__attachment-copy">

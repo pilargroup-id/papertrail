@@ -200,6 +200,103 @@ function getCreatedFrpId(response) {
   return response?.data?.id ?? response?.data?.data?.id ?? response?.id ?? ''
 }
 
+function getResponseData(response) {
+  return response?.data?.data ?? response?.data ?? response ?? {}
+}
+
+function getResponseItems(response) {
+  const data = getResponseData(response)
+
+  if (Array.isArray(data?.items)) {
+    return data.items
+  }
+
+  if (Array.isArray(response?.items)) {
+    return response.items
+  }
+
+  return []
+}
+
+function hasHeader(headers, headerName) {
+  return Object.keys(headers).some((key) => key.toLowerCase() === headerName.toLowerCase())
+}
+
+function getSignedUploadHeaders(uploadItem, file) {
+  const headers = {
+    ...(uploadItem?.headers || {}),
+  }
+
+  if (!hasHeader(headers, 'Content-Type')) {
+    headers['Content-Type'] = uploadItem?.mime_type || file?.type || 'application/octet-stream'
+  }
+
+  return headers
+}
+
+function normalizeDocumentTypeId(documentTypeId) {
+  const numericDocumentTypeId = Number(documentTypeId)
+
+  return Number.isFinite(numericDocumentTypeId) ? numericDocumentTypeId : documentTypeId
+}
+
+async function uploadCreatedFrpAttachment(frpId, attachment, documentTypeId) {
+  const file = attachment?.file
+  let uploadItem = null
+
+  if (!file) {
+    throw new Error('File attachment tidak tersedia.')
+  }
+
+  try {
+    const signResponse = await api.frp.attachments.signUpload(frpId, {
+      document_type_id: normalizeDocumentTypeId(documentTypeId),
+      original_file_name: file.name,
+      mime_type: file.type || 'application/octet-stream',
+      file_size: file.size,
+    })
+    uploadItem = getResponseItems(signResponse)[0]
+
+    if (!uploadItem?.upload_url) {
+      throw new Error('URL upload attachment tidak tersedia.')
+    }
+
+    try {
+      await api.frp.attachments.uploadToStorage(uploadItem.upload_url, file, {
+        method: uploadItem.method || 'PUT',
+        headers: getSignedUploadHeaders(uploadItem, file),
+      })
+    } catch {
+      await api.frp.attachments.uploadViaBackend(frpId, uploadItem.attachment_id, file)
+    }
+
+    const confirmResponse = await api.frp.attachments.confirm(frpId, {
+      attachment_id: uploadItem.attachment_id,
+      checksum: null,
+    })
+    const confirmedAttachment = getResponseItems(confirmResponse)[0]
+    const uploadStatus = String(
+      confirmedAttachment?.upload_status ?? confirmedAttachment?.status ?? '',
+    ).toUpperCase()
+
+    if (uploadStatus && uploadStatus !== 'UPLOADED') {
+      throw new Error('Attachment belum berhasil dikonfirmasi.')
+    }
+
+    return confirmedAttachment
+  } catch (error) {
+    if (uploadItem?.attachment_id) {
+      try {
+        await api.frp.attachments.cancel(frpId, uploadItem.attachment_id)
+      } catch {
+        // Ignore cleanup errors so the original upload problem stays visible.
+      }
+    }
+
+    throw error
+  }
+}
+
 function getPrimaryItem(items) {
   if (!Array.isArray(items) || items.length === 0) {
     return null
@@ -762,10 +859,7 @@ function DialogCreateFrp({
         try {
           await Promise.all(
             attachmentDraft.files.map((attachment) =>
-              api.frp.attachments.upload(createdFrpId, {
-                file: attachment.file,
-                documentTypeId: attachmentDraft.documentTypeId,
-              }),
+              uploadCreatedFrpAttachment(createdFrpId, attachment, attachmentDraft.documentTypeId),
             ),
           )
         } catch (error) {
