@@ -23,6 +23,7 @@ function createMobileCardFrp({
       },
     },
     title: '',
+    subtitle: () => '',
     rows: [
       {
         key: 'requestBy',
@@ -49,6 +50,14 @@ function createMobileCardFrp({
           typeof formatDateTime === 'function'
             ? formatDateTime(frp?.created_at)
             : getDisplayValue(frp?.created_at),
+      },
+      {
+        key: 'createdPayment',
+        label: 'Payment Date',
+        value: (frp) =>
+          typeof formatDateTime === 'function'
+            ? formatDateTime(frp?.payment_date)
+            : getDisplayValue(frp?.payment_date),
       },
     ],
     sections: [
