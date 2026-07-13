@@ -78,6 +78,7 @@ function normalizeBiDate(value, fallbackDate) {
     return fallbackDate;
   }
 
+  // BI format: 2021-01-11T00:00:00+07:00
   const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) {
     return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
@@ -96,9 +97,22 @@ function normalizeBiDate(value, fallbackDate) {
   return fallbackDate;
 }
 
+/**
+ * Extract a tag's inner text from an XML fragment.
+ * Tag name boundary is anchored with (?=[\s/>]) on BOTH the opening
+ * and closing side so "beli" cannot accidentally match inside
+ * "beli_subkurslokal" (or vice versa) — previous version only
+ * anchored loosely on open and strictly on close, which silently
+ * broke every lookup when BI's real field names didn't match the
+ * guessed short names.
+ */
 function getTagValue(block, names = []) {
   for (const name of names) {
-    const pattern = new RegExp(`<(?:\\w+:)?${name}[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${name}>`, 'i');
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(
+      `<(?:\\w+:)?${escaped}(?=[\\s/>])[^>]*>([\\s\\S]*?)<\\/(?:\\w+:)?${escaped}(?=[\\s>])>`,
+      'i'
+    );
     const match = block.match(pattern);
 
     if (match && match[1] !== undefined) {
@@ -133,6 +147,7 @@ function parseBiKursXml(xml, requestedCurrencyCode, fallbackDate) {
   rowBlocks.forEach((block) => {
     const code = normalizeCurrencyCode(
       getTagValue(block, [
+        'mts_subkurslokal', // real BI field (getSubKursLokal3 / getSubKursLokal2)
         'mts',
         'MTS',
         'kode_mata_uang',
@@ -147,18 +162,21 @@ function parseBiKursXml(xml, requestedCurrencyCode, fallbackDate) {
       return;
     }
 
+    // "nil_subkurslokal" = kelipatan/unit kuotasi (mis. 1, atau 100 utk JPY/KRW dsb)
     const unit = parseDecimal(
-      getTagValue(block, ['nilai', 'Nilai', 'satuan', 'Satuan'])
+      getTagValue(block, ['nil_subkurslokal', 'nilai', 'Nilai', 'satuan', 'Satuan'])
     ) || 1;
 
     const buyRateRaw = parseDecimal(
-      getTagValue(block, ['kurs_beli', 'KursBeli', 'beli', 'Beli', 'buy_rate'])
+      getTagValue(block, ['beli_subkurslokal', 'kurs_beli', 'KursBeli', 'beli', 'Beli', 'buy_rate'])
     );
 
     const sellRateRaw = parseDecimal(
-      getTagValue(block, ['kurs_jual', 'KursJual', 'jual', 'Jual', 'sell_rate'])
+      getTagValue(block, ['jual_subkurslokal', 'kurs_jual', 'KursJual', 'jual', 'Jual', 'sell_rate'])
     );
 
+    // getSubKursLokal3 tidak punya field kurs tengah eksplisit -> tetap null,
+    // di-fallback ke rata-rata beli/jual di bawah.
     const middleRateRaw = parseDecimal(
       getTagValue(block, ['kurs_tengah', 'KursTengah', 'tengah', 'Tengah', 'middle_rate'])
     );
@@ -179,7 +197,7 @@ function parseBiKursXml(xml, requestedCurrencyCode, fallbackDate) {
       currency_code: currencyCode,
       base_currency_code: 'IDR',
       rate_date: normalizeBiDate(
-        getTagValue(block, ['tanggal', 'Tanggal', 'tgl', 'Tgl', 'date', 'Date']),
+        getTagValue(block, ['tgl_subkurslokal', 'tanggal', 'Tanggal', 'tgl', 'Tgl', 'date', 'Date']),
         fallbackDate
       ),
       rate_type: 'BI_TRANSACTION',
