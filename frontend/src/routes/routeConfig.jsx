@@ -5,6 +5,8 @@ import AppLayout from '../layouts/AppLayout';
 // =========MASTER PAGES=========
 // frp
 import FrpPage from '../pages/frp/FrpPage.jsx';
+// rp
+import RpPage from '../pages/rp/RpPage.jsx';
 
 // Vendor Management
 import VendorPage from '../pages/master/vendors/vendor/VendorPage.jsx';
@@ -40,6 +42,9 @@ export default function RouteConfig() {
         <Route path="Forms" element={<FormsPage />} />
 
         <Route path="frp" element={<FrpPage />} />
+        <Route path="rp" element={<RpPage />} />
+        <Route path="Rp" element={<RpPage />} />
+
         {/* master pages */}
 
         {/* Vendor Management */}

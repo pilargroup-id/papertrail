@@ -18,6 +18,7 @@ export const implementedNavigationPaths = [
   '/Master',
   '/frp',
   '/rp',
+  '/Rp',
 
   // VENDOR MANAGEMENT
   '/Master/Vendor',
@@ -55,6 +56,12 @@ export const primaryNavigationItems = [
     id: 'frp',
     label: 'Frp',
     href: '/frp',
+    icon: FileText01,
+  },
+  {
+    id: 'rp',
+    label: 'Rp',
+    href: '/Rp',
     icon: FileText01,
   },
   {
