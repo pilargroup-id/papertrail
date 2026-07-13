@@ -2762,12 +2762,14 @@ width: var(--sidebar-collapsed-width);
   flex: 1;
   min-height: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .users-table-wrapper {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  margin-top: 22px;
+  max-height: var(--users-table-wrapper-max-height, min(56dvh, 560px));
+  margin-top: 16px;
   overflow: auto;
   scrollbar-width: none;
   border: 1px solid rgba(26, 42, 87, 0.08);
@@ -4009,17 +4011,19 @@ width: var(--sidebar-collapsed-width);
 }
 
 .users-table-pagination {
-  position: relative;
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 18px;
-  padding: 0.9rem 1rem;
+  margin-top: 10px;
+  padding: 0.5rem 0.75rem;
   border: 1px solid rgba(26, 42, 87, 0.08);
-  border-radius: 18px;
+  border-radius: 14px;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 249, 250, 0.88)),
     radial-gradient(circle at top left, rgba(42, 157, 143, 0.1), transparent 32%);
@@ -4029,14 +4033,14 @@ width: var(--sidebar-collapsed-width);
 .users-table-pagination__meta {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
 }
 
 .users-table-pagination__summary {
   margin: 0;
   color: var(--primary-blue);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
@@ -4044,14 +4048,14 @@ width: var(--sidebar-collapsed-width);
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  min-height: 42px;
-  padding: 0.25rem 0.35rem 0.25rem 0.85rem;
+  gap: 0.5rem;
+  min-height: 34px;
+  padding: 0.18rem 0.25rem 0.18rem 0.65rem;
   border: 1px solid rgba(26, 42, 87, 0.1);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   color: #5a6b88;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 600;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 }
@@ -4059,7 +4063,7 @@ width: var(--sidebar-collapsed-width);
 .users-table-pagination__page-size-label {
   color: #64748b;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4071,19 +4075,19 @@ width: var(--sidebar-collapsed-width);
 }
 
 .users-table-pagination__select {
-  min-height: 34px;
-  min-width: 68px;
+  min-height: 28px;
+  min-width: 58px;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.45rem;
-  padding: 0.42rem 0.6rem 0.42rem 0.9rem;
+  gap: 0.32rem;
+  padding: 0.3rem 0.48rem 0.3rem 0.68rem;
   border: 1px solid rgba(42, 157, 143, 0.32);
   border-radius: 999px;
   background: #ffffff;
   color: var(--primary-blue);
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 8px 18px rgba(42, 157, 143, 0.12);
@@ -4163,21 +4167,22 @@ width: var(--sidebar-collapsed-width);
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.4rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
 }
 
 .users-table-pagination__button {
-  min-width: 38px;
-  min-height: 38px;
+  min-width: 32px;
+  min-height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.55rem 0.85rem;
+  padding: 0.42rem 0.68rem;
   border: 1px solid rgba(26, 42, 87, 0.12);
   border-radius: 999px;
   background: #fff;
   color: var(--primary-blue);
+  font-size: 0.82rem;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -4220,9 +4225,10 @@ width: var(--sidebar-collapsed-width);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  min-height: 38px;
+  min-width: 24px;
+  min-height: 32px;
   color: var(--neutral-gray);
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
