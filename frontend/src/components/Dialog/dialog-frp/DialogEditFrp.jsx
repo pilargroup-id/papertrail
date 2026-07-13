@@ -25,6 +25,13 @@ const editInitialItem = () => ({
   unit_price: '',
 })
 
+function isPositiveIntegerInput(value) {
+  const normalizedValue = String(value ?? '').trim()
+  const numberValue = Number(normalizedValue)
+
+  return /^\d+$/.test(normalizedValue) && Number.isSafeInteger(numberValue) && numberValue > 0
+}
+
 const editInitialFormValues = () => ({
   frp_date: getTodayDateValue(),
   description: '',
@@ -1065,8 +1072,8 @@ function DialogEditFrp({
         nextFieldErrors[`items.${index}.memo`] = 'Memo item wajib diisi.'
       }
 
-      if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
-        nextFieldErrors[`items.${index}.quantity`] = 'Quantity harus lebih dari 0.'
+      if (!isPositiveIntegerInput(formValues.items[index]?.quantity)) {
+        nextFieldErrors[`items.${index}.quantity`] = 'Quantity harus berupa angka bulat lebih dari 0.'
       }
 
       if (!Number.isFinite(item.unit_price) || item.unit_price < 0) {

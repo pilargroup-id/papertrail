@@ -16,6 +16,8 @@ import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreat
 import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
 import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
+import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
+
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
 import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
@@ -153,18 +155,22 @@ function FrpPage(props) {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
+  const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
   const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
+  const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
   const [selectedMobileDetailsFrp, setSelectedMobileDetailsFrp] = useState(null)
   const [selectedMobileEditFrp, setSelectedMobileEditFrp] = useState(null)
   const [isMobileCreateScreenOpen, setIsMobileCreateScreenOpen] = useState(false)
   const [approveError, setApproveError] = useState('')
   const [rejectError, setRejectError] = useState('')
+  const [revertError, setRevertError] = useState('')
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
+  const [isReverting, setIsReverting] = useState(false)
 
   useEffect(() => {
     setMobileHeaderHidden?.(
@@ -305,6 +311,22 @@ function FrpPage(props) {
     setRejectError('')
   }
 
+  const openRevertDialog = (frp) => {
+    setSelectedRevertFrp(frp)
+    setRevertError('')
+    setIsRevertDialogOpen(true)
+  }
+
+  const closeRevertDialog = () => {
+    if (isReverting) {
+      return
+    }
+
+    setIsRevertDialogOpen(false)
+    setSelectedRevertFrp(null)
+    setRevertError('')
+  }
+
   const handleVendorUpdated = async (response) => {
     const updatedVendor = getVendorFromResponse(response)
 
@@ -388,25 +410,22 @@ function FrpPage(props) {
     }
   }
 
-  const handleFrpReverted = async (targetFrp) => {
-    const frpId = targetFrp?.id
+  const handleFrpReverted = async ({ frp: targetFrp, notes } = {}) => {
+    const target = targetFrp ?? selectedRevertFrp
+    const frpId = target?.id
 
     if (frpId === undefined || frpId === null) {
-      setErrorMessage('ID FRP tidak tersedia.')
+      setRevertError('ID FRP tidak tersedia.')
       return
     }
 
-    const frpLabel = getFrpEditLabel(targetFrp)
+    const frpLabel = getFrpEditLabel(target)
 
-    if (typeof window !== 'undefined' && !window.confirm(`Revert ${frpLabel}?`)) {
-      return
-    }
-
-    setErrorMessage('')
-
+    setRevertError('')
+    setIsReverting(true)
     try {
       const response = await api.frp.revert(frpId, {
-        reason: `Revert ${frpLabel}`,
+        reason: notes || `Revert ${frpLabel}`,
       })
       const revertedFrp = getFrpFromResponse(response)
 
@@ -415,8 +434,13 @@ function FrpPage(props) {
       } else {
         setReloadToken((currentValue) => currentValue + 1)
       }
+
+      setIsRevertDialogOpen(false)
+      setSelectedRevertFrp(null)
     } catch (error) {
-      setErrorMessage(error.message || 'Gagal revert FRP.')
+      setRevertError(error.message || 'Gagal revert FRP.')
+    } finally {
+      setIsReverting(false)
     }
   }
 
@@ -542,7 +566,7 @@ function FrpPage(props) {
           onDetails={openDetailsDialog}
           onApproval={openApproveDialog}
           onReject={openRejectDialog}
-          onRevert={handleFrpReverted}
+          onRevert={openRevertDialog}
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
@@ -600,6 +624,17 @@ function FrpPage(props) {
         submitError={rejectError}
         onClose={closeRejectDialog}
         onReject={handleFrpRejected}
+      />
+
+      <DialogRevertFrp
+        key={selectedRevertFrp?.id ?? 'revert-frp'}
+        isOpen={isRevertDialogOpen}
+        title={`Revert ${getFrpEditLabel(selectedRevertFrp)}`}
+        frp={selectedRevertFrp}
+        isSubmitting={isReverting}
+        submitError={revertError}
+        onClose={closeRevertDialog}
+        onRevert={handleFrpReverted}
       />
     </section>
 

@@ -9,6 +9,16 @@ function toNumber(value) {
   return Number.isFinite(normalizedValue) ? normalizedValue : 0
 }
 
+function isIntegerInputValue(value) {
+  return value === '' || /^\d+$/.test(value)
+}
+
+function preventNonIntegerInput(event) {
+  if (['e', 'E', '+', '-', '.', ','].includes(event.key)) {
+    event.preventDefault()
+  }
+}
+
 function formatRupiah(value) {
   const numberValue = Number(value)
 
@@ -191,12 +201,24 @@ function MobileTabsItems({
                   placeholder="1"
                   leftIcon={Table01}
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   min="0"
-                  step="0.01"
+                  step="1"
                   required
                   disabled={isFormDisabled}
                   error={fieldErrors[`items.${index}.quantity`]}
-                  onChange={(event) => updateItemValue(index, 'quantity', event.target.value)}
+                  onKeyDown={preventNonIntegerInput}
+                  onPaste={(event) => {
+                    if (!isIntegerInputValue(event.clipboardData.getData('text'))) {
+                      event.preventDefault()
+                    }
+                  }}
+                  onChange={(event) => {
+                    if (isIntegerInputValue(event.target.value)) {
+                      updateItemValue(index, 'quantity', event.target.value)
+                    }
+                  }}
                 />
               </div>
               <div className="register-user-popup__field">

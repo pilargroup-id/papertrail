@@ -1,6 +1,6 @@
 import DropdownCheckBox from '../../../forms/dropdown/DropdownCheckBox.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
-import { Eye, FileText01, Trash03, Upload } from '../../../layoute/TemplateIcons.jsx'
+import { Eye, FileText01, Trash03, Upload, Download } from '../../../layoute/TemplateIcons.jsx'
 
 function formatFileSize(size) {
   if (!Number.isFinite(size) || size <= 0) {
@@ -186,8 +186,8 @@ function TabsAttachment({
                         disabled={isFormDisabled}
                         onClick={() => previewAttachmentDraft(attachment.previewUrl)}
                       >
-                        <Eye size={16} />
-                        Preview
+                        <Download size={16} />
+                        Download
                       </button>
                       <button
                         type="button"
@@ -263,8 +263,7 @@ function TabsAttachment({
                         disabled={isFormDisabled || !isAttachmentUploaded}
                         onClick={() => previewExistingAttachment?.(attachment)}
                       >
-                        <Eye size={16} />
-                        Preview
+                        <Download size={16} />
                       </button>
                       <button
                         type="button"
