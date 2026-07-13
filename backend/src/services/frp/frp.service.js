@@ -23,6 +23,7 @@ const {
 } = require('../master/masterSnapshot.service');
 
 const activityLogService = require('../activity/activityLog.service');
+const { resolveCurrencyRateSnapshot } = require('../master/currency.service');
 
 function normalizeNumber(value, fallback = 0) {
   const number = Number(value);
@@ -437,13 +438,16 @@ function validateCreatePayload(body = {}) {
   });
 }
 
-async function buildFrpItems(conn, bodyItems = []) {
+async function buildFrpItems(conn, bodyItems = [], currencySnapshot = {}) {
   const items = [];
+  const currencyCode = currencySnapshot.currency_code || 'IDR';
+  const exchangeRate = normalizeNumber(currencySnapshot.exchange_rate, 1);
 
   for (const item of bodyItems) {
     const quantity = normalizeNumber(item.quantity, 0);
     const unitPrice = normalizeNumber(item.unit_price, 0);
-    const amount = normalizeNumber(item.amount, quantity * unitPrice);
+    const amountOriginal = normalizeNumber(item.amount, quantity * unitPrice);
+    const amountIdr = amountOriginal * exchangeRate;
 
     const budget = await getBudgetForUpdate(conn, item.budget_id);
 
@@ -452,7 +456,7 @@ async function buildFrpItems(conn, bodyItems = []) {
     }
 
     const remainingBefore = Number(budget.budget_remaining || 0);
-    const remainingAfter = remainingBefore - amount;
+    const remainingAfter = remainingBefore - amountIdr;
 
     items.push({
       id: randomUUID(),
@@ -474,9 +478,13 @@ async function buildFrpItems(conn, bodyItems = []) {
       budget_class_code_snapshot: budget.class_code_snapshot,
 
       memo: normalizeString(item.memo),
+      currency_code: currencyCode,
+      exchange_rate: exchangeRate,
       quantity,
       unit_price: unitPrice,
-      amount,
+      amount: amountOriginal,
+      amount_original: amountOriginal,
+      amount_idr: amountIdr,
       budget_remaining_before: remainingBefore,
       budget_remaining_after: remainingAfter,
     });
@@ -544,6 +552,20 @@ function assertBudgetDepartmentNotChanged(oldDepartment, newDepartment) {
 
 function sumTotalAmount(items = []) {
   return items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+
+function sumTotalAmountIdr(items = []) {
+  return items.reduce((sum, item) => sum + Number(item.amount_idr || item.amount || 0), 0);
+}
+
+function getItemBudgetAmount(item = {}) {
+  const amountIdr = Number(item.amount_idr || 0);
+
+  if (amountIdr > 0) {
+    return amountIdr;
+  }
+
+  return Number(item.amount || 0);
 }
 
 async function cancelAttachmentsByRemovedDocumentTypes(
@@ -673,9 +695,15 @@ async function createFrp(body = {}, user = {}, req = null) {
       body.document_type_ids || []
     );
 
+    const currencySnapshot = await resolveCurrencyRateSnapshot(
+      conn,
+      body.currency_code || 'IDR',
+      body.frp_date || null
+    );
+
     const frpId = randomUUID();
 
-    const items = await buildFrpItems(conn, body.items);
+    const items = await buildFrpItems(conn, body.items, currencySnapshot);
     const documentNumberDepartment = getDocumentNumberDepartmentFromItems(items);
 
     const frpNumber = await generateDocumentNumber(conn, {
@@ -686,6 +714,7 @@ async function createFrp(body = {}, user = {}, req = null) {
     });
 
     const totalAmount = sumTotalAmount(items);
+    const totalAmountIdr = sumTotalAmountIdr(items);
 
     const headerData = {
       id: frpId,
@@ -701,8 +730,7 @@ async function createFrp(body = {}, user = {}, req = null) {
 
       frp_date: body.frp_date,
       description: normalizeString(body.description),
-      currency_code: body.currency_code || 'IDR',
-      exchange_rate: normalizeNumber(body.exchange_rate, 1),
+      ...currencySnapshot,
 
       internal_po_number: normalizeString(body.internal_po_number),
       external_document_number: normalizeString(body.external_document_number),
@@ -713,6 +741,7 @@ async function createFrp(body = {}, user = {}, req = null) {
       destination_bank_account_name: normalizeString(body.destination_bank_account_name),
 
       total_amount: totalAmount,
+      total_amount_idr: totalAmountIdr,
     };
 
     await frpModel.insertFrpHeader(conn, headerData);
@@ -725,7 +754,7 @@ async function createFrp(body = {}, user = {}, req = null) {
 
       await reserveBudget(conn, {
         budgetId: item.budget_id,
-        amount: item.amount,
+        amount: getItemBudgetAmount(item),
         sourceModule: 'FRP',
         sourceHeaderId: frpId,
         sourceItemId: item.id,
@@ -766,10 +795,12 @@ async function createFrp(body = {}, user = {}, req = null) {
         frp_number: frpNumber,
         status: 'PENDING',
         total_amount: totalAmount,
+        total_amount_idr: totalAmountIdr,
       },
       metadata: {
         frp_number: frpNumber,
         total_amount: totalAmount,
+        total_amount_idr: totalAmountIdr,
       },
     });
 
@@ -780,6 +811,7 @@ async function createFrp(body = {}, user = {}, req = null) {
       frp_number: frpNumber,
       status: 'PENDING',
       total_amount: totalAmount,
+      total_amount_idr: totalAmountIdr,
     };
   } catch (error) {
     await conn.rollback();
@@ -840,13 +872,20 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
       body.document_type_ids
     );
 
-    const newItems = await buildFrpItems(conn, body.items);
+    const currencySnapshot = await resolveCurrencyRateSnapshot(
+      conn,
+      body.currency_code || frp.currency_code || 'IDR',
+      body.frp_date || frp.frp_date || null
+    );
+
+    const newItems = await buildFrpItems(conn, body.items, currencySnapshot);
     const newBudgetDepartment = getDocumentNumberDepartmentFromItems(newItems);
 
     assertBudgetDepartmentNotChanged(oldBudgetDepartment, newBudgetDepartment);
 
     const headerSnapshot = buildHeaderSnapshotFromExistingFrp(frp);
     const totalAmount = sumTotalAmount(newItems);
+    const totalAmountIdr = sumTotalAmountIdr(newItems);
 
     const oldDocumentTypeIds = oldDocuments.map((document) => Number(document.document_type_id));
     const newDocumentTypeIds = newDocumentSnapshots.map((document) => Number(document.document_type_id));
@@ -865,7 +904,7 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
     for (const oldItem of oldItems) {
       await releaseBudget(conn, {
         budgetId: oldItem.budget_id,
-        amount: Number(oldItem.amount || 0),
+        amount: getItemBudgetAmount(oldItem),
         sourceModule: 'FRP',
         sourceHeaderId: id,
         sourceItemId: oldItem.id,
@@ -884,7 +923,7 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
 
       await reserveBudget(conn, {
         budgetId: newItem.budget_id,
-        amount: newItem.amount,
+        amount: getItemBudgetAmount(newItem),
         sourceModule: 'FRP',
         sourceHeaderId: id,
         sourceItemId: newItem.id,
@@ -912,8 +951,7 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
 
       frp_date: body.frp_date,
       description: normalizeString(body.description),
-      currency_code: body.currency_code || 'IDR',
-      exchange_rate: normalizeNumber(body.exchange_rate, 1),
+      ...currencySnapshot,
 
       internal_po_number: normalizeString(body.internal_po_number),
       external_document_number: normalizeString(body.external_document_number),
@@ -924,6 +962,7 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
       destination_bank_account_name: normalizeString(body.destination_bank_account_name),
 
       total_amount: totalAmount,
+      total_amount_idr: totalAmountIdr,
 
       updated_by_user_id: user.id,
       updated_by_name: user.name,
@@ -939,15 +978,18 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
       req,
       oldValues: {
         total_amount: frp.total_amount,
+        total_amount_idr: frp.total_amount_idr,
         description: frp.description,
       },
       newValues: {
         total_amount: totalAmount,
+        total_amount_idr: totalAmountIdr,
         description: normalizeString(body.description),
       },
       metadata: {
         frp_number: frp.frp_number,
         total_amount: totalAmount,
+        total_amount_idr: totalAmountIdr,
         canceled_attachments: canceledAttachments,
       },
     });
@@ -959,6 +1001,7 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
       frp_number: frp.frp_number,
       status: 'PENDING',
       total_amount: totalAmount,
+      total_amount_idr: totalAmountIdr,
       canceled_attachments: canceledAttachments,
     };
   } catch (error) {
@@ -998,7 +1041,7 @@ async function approveFrp(id, user = {}, body = {}, req = null) {
     for (const item of items) {
       await finalizeBudget(conn, {
         budgetId: item.budget_id,
-        amount: Number(item.amount || 0),
+        amount: getItemBudgetAmount(item),
         sourceModule: 'FRP',
         sourceHeaderId: id,
         sourceItemId: item.id,
@@ -1089,7 +1132,7 @@ async function rejectFrp(id, user = {}, body = {}, req = null) {
     for (const item of items) {
       await releaseBudget(conn, {
         budgetId: item.budget_id,
-        amount: Number(item.amount || 0),
+        amount: getItemBudgetAmount(item),
         sourceModule: 'FRP',
         sourceHeaderId: id,
         sourceItemId: item.id,
@@ -1178,7 +1221,7 @@ async function revertFrp(id, user = {}, body = {}, req = null) {
     for (const item of items) {
       await revertFinalizeBudget(conn, {
         budgetId: item.budget_id,
-        amount: Number(item.amount || 0),
+        amount: getItemBudgetAmount(item),
         sourceModule: 'FRP',
         sourceHeaderId: id,
         sourceItemId: item.id,
