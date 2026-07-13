@@ -809,8 +809,6 @@ function DialogCreateFrp({
         nextFieldErrors.vendor_id ||
         nextFieldErrors.payment_method_id ||
         nextFieldErrors.payment_date ||
-        nextFieldErrors.currency_code ||
-        nextFieldErrors.exchange_rate ||
         nextFieldErrors.destination_bank_name ||
         nextFieldErrors.destination_bank_account ||
         nextFieldErrors.destination_bank_account_name
@@ -969,6 +967,7 @@ function DialogCreateFrp({
         isOptionsLoading={isOptionsLoading}
         isFormDisabled={isFormDisabled}
         budgetOptions={budgetOptions}
+        updateValue={updateValue}
         updateItemValue={updateItemValue}
         removeItem={removeItem}
         addItem={addItem}

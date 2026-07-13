@@ -294,6 +294,43 @@ async function getLatestExchangeRate(currencyCode, options = {}) {
   }
 }
 
+async function resolveCurrencyRateSnapshot(conn, currencyCode = 'IDR', maxDate = null) {
+  const code = normalizeCurrencyCode(currencyCode || 'IDR');
+  const currency = await currencyModel.getCurrencyByCode(conn, code);
+
+  if (!currency || Number(currency.is_active) !== 1) {
+    throw new Error('Currency is not active or not found');
+  }
+
+  if (code === 'IDR') {
+    return {
+      currency_code: 'IDR',
+      currency_id: currency.id,
+      exchange_rate: 1,
+      exchange_rate_date: maxDate || formatDate(new Date()),
+      exchange_rate_type: 'SYSTEM',
+      exchange_rate_source: 'SYSTEM',
+    };
+  }
+
+  const rate = await currencyModel.getLatestExchangeRate(conn, code, {
+    maxDate,
+  });
+
+  if (!rate) {
+    throw new Error(`Exchange rate for ${code} is not found`);
+  }
+
+  return {
+    currency_code: code,
+    currency_id: currency.id,
+    exchange_rate: rate.middle_rate,
+    exchange_rate_date: rate.rate_date,
+    exchange_rate_type: rate.rate_type,
+    exchange_rate_source: rate.source_name,
+  };
+}
+
 async function createManualExchangeRate(body = {}, user = {}) {
   assertRequired(body.currency_code, 'Currency code is required');
   assertRequired(body.rate_date, 'Rate date is required');
@@ -395,6 +432,7 @@ async function syncExchangeRatesFromBI(options = {}) {
 module.exports = {
   listCurrencies,
   getLatestExchangeRate,
+  resolveCurrencyRateSnapshot,
   createManualExchangeRate,
   syncExchangeRatesFromBI,
 };

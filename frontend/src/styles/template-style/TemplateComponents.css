@@ -5406,6 +5406,10 @@ width: var(--sidebar-collapsed-width);
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-currency-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .entity-form-popup
   .register-user-popup__grid.register-user-popup__grid--frp-budget-row {
   grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.65fr) minmax(0, 0.65fr);
@@ -5934,6 +5938,48 @@ width: var(--sidebar-collapsed-width);
 .frp-dialog__budget-field .form-dropdown__placeholder {
   display: block;
   max-width: 100%;
+}
+
+.frp-dialog__total-amount {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  min-height: 4.35rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid rgba(26, 42, 87, 0.12);
+  border-radius: 8px;
+  background: rgba(26, 42, 87, 0.06);
+}
+
+.frp-dialog__total-amount-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
+  background: var(--primary-blue);
+  color: #ffffff;
+}
+
+.frp-dialog__total-amount-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #607089;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.frp-dialog__total-amount strong {
+  display: block;
+  color: var(--primary-blue);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .frp-dialog__icon-button {
@@ -7860,6 +7906,10 @@ width: var(--sidebar-collapsed-width);
   }
 
   .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-three {
+    grid-template-columns: 1fr;
+  }
+
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-currency-row {
     grid-template-columns: 1fr;
   }
 
