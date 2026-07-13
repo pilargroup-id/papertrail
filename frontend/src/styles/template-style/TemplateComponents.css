@@ -650,7 +650,6 @@ width: var(--sidebar-collapsed-width);
   flex: 0 0 auto;
   width: clamp(112px, 14vw, 148px);
   height: auto;
-  margin-left: auto;
   object-fit: contain;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.22));
 }
@@ -684,6 +683,7 @@ width: var(--sidebar-collapsed-width);
 
 .header-menu-button--toolbar {
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .header-menu-button--plain {

@@ -167,12 +167,14 @@ function FrpPage(props) {
   const [isRejecting, setIsRejecting] = useState(false)
 
   useEffect(() => {
-    setMobileHeaderHidden?.(isMobileCreateScreenOpen || Boolean(selectedMobileEditFrp))
+    setMobileHeaderHidden?.(
+      isMobileCreateScreenOpen || Boolean(selectedMobileEditFrp) || Boolean(selectedMobileDetailsFrp),
+    )
 
     return () => {
       setMobileHeaderHidden?.(false)
     }
-  }, [isMobileCreateScreenOpen, selectedMobileEditFrp, setMobileHeaderHidden])
+  }, [isMobileCreateScreenOpen, selectedMobileDetailsFrp, selectedMobileEditFrp, setMobileHeaderHidden])
 
   useEffect(() => {
     if (!shouldLoadFrp) {

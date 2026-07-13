@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import api from '../../services/api.js'
 import ButtonAttachmentsFrp from '../../components/button/button-frp/ButtonAttachmentsFrp.jsx'
-import { Eye } from '../../components/layoute/TemplateIcons.jsx'
+import { ChevronLeft, Eye } from '../../components/layoute/TemplateIcons.jsx'
 
 function isBlankValue(value) {
   return value === undefined || value === null || value === ''
@@ -497,28 +497,28 @@ function MobileScreenDetailFrp({ frp, onBack }) {
   ]
 
   return (
-    <section className="frp-mobile-detail-page" aria-label={`Detail ${formatDisplayValue(frp?.frp_number ?? frpId)}`}>
-      <div className="frp-mobile-detail-page__topbar">
+    <section
+      className="frp-mobile-detail-page frp-mobile-create-page"
+      aria-label={`Detail ${formatDisplayValue(frp?.frp_number ?? frpId)}`}
+    >
+      <header className="frp-mobile-create-page__header">
         <button
-          className="frp-mobile-detail-page__back"
+          className="frp-mobile-create-page__back"
           type="button"
           onClick={onBack}
           aria-label="Kembali ke daftar FRP"
         >
-          <span aria-hidden="true">&lt;</span>
-          Back
+          <ChevronLeft size={20} />
         </button>
-      </div>
-
-      <div className="frp-mobile-detail-page__hero">
-        <p className="frp-mobile-detail-page__eyebrow">FRP Detail</p>
-        <h2 className="frp-mobile-detail-page__title">
-          {formatDisplayValue(getFirstValue(resolvedFrpDetail, ['frp_number', 'frpNumber', 'id']))}
-        </h2>
-        <span className="frp-mobile-detail-page__status">
-          {formatStatusLabel(getFirstValue(resolvedFrpDetail, ['status'], ''))}
-        </span>
-      </div>
+        <div className="frp-mobile-create-page__heading">
+          <p className="frp-mobile-create-page__eyebrow">
+            FRP Detail - {formatStatusLabel(getFirstValue(resolvedFrpDetail, ['status'], ''))}
+          </p>
+          <h2 className="frp-mobile-create-page__title">
+            {formatDisplayValue(getFirstValue(resolvedFrpDetail, ['frp_number', 'frpNumber', 'id']))}
+          </h2>
+        </div>
+      </header>
 
       {effectiveErrorMessage ? (
         <p className="frp-mobile-detail-page__message">{effectiveErrorMessage}</p>

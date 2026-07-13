@@ -270,6 +270,8 @@ function HeaderMobile({
     <header className="header-main header-main--mobile">
       <div className="header-breadcrumb">
         <div className="header-breadcrumb-content">
+          <img src={logoPiagam} alt="Logo Piagam" className="mobile-header-logo" />
+
           <nav
             className="breadcrumb-nav"
             aria-label={departmentFilterProps ? 'Filter divisi' : 'Breadcrumb'}
@@ -277,17 +279,6 @@ function HeaderMobile({
           >
             {renderBreadcrumb()}
           </nav>
-
-          {showMenuButton ? (
-            <button
-              type="button"
-              className="header-menu-button header-menu-button--toolbar header-menu-button--plain"
-              aria-label="Open sidebar"
-              onClick={onMenuToggle}
-            >
-              <Menu01 size={20} />
-            </button>
-          ) : null}
 
           {hasSearch && !hasHeaderTabs ? (
             <label
@@ -309,7 +300,16 @@ function HeaderMobile({
 
           {!hasHeaderTabs ? renderHeaderActions() : null}
 
-          <img src={logoPiagam} alt="Logo Piagam" className="mobile-header-logo" />
+          {showMenuButton ? (
+            <button
+              type="button"
+              className="header-menu-button header-menu-button--toolbar header-menu-button--plain"
+              aria-label="Open sidebar"
+              onClick={onMenuToggle}
+            >
+              <Menu01 size={20} />
+            </button>
+          ) : null}
         </div>
 
         {hasHeaderTabs ? (
