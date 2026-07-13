@@ -470,6 +470,12 @@ const api = {
   // =====================
   frp: createFrpResource('/frp'),
 
+
+  // =====================
+  // rp
+  // =====================
+  rp: createFrpResource('/rp'),
+
   // =====================
   // Master - Vendor Management
   // =====================
@@ -490,6 +496,13 @@ const api = {
   frpDocumentTypes: createResource('/master/frp-document-types'),
   externalDocumentTypes: createResource('/master/external-document-types'),
   paymentMethods: createResource('/master/payment-methods'),
+  currencies: {
+    ...createResource('/master/currencies'),
+    exchangeRates: {
+      latest: (params, options) =>
+        api.get('/master/currencies/exchange-rates/latest', { ...options, params }),
+    },
+  },
 
   // =====================
   // Master - RP Configuration
