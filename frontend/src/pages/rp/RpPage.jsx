@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
-import DataTableRp from '../../components/table/rp/DataTableRp.jsx';
 import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
 } from '../../components/table/rp/rp-button-access.js';
+
+// DataTable
+import TabsProcessRp from './TabsProcessRp.jsx'
+import DataTableRp from '../../components/table/rp/DataTableRp.jsx';
 
 // Button Frp
 import Switch from '../../components/forms/Switch.jsx';
@@ -13,7 +16,7 @@ import ButtonCreateRp from '../../components/button/button-rp/ButtonCreateRp.jsx
 import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreate.jsx'
 
 // Dialog Frp
-import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
+import DialogEditRp from '../../components/Dialog/dialog-rp/DialogEditRp.jsx'
 import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
@@ -146,7 +149,8 @@ function RpPage(props) {
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
-  const pageTitle = activePage?.title ?? 'RP Checker Rules'
+  const activePageTitle = activePage?.title
+  const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'RP'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [rp, setBudgetType] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -590,7 +594,7 @@ function RpPage(props) {
         />
       </div>
 
-      <DialogEditFrp
+      <DialogEditRp
         isOpen={isEditDialogOpen}
         title={`Edit ${getFrpEditLabel(selectedBudgetType)}`}
         rp={selectedBudgetType}

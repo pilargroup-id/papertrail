@@ -145,7 +145,8 @@ function FrpPage(props) {
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
-  const pageTitle = activePage?.title ?? 'RP Checker Rules'
+  const activePageTitle = activePage?.title
+  const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'FRP'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [frp, setBudgetType] = useState([])
   const [isLoading, setIsLoading] = useState(false)

@@ -1,6 +1,6 @@
 import TextField from '../../../forms/TextField.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
-import { Banks, Calendar01, CreditCard, UserBank } from '../../../layoute/TemplateIcons.jsx'
+import { UserBank } from '../../../layoute/TemplateIcons.jsx'
 
 function TabsVendor({
   formValues,
@@ -8,10 +8,9 @@ function TabsVendor({
   isOptionsLoading,
   isFormDisabled,
   vendorOptions,
-  filteredVendorBankOptions,
-  paymentMethodOptions,
+  paymentCategoryOptions,
+  destinationDepartmentOptions,
   updateValue,
-  handleVendorBankChange,
 }) {
   return (
     <div className="register-user-popup__grid register-user-popup__grid--frp register-user-popup__grid--frp-vendor">
@@ -26,85 +25,47 @@ function TabsVendor({
           required
           disabled={isFormDisabled}
           error={fieldErrors.vendor_id}
-          onChange={(value) => {
-            updateValue('vendor_id', value)
-            updateValue('vendor_bank_account_id', '')
-          }}
+          onChange={(value) => updateValue('vendor_id', value)}
         />
       </div>
       <div className="register-user-popup__field register-user-popup__field--frp-half">
         <DropdownSearch
-          label="Vendor Bank Account"
-          value={formValues.vendor_bank_account_id}
-          options={filteredVendorBankOptions}
-          placeholder={isOptionsLoading ? 'Memuat rekening...' : 'Pilih rekening vendor'}
-          searchPlaceholder="Cari rekening vendor..."
-          emptyMessage="Rekening vendor aktif tidak ditemukan."
-          disabled={isFormDisabled}
-          error={fieldErrors.vendor_bank_account_id}
-          onChange={handleVendorBankChange}
-        />
-      </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Destination Bank"
-          value={formValues.destination_bank_name}
-          placeholder="BCA"
-          leftIcon={Banks}
+          label="Category Payment"
+          value={formValues.payment_category_id}
+          options={paymentCategoryOptions}
+          placeholder={isOptionsLoading ? 'Memuat category...' : 'Pilih category payment'}
+          searchPlaceholder="Cari category payment..."
+          emptyMessage="Category payment aktif tidak ditemukan."
           required
           disabled={isFormDisabled}
-          error={fieldErrors.destination_bank_name}
-          onChange={(event) => updateValue('destination_bank_name', event.target.value)}
+          error={fieldErrors.payment_category_id}
+          onChange={(value) => updateValue('payment_category_id', value)}
         />
       </div>
-      <div className="register-user-popup__field">
-        <TextField
-          label="Destination Account"
-          value={formValues.destination_bank_account}
-          placeholder="1234567890"
-          leftIcon={CreditCard}
+      <div className="register-user-popup__field register-user-popup__field--frp-half">
+        <DropdownSearch
+          label="Division To Process"
+          value={formValues.destination_department_id}
+          options={destinationDepartmentOptions}
+          placeholder={isOptionsLoading ? 'Memuat division...' : 'Pilih division'}
+          searchPlaceholder="Cari division..."
+          emptyMessage="Division tujuan aktif tidak ditemukan."
           required
           disabled={isFormDisabled}
-          error={fieldErrors.destination_bank_account}
-          onChange={(event) => updateValue('destination_bank_account', event.target.value)}
+          error={fieldErrors.destination_department_id}
+          onChange={(value) => updateValue('destination_department_id', value)}
         />
       </div>
-      <div className="register-user-popup__field">
+      <div className="register-user-popup__field register-user-popup__field--frp-half">
         <TextField
-          label="Destination Account Name"
-          value={formValues.destination_bank_account_name}
-          placeholder="PT Vendor Testing"
+          label="Pic"
+          value={formValues.pic_name}
+          placeholder="Nama PIC"
           leftIcon={UserBank}
           required
           disabled={isFormDisabled}
-          error={fieldErrors.destination_bank_account_name}
-          onChange={(event) => updateValue('destination_bank_account_name', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field register-user-popup__field--frp-half">
-        <DropdownSearch
-          label="Payment Method"
-          value={formValues.payment_method_id}
-          options={paymentMethodOptions}
-          placeholder={isOptionsLoading ? 'Memuat payment method...' : 'Pilih payment method'}
-          searchPlaceholder="Cari payment method..."
-          emptyMessage="Payment method aktif tidak ditemukan."
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.payment_method_id}
-          onChange={(value) => updateValue('payment_method_id', value)}
-        />
-      </div>
-      <div className="register-user-popup__field register-user-popup__field--frp-half">
-        <TextField
-          label="Payment Date"
-          type="date"
-          value={formValues.payment_date}
-          leftIcon={Calendar01}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.payment_date}
-          onChange={(event) => updateValue('payment_date', event.target.value)}
+          error={fieldErrors.pic_name}
+          onChange={(event) => updateValue('pic_name', event.target.value)}
         />
       </div>
     </div>

@@ -1,57 +1,12 @@
-import { useEffect, useState } from 'react'
-
-import api from '../../../../services/api.js'
 import TextArea from '../../../forms/TextArea.jsx'
 import TextField from '../../../forms/TextField.jsx'
-import Dropdown from '../../../forms/dropdown/Dropdown.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
-import { Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
-
-const fallbackCurrencyOptions = [{ value: 'IDR', label: 'IDR - Indonesian Rupiah' }]
+import { ExternalLink, Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
 
 function toNumber(value) {
   const normalizedValue = Number(value)
 
   return Number.isFinite(normalizedValue) ? normalizedValue : 0
-}
-
-function getRowsFromResponse(response) {
-  if (Array.isArray(response)) {
-    return response
-  }
-
-  if (Array.isArray(response?.data)) {
-    return response.data
-  }
-
-  if (Array.isArray(response?.data?.data)) {
-    return response.data.data
-  }
-
-  if (Array.isArray(response?.rows)) {
-    return response.rows
-  }
-
-  return []
-}
-
-function getResponseData(response) {
-  return response?.data?.data ?? response?.data ?? response ?? {}
-}
-
-function mapCurrencyOptions(currencies) {
-  return currencies
-    .filter((currency) => Number(currency?.is_active ?? 1) === 1)
-    .map((currency) => {
-      const code = currency?.code
-      const name = currency?.name
-
-      return {
-        value: code,
-        label: [code, name].filter(Boolean).join(' - ') || code,
-      }
-    })
-    .filter((option) => option.value)
 }
 
 function isIntegerInputValue(value) {
@@ -82,8 +37,8 @@ function getSelectedBudgetOption(budgetOptions, budgetId) {
   return budgetOptions.find((option) => String(option.value) === String(budgetId))
 }
 
-function getBudgetMetaValue(option, metaKey) {
-  const value = option?.meta?.[metaKey]
+function getBudgetRemaining(option) {
+  const value = option?.meta?.budgetRemaining
 
   return value === undefined || value === null || value === '' ? '' : value
 }
@@ -94,184 +49,38 @@ function TabsItems({
   isOptionsLoading,
   isFormDisabled,
   budgetOptions,
-  updateValue,
   updateItemValue,
   removeItem,
   addItem,
 }) {
-  const [currencyOptions, setCurrencyOptions] = useState(fallbackCurrencyOptions)
-  const [isCurrenciesLoading, setIsCurrenciesLoading] = useState(false)
-  const [isExchangeRateLoading, setIsExchangeRateLoading] = useState(false)
-  const [exchangeRateMessage, setExchangeRateMessage] = useState('')
-  const currencyCode = String(formValues.currency_code || 'IDR').trim().toUpperCase()
-  const exchangeRate = toNumber(formValues.exchange_rate || 1)
-  const totalAmountIdr = formValues.items.reduce((total, item) => {
+  const totalAmount = formValues.items.reduce((total, item) => {
     const quantity = toNumber(item.quantity)
     const unitPrice = toNumber(item.unit_price)
 
-    return total + quantity * unitPrice * exchangeRate
+    return total + quantity * unitPrice
   }, 0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    async function loadCurrencies() {
-      setIsCurrenciesLoading(true)
-
-      try {
-        const response = await api.currencies.list(
-          {
-            page: 1,
-            limit: 100,
-            is_active: 1,
-          },
-          {
-            signal: controller.signal,
-          },
-        )
-        const nextCurrencyOptions = mapCurrencyOptions(getRowsFromResponse(response))
-
-        setCurrencyOptions(
-          nextCurrencyOptions.length > 0 ? nextCurrencyOptions : fallbackCurrencyOptions,
-        )
-      } catch (error) {
-        if (error.name === 'AbortError') {
-          return
-        }
-
-        setCurrencyOptions(fallbackCurrencyOptions)
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsCurrenciesLoading(false)
-        }
-      }
-    }
-
-    loadCurrencies()
-
-    return () => {
-      controller.abort()
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!currencyCode) {
-      updateValue('exchange_rate', '')
-      setExchangeRateMessage('')
-      return undefined
-    }
-
-    if (currencyCode === 'IDR') {
-      updateValue('exchange_rate', '1')
-      setExchangeRateMessage('')
-      return undefined
-    }
-
-    const controller = new AbortController()
-
-    async function loadLatestExchangeRate() {
-      setIsExchangeRateLoading(true)
-      setExchangeRateMessage('')
-
-      try {
-        const response = await api.currencies.exchangeRates.latest(
-          {
-            currency_code: currencyCode,
-            max_date: formValues.frp_date,
-          },
-          {
-            signal: controller.signal,
-          },
-        )
-        const rateData = getResponseData(response)
-        const latestExchangeRate = rateData?.exchange_rate ?? rateData?.middle_rate
-
-        if (
-          latestExchangeRate === undefined ||
-          latestExchangeRate === null ||
-          latestExchangeRate === ''
-        ) {
-          updateValue('exchange_rate', '')
-          setExchangeRateMessage('Exchange rate tidak ditemukan.')
-          return
-        }
-
-        updateValue('exchange_rate', String(latestExchangeRate))
-      } catch (error) {
-        if (error.name === 'AbortError') {
-          return
-        }
-
-        updateValue('exchange_rate', '')
-        setExchangeRateMessage(error.message || 'Gagal memuat exchange rate.')
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsExchangeRateLoading(false)
-        }
-      }
-    }
-
-    loadLatestExchangeRate()
-
-    return () => {
-      controller.abort()
-    }
-  }, [currencyCode, formValues.frp_date])
 
   return (
     <div className="frp-dialog__items">
-      <div className="register-user-popup__grid register-user-popup__grid--frp-currency-row">
-        <div className="register-user-popup__field">
-          <Dropdown
-            label="Currency"
-            value={formValues.currency_code}
-            options={currencyOptions}
-            placeholder={isCurrenciesLoading ? 'Memuat currency...' : 'Pilih currency'}
-            required
-            disabled={isFormDisabled || isCurrenciesLoading}
-            error={fieldErrors.currency_code}
-            onChange={(value) => updateValue('currency_code', value)}
-          />
-        </div>
-        <div className="register-user-popup__field">
-          <TextField
-            label="Exchange Rate"
-            value={formValues.exchange_rate}
-            placeholder={isExchangeRateLoading ? 'Memuat exchange rate...' : 'Exchange rate'}
-            leftIcon={TrendingUp}
-            type="number"
-            min="0"
-            step="0.0001"
-            required
-            disabled={isFormDisabled || isExchangeRateLoading}
-            error={fieldErrors.exchange_rate}
-            helperText={exchangeRateMessage}
-            onChange={(event) => updateValue('exchange_rate', event.target.value)}
-          />
-        </div>
-        <div className="frp-dialog__total-amount" aria-live="polite">
-          <span className="frp-dialog__total-amount-icon" aria-hidden="true">
-            <TrendingUp size={18} />
-          </span>
-          <div>
-            <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
-            <strong>{formatRupiah(totalAmountIdr)}</strong>
-          </div>
+      <div className="frp-dialog__total-amount" aria-live="polite">
+        <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+          <TrendingUp size={18} />
+        </span>
+        <div>
+          <span className="frp-dialog__total-amount-label">Total RP</span>
+          <strong>{formatRupiah(totalAmount)}</strong>
         </div>
       </div>
 
       {formValues.items.map((item, index) => {
+        const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
+        const budgetRemaining = formatRupiah(getBudgetRemaining(selectedBudgetOption))
         const quantity = toNumber(item.quantity)
         const unitPrice = toNumber(item.unit_price)
-        const amountIdr = quantity * unitPrice * exchangeRate
-        const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
-        const budgetAmount = formatRupiah(getBudgetMetaValue(selectedBudgetOption, 'budgetAmount'))
-        const budgetRemaining = formatRupiah(
-          getBudgetMetaValue(selectedBudgetOption, 'budgetRemaining'),
-        )
+        const amount = quantity * unitPrice
 
         return (
-          <div className="frp-dialog__item" key={`frp-item-${index}`}>
+          <div className="frp-dialog__item" key={`rp-item-${index}`}>
             <div className="frp-dialog__item-header">
               <strong>Item {index + 1}</strong>
               <button
@@ -302,37 +111,14 @@ function TabsItems({
               </div>
               <div className="register-user-popup__field">
                 <TextField
-                  label="Budget Amount"
-                  value={budgetAmount}
-                  placeholder="-"
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Budget Remaining"
-                  value={budgetRemaining}
-                  placeholder="-"
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-            </div>
-
-            <div className="register-user-popup__grid register-user-popup__grid--frp-three">
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Quantity"
+                  label="Qty"
                   value={item.quantity}
                   placeholder="1"
                   leftIcon={Table01}
                   type="number"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  min="0"
+                  min="1"
                   step="1"
                   required
                   disabled={isFormDisabled}
@@ -352,12 +138,25 @@ function TabsItems({
               </div>
               <div className="register-user-popup__field">
                 <TextField
-                  label={`Unit Price (${currencyCode || 'IDR'})`}
+                  label="Budget Remaining"
+                  value={budgetRemaining}
+                  placeholder="-"
+                  leftIcon={TrendingUp}
+                  disabled
+                  readOnly
+                />
+              </div>
+            </div>
+
+            <div className="register-user-popup__grid register-user-popup__grid--frp-three">
+              <div className="register-user-popup__field">
+                <TextField
+                  label="Nominal"
                   value={item.unit_price}
                   placeholder="100000"
                   leftIcon={TrendingUp}
                   type="number"
-                  min="0"
+                  min="1"
                   step="1"
                   required
                   disabled={isFormDisabled}
@@ -367,18 +166,29 @@ function TabsItems({
               </div>
               <div className="register-user-popup__field">
                 <TextField
-                  label="Amount (IDR)"
-                  value={formatRupiah(Number.isFinite(amountIdr) ? amountIdr : 0)}
+                  label="Amount"
+                  value={formatRupiah(Number.isFinite(amount) ? amount : 0)}
                   leftIcon={TrendingUp}
                   disabled
                   readOnly
+                />
+              </div>
+              <div className="register-user-popup__field">
+                <TextField
+                  label="Purchase Link"
+                  value={item.purchase_link}
+                  placeholder="https://example.com/item"
+                  leftIcon={ExternalLink}
+                  disabled={isFormDisabled}
+                  error={fieldErrors[`items.${index}.purchase_link`]}
+                  onChange={(event) => updateItemValue(index, 'purchase_link', event.target.value)}
                 />
               </div>
               <div className="register-user-popup__field register-user-popup__field--full">
                 <TextArea
                   label="Memo"
                   value={item.memo}
-                  placeholder="Pembayaran invoice vendor"
+                  placeholder="Keterangan item pembelian"
                   rows={3}
                   required
                   disabled={isFormDisabled}

@@ -5406,6 +5406,12 @@ width: var(--sidebar-collapsed-width);
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-three
+  > .register-user-popup__field--full {
+  grid-column: 1 / -1;
+}
+
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-currency-row {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

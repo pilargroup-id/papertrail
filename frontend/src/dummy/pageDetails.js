@@ -47,6 +47,24 @@ export const pageDetails = {
     value: '9',
     detail: 'Kumpulan komponen form yang siap dipakai untuk input data aplikasi.',
   },
+  '/frp': {
+    title: 'FRP',
+    eyebrow: 'Document Transaction',
+    value: '0',
+    detail: 'Daftar transaksi FRP.',
+  },
+  '/rp': {
+    title: 'RP',
+    eyebrow: 'Document Transaction',
+    value: '0',
+    detail: 'Daftar transaksi RP.',
+  },
+  '/Rp': {
+    title: 'RP',
+    eyebrow: 'Document Transaction',
+    value: '0',
+    detail: 'Daftar transaksi RP.',
+  },
   '/Master/Vendor': {
     title: 'Vendor',
     eyebrow: 'Master Data',

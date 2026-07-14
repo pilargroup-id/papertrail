@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import DialogCreateRp from '../../Dialog/dialog-frp/DialogCreateFrp.jsx'
+import DialogCreateRp from '../../Dialog/dialog-rp/DialogCreateRp.jsx'
 
 const buttonClassNames = {
   create: 'dashboard-popup__button dashboard-popup__button--primary',
@@ -11,7 +11,7 @@ const buttonClassNames = {
 }
 
 function ButtonCreateRp({
-  children = 'Create Frp',
+  children = 'Create RP',
   className = '',
   variant = 'accordion',
   tone = 'default',
