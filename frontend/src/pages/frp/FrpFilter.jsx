@@ -5,7 +5,7 @@ function FrpFilter({
   onFilterChange,
 }) {
   return (
-    <div className="frp-page__filters" aria-label="Filter FRP">
+    <div className="frp-page__filters" id="frp-desktop-filter" aria-label="Filter FRP">
       <label className="frp-page__filter-field">
         <span>Request By</span>
         <select

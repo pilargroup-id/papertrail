@@ -11,7 +11,7 @@ import FrpFilter from './FrpFilter.jsx'
 // Button Frp
 import Switch from '../../components/forms/Switch.jsx';
 import ButtonCreateFrp from '../../components/button/button-frp/ButtonCreateFrp.jsx'
-import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreate.jsx'
+import ButtonFilterFrp from '../../components/button/button-frp/ButtonFilterFrp.jsx'
 
 // Dialog Frp
 import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
@@ -26,6 +26,7 @@ import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx
 import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
 import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
+import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreate.jsx'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -219,6 +220,7 @@ function FrpPage(props) {
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
   const [desktopFrpStatusFilter, setDesktopFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
+  const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [frpFilters, setFrpFilters] = useState({
     requestBy: '',
     vendor: '',
@@ -604,14 +606,18 @@ function FrpPage(props) {
           <h1 className="dashboard-panel__title">{pageTitle}</h1>
         </div>
 
-        {/* <FrpFilter
-          filters={frpFilters}
-          requestByOptions={requestByFilterOptions}
-          vendorOptions={vendorFilterOptions}
-          onFilterChange={updateFrpFilter}
-        /> */}
-
         <div className="users-table-card__actions frp-page__desktop-actions">
+          <SearchFrp searchProps={searchProps} variant="desktop" />
+          <ButtonFilterFrp
+            label={isDesktopFilterOpen ? 'Tutup filter' : 'Buka filter'}
+            className={[
+              'frp-page__filter-button',
+              hasActiveFrpFilter ? 'frp-page__filter-button--active' : '',
+            ].filter(Boolean).join(' ')}
+            aria-expanded={isDesktopFilterOpen}
+            aria-controls="frp-desktop-filter"
+            onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
+          />
           <ButtonCreateFrp
             variant="create"
             dialogProps={{
@@ -621,7 +627,6 @@ function FrpPage(props) {
             Create
           </ButtonCreateFrp>
 
-          <SearchFrp searchProps={searchProps} variant="desktop" />
         </div>
       </div>
 
@@ -658,10 +663,21 @@ function FrpPage(props) {
             : '',
         ].filter(Boolean).join(' ')}
       >
-        <TabsFrpDekstop
-          activeStatus={desktopFrpStatusFilter}
-          onStatusChange={setDesktopFrpStatusFilter}
-        />
+        <div className="frp-page__tabs-toolbar">
+          <TabsFrpDekstop
+            activeStatus={desktopFrpStatusFilter}
+            onStatusChange={setDesktopFrpStatusFilter}
+          />
+        </div>
+
+        {isDesktopFilterOpen ? (
+          <FrpFilter
+            filters={frpFilters}
+            requestByOptions={requestByFilterOptions}
+            vendorOptions={vendorFilterOptions}
+            onFilterChange={updateFrpFilter}
+          />
+        ) : null}
 
         <DataTableFrp
           rows={shouldLoadFrp ? visibleFrp : []}
