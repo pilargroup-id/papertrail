@@ -1,75 +1,66 @@
-import { useState } from "react";
-import { Box, Tabs, Tab, Typography } from "@mui/material";
+import { Box, Tab, Tabs } from '@mui/material'
 
-export default function TabsProcessRp() {
-  const [value, setValue] = useState(0);
+const rpProcessStatusTabs = [
+  { id: 'PENDING_REQUESTER_MANAGER', label: 'Requester Manager' },
+  { id: 'PENDING_DESTINATION_CHECKER', label: 'Destination Checker' },
+  { id: 'PENDING_DESTINATION_MANAGER', label: 'Destination Manager' },
+  { id: 'APPROVED', label: 'Approved' },
+  { id: 'REJECTED', label: 'Rejected' },
+  { id: 'VOIDED', label: 'Voided' },
+]
 
-  const tabs = [
-    {
-      label: "Pending Requester",
-      content: "Content Pending Requester",
-    },
-    {
-      label: "Destination Checker",
-      content: "Content Destination Checker",
-    },
-    {
-      label: "Destination Manager",
-      content: "Content Destination Manager",
-    },
-    {
-      label: "Approved",
-      content: "Content Approved",
-    },
-    {
-      label: "Rejected",
-      content: "Content Rejected",
-    },
-    {
-      label: "Voided",
-      content: "Content Voided",
-    },
-  ];
+function joinClassNames(...classNames) {
+  return classNames.filter(Boolean).join(' ')
+}
 
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
-  };
+function getStatusTabClassName(status) {
+  return String(status).toLowerCase().replace(/_/g, '-')
+}
+
+function getTabLabel(tab) {
+  return typeof tab.count === 'number' ? `${tab.label} (${tab.count})` : tab.label
+}
+
+function TabsProcessRp({
+  activeStatus = rpProcessStatusTabs[0].id,
+  ariaLabel = 'Filter status RP',
+  className,
+  onStatusChange,
+  tabs = rpProcessStatusTabs,
+}) {
+  const selectedStatus = tabs.some((tab) => tab.id === activeStatus)
+    ? activeStatus
+    : tabs[0]?.id
+
+  const handleChange = (_event, nextStatus) => {
+    onStatusChange?.(nextStatus)
+  }
 
   return (
-    <Box sx={{ width: "100%" }}>
-      {/* Tabs */}
+    <Box className={joinClassNames('rp-process-tabs', className)} sx={{ width: '100%' }}>
       <Tabs
-        value={value}
+        value={selectedStatus}
         onChange={handleChange}
         variant="scrollable"
         scrollButtons="auto"
+        allowScrollButtonsMobile
+        aria-label={ariaLabel}
+        className="rp-process-tabs__tabs"
       >
-        {tabs.map((tab, index) => (
-          <Tab key={index} label={tab.label} />
+        {tabs.map((tab) => (
+          <Tab
+            key={tab.id}
+            className={joinClassNames(
+              'rp-process-tabs__tab',
+              `rp-process-tabs__tab--${getStatusTabClassName(tab.id)}`,
+            )}
+            label={getTabLabel(tab)}
+            value={tab.id}
+          />
         ))}
       </Tabs>
-
-      {/* Content */}
-      <Box
-        sx={{
-          mt: 2,
-          p: 3,
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: 2,
-          bgcolor: "background.paper",
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          {tabs[value].label}
-        </Typography>
-
-        <Typography color="text.secondary">
-          {tabs[value].content}
-        </Typography>
-      </Box>
     </Box>
-  );
+  )
 }
 
 export default TabsProcessRp

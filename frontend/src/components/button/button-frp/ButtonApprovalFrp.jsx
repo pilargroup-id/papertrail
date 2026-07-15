@@ -1,8 +1,8 @@
-import { Approve } from '../../layoute/TemplateIcons.jsx'
+import { Check } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonApproveFrp({
   label = 'Approve',
-  icon: Icon = Approve,
+  icon: Icon = Check,
   size = 16,
   className = '',
   type = 'button',

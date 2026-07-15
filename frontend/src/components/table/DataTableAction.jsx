@@ -59,11 +59,24 @@ function getMobileCardActions(mobileCard, resolvedActions) {
   return mobileCard.actions
 }
 
+function getTableWrapperStyle(pagination, tableWrapperStyle) {
+  if (pagination === false || pagination === null) {
+    return tableWrapperStyle
+  }
+
+  return {
+    minHeight: 'var(--data-table-action-min-height, min(56dvh, 560px))',
+    ...tableWrapperStyle,
+  }
+}
+
 function DataTableAction({
   columns = [],
   actions = [],
   useDefaultActions = true,
   mobileCard,
+  pagination = true,
+  tableWrapperStyle,
   actionColumnLabel = 'Action',
   actionColumnKey = 'action',
   actionCellClassName = 'users-table__action-cell',
@@ -127,6 +140,8 @@ function DataTableAction({
   return (
     <DataTable
       {...props}
+      pagination={pagination}
+      tableWrapperStyle={getTableWrapperStyle(pagination, tableWrapperStyle)}
       mobileCard={
         mobileCard === false
           ? false

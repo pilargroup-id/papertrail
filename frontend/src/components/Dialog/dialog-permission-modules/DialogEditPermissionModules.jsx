@@ -14,74 +14,10 @@ import {
   mapPermissionModuleOptions,
   mapUserOptions,
   mergeUniqueOptions,
+  optionMatchesPermissionModuleTab,
   permissionAccessOptions,
+  permissionModuleTabs,
 } from './permissionModuleFormUtils.js'
-
-const permissionModuleTabs = [
-  {
-    id: 'vendor',
-    label: 'Vendor',
-    groupMatches: ['vendor'],
-    moduleMatches: ['vendor', 'bank', 'vendor bank', 'vendor bank account'],
-  },
-  {
-    id: 'budget',
-    label: 'Budget',
-    groupMatches: ['budget'],
-    moduleMatches: ['budget', 'budget type', 'budget access', 'budget access rule'],
-  },
-  {
-    id: 'document',
-    label: 'Document',
-    groupMatches: ['document'],
-    moduleMatches: ['frp document', 'frp document type', 'external document', 'external document type'],
-  },
-  {
-    id: 'payment',
-    label: 'Payment',
-    groupMatches: ['payment'],
-    moduleMatches: ['payment method', 'rp payment category', 'payment category'],
-  },
-  {
-    id: 'permission',
-    label: 'Permission',
-    groupMatches: ['permission'],
-    moduleMatches: ['master permission', 'master permission module', 'permission module', 'permission management'],
-  },
-]
-
-function normalizeModuleText(value) {
-  return String(value ?? '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-}
-
-function getPermissionModuleSearchText(option) {
-  return normalizeModuleText(
-    [
-      option?.label,
-      option?.meta?.module_code,
-      option?.meta?.module_name,
-      option?.meta?.description,
-    ].filter(Boolean).join(' '),
-  )
-}
-
-function getPermissionModuleGroupText(option) {
-  return normalizeModuleText(option?.meta?.module_group)
-}
-
-function optionMatchesPermissionModuleTab(option, tab) {
-  const groupText = getPermissionModuleGroupText(option)
-  const searchText = getPermissionModuleSearchText(option)
-  const matchesGroup = tab.groupMatches.some((group) => groupText.includes(normalizeModuleText(group)))
-  const matchesModule = tab.moduleMatches.some((moduleName) =>
-    searchText.includes(normalizeModuleText(moduleName)),
-  )
-
-  return matchesGroup || matchesModule
-}
 
 function getPermissionRecords(permissionModule) {
   if (Array.isArray(permissionModule?.permissions)) {

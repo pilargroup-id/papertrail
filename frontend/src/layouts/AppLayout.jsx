@@ -161,16 +161,6 @@ function AppLayout({
             title="Papertrail"
             showMenuButton
             onMenuToggle={() => setMobileSidebarOpen(true)}
-            breadcrumb={[
-              { label: 'Papertrail', href: '#' },
-              { label: resolvedPageTitle, href: '#', active: true },
-            ]}
-            searchProps={searchProps}
-            notificationProps={{
-              ariaLabel: 'Open notifications',
-              modalTitle: 'Notifications',
-            }}
-            onRefresh={handleRefresh}
           />
         </div>
 

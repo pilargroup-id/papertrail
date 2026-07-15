@@ -1,15 +1,15 @@
-import { Check } from '../../layoute/TemplateIcons.jsx'
+import { CheckData } from '../../layoute/TemplateIcons.jsx'
 
-function ButtonApproveRp({
-  label = 'Approve',
-  icon: Icon = Check,
+function ButtonCheckDataRp({
+  label = 'Check Data   ',
+  icon: Icon = CheckData,
   size = 16,
   className = '',
   type = 'button',
   ...buttonProps
 }) {
   const buttonClassName = [
-    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--approval',
+    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--edit',
     className,
   ]
     .filter(Boolean)
@@ -28,4 +28,4 @@ function ButtonApproveRp({
   )
 }
 
-export default ButtonApproveRp
+export default ButtonCheckDataRp

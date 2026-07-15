@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
@@ -6,7 +6,7 @@ import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
 } from '../../components/table/frp/frp-button-access.js';
-
+import FrpFilter from './FrpFilter.jsx'
 // Button Frp
 import Switch from '../../components/forms/Switch.jsx';
 import ButtonCreateFrp from '../../components/button/button-frp/ButtonCreateFrp.jsx'
@@ -17,8 +17,9 @@ import DialogEditFrp from '../../components/Dialog/dialog-frp/DialogEditFrp.jsx'
 import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
-
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
+
+// Mobile
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
 import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
 import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
@@ -106,6 +107,50 @@ function getFrpStatusValue(frp) {
   return String(frp?.status ?? '').trim().toUpperCase()
 }
 
+function normalizeFilterValue(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function getDateInputValue(value) {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(0, 10)
+  }
+
+  return date.toISOString().slice(0, 10)
+}
+
+function getFilterOptions(rows, keys) {
+  const values = rows
+    .map((row) => getFirstValue(row, keys))
+    .filter((value) => value !== undefined && value !== null && String(value).trim() !== '')
+
+  return [...new Set(values.map(String))].sort((firstValue, secondValue) =>
+    firstValue.localeCompare(secondValue),
+  )
+}
+
+function matchesFrpFilters(frp, filters) {
+  const requestBy = normalizeFilterValue(
+    getFirstValue(frp, ['requested_by_name', 'request_by_name', 'request_by', 'created_by_name', 'created_by']),
+  )
+  const vendor = normalizeFilterValue(
+    getFirstValue(frp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
+  )
+  const createdAt = getDateInputValue(getFirstValue(frp, ['created_at', 'createdAt']))
+
+  return (
+    (!filters.requestBy || requestBy === normalizeFilterValue(filters.requestBy)) &&
+    (!filters.vendor || vendor === normalizeFilterValue(filters.vendor)) &&
+    (!filters.createdAt || createdAt === filters.createdAt)
+  )
+}
+
 function updateVendorStatus(frp, frpId, isActive, updatedBudgetType) {
   return frp.map((frp) => {
     if (String(frp?.id) !== String(frpId)) {
@@ -147,7 +192,7 @@ function FrpPage(props) {
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
   const activePageTitle = activePage?.title
   const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'FRP'
-  const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
+  const pageEyebrow = activePage?.eyebrow ?? 'Document Transaction'
   const [frp, setBudgetType] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -172,6 +217,11 @@ function FrpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
+  const [frpFilters, setFrpFilters] = useState({
+    requestBy: '',
+    vendor: '',
+    createdAt: '',
+  })
 
   useEffect(() => {
     setMobileHeaderHidden?.(
@@ -229,6 +279,13 @@ function FrpPage(props) {
 
   const handleFrpCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
+  }
+
+  const updateFrpFilter = (filterName, value) => {
+    setFrpFilters((currentFilters) => ({
+      ...currentFilters,
+      [filterName]: value,
+    }))
   }
 
   const openEditDialog = (frp) => {
@@ -497,12 +554,29 @@ function FrpPage(props) {
   const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP checker rules...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.'))
-  const visibleFrp =
-    mobileFrpStatusFilter === FRP_MOBILE_STATUS_ALL
-      ? frp
-      : frp.filter((frpItem) => getFrpStatusValue(frpItem) === mobileFrpStatusFilter)
+  const requestByFilterOptions = useMemo(
+    () => getFilterOptions(frp, ['requested_by_name', 'request_by_name', 'request_by', 'created_by_name', 'created_by']),
+    [frp],
+  )
+  const vendorFilterOptions = useMemo(
+    () => getFilterOptions(frp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
+    [frp],
+  )
+  const hasActiveFrpFilter = Boolean(frpFilters.requestBy || frpFilters.vendor || frpFilters.createdAt)
+  const visibleFrp = frp.filter((frpItem) => {
+    const matchesStatus =
+      mobileFrpStatusFilter === FRP_MOBILE_STATUS_ALL ||
+      getFrpStatusValue(frpItem) === mobileFrpStatusFilter
+
+    return matchesStatus && matchesFrpFilters(frpItem, frpFilters)
+  })
   const filteredEmptyMessage =
     !authGateMessage &&
+    !isLoading &&
+    !errorMessage &&
+    hasActiveFrpFilter
+      ? 'Data tidak ditemukan untuk filter yang dipilih.'
+      : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
     mobileFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
@@ -520,6 +594,13 @@ function FrpPage(props) {
           <h1 className="dashboard-panel__title">{pageTitle}</h1>
         </div>
 
+        {/* <FrpFilter
+          filters={frpFilters}
+          requestByOptions={requestByFilterOptions}
+          vendorOptions={vendorFilterOptions}
+          onFilterChange={updateFrpFilter}
+        /> */}
+
         <div className="users-table-card__actions frp-page__desktop-actions">
           <ButtonCreateFrp
             variant="create"
@@ -529,6 +610,8 @@ function FrpPage(props) {
           >
             Create
           </ButtonCreateFrp>
+
+          <SearchFrp searchProps={searchProps} variant="desktop" />
         </div>
       </div>
 

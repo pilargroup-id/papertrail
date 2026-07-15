@@ -3,18 +3,18 @@ import { createPortal } from 'react-dom'
 
 import TextArea from '../../forms/TextArea.jsx'
 
-function DialogApproveFrp({
+function DialogApproveRp({
   isOpen = false,
-  eyebrow = 'Approve FRP',
-  title = 'Approve FRP',
-  frp = null,
+  eyebrow = 'Approve RP',
+  title = 'Approve RP',
+  rp = null,
   confirmLabel = 'Approve',
   isSubmitting = false,
   submitError = '',
   onClose,
   onApprove,
 }) {
-  const [notes, setNotes] = useState('Approve FRP')
+  const [notes, setNotes] = useState('Approve RP')
 
   const handleClose = useCallback(() => {
     if (isSubmitting) {
@@ -50,7 +50,7 @@ function DialogApproveFrp({
     return null
   }
 
-  const frpLabel = frp?.frp_number ?? frp?.id ?? 'FRP ini'
+  const rpLabel = rp?.rp_number ?? rp?.id ?? 'RP ini'
   const handleSubmit = (event) => {
     event.preventDefault()
 
@@ -59,8 +59,8 @@ function DialogApproveFrp({
     }
 
     onApprove?.({
-      frp,
-      notes: notes.trim() || 'Approve FRP',
+      rp,
+      notes: notes.trim() || 'Approve RP',
     })
   }
 
@@ -70,14 +70,14 @@ function DialogApproveFrp({
         className="dashboard-popup"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="dialog-approve-frp-title"
+        aria-labelledby="dialog-approve-rp-title"
         onClick={(event) => event.stopPropagation()}
       >
         <form onSubmit={handleSubmit}>
           <div className="dashboard-popup__header">
             <div>
               <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-              <h2 className="dashboard-popup__title" id="dialog-approve-frp-title">
+              <h2 className="dashboard-popup__title" id="dialog-approve-rp-title">
                 {title}
               </h2>
             </div>
@@ -85,7 +85,7 @@ function DialogApproveFrp({
 
           <div className="dashboard-popup__body">
             <p className="dashboard-popup__text">
-              FRP <strong>{frpLabel}</strong> akan diapprove. Pastikan data sudah sesuai sebelum
+              RP <strong>{rpLabel}</strong> akan diapprove. Pastikan data sudah sesuai sebelum
               melanjutkan.
             </p>
 
@@ -125,4 +125,4 @@ function DialogApproveFrp({
   return createPortal(dialogNode, document.body)
 }
 
-export default DialogApproveFrp
+export default DialogApproveRp

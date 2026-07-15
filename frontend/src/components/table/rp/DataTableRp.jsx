@@ -2,9 +2,13 @@ import DataTableAction, { DataTableStatus } from '../DataTableAction.jsx'
 import ButtonEditRp from '../../button/button-rp/ButtonEditRp.jsx'
 import ButtonDetailsRp from '../../button/button-rp/ButtonDetailsRp.jsx'
 
+// Button Action Dekstop
 import ButtonApprovalRp from '../../button/button-rp/ButtonApprovalRp.jsx'
 import ButtonRejectRp from '../../button/button-rp/ButtonRejectRp.jsx'
 import ButtonRevertRp from '../../button/button-rp/ButtonRevertRp.jsx'
+import ButtonCheckDataRp from '../../button/button-rp/ButtonCheckDataRp.jsx'
+
+// MOBILE
 import createMobileCardRp from '../../../mobile/frp-card/MobileCardFrp.jsx'
 import MobileButtonApprovalRp from '../../../mobile/mobile-button/frp/MobileButtonApprovalFrp.jsx'
 import MobileButtonEditRp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
@@ -12,7 +16,7 @@ import MobileButtonRejectRp from '../../../mobile/mobile-button/frp/MobileButton
 import MobileButtonRevert from '../../../mobile/mobile-button/frp/MobileButtonRevert.jsx'
 import {
   canAccessFrpButton,
-  canCurrentUserApproveFrp,
+  canCurrentUserApproveRp,
   canCurrentUserEditFrp,
   canCurrentUserRejectFrp,
   canCurrentUserRevertFrp,
@@ -52,7 +56,11 @@ function formatRupiah(value) {
 }
 
 function getFrpStatusValue(rp) {
-  return String(rp?.status ?? '').trim().toUpperCase()
+  return String(rp?.status ?? '')
+    .trim()
+    .replace(/[\s-]+/g, '_')
+    .replace(/_+/g, '_')
+    .toUpperCase()
 }
 
 function getFrpStatusLabel(rp) {
@@ -69,14 +77,24 @@ function getFrpStatusLabel(rp) {
     .join(' ')
 }
 
+function isFrpPendingStatus(rp) {
+  return getFrpStatusValue(rp).startsWith('PENDING')
+}
+
 function getFrpStatusVariant(rp) {
-  switch (getFrpStatusValue(rp)) {
-    case 'PENDING':
-      return 'pending'
+  const status = getFrpStatusValue(rp)
+
+  if (status.startsWith('PENDING')) {
+    return 'pending'
+  }
+
+  switch (status) {
     case 'APPROVED':
       return 'active'
     case 'REJECTED':
       return 'inactive'
+    case 'VOIDED':
+      return 'default'
     default:
       return 'default'
   }
@@ -190,17 +208,17 @@ function renderBanksStatus(rp, index, {
 }
 
 function isApproveActionHidden(rp, index, currentUser, canApproveAction) {
-  const isPending = getFrpStatusValue(rp) === 'PENDING'
+  const isPending = isFrpPendingStatus(rp)
 
   return !(
     isPending &&
-    canCurrentUserApproveFrp(rp, currentUser) &&
+    canCurrentUserApproveRp(rp, currentUser) &&
     (typeof canApproveAction !== 'function' || canApproveAction(rp, index))
   )
 }
 
 function isRejectActionHidden(rp, index, currentUser, canRejectAction) {
-  const isPending = getFrpStatusValue(rp) === 'PENDING'
+  const isPending = isFrpPendingStatus(rp)
 
   return !(
     isPending &&
@@ -217,9 +235,9 @@ function isRevertActionHidden(rp, index, currentUser, canRevertAction) {
   )
 }
 
-const columnsDataTableBanks = [{
+const columnsDataTableRp = [{
     key: 'rpNumber',
-    header: 'FRP Number',
+    header: 'RP Number',
     accessor: 'rp_number',
     type: 'identity',
     subtitleAccessor: (rp) => `Date: ${formatDateTime(rp?.created_at)}`,
@@ -231,6 +249,14 @@ const columnsDataTableBanks = [{
     accessor: 'requested_by_name',
     type: 'identity',
     subtitleAccessor: (rp) => `Division  : ${rp?.department_name_snapshot ?? '-'}`,
+    minWidth: 260,
+  },
+   {
+    key: 'picName',
+    header: 'Destination',
+    accessor: 'pic_name',
+    type: 'identity',
+    subtitleAccessor: (rp) => `Division  : ${rp?.destination_department_name_snapshot ?? '-'}`,
     minWidth: 260,
   },
   {
@@ -274,7 +300,7 @@ const columnsDataTableBanks = [{
 
 function DataTableRp({
   rows = [],
-  columns = columnsDataTableBanks,
+  columns = columnsDataTableRp,
   actions,
   getRowId = (rp, index) => rp?.id ?? index,
   tableLabel = 'FRP table',
@@ -285,9 +311,12 @@ function DataTableRp({
   onApproval,
   onReject,
   onRevert,
+  onCheckData,
   canApprove,
   canReject,
   canRevert,
+  canCheckData,
+  useCheckDataAction = false,
   currentUser,
   onStatusChange,
   SwitchComponent,
@@ -385,21 +414,24 @@ function DataTableRp({
           onClick: onRevert,
         }
       : null,
-    typeof onEdit === 'function'
+    typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
       ? {
           key: 'edit',
-          label: 'Edit FRP',
-          buttonComponent: ButtonEditRp,
+          label: useCheckDataAction ? 'Check Data' : 'Edit FRP',
+          buttonComponent: useCheckDataAction ? ButtonCheckDataRp : ButtonEditRp,
           mobileButtonComponent: MobileButtonEditRp,
           mobilePlacement: 'header-start',
-          hidden: (rp) => !canCurrentUserEditFrp(rp, currentUser),
-          onClick: onEdit,
+          hidden: (rp, index) =>
+            useCheckDataAction
+              ? typeof canCheckData === 'function' && !canCheckData(rp, index)
+              : !canCurrentUserEditFrp(rp, currentUser),
+          onClick: useCheckDataAction ? onCheckData : onEdit,
         }
       : null,
     typeof onDetails === 'function'
       ? {
           key: 'details',
-          label: 'Details FRP',
+          label: 'Details RP',
           buttonComponent: ButtonDetailsRp,
           mobileHidden: true,
           hidden: () => !canAccessFrpButton(currentUser, 'details'),

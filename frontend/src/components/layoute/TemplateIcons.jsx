@@ -629,6 +629,17 @@ export function Revert(props) {
     </IconBase>
   )
 }
+
+export function CheckData(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m15.5 15.5 5 5" />
+      <path d="M8.5 9.5h4" />
+      <path d="M8.5 11.5h3" />
+    </IconBase>
+  )
+}
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

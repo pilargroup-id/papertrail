@@ -1,8 +1,8 @@
-import { Reject } from '../../layoute/TemplateIcons.jsx'
+import { XClose } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonRejectRp({
   label = 'Reject',
-  icon: Icon = Reject,
+  icon: Icon = XClose,
   size = 16,
   className = '',
   type = 'button',

@@ -78,6 +78,10 @@ function getFrpStatusValue(frp) {
   return String(frp?.status ?? '').trim().toUpperCase()
 }
 
+function isFrpPendingStatus(frp) {
+  return getFrpStatusValue(frp).startsWith('PENDING')
+}
+
 export function isManagerUser(user) {
   const explicitManagerFlag = getFirstValue(user, ['is_manager', 'isManager'], null)
 
@@ -184,7 +188,7 @@ export function canAccessFrpButton(user, action) {
 }
 
 export function canCurrentUserApproveFrp(frp, currentUser) {
-  if (!canAccessFrpButton(currentUser, 'approve') || getFrpStatusValue(frp) !== 'PENDING') {
+  if (!canAccessFrpButton(currentUser, 'approve') || !isFrpPendingStatus(frp)) {
     return false
   }
 

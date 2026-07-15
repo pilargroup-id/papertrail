@@ -30,6 +30,90 @@ export const permissionAccessOptions = [
   },
 ]
 
+export const permissionModuleTabs = [
+  {
+    id: 'vendor',
+    label: 'Vendor',
+    groupMatches: ['vendor'],
+    moduleMatches: ['master vendor', 'master bank', 'vendor bank account'],
+  },
+  {
+    id: 'budget',
+    label: 'Budget',
+    groupMatches: ['budget'],
+    moduleMatches: ['master budget', 'budget type', 'budget access rule'],
+  },
+  {
+    id: 'document',
+    label: 'Document',
+    groupMatches: ['document'],
+    moduleMatches: ['frp document type', 'external document type'],
+  },
+  {
+    id: 'payment',
+    label: 'Payment',
+    groupMatches: ['payment'],
+    moduleMatches: ['payment method'],
+  },
+  {
+    id: 'rp',
+    label: 'RP',
+    groupMatches: ['rp'],
+    moduleMatches: [
+      'rp destination department',
+      'rp checker rule',
+      'rp payment category',
+      'master rp destination department',
+      'master rp checker rule',
+      'master rp payment category',
+    ],
+  },
+  {
+    id: 'permission',
+    label: 'Permission',
+    groupMatches: ['permission'],
+    moduleMatches: [
+      'master permission',
+      'master permission module',
+      'permission module',
+      'permission management',
+    ],
+  },
+]
+
+function normalizeModuleText(value) {
+  return String(value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function getPermissionModuleSearchText(option) {
+  return normalizeModuleText(
+    [
+      option?.label,
+      option?.meta?.module_code,
+      option?.meta?.module_name,
+      option?.meta?.description,
+    ].filter(Boolean).join(' '),
+  )
+}
+
+function getPermissionModuleGroupText(option) {
+  return normalizeModuleText(option?.meta?.module_group)
+}
+
+export function optionMatchesPermissionModuleTab(option, tab) {
+  const groupText = getPermissionModuleGroupText(option)
+  const searchText = getPermissionModuleSearchText(option)
+  const matchesGroup = tab.groupMatches.some((group) => groupText.includes(normalizeModuleText(group)))
+  const matchesModule = tab.moduleMatches.some((moduleName) =>
+    searchText.includes(normalizeModuleText(moduleName)),
+  )
+
+  return matchesGroup || matchesModule
+}
+
 export function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
     return response

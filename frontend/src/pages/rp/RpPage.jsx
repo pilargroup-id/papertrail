@@ -17,10 +17,11 @@ import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreat
 
 // Dialog Frp
 import DialogEditRp from '../../components/Dialog/dialog-rp/DialogEditRp.jsx'
-import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
+import DialogCheckDataRp from '../../components/Dialog/dialog-rp/DialogCheckDataRp.jsx'
+import DialogApproveRp from '../../components/Dialog/dialog-rp/DialogApproveRp.jsx'
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
-import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
+import DialogDetailsRp from '../../components/Dialog/dialog-rp/DialogDetailsRp.jsx'
 
 // Mobile Ui
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
@@ -28,6 +29,18 @@ import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx
 import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
 import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
+
+const RP_STATUS_ALL = 'ALL'
+const RP_DEFAULT_STATUS = 'PENDING_REQUESTER_MANAGER'
+
+const rpProcessStatusTabs = [
+  { id: RP_DEFAULT_STATUS, label: 'Requester Manager' },
+  { id: 'PENDING_DESTINATION_CHECKER', label: 'Destination Checker' },
+  { id: 'PENDING_DESTINATION_MANAGER', label: 'Destination Manager' },
+  { id: 'APPROVED', label: 'Approved' },
+  { id: 'REJECTED', label: 'Rejected' },
+  { id: 'VOIDED', label: 'Voided' },
+]
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -102,12 +115,82 @@ function getAuthDepartmentId(user) {
   )
 }
 
+function getAuthDepartmentIds(user) {
+  const departments = Array.isArray(user?.departments) ? user.departments : []
+  const departmentIds = departments
+    .flatMap((department) => [
+      getFirstValue(department, ['id', 'department_id', 'departmentId']),
+      getFirstValue(department, ['class_department_id', 'classDepartmentId']),
+    ])
+    .filter((departmentId) => departmentId !== '')
+
+  return [
+    getFirstValue(user, ['context_department_id', 'department_id', 'departmentId']),
+    getFirstValue(user, ['class_department_id', 'classDepartmentId']),
+    ...departmentIds,
+  ].filter((departmentId) => departmentId !== '')
+}
+
+function isCurrentUserDestinationDepartment(rp, user) {
+  const destinationDepartmentId = getFirstValue(
+    rp,
+    ['destination_department_id', 'destinationDepartmentId'],
+  )
+
+  if (destinationDepartmentId === '') {
+    return false
+  }
+
+  return getAuthDepartmentIds(user).some(
+    (departmentId) => String(departmentId) === String(destinationDepartmentId),
+  )
+}
+
 function getFrpEditLabel(rp) {
   return rp?.rp_number ?? rp?.id ?? 'FRP ini'
 }
 
 function getFrpStatusValue(rp) {
-  return String(rp?.status ?? '').trim().toUpperCase()
+  return normalizeRpStatusValue(rp?.status)
+}
+
+function normalizeRpStatusValue(status) {
+  return String(status ?? '')
+    .trim()
+    .replace(/[\s-]+/g, '_')
+    .replace(/_+/g, '_')
+    .toUpperCase()
+}
+
+function getRpStatusFilterLabel(status) {
+  const normalizedStatus = normalizeRpStatusValue(status)
+  const matchedTab = rpProcessStatusTabs.find((tab) => tab.id === normalizedStatus)
+
+  if (matchedTab) {
+    return matchedTab.label
+  }
+
+  return normalizedStatus
+    .toLowerCase()
+    .split('_')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+function matchesStatusFilter(status, filter) {
+  const normalizedStatus = normalizeRpStatusValue(status)
+  const normalizedFilter = normalizeRpStatusValue(filter)
+
+  if (!normalizedFilter || normalizedFilter === RP_STATUS_ALL || normalizedFilter === FRP_MOBILE_STATUS_ALL) {
+    return true
+  }
+
+  if (normalizedFilter === 'PENDING') {
+    return normalizedStatus.startsWith('PENDING')
+  }
+
+  return normalizedStatus === normalizedFilter
 }
 
 function updateVendorStatus(rp, rpId, isActive, updatedBudgetType) {
@@ -157,14 +240,16 @@ function RpPage(props) {
   const [errorMessage, setErrorMessage] = useState('')
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isCheckDataDialogOpen, setIsCheckDataDialogOpen] = useState(false)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
+  const [selectedCheckDataRp, setSelectedCheckDataRp] = useState(null)
   const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
-  const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
+  const [selectedApprovalRp, setSelectedApprovalRp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
   const [selectedMobileDetailsFrp, setSelectedMobileDetailsFrp] = useState(null)
@@ -176,6 +261,7 @@ function RpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
+  const [activeRpStatus, setActiveRpStatus] = useState(RP_DEFAULT_STATUS)
 
   useEffect(() => {
     setMobileHeaderHidden?.(
@@ -204,7 +290,6 @@ function RpPage(props) {
             page: 1,
             limit: 100,
             search: searchQuery,
-            department_id: authDepartmentId,
           },
           {
             signal: controller.signal,
@@ -243,6 +328,16 @@ function RpPage(props) {
   const closeEditDialog = () => {
     setIsEditDialogOpen(false)
     setSelectedBudgetType(null)
+  }
+
+  const openCheckDataDialog = (rp) => {
+    setSelectedCheckDataRp(rp)
+    setIsCheckDataDialogOpen(true)
+  }
+
+  const closeCheckDataDialog = () => {
+    setIsCheckDataDialogOpen(false)
+    setSelectedCheckDataRp(null)
   }
 
   const openDetailsDialog = (rp) => {
@@ -285,7 +380,7 @@ function RpPage(props) {
   }
 
   const openApproveDialog = (rp) => {
-    setSelectedApprovalFrp(rp)
+    setSelectedApprovalRp(rp)
     setApproveError('')
     setIsApproveDialogOpen(true)
   }
@@ -296,7 +391,7 @@ function RpPage(props) {
     }
 
     setIsApproveDialogOpen(false)
-    setSelectedApprovalFrp(null)
+    setSelectedApprovalRp(null)
     setApproveError('')
   }
 
@@ -349,12 +444,24 @@ function RpPage(props) {
     closeMobileEditPage()
   }
 
-  const handleFrpApproved = async ({ rp: targetFrp, notes }) => {
-    const target = targetFrp ?? selectedApprovalFrp
+  const handleRpChecked = async (response) => {
+    const checkedRp = getFrpFromResponse(response)
+
+    if (checkedRp?.id !== undefined && checkedRp?.id !== null) {
+      setBudgetType((currentRp) => updateVendorRecord(currentRp, checkedRp.id, checkedRp))
+    } else if (selectedCheckDataRp?.id !== undefined && selectedCheckDataRp?.id !== null) {
+      setReloadToken((currentValue) => currentValue + 1)
+    }
+
+    closeCheckDataDialog()
+  }
+
+  const handleRpApproved = async ({ rp: targetRp, notes }) => {
+    const target = targetRp ?? selectedApprovalRp
     const rpId = target?.id
 
     if (rpId === undefined || rpId === null) {
-      setApproveError('ID FRP tidak tersedia.')
+      setApproveError('ID RP tidak tersedia.')
       return
     }
 
@@ -362,9 +469,20 @@ function RpPage(props) {
     setIsApproving(true)
 
     try {
-      const response = await api.rp.approve(rpId, {
-        notes: notes || 'Approve FRP',
-      })
+      const status = getFrpStatusValue(target)
+
+      if (!['PENDING_REQUESTER_MANAGER', 'PENDING_DESTINATION_MANAGER'].includes(status)) {
+        setApproveError(`RP status ${status || '-'} tidak bisa diapprove.`)
+        return
+      }
+
+      const response = await api.rp.approveByStatus(
+        rpId,
+        status,
+        {
+          notes: notes || 'Approve RP',
+        },
+      )
       const approvedFrp = getFrpFromResponse(response)
 
       if (approvedFrp) {
@@ -374,9 +492,9 @@ function RpPage(props) {
       }
 
       setIsApproveDialogOpen(false)
-      setSelectedApprovalFrp(null)
+      setSelectedApprovalRp(null)
     } catch (error) {
-      setApproveError(error.message || 'Gagal approve FRP.')
+      setApproveError(error.message || 'Gagal approve RP.')
     } finally {
       setIsApproving(false)
     }
@@ -501,16 +619,48 @@ function RpPage(props) {
   const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP checker rules...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.'))
-  const visibleFrp =
-    mobileFrpStatusFilter === FRP_MOBILE_STATUS_ALL
-      ? rp
-      : rp.filter((rpItem) => getFrpStatusValue(rpItem) === mobileFrpStatusFilter)
+  const rpTabsWithCounts = rpProcessStatusTabs.map((tab) => ({
+    ...tab,
+    count: rp.filter((rpItem) => {
+      const status = getFrpStatusValue(rpItem)
+      const matchesDestinationCheckerDivision =
+        tab.id !== 'PENDING_DESTINATION_CHECKER' ||
+        isCurrentUserDestinationDepartment(rpItem, currentUser)
+
+      return (
+        matchesStatusFilter(status, mobileFrpStatusFilter) &&
+        matchesStatusFilter(status, tab.id) &&
+        matchesDestinationCheckerDivision
+      )
+    }).length,
+  }))
+  const visibleFrp = rp.filter((rpItem) => {
+    const status = getFrpStatusValue(rpItem)
+    const matchesRpStatusFilter = matchesStatusFilter(status, activeRpStatus)
+    const matchesDestinationCheckerDivision =
+      activeRpStatus !== 'PENDING_DESTINATION_CHECKER' ||
+      isCurrentUserDestinationDepartment(rpItem, currentUser)
+
+    return (
+      matchesStatusFilter(status, mobileFrpStatusFilter) &&
+      matchesRpStatusFilter &&
+      matchesDestinationCheckerDivision
+    )
+  })
+  const hasRpStatusFilter = activeRpStatus !== RP_STATUS_ALL
+  const isDestinationCheckerTab = activeRpStatus === 'PENDING_DESTINATION_CHECKER'
+  const filteredStatusLabel = getRpStatusFilterLabel(activeRpStatus)
   const filteredEmptyMessage =
     !authGateMessage &&
     !isLoading &&
     !errorMessage &&
-    mobileFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
-      ? `Belum ada FRP berstatus ${mobileFrpStatusFilter.toLowerCase()}.`
+    hasRpStatusFilter
+      ? `Belum ada RP pada status ${filteredStatusLabel}.`
+      : !authGateMessage &&
+        !isLoading &&
+        !errorMessage &&
+        mobileFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
+        ? `Belum ada RP berstatus ${getRpStatusFilterLabel(mobileFrpStatusFilter)}.`
       : emptyMessage
 
   return (
@@ -525,6 +675,8 @@ function RpPage(props) {
         </div>
 
         <div className="users-table-card__actions rp-page__desktop-actions">
+          <SearchFrp searchProps={searchProps} variant="desktop" />
+          
           <ButtonCreateRp
             variant="create"
             dialogProps={{
@@ -533,6 +685,7 @@ function RpPage(props) {
           >
             Create
           </ButtonCreateRp>
+
         </div>
       </div>
 
@@ -561,13 +714,27 @@ function RpPage(props) {
         onUpdated={handleVendorUpdated}
       />
 
-      <div className={selectedMobileDetailsFrp || selectedMobileEditFrp || isMobileCreateScreenOpen ? 'rp-page__mobile-list--hidden' : ''}>
+      <div
+        className={[
+          'rp-page__table-section',
+          selectedMobileDetailsFrp || selectedMobileEditFrp || isMobileCreateScreenOpen
+            ? 'rp-page__mobile-list--hidden'
+            : '',
+        ].filter(Boolean).join(' ')}
+      >
+        <TabsProcessRp
+          activeStatus={activeRpStatus}
+          onStatusChange={setActiveRpStatus}
+          tabs={rpTabsWithCounts}
+        />
+
         <DataTableRp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}
           emptyMessage={filteredEmptyMessage}
           SwitchComponent={Switch}
           onEdit={openEditDialog}
+          onCheckData={openCheckDataDialog}
           onDetails={openDetailsDialog}
           onApproval={openApproveDialog}
           onReject={openRejectDialog}
@@ -575,6 +742,11 @@ function RpPage(props) {
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
+          canCheckData={(row) =>
+            getFrpStatusValue(row) === 'PENDING_DESTINATION_CHECKER' &&
+            isCurrentUserDestinationDepartment(row, currentUser)
+          }
+          useCheckDataAction={isDestinationCheckerTab}
           isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
           onStatusChange={handleVendorStatusChange}
           mobileCard={{
@@ -585,8 +757,14 @@ function RpPage(props) {
                   ? {
                       ...action,
                       hidden: false,
-                      disabled: (rp) => !canCurrentUserEditFrp(rp, currentUser),
-                      onClick: openMobileEditPage,
+                      disabled: (rp) =>
+                        isDestinationCheckerTab
+                          ? !(
+                              getFrpStatusValue(rp) === 'PENDING_DESTINATION_CHECKER' &&
+                              isCurrentUserDestinationDepartment(rp, currentUser)
+                            )
+                          : !canCurrentUserEditFrp(rp, currentUser),
+                      onClick: isDestinationCheckerTab ? openCheckDataDialog : openMobileEditPage,
                     }
                   : action,
               ),
@@ -602,22 +780,30 @@ function RpPage(props) {
         onUpdated={handleVendorUpdated}
       />
 
-      <DialogDetailsFrp
+      <DialogCheckDataRp
+        isOpen={isCheckDataDialogOpen}
+        title={`Check Data ${getFrpEditLabel(selectedCheckDataRp)}`}
+        rp={selectedCheckDataRp}
+        onClose={closeCheckDataDialog}
+        onUpdated={handleRpChecked}
+      />
+
+      <DialogDetailsRp
         isOpen={isDetailsDialogOpen}
         title={`Detail ${getFrpEditLabel(selectedDetailsFrp)}`}
         rp={selectedDetailsFrp}
         onClose={closeDetailsDialog}
       />
 
-      <DialogApproveFrp
-        key={selectedApprovalFrp?.id ?? 'approve-rp'}
+      <DialogApproveRp
+        key={selectedApprovalRp?.id ?? 'approve-rp'}
         isOpen={isApproveDialogOpen}
-        title={`Approve ${getFrpEditLabel(selectedApprovalFrp)}`}
-        rp={selectedApprovalFrp}
+        title={`Approve ${getFrpEditLabel(selectedApprovalRp)}`}
+        rp={selectedApprovalRp}
         isSubmitting={isApproving}
         submitError={approveError}
         onClose={closeApproveDialog}
-        onApprove={handleFrpApproved}
+        onApprove={handleRpApproved}
       />
 
       <DialogRejectFrp

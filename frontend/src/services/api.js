@@ -345,6 +345,31 @@ const createFrpResource = (path) => ({
   },
 });
 
+const createRpResource = (path) => ({
+  ...createFrpResource(path),
+  requesterManagerApprove: (id, data = {}, options) =>
+    api.post(`${path}/${id}/requester-manager-approve`, data, options),
+  destinationCheck: (id, data = {}, options) =>
+    api.post(`${path}/${id}/destination-check`, data, options),
+  destinationManagerApprove: (id, data = {}, options) =>
+    api.post(`${path}/${id}/destination-manager-approve`, data, options),
+  approveByStatus: (id, status, data = {}, options) => {
+    const normalizedStatus = String(status ?? '')
+      .trim()
+      .replace(/[\s-]+/g, '_')
+      .replace(/_+/g, '_')
+      .toUpperCase();
+
+    if (normalizedStatus === 'PENDING_DESTINATION_MANAGER') {
+      return api.post(`${path}/${id}/destination-manager-approve`, data, options);
+    }
+
+    return api.post(`${path}/${id}/requester-manager-approve`, data, options);
+  },
+  approve: (id, data = {}, options) =>
+    api.post(`${path}/${id}/requester-manager-approve`, data, options),
+});
+
 const request = async (
   path,
   {
@@ -474,7 +499,7 @@ const api = {
   // =====================
   // rp
   // =====================
-  rp: createFrpResource('/rp'),
+  rp: createRpResource('/rp'),
 
   // =====================
   // Master - Vendor Management

@@ -1,12 +1,17 @@
 import { SearchMd } from '../../components/layoute/TemplateIcons.jsx'
 
-function SearchFrp({ children, searchProps }) {
+function SearchFrp({ children, searchProps, variant = 'mobile' }) {
   if (!searchProps) {
     return null
   }
 
+  const searchClassName = [
+    'mobile-frp-search',
+    variant === 'desktop' ? 'mobile-frp-search--desktop' : 'mobile-frp-search--mobile',
+  ].join(' ')
+
   return (
-    <div className="mobile-frp-search" role="search">
+    <div className={searchClassName} role="search">
       <div className="mobile-frp-search__bar">
         <label
           className="mobile-frp-search__field"

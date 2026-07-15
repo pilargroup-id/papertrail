@@ -52,6 +52,8 @@ function TabsItems({
   updateItemValue,
   removeItem,
   addItem,
+  isBudgetDisabled = false,
+  canManageItems = true,
 }) {
   const totalAmount = formValues.items.reduce((total, item) => {
     const quantity = toNumber(item.quantity)
@@ -87,7 +89,7 @@ function TabsItems({
                 type="button"
                 className="frp-dialog__icon-button"
                 aria-label={`Hapus item ${index + 1}`}
-                disabled={isFormDisabled || formValues.items.length === 1}
+                disabled={!canManageItems || isFormDisabled || formValues.items.length === 1}
                 onClick={() => removeItem(index)}
               >
                 <Trash03 size={16} />
@@ -104,7 +106,7 @@ function TabsItems({
                   searchPlaceholder="Cari budget..."
                   emptyMessage="Budget aktif tidak ditemukan."
                   required
-                  disabled={isFormDisabled}
+                  disabled={isFormDisabled || isBudgetDisabled}
                   error={fieldErrors[`items.${index}.budget_id`]}
                   onChange={(value) => updateItemValue(index, 'budget_id', value)}
                 />
@@ -204,7 +206,7 @@ function TabsItems({
       <button
         type="button"
         className="dashboard-popup__button dashboard-popup__button--secondary frp-dialog__add-item"
-        disabled={isFormDisabled}
+        disabled={!canManageItems || isFormDisabled}
         onClick={addItem}
       >
         <Plus size={16} />
