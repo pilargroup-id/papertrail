@@ -67,7 +67,12 @@ const initialRequesterInfo = {
   company: '',
   division: '',
   request_by: '',
+  department_id: '',
+  class_department_id: '',
 }
+
+const FRP_BUDGET_ACCESS_MODULE = 'FRP'
+const CROSS_BUDGET_ACCESS_TYPE = 'CROSS_BUDGET'
 
 const frpTabs = [
   {
@@ -184,13 +189,23 @@ function mapNameOptions(rows, fallbackName) {
 function mapBudgetOptions(budgets) {
   return budgets.map((budget) => {
     const id = getFirstValue(budget, ['id', 'budget_id'])
+    const code = getFirstValue(budget, ['budget_code', 'code'])
     const projectName = getFirstValue(budget, ['project_name', 'name'], `Budget #${id ?? '-'}`)
     const budgetAmount = getFirstValue(budget, ['budget_amount', 'amount'])
     const remaining = getFirstValue(budget, ['budget_remaining', 'remaining_amount'])
+    const departmentCode = getFirstValue(
+      budget,
+      ['department_code_snapshot', 'department_code'],
+    )
+    const departmentName = getFirstValue(
+      budget,
+      ['department_name_snapshot', 'department_name'],
+    )
+    const departmentLabel = [departmentCode, departmentName].filter(Boolean).join(' - ')
 
     return {
       value: id,
-      label: projectName,
+      label: [code, projectName, departmentLabel].filter(Boolean).join(' - '),
       meta: {
         budgetAmount,
         budgetRemaining: remaining,
@@ -312,11 +327,105 @@ function getPrimaryItem(items) {
   return items.find((item) => Number(item?.is_primary) === 1) || items[0]
 }
 
+function normalizeText(value) {
+  return String(value ?? '').trim().toUpperCase()
+}
+
+function isActiveRecord(record) {
+  const isActive = getFirstValue(record, ['is_active', 'isActive'], 1)
+
+  return Number(isActive) !== 0
+}
+
+function getUserDepartmentIds(user = {}) {
+  const departments = Array.isArray(user.departments) ? user.departments : []
+  const departmentIds = [
+    user.context_department_id,
+    user.department_id,
+    user.departmentId,
+    ...departments.map((department) =>
+      getFirstValue(department, ['department_id', 'departmentId', 'id']),
+    ),
+  ]
+
+  return departmentIds.filter(
+    (departmentId) => departmentId !== undefined && departmentId !== null && departmentId !== '',
+  )
+}
+
+function hasCrossBudgetAccess(user = {}, budgetAccessRules = []) {
+  const userDepartmentIds = getUserDepartmentIds(user)
+
+  return budgetAccessRules.some((rule) => {
+    const ruleDepartmentId = getFirstValue(rule, ['department_id', 'departmentId'])
+    const moduleName = normalizeText(getFirstValue(rule, ['module'], FRP_BUDGET_ACCESS_MODULE))
+    const accessType = normalizeText(
+      getFirstValue(rule, ['access_type', 'accessType'], CROSS_BUDGET_ACCESS_TYPE),
+    )
+
+    return (
+      isActiveRecord(rule) &&
+      moduleName === FRP_BUDGET_ACCESS_MODULE &&
+      accessType === CROSS_BUDGET_ACCESS_TYPE &&
+      userDepartmentIds.some((departmentId) => String(departmentId) === String(ruleDepartmentId))
+    )
+  })
+}
+
+function filterBudgetsByRequesterScope(budgets, requesterInfo) {
+  const requesterDepartmentId = requesterInfo.department_id
+  const requesterClassDepartmentId = requesterInfo.class_department_id
+
+  return budgets.filter((budget) => {
+    const budgetDepartmentId = getFirstValue(budget, ['department_id', 'departmentId'])
+    const budgetClassDepartmentId = getFirstValue(
+      budget,
+      ['class_department_id', 'classDepartmentId'],
+    )
+
+    if (!budgetDepartmentId && !budgetClassDepartmentId) {
+      return true
+    }
+
+    return (
+      (requesterDepartmentId && String(budgetDepartmentId) === String(requesterDepartmentId)) ||
+      (requesterClassDepartmentId &&
+        String(budgetClassDepartmentId) === String(requesterClassDepartmentId))
+    )
+  })
+}
+
+function getBudgetListParams(requesterInfo, canUseCrossBudget) {
+  const params = {
+    page: 1,
+    limit: 200,
+    is_active: 1,
+  }
+
+  if (!canUseCrossBudget) {
+    params.department_id = requesterInfo.department_id || undefined
+    params.class_department_id = requesterInfo.class_department_id || undefined
+  }
+
+  return params
+}
+
 function getUserRequesterInfo(user = {}) {
   const primaryCompany = getPrimaryItem(user.companies)
   const primaryDepartment = getPrimaryItem(user.departments)
   const companyCode = user.company_code ?? primaryCompany?.code
   const companyName = user.company ?? primaryCompany?.name ?? primaryCompany?.company_name
+  const departmentId =
+    user.context_department_id ??
+    user.department_id ??
+    primaryDepartment?.department_id ??
+    primaryDepartment?.id ??
+    ''
+  const classDepartmentId =
+    user.class_department_id ??
+    primaryDepartment?.class_department_id ??
+    primaryDepartment?.id ??
+    departmentId
   const departmentCode = user.department_code ?? primaryDepartment?.code
   const departmentName =
     user.department ?? primaryDepartment?.name ?? primaryDepartment?.department_name
@@ -325,6 +434,8 @@ function getUserRequesterInfo(user = {}) {
     company: [companyCode, companyName].filter(Boolean).join(' - '),
     division: [departmentCode, departmentName].filter(Boolean).join(' - '),
     request_by: user.name ?? user.full_name ?? user.username ?? '',
+    department_id: departmentId,
+    class_department_id: classDepartmentId,
   }
 }
 
@@ -351,6 +462,14 @@ function DialogCreateFrp({
   const [optionsError, setOptionsError] = useState('')
   const [attachmentDraft, setAttachmentDraft] = useState(createInitialAttachmentDraft)
   const attachmentFilesRef = useRef([])
+
+  const revokeAttachmentPreviewUrls = (files = attachmentFilesRef.current) => {
+    files.forEach((item) => {
+      if (item.previewUrl) {
+        URL.revokeObjectURL(item.previewUrl)
+      }
+    })
+  }
 
   const resetDialogState = () => {
     revokeAttachmentPreviewUrls()
@@ -431,14 +550,6 @@ function DialogCreateFrp({
       ...currentErrors,
       attachment_document_type_id: '',
     }))
-  }
-
-  const revokeAttachmentPreviewUrls = (files = attachmentFilesRef.current) => {
-    files.forEach((item) => {
-      if (item.previewUrl) {
-        URL.revokeObjectURL(item.previewUrl)
-      }
-    })
   }
 
   const updateAttachmentFile = (files) => {
@@ -576,16 +687,28 @@ function DialogCreateFrp({
       try {
         const [
           authResponse,
+          budgetAccessRulesResponse,
           vendorsResponse,
           vendorBanksResponse,
           externalDocumentTypesResponse,
           paymentMethodsResponse,
           frpDocumentTypesResponse,
-          budgetsResponse,
         ] = await Promise.all([
           api.auth.me({
             signal: controller.signal,
           }),
+          api.budgetAccessRules.list(
+            {
+              page: 1,
+              limit: 200,
+              module: FRP_BUDGET_ACCESS_MODULE,
+              access_type: CROSS_BUDGET_ACCESS_TYPE,
+              is_active: 1,
+            },
+            {
+              signal: controller.signal,
+            },
+          ),
           api.vendors.list(
             {
               page: 1,
@@ -636,20 +759,25 @@ function DialogCreateFrp({
               signal: controller.signal,
             },
           ),
-          api.budgets.list(
-            {
-              page: 1,
-              limit: 200,
-              is_active: 1,
-            },
-            {
-              signal: controller.signal,
-            },
-          ),
         ])
         const authUser = getAuthUser(authResponse)
+        const nextRequesterInfo = getUserRequesterInfo(authUser)
+        const canUseCrossBudget = hasCrossBudgetAccess(
+          authUser,
+          getRowsFromResponse(budgetAccessRulesResponse),
+        )
+        const budgetsResponse = await api.budgets.list(
+          getBudgetListParams(nextRequesterInfo, canUseCrossBudget),
+          {
+            signal: controller.signal,
+          },
+        )
+        const budgetRows = getRowsFromResponse(budgetsResponse)
+        const visibleBudgetRows = canUseCrossBudget
+          ? budgetRows
+          : filterBudgetsByRequesterScope(budgetRows, nextRequesterInfo)
 
-        setRequesterInfo(getUserRequesterInfo(authUser))
+        setRequesterInfo(nextRequesterInfo)
         setVendorOptions(mapVendorOptions(getRowsFromResponse(vendorsResponse)))
         setVendorBankOptions(mapVendorBankOptions(getRowsFromResponse(vendorBanksResponse)))
         setExternalDocumentTypeOptions(
@@ -661,7 +789,7 @@ function DialogCreateFrp({
         setFrpDocumentTypeOptions(
           mapNameOptions(getRowsFromResponse(frpDocumentTypesResponse), 'FRP document'),
         )
-        setBudgetOptions(mapBudgetOptions(getRowsFromResponse(budgetsResponse)))
+        setBudgetOptions(mapBudgetOptions(visibleBudgetRows))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -869,7 +997,9 @@ function DialogCreateFrp({
           )
         } catch (error) {
           setActiveTab('attachment')
-          throw new Error(error.message || 'FRP berhasil dibuat, tetapi attachment gagal diupload.')
+          throw new Error(error.message || 'FRP berhasil dibuat, tetapi attachment gagal diupload.', {
+            cause: error,
+          })
         }
       }
 

@@ -135,6 +135,32 @@ function buildListFilters(query = {}) {
     params.push(query.company_id);
   }
 
+  if (query.department_scope_id) {
+    where.push(`
+      (
+        rr.department_id = ?
+        OR rr.class_department_id = ?
+        OR rr.destination_department_id = ?
+        OR EXISTS (
+          SELECT 1
+          FROM rp_request_items rri_scope
+          WHERE rri_scope.rp_request_id = rr.id
+            AND (
+              rri_scope.budget_department_id = ?
+              OR rri_scope.budget_class_department_id = ?
+            )
+        )
+      )
+    `);
+    params.push(
+      query.department_scope_id,
+      query.department_scope_id,
+      query.department_scope_id,
+      query.department_scope_id,
+      query.department_scope_id
+    );
+  }
+
   if (query.department_id) {
     where.push('rr.department_id = ?');
     params.push(query.department_id);

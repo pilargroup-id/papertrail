@@ -1070,7 +1070,7 @@ function DataTable({
       ) : null}
 
       {hasPagination ? (
-        <>
+        <div className="users-table-pagination-shell">
           <PaginationTable
             id={idPrefix}
             summary={paginationConfig.summary}
@@ -1106,7 +1106,7 @@ function DataTable({
             onPrevious={handlePreviousPage}
             onNext={handleNextPage}
           />
-        </>
+        </div>
       ) : null}
     </div>
   )

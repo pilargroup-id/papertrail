@@ -128,6 +128,7 @@ function scaleTableColumn(column, scale) {
 
 function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   return {
+    '--users-table-wrapper-max-height': 'min(72dvh, 720px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(1, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(1, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
@@ -142,6 +143,8 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
+    minHeight: 'min(66dvh, 660px)',
+    marginTop: '2rem',
     ...tableWrapperStyle,
   }
 }

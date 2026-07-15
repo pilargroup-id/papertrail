@@ -7,7 +7,7 @@ import DropdownSearch from '../../forms/dropdown/DropdownSearch.jsx'
 import {
   accessTypeOptions,
   findOption,
-  getAuthUser,
+  getRowsFromResponse,
   initialBudgetAccessRuleFormValues,
   mapDepartmentOptions,
   moduleOptions,
@@ -73,22 +73,11 @@ function DialogCreateBudgetAccesRules({
       setOptionsError('')
 
       try {
-        const authResponse = await api.auth.me({
+        const departmentResponse = await api.directory.departments.list(undefined, {
           signal: controller.signal,
         })
-        const authUser = getAuthUser(authResponse)
         const nextDepartmentOptions = mapDepartmentOptions(
-          Array.isArray(authUser?.departments)
-            ? authUser.departments
-            : [
-                {
-                  id: authUser?.department_id,
-                  name: authUser?.department,
-                  class: authUser?.department_class,
-                  code: authUser?.department_code,
-                  is_primary: 1,
-                },
-              ].filter((department) => department.id || department.name),
+          getRowsFromResponse(departmentResponse),
         )
         const primaryDepartment = nextDepartmentOptions.find((option) => option.isPrimary)
 
@@ -107,7 +96,7 @@ function DialogCreateBudgetAccesRules({
         }
 
         setDepartmentOptions([])
-        setOptionsError(error.message || 'Gagal memuat department user.')
+        setOptionsError(error.message || 'Gagal memuat data department.')
       } finally {
         if (!controller.signal.aborted) {
           setIsOptionsLoading(false)

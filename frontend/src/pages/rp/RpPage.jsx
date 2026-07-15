@@ -290,6 +290,7 @@ function RpPage(props) {
             page: 1,
             limit: 100,
             search: searchQuery,
+            department_scope_id: authDepartmentId,
           },
           {
             signal: controller.signal,

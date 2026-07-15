@@ -210,6 +210,32 @@ function formatDateInputValue(value) {
   return String(value).slice(0, 10)
 }
 
+function formatIntegerInputValue(value, fallback = '1') {
+  if (value === undefined || value === null || value === '') {
+    return fallback
+  }
+
+  const numberValue = Number(value)
+
+  if (Number.isSafeInteger(numberValue)) {
+    return String(numberValue)
+  }
+
+  return String(value)
+}
+
+function getRpItems(rp) {
+  const candidates = [
+    rp?.items,
+    rp?.rp_items,
+    rp?.rpItems,
+    rp?.request_items,
+    rp?.requestItems,
+  ]
+
+  return candidates.find((items) => Array.isArray(items)) ?? []
+}
+
 function mapRpItemsToFormItems(items) {
   if (!Array.isArray(items) || items.length === 0) {
     return [editInitialItem()]
@@ -219,7 +245,7 @@ function mapRpItemsToFormItems(items) {
     budget_id: getFirstValue(item, ['budget_id', 'budgetId'], ''),
     memo: getFirstValue(item, ['memo', 'description'], ''),
     purchase_link: getFirstValue(item, ['purchase_link', 'purchaseLink'], ''),
-    quantity: String(getFirstValue(item, ['quantity'], '1')),
+    quantity: formatIntegerInputValue(getFirstValue(item, ['quantity', 'qty'], '1')),
     unit_price: String(getFirstValue(item, ['unit_price', 'unitPrice'], '')),
   }))
 }
@@ -244,7 +270,7 @@ function mapRpToFormValues(rp) {
       '',
     ),
     pic_name: getFirstValue(rp, ['pic_name', 'picName'], ''),
-    items: mapRpItemsToFormItems(rp?.items),
+    items: mapRpItemsToFormItems(getRpItems(rp)),
     notes: getFirstValue(rp, ['notes'], 'Update RP'),
   }
 }
@@ -543,7 +569,6 @@ function DialogEditRp({
           mapPaymentCategoryOptions(getRowsFromResponse(paymentCategoriesResponse)),
           nextFormValues.payment_category_id,
           [
-            getFirstValue(rpDetail, ['payment_category_code_snapshot'], ''),
             getFirstValue(rpDetail, ['payment_category_name_snapshot'], ''),
           ]
             .filter(Boolean)
@@ -562,7 +587,7 @@ function DialogEditRp({
         )
         const nextBudgetOptions = ensureBudgetOptionsForItems(
           mapBudgetOptions(getRowsFromResponse(budgetsResponse)),
-          rpDetail?.items,
+          getRpItems(rpDetail),
         )
 
         setRequesterInfo(nextRequesterInfo)

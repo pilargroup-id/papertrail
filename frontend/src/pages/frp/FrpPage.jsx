@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
+import TabsFrpDekstop from './TabsFrpDekstop.jsx'
 import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
@@ -217,6 +218,7 @@ function FrpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
+  const [desktopFrpStatusFilter, setDesktopFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
   const [frpFilters, setFrpFilters] = useState({
     requestBy: '',
     vendor: '',
@@ -564,11 +566,14 @@ function FrpPage(props) {
   )
   const hasActiveFrpFilter = Boolean(frpFilters.requestBy || frpFilters.vendor || frpFilters.createdAt)
   const visibleFrp = frp.filter((frpItem) => {
-    const matchesStatus =
+    const matchesMobileStatus =
       mobileFrpStatusFilter === FRP_MOBILE_STATUS_ALL ||
       getFrpStatusValue(frpItem) === mobileFrpStatusFilter
+    const matchesDesktopStatus =
+      desktopFrpStatusFilter === FRP_MOBILE_STATUS_ALL ||
+      getFrpStatusValue(frpItem) === desktopFrpStatusFilter
 
-    return matchesStatus && matchesFrpFilters(frpItem, frpFilters)
+    return matchesMobileStatus && matchesDesktopStatus && matchesFrpFilters(frpItem, frpFilters)
   })
   const filteredEmptyMessage =
     !authGateMessage &&
@@ -576,6 +581,11 @@ function FrpPage(props) {
     !errorMessage &&
     hasActiveFrpFilter
       ? 'Data tidak ditemukan untuk filter yang dipilih.'
+      : !authGateMessage &&
+    !isLoading &&
+    !errorMessage &&
+    desktopFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
+      ? `Belum ada FRP berstatus ${desktopFrpStatusFilter.toLowerCase()}.`
       : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
@@ -640,11 +650,24 @@ function FrpPage(props) {
         onUpdated={handleVendorUpdated}
       />
 
-      <div className={selectedMobileDetailsFrp || selectedMobileEditFrp || isMobileCreateScreenOpen ? 'frp-page__mobile-list--hidden' : ''}>
+      <div
+        className={[
+          'frp-page__table-section',
+          selectedMobileDetailsFrp || selectedMobileEditFrp || isMobileCreateScreenOpen
+            ? 'frp-page__mobile-list--hidden'
+            : '',
+        ].filter(Boolean).join(' ')}
+      >
+        <TabsFrpDekstop
+          activeStatus={desktopFrpStatusFilter}
+          onStatusChange={setDesktopFrpStatusFilter}
+        />
+
         <DataTableFrp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}
           emptyMessage={filteredEmptyMessage}
+          tableWrapperStyle={{ marginTop: '0.75rem' }}
           SwitchComponent={Switch}
           onEdit={openEditDialog}
           onDetails={openDetailsDialog}
