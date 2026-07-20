@@ -2208,6 +2208,13 @@ width: var(--sidebar-collapsed-width);
   flex: 0 1 auto;
 }
 
+.rp-page__filters {
+  width: min(420px, 42vw);
+  min-width: 320px;
+  margin: 0 0 0.35rem auto;
+  flex: 0 0 min(420px, 42vw);
+}
+
 .frp-page__filter-field {
   display: grid;
   gap: 0.35rem;
@@ -2307,13 +2314,24 @@ width: var(--sidebar-collapsed-width);
   flex: 1;
 }
 
-.frp-page__tabs-toolbar {
+.frp-page__tabs-toolbar,
+.rp-page__tabs-toolbar {
   display: flex;
   align-items: flex-end;
   gap: 0.75rem;
   flex-shrink: 0;
   margin-top: 0.65rem;
   border-bottom: 1px solid rgba(26, 42, 87, 0.1);
+}
+
+.rp-page__tabs-toolbar {
+  justify-content: space-between;
+}
+
+.rp-page__tabs-toolbar .frp-desktop-tabs {
+  width: auto;
+  flex: 1 1 0;
+  flex-shrink: 1;
 }
 
 .frp-desktop-tabs {
@@ -2336,7 +2354,8 @@ width: var(--sidebar-collapsed-width);
   background: var(--primary-blue);
 }
 
-.frp-page__filter-button {
+.frp-page__filter-button,
+.rp-page__filter-button {
   flex: 0 0 auto;
   --frp-icon-color: #1d4ed8;
   --frp-icon-bg: rgba(59, 130, 246, 0.12);
@@ -2348,7 +2367,8 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-focus: rgba(59, 130, 246, 0.16);
 }
 
-.frp-page__filter-button.frp-icon-button {
+.frp-page__filter-button.frp-icon-button,
+.rp-page__filter-button.frp-icon-button {
   width: 44px;
   height: 44px;
   min-width: 44px;
@@ -2363,7 +2383,8 @@ width: var(--sidebar-collapsed-width);
     0 7px 16px var(--frp-icon-shadow);
 }
 
-.frp-page__filter-button.frp-icon-button:hover {
+.frp-page__filter-button.frp-icon-button:hover,
+.rp-page__filter-button.frp-icon-button:hover {
   color: var(--frp-icon-color);
   background: var(--frp-icon-hover-bg);
   border-color: var(--frp-icon-hover-border);
@@ -2372,13 +2393,15 @@ width: var(--sidebar-collapsed-width);
     0 10px 22px var(--frp-icon-hover-shadow);
 }
 
-.frp-page__filter-button.frp-icon-button:focus-visible {
+.frp-page__filter-button.frp-icon-button:focus-visible,
+.rp-page__filter-button.frp-icon-button:focus-visible {
   box-shadow:
     0 0 0 4px var(--frp-icon-focus),
     0 10px 22px var(--frp-icon-hover-shadow);
 }
 
-.frp-page__filter-button--active.frp-icon-button {
+.frp-page__filter-button--active.frp-icon-button,
+.rp-page__filter-button--active.frp-icon-button {
   --frp-icon-color: #0f766e;
   --frp-icon-bg: rgba(20, 184, 166, 0.14);
   --frp-icon-border: rgba(20, 184, 166, 0.34);
@@ -2387,6 +2410,50 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-hover-border: rgba(20, 184, 166, 0.48);
   --frp-icon-hover-shadow: rgba(15, 118, 110, 0.16);
   --frp-icon-focus: rgba(20, 184, 166, 0.18);
+}
+
+.frp-filter-dialog-anchor {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.frp-filter-dialog {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: 40;
+  width: min(520px, calc(100vw - 48px));
+  padding: 1rem;
+  border: 1px solid rgba(26, 42, 87, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 22px 54px rgba(15, 23, 42, 0.16),
+    0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.frp-filter-dialog::before {
+  position: absolute;
+  top: -6px;
+  right: 16px;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid rgba(26, 42, 87, 0.12);
+  border-left: 1px solid rgba(26, 42, 87, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  content: '';
+  transform: rotate(45deg);
+}
+
+.frp-filter-dialog .frp-page__filters,
+.frp-filter-dialog .rp-page__filters {
+  width: 100%;
+  margin: 0;
+}
+
+.frp-filter-dialog .frp-page__filters {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .frp-desktop-tabs__tabs .MuiTabs-scrollButtons {
@@ -7320,6 +7387,22 @@ width: var(--sidebar-collapsed-width);
     justify-content: flex-start;
   }
 
+  .frp-filter-dialog {
+    right: auto;
+    left: 0;
+    width: min(520px, calc(100vw - 40px));
+  }
+
+  .frp-filter-dialog::before {
+    right: auto;
+    left: 16px;
+  }
+
+  .frp-filter-dialog .frp-page__filters,
+  .frp-filter-dialog .rp-page__filters {
+    grid-template-columns: 1fr;
+  }
+
   .frp-page__desktop-actions .mobile-frp-search--desktop {
     max-width: none;
   }
@@ -7849,6 +7932,7 @@ width: var(--sidebar-collapsed-width);
   }
 
   .frp-page__tabs-toolbar,
+  .rp-page__tabs-toolbar,
   .frp-desktop-tabs {
     display: none;
   }

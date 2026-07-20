@@ -27,17 +27,22 @@ function TabsProcessRp({
   className,
   onStatusChange,
   tabs = rpProcessStatusTabs,
+  variant = 'process',
 }) {
   const selectedStatus = tabs.some((tab) => tab.id === activeStatus)
     ? activeStatus
     : tabs[0]?.id
+  const isDesktopVariant = variant === 'desktop'
+  const rootClassName = isDesktopVariant ? 'frp-desktop-tabs' : 'rp-process-tabs'
+  const tabsClassName = isDesktopVariant ? 'frp-desktop-tabs__tabs' : 'rp-process-tabs__tabs'
+  const tabClassName = isDesktopVariant ? 'frp-desktop-tabs__tab' : 'rp-process-tabs__tab'
 
   const handleChange = (_event, nextStatus) => {
     onStatusChange?.(nextStatus)
   }
 
   return (
-    <Box className={joinClassNames('rp-process-tabs', className)} sx={{ width: '100%' }}>
+    <Box className={joinClassNames(rootClassName, className)} sx={{ width: '100%' }}>
       <Tabs
         value={selectedStatus}
         onChange={handleChange}
@@ -45,14 +50,14 @@ function TabsProcessRp({
         scrollButtons="auto"
         allowScrollButtonsMobile
         aria-label={ariaLabel}
-        className="rp-process-tabs__tabs"
+        className={tabsClassName}
       >
         {tabs.map((tab) => (
           <Tab
             key={tab.id}
             className={joinClassNames(
-              'rp-process-tabs__tab',
-              `rp-process-tabs__tab--${getStatusTabClassName(tab.id)}`,
+              tabClassName,
+              `${tabClassName}--${getStatusTabClassName(tab.id)}`,
             )}
             label={getTabLabel(tab)}
             value={tab.id}

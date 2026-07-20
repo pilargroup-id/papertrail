@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from 'react'
 
 import { Filter } from '../../layoute/TemplateIcons.jsx'
 
-function ButtonFilterFrp({
+function ButtonFilterRp({
   label = 'Filter',
   icon: Icon = Filter,
   size = 16,
@@ -85,4 +85,4 @@ function ButtonFilterFrp({
   )
 }
 
-export default ButtonFilterFrp
+export default ButtonFilterRp

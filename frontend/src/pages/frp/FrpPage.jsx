@@ -610,14 +610,23 @@ function FrpPage(props) {
           <SearchFrp searchProps={searchProps} variant="desktop" />
           <ButtonFilterFrp
             label={isDesktopFilterOpen ? 'Tutup filter' : 'Buka filter'}
+            dialogId="frp-desktop-filter"
+            dialogLabel="Filter FRP"
+            isOpen={isDesktopFilterOpen}
+            onClose={() => setIsDesktopFilterOpen(false)}
             className={[
               'frp-page__filter-button',
               hasActiveFrpFilter ? 'frp-page__filter-button--active' : '',
             ].filter(Boolean).join(' ')}
-            aria-expanded={isDesktopFilterOpen}
-            aria-controls="frp-desktop-filter"
             onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
-          />
+          >
+            <FrpFilter
+              filters={frpFilters}
+              requestByOptions={requestByFilterOptions}
+              vendorOptions={vendorFilterOptions}
+              onFilterChange={updateFrpFilter}
+            />
+          </ButtonFilterFrp>
           <ButtonCreateFrp
             variant="create"
             dialogProps={{
@@ -669,15 +678,6 @@ function FrpPage(props) {
             onStatusChange={setDesktopFrpStatusFilter}
           />
         </div>
-
-        {isDesktopFilterOpen ? (
-          <FrpFilter
-            filters={frpFilters}
-            requestByOptions={requestByFilterOptions}
-            vendorOptions={vendorFilterOptions}
-            onFilterChange={updateFrpFilter}
-          />
-        ) : null}
 
         <DataTableFrp
           rows={shouldLoadFrp ? visibleFrp : []}

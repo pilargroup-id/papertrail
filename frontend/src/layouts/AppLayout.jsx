@@ -8,6 +8,8 @@ import { pageDetails } from '../dummy/pageDetails.js'
 import createMobileFrpHeaderTabs, {
   FRP_MOBILE_STATUS_ALL,
 } from '../mobile/mobile-button/frp/MobileTabsFrp.jsx'
+import createMobileRpHeaderTabs from '../mobile/mobile-button/rp/MobileTabsRp.jsx'
+import { RP_MOBILE_DEFAULT_STATUS } from '../mobile/mobile-button/rp/mobileTabsRpConfig.js'
 import HeaderMobile from '../mobile/layoutes-mobile/HeaderMobile.jsx'
 import api from '../services/api.js'
 
@@ -56,6 +58,7 @@ function AppLayout({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const [mobileFrpStatusFilter, setMobileFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
+  const [mobileRpStatusFilter, setMobileRpStatusFilter] = useState(RP_MOBILE_DEFAULT_STATUS)
   const [isMobileHeaderHidden, setIsMobileHeaderHidden] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(() => new Date())
   const [authProfile, setAuthProfile] = useState({
@@ -80,12 +83,19 @@ function AppLayout({
     .join(' ')
 
   const isMyTicketsPage = resolvedActivePath === '/MyTickets'
-  const isFrpPage = resolvedActivePath.toLowerCase() === '/frp'
+  const normalizedActivePath = resolvedActivePath.toLowerCase()
+  const isFrpPage = normalizedActivePath === '/frp'
+  const isRpPage = normalizedActivePath === '/rp'
   const mobileHeaderTabs = isFrpPage
     ? createMobileFrpHeaderTabs({
         activeStatus: mobileFrpStatusFilter,
         onStatusChange: setMobileFrpStatusFilter,
       })
+    : isRpPage
+      ? createMobileRpHeaderTabs({
+          activeStatus: mobileRpStatusFilter,
+          onStatusChange: setMobileRpStatusFilter,
+        })
     : undefined
   const searchProps = {
     value: searchQuery,
@@ -198,6 +208,8 @@ function AppLayout({
                   currentUser,
                   isAuthLoading,
                   mobileFrpStatusFilter,
+                  mobileRpStatusFilter,
+                  setMobileRpStatusFilter,
                   setMobileHeaderHidden: setIsMobileHeaderHidden,
                   searchProps,
                   onDataChange: handleRefresh,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import {
@@ -8,11 +8,13 @@ import {
 
 // DataTable
 import TabsProcessRp from './TabsProcessRp.jsx'
+import RpFilter from './RpFilter.jsx'
 import DataTableRp from '../../components/table/rp/DataTableRp.jsx';
 
 // Button Frp
 import Switch from '../../components/forms/Switch.jsx';
 import ButtonCreateRp from '../../components/button/button-rp/ButtonCreateRp.jsx'
+import ButtonFilterRp from '../../components/button/button-rp/ButtonFilterRp.jsx'
 import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreate.jsx'
 
 // Dialog Frp
@@ -24,23 +26,18 @@ import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.
 import DialogDetailsRp from '../../components/Dialog/dialog-rp/DialogDetailsRp.jsx'
 
 // Mobile Ui
-import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
+import {
+  RP_MOBILE_DEFAULT_STATUS,
+  rpMobileStatusTabs,
+} from '../../mobile/mobile-button/rp/mobileTabsRpConfig.js'
 import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
 import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
 import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
 
 const RP_STATUS_ALL = 'ALL'
-const RP_DEFAULT_STATUS = 'PENDING_REQUESTER_MANAGER'
-
-const rpProcessStatusTabs = [
-  { id: RP_DEFAULT_STATUS, label: 'Requester Manager' },
-  { id: 'PENDING_DESTINATION_CHECKER', label: 'Destination Checker' },
-  { id: 'PENDING_DESTINATION_MANAGER', label: 'Destination Manager' },
-  { id: 'APPROVED', label: 'Approved' },
-  { id: 'REJECTED', label: 'Rejected' },
-  { id: 'VOIDED', label: 'Voided' },
-]
+const RP_DEFAULT_STATUS = RP_MOBILE_DEFAULT_STATUS
+const rpProcessStatusTabs = rpMobileStatusTabs
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -182,7 +179,7 @@ function matchesStatusFilter(status, filter) {
   const normalizedStatus = normalizeRpStatusValue(status)
   const normalizedFilter = normalizeRpStatusValue(filter)
 
-  if (!normalizedFilter || normalizedFilter === RP_STATUS_ALL || normalizedFilter === FRP_MOBILE_STATUS_ALL) {
+  if (!normalizedFilter || normalizedFilter === RP_STATUS_ALL) {
     return true
   }
 
@@ -191,6 +188,34 @@ function matchesStatusFilter(status, filter) {
   }
 
   return normalizedStatus === normalizedFilter
+}
+
+function normalizeFilterValue(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function getFilterOptions(rows, keys) {
+  const values = rows
+    .map((row) => getFirstValue(row, keys))
+    .filter((value) => value !== undefined && value !== null && String(value).trim() !== '')
+
+  return [...new Set(values.map(String))].sort((firstValue, secondValue) =>
+    firstValue.localeCompare(secondValue),
+  )
+}
+
+function matchesRpFilters(rp, filters) {
+  const requestBy = normalizeFilterValue(
+    getFirstValue(rp, ['requested_by_name', 'request_by_name', 'request_by', 'created_by_name', 'created_by']),
+  )
+  const vendor = normalizeFilterValue(
+    getFirstValue(rp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
+  )
+
+  return (
+    (!filters.requestBy || requestBy === normalizeFilterValue(filters.requestBy)) &&
+    (!filters.vendor || vendor === normalizeFilterValue(filters.vendor))
+  )
 }
 
 function updateVendorStatus(rp, rpId, isActive, updatedBudgetType) {
@@ -225,10 +250,13 @@ function RpPage(props) {
   const searchProps = props.searchProps ?? outletContext.searchProps
   const currentUser = props.currentUser ?? outletContext.currentUser ?? null
   const setMobileHeaderHidden = props.setMobileHeaderHidden ?? outletContext.setMobileHeaderHidden
-  const mobileFrpStatusFilter =
-    props.mobileFrpStatusFilter ??
-    outletContext.mobileFrpStatusFilter ??
-    FRP_MOBILE_STATUS_ALL
+  const mobileRpStatusFilter =
+    props.mobileRpStatusFilter ??
+    outletContext.mobileRpStatusFilter ??
+    RP_DEFAULT_STATUS
+  const setMobileRpStatusFilter =
+    props.setMobileRpStatusFilter ??
+    outletContext.setMobileRpStatusFilter
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
@@ -261,7 +289,14 @@ function RpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
-  const [activeRpStatus, setActiveRpStatus] = useState(RP_DEFAULT_STATUS)
+  const [internalActiveRpStatus, setInternalActiveRpStatus] = useState(RP_DEFAULT_STATUS)
+  const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
+  const [rpFilters, setRpFilters] = useState({
+    requestBy: '',
+    vendor: '',
+  })
+  const activeRpStatus = mobileRpStatusFilter ?? internalActiveRpStatus
+  const setActiveRpStatus = setMobileRpStatusFilter ?? setInternalActiveRpStatus
 
   useEffect(() => {
     setMobileHeaderHidden?.(
@@ -319,6 +354,13 @@ function RpPage(props) {
 
   const handleFrpCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
+  }
+
+  const updateRpFilter = (filterName, value) => {
+    setRpFilters((currentFilters) => ({
+      ...currentFilters,
+      [filterName]: value,
+    }))
   }
 
   const openEditDialog = (rp) => {
@@ -620,6 +662,15 @@ function RpPage(props) {
   const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP checker rules...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.'))
+  const requestByFilterOptions = useMemo(
+    () => getFilterOptions(rp, ['requested_by_name', 'request_by_name', 'request_by', 'created_by_name', 'created_by']),
+    [rp],
+  )
+  const vendorFilterOptions = useMemo(
+    () => getFilterOptions(rp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
+    [rp],
+  )
+  const hasActiveRpFilter = Boolean(rpFilters.requestBy || rpFilters.vendor)
   const rpTabsWithCounts = rpProcessStatusTabs.map((tab) => ({
     ...tab,
     count: rp.filter((rpItem) => {
@@ -629,9 +680,9 @@ function RpPage(props) {
         isCurrentUserDestinationDepartment(rpItem, currentUser)
 
       return (
-        matchesStatusFilter(status, mobileFrpStatusFilter) &&
         matchesStatusFilter(status, tab.id) &&
-        matchesDestinationCheckerDivision
+        matchesDestinationCheckerDivision &&
+        matchesRpFilters(rpItem, rpFilters)
       )
     }).length,
   }))
@@ -643,9 +694,9 @@ function RpPage(props) {
       isCurrentUserDestinationDepartment(rpItem, currentUser)
 
     return (
-      matchesStatusFilter(status, mobileFrpStatusFilter) &&
       matchesRpStatusFilter &&
-      matchesDestinationCheckerDivision
+      matchesDestinationCheckerDivision &&
+      matchesRpFilters(rpItem, rpFilters)
     )
   })
   const hasRpStatusFilter = activeRpStatus !== RP_STATUS_ALL
@@ -655,13 +706,13 @@ function RpPage(props) {
     !authGateMessage &&
     !isLoading &&
     !errorMessage &&
+    hasActiveRpFilter
+      ? 'Data tidak ditemukan untuk filter yang dipilih.'
+      : !authGateMessage &&
+    !isLoading &&
+    !errorMessage &&
     hasRpStatusFilter
       ? `Belum ada RP pada status ${filteredStatusLabel}.`
-      : !authGateMessage &&
-        !isLoading &&
-        !errorMessage &&
-        mobileFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
-        ? `Belum ada RP berstatus ${getRpStatusFilterLabel(mobileFrpStatusFilter)}.`
       : emptyMessage
 
   return (
@@ -677,7 +728,25 @@ function RpPage(props) {
 
         <div className="users-table-card__actions rp-page__desktop-actions">
           <SearchFrp searchProps={searchProps} variant="desktop" />
-          
+          <ButtonFilterRp
+            label={isDesktopFilterOpen ? 'Tutup filter' : 'Buka filter'}
+            dialogId="rp-desktop-filter"
+            dialogLabel="Filter RP"
+            isOpen={isDesktopFilterOpen}
+            onClose={() => setIsDesktopFilterOpen(false)}
+            className={[
+              'rp-page__filter-button',
+              hasActiveRpFilter ? 'rp-page__filter-button--active' : '',
+            ].filter(Boolean).join(' ')}
+            onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
+          >
+            <RpFilter
+              filters={rpFilters}
+              requestByOptions={requestByFilterOptions}
+              vendorOptions={vendorFilterOptions}
+              onFilterChange={updateRpFilter}
+            />
+          </ButtonFilterRp>
           <ButtonCreateRp
             variant="create"
             dialogProps={{
@@ -723,16 +792,20 @@ function RpPage(props) {
             : '',
         ].filter(Boolean).join(' ')}
       >
-        <TabsProcessRp
-          activeStatus={activeRpStatus}
-          onStatusChange={setActiveRpStatus}
-          tabs={rpTabsWithCounts}
-        />
+        <div className="rp-page__tabs-toolbar">
+          <TabsProcessRp
+            activeStatus={activeRpStatus}
+            onStatusChange={setActiveRpStatus}
+            tabs={rpTabsWithCounts}
+            variant="desktop"
+          />
+        </div>
 
         <DataTableRp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}
           emptyMessage={filteredEmptyMessage}
+          tableWrapperStyle={{ marginTop: '0.75rem' }}
           SwitchComponent={Switch}
           onEdit={openEditDialog}
           onCheckData={openCheckDataDialog}
