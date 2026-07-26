@@ -136,7 +136,7 @@ Backend akan resolve ulang kurs saat create/update FRP.
 Digunakan oleh admin/master data, bukan user FRP biasa.
 
 ```http
-POST /api/master/currencies/exchange-rates
+ /api/master/currencies/exchange-rates
 ```
 
 Payload:

@@ -1,9 +1,10 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
+import { XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-edit-frp/TabsInformation.jsx'
 import TabsItems from './tabs-edit-frp/TabsItems.jsx'
 import TabsVendor from './tabs-edit-frp/TabsVendor.jsx'
@@ -545,7 +546,6 @@ function DialogEditFrp({
     resetDialogState()
     onClose?.()
   }
-  const handleCloseEvent = useEffectEvent(handleClose)
 
   const handleTabChange = (_, nextValue) => {
     setActiveTab(nextValue)
@@ -968,18 +968,10 @@ function DialogEditFrp({
       }
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        handleCloseEvent()
-      }
-    }
-
     loadOptions()
-    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       controller.abort()
-      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [frp, isOpen])
 
@@ -1283,7 +1275,7 @@ function DialogEditFrp({
   }
 
   const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation" onClick={handleClose}>
+    <div className="dashboard-popup-overlay" role="presentation">
       <div
         className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
         role="dialog"
@@ -1301,6 +1293,16 @@ function DialogEditFrp({
                 {title}
               </h2>
             </div>
+
+            <button
+              type="button"
+              className="frp-bare-icon-button frp-dialog__close-button"
+              aria-label="Tutup dialog"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              <XClose size={24} />
+            </button>
           </div>
 
           <div className="dashboard-popup__body">
@@ -1375,14 +1377,6 @@ function DialogEditFrp({
           </div>
 
           <div className="dashboard-popup__actions">
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--secondary"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </button>
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

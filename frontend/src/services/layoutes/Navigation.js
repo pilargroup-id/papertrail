@@ -14,7 +14,7 @@ import {
 export const defaultNavigationPath = '/forms'
 
 export const implementedNavigationPaths = [
-  '/forms',
+  // '/forms',
   '/Master',
   '/frp',
   '/rp',
@@ -29,6 +29,7 @@ export const implementedNavigationPaths = [
   '/Master/Budgets',
   '/Master/Budget-type',
   '/Master/Budget-access',
+  '/Master/Currencies',
 
   // DOCUMENT MANAGEMENT
   '/Master/Frp-docs-type',
@@ -36,8 +37,8 @@ export const implementedNavigationPaths = [
   '/Master/Payment-methods',
 
   // SETTINGS
-  '/Master/Rp-destination-departments',
-  '/Master/Rp-checker-rules',
+  // '/Master/Rp-destination-departments',
+  // '/Master/Rp-checker-rules',
   '/Master/Rp-payment-categories',
 
   // PERMISSION
@@ -46,21 +47,21 @@ export const implementedNavigationPaths = [
 ]
 
 export const primaryNavigationItems = [
-  {
-    id: 'forms',
-    label: 'Forms',
-    href: '/forms',
-    icon: Users01,
-  },
+  // {
+  //   id: 'forms',
+  //   label: 'Forms',
+  //   href: '/forms',
+  //   icon: Users01,
+  // },
   {
     id: 'frp',
-    label: 'Frp',
+    label: 'Forms Req Payment',
     href: '/frp',
     icon: FileText01,
   },
   {
     id: 'rp',
-    label: 'Rp',
+    label: 'Req Payment',
     href: '/Rp',
     icon: FileText01,
   },
@@ -79,19 +80,19 @@ export const primaryNavigationItems = [
             id: 'vendor',
             label: 'Vendor',
             href: '/Master/Vendor',
-            icon: Users01,
+            // icon: Users01,
           },
           {
             id: 'vendor-bank',
             label: 'Banks',
             href: '/Master/Banks',
-            icon: Banks,
+            // icon: Banks,
           },
           {
             id: 'vendor-banks-account',
             label: 'Vendor Banks',
             href: '/Master/VendorBanksAccount',
-            icon: UserBank,
+            // icon: UserBank,
           },
         ],
       },
@@ -104,19 +105,24 @@ export const primaryNavigationItems = [
             id: 'budgets',
             label: 'Budgets',
             href: '/Master/Budgets',
-            icon: Budgets,
+            // icon: Budgets,
           },
           {
             id: 'budget-type',
             label: 'Budget Type',
             href: '/Master/Budget-type',
-            icon: BudgetType,
+            // icon: BudgetType,
           },
           {
             id: 'budget-access',
             label: 'Budget Access',
             href: '/Master/Budget-access',
-            icon: BudgetAccess,
+            // icon: BudgetAccess,
+          },
+          {
+            id: 'currencies',
+            label: 'Currencies',
+            href: '/Master/Currencies'
           }
         ]
       }
@@ -124,7 +130,7 @@ export const primaryNavigationItems = [
   },
     {
     id: 'config-frp',
-    label: 'Config Frp',
+    label: 'Config',
     href: '/Master',
     icon: Settings01,
     children: [
@@ -144,29 +150,10 @@ export const primaryNavigationItems = [
         href: '/Master/Payment-methods',
  
       },
-    ]
-  },
-  {
-    id: 'config-rp',
-    label: 'Config Rp',
-    href: '/Master',
-    icon: Settings01,
-    children: [
-      {
-        id: 'rp-destination-departments',
-        label: 'RP Destinations',
-        href: '/Master/Rp-destination-departments',
-      },
-      {
-        id: 'rp-checker-rules',
-        label: 'Checker Rules (Rp)',
-        href: '/Master/Rp-checker-rules',
-      },
       {
         id: 'rp-payment-categories',
         label: 'Categories Payment (Rp)',
         href: '/Master/Rp-payment-categories',
-
       }
     ]
   },

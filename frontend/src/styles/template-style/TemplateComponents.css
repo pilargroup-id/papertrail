@@ -1631,6 +1631,47 @@ width: var(--sidebar-collapsed-width);
   box-shadow: 0 0 0 4px rgba(233, 196, 106, 0.12);
 }
 
+.entity-form-popup--frp .dashboard-popup__header {
+  align-items: center;
+}
+
+.frp-dialog__close-button.frp-bare-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  min-width: 0;
+  height: 40px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  line-height: 0;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.frp-dialog__close-button.frp-bare-icon-button:hover:not(:disabled) {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  box-shadow: none;
+  transform: none;
+}
+
+.frp-dialog__close-button.frp-bare-icon-button:focus-visible {
+  outline: 2px solid rgba(233, 196, 106, 0.55);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+.frp-dialog__close-button.frp-bare-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .dashboard-popup__body {
   display: grid;
   gap: 0.85rem;
@@ -2175,13 +2216,16 @@ width: var(--sidebar-collapsed-width);
 }
 
 .frp-page__desktop-actions {
-  gap: 0.6rem;
+  flex: 1 1 auto;
+  gap: 0.55rem;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .frp-page__desktop-actions .mobile-frp-search--desktop {
-  flex: 1 1 320px;
-  min-width: 260px;
-  max-width: 380px;
+  flex: 1 1 480px;
+  min-width: 340px;
+  max-width: 560px;
 }
 
 .frp-page__desktop-actions .mobile-frp-search--desktop .mobile-frp-search__field,
@@ -2320,7 +2364,7 @@ width: var(--sidebar-collapsed-width);
   align-items: flex-end;
   gap: 0.75rem;
   flex-shrink: 0;
-  margin-top: 0.65rem;
+  margin-top: 0.85rem;
   border-bottom: 1px solid rgba(26, 42, 87, 0.1);
 }
 
@@ -3361,6 +3405,12 @@ width: var(--sidebar-collapsed-width);
   overflow-wrap: anywhere;
 }
 
+.users-table-wrapper.frp-table--actions .users-table th,
+.users-table-wrapper.rp-table--actions .users-table th {
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .users-table-wrapper.vendor-banks-table--auto-fit .users-table td {
   padding:
     var(--vendor-banks-table-cell-padding-block, 1rem)
@@ -3409,7 +3459,8 @@ width: var(--sidebar-collapsed-width);
 }
 
 .users-table-wrapper.frp-table--actions .frp-table__approval-cell,
-.users-table-wrapper.frp-table--actions .frp-table__action-cell {
+.users-table-wrapper.frp-table--actions .frp-table__action-cell,
+.users-table-wrapper.rp-table--actions .rp-table__action-cell {
   padding-inline: 0.55rem;
   vertical-align: middle;
 }
@@ -3425,15 +3476,79 @@ width: var(--sidebar-collapsed-width);
   gap: 0.38rem;
 }
 
-.users-table-wrapper.frp-table--actions .frp-table__action-cell > .frp-icon-button {
+.users-table-wrapper.frp-table--actions .frp-table__action-cell > .frp-icon-button,
+.users-table-wrapper.rp-table--actions .rp-table__action-cell > .frp-icon-button {
   vertical-align: middle;
 }
 
-.users-table-wrapper.frp-table--actions .frp-table__action-cell > .frp-icon-button + .frp-icon-button {
+.users-table-wrapper.frp-table--actions .frp-table__action-cell > .frp-icon-button + .frp-icon-button,
+.users-table-wrapper.rp-table--actions .rp-table__action-cell > .frp-icon-button + .frp-icon-button {
   margin-left: 0.38rem;
 }
 
+.users-table-wrapper.frp-table--actions .frp-table__amount-cell,
+.users-table-wrapper.rp-table--actions .frp-table__amount-cell {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.users-table-wrapper.frp-table--actions .frp-table__description-cell,
+.users-table-wrapper.rp-table--actions .frp-table__description-cell {
+  line-height: 1.45;
+}
+
+.frp-table__sort-button,
+.data-table-action__sort-button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.frp-table__sort-button[data-align='center'],
+.data-table-action__sort-button[data-align='center'] {
+  justify-content: center;
+}
+
+.frp-table__sort-button[data-align='right'],
+.data-table-action__sort-button[data-align='right'] {
+  justify-content: flex-end;
+}
+
+.frp-table__sort-label,
+.data-table-action__sort-label {
+  min-width: 0;
+}
+
+.frp-table__sort-indicator,
+.data-table-action__sort-indicator {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.frp-table__sort-indicator svg + svg,
+.data-table-action__sort-indicator svg + svg {
+  margin-top: -0.25rem;
+}
+
 .users-table-wrapper.frp-table--actions .frp-icon-button,
+.users-table-wrapper.rp-table--actions .frp-icon-button,
 .frp-accordion-detail .frp-icon-button {
   width: max(var(--vendor-banks-table-icon-size, 36px), 34px);
   height: max(var(--vendor-banks-table-icon-size, 36px), 34px);
@@ -3450,6 +3565,7 @@ width: var(--sidebar-collapsed-width);
 }
 
 .users-table-wrapper.frp-table--actions .frp-icon-button:hover,
+.users-table-wrapper.rp-table--actions .frp-icon-button:hover,
 .frp-accordion-detail .frp-icon-button:hover {
   color: var(--frp-icon-hover-color, var(--frp-icon-color, var(--primary-blue)));
   background: var(--frp-icon-hover-bg, #fff);
@@ -3460,13 +3576,15 @@ width: var(--sidebar-collapsed-width);
 }
 
 .users-table-wrapper.frp-table--actions .frp-icon-button:focus-visible,
+.users-table-wrapper.rp-table--actions .frp-icon-button:focus-visible,
 .frp-accordion-detail .frp-icon-button:focus-visible {
   box-shadow:
     0 0 0 4px var(--frp-icon-focus, rgba(42, 157, 143, 0.14)),
     0 10px 22px var(--frp-icon-hover-shadow, rgba(26, 42, 87, 0.12));
 }
 
-.users-table-wrapper.frp-table--actions .frp-icon-button--approval {
+.users-table-wrapper.frp-table--actions .frp-icon-button--approval,
+.users-table-wrapper.rp-table--actions .frp-icon-button--approval {
   --frp-icon-color: #15803d;
   --frp-icon-bg: rgba(34, 197, 94, 0.13);
   --frp-icon-border: rgba(34, 197, 94, 0.3);
@@ -3477,7 +3595,8 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-focus: rgba(34, 197, 94, 0.18);
 }
 
-.users-table-wrapper.frp-table--actions .frp-icon-button--reject {
+.users-table-wrapper.frp-table--actions .frp-icon-button--reject,
+.users-table-wrapper.rp-table--actions .frp-icon-button--reject {
   --frp-icon-color: #b42318;
   --frp-icon-bg: rgba(239, 68, 68, 0.12);
   --frp-icon-border: rgba(239, 68, 68, 0.3);
@@ -3488,7 +3607,8 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-focus: rgba(239, 68, 68, 0.16);
 }
 
-.users-table-wrapper.frp-table--actions .frp-icon-button--revert {
+.users-table-wrapper.frp-table--actions .frp-icon-button--revert,
+.users-table-wrapper.rp-table--actions .frp-icon-button--revert {
   --frp-icon-color: #b45309;
   --frp-icon-bg: rgba(245, 158, 11, 0.14);
   --frp-icon-border: rgba(245, 158, 11, 0.34);
@@ -3499,7 +3619,8 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-focus: rgba(245, 158, 11, 0.18);
 }
 
-.users-table-wrapper.frp-table--actions .frp-icon-button--edit {
+.users-table-wrapper.frp-table--actions .frp-icon-button--edit,
+.users-table-wrapper.rp-table--actions .frp-icon-button--edit {
   --frp-icon-color: #1d4ed8;
   --frp-icon-bg: rgba(59, 130, 246, 0.12);
   --frp-icon-border: rgba(59, 130, 246, 0.28);
@@ -3510,7 +3631,8 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-focus: rgba(59, 130, 246, 0.16);
 }
 
-.users-table-wrapper.frp-table--actions .frp-icon-button--details {
+.users-table-wrapper.frp-table--actions .frp-icon-button--details,
+.users-table-wrapper.rp-table--actions .frp-icon-button--details {
   --frp-icon-color: #0f766e;
   --frp-icon-bg: rgba(20, 184, 166, 0.12);
   --frp-icon-border: rgba(20, 184, 166, 0.3);
@@ -3522,6 +3644,7 @@ width: var(--sidebar-collapsed-width);
 }
 
 .users-table-wrapper.frp-table--actions .frp-icon-button--attachments,
+.users-table-wrapper.rp-table--actions .frp-icon-button--attachments,
 .frp-accordion-detail .frp-icon-button--attachments {
   --frp-icon-color: #7c3aed;
   --frp-icon-bg: rgba(124, 58, 237, 0.12);

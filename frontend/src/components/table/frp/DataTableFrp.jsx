@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import DataTableAction, { DataTableStatus } from '../DataTableAction.jsx'
 import ButtonEditFrp from '../../button/button-frp/ButtonEditFrp.jsx'
 import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
@@ -10,6 +11,7 @@ import MobileButtonApprovalFrp from '../../../mobile/mobile-button/frp/MobileBut
 import MobileButtonEditFrp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
 import MobileButtonRejectFrp from '../../../mobile/mobile-button/frp/MobileButtonRejectFrp.jsx'
 import MobileButtonRevert from '../../../mobile/mobile-button/frp/MobileButtonRevert.jsx'
+import { ChevronDown, ChevronUp } from '../../layoute/TemplateIcons.jsx'
 import {
   canAccessFrpButton,
   canCurrentUserApproveFrp,
@@ -20,6 +22,12 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
+const DEFAULT_PAGINATION_PAGE_SIZE = 10
+const FRP_STATUS_DEFAULT_ORDER = {
+  PENDING: 0,
+  APPROVED: 1,
+  REJECTED: 2,
+}
 
 function formatDateTime(value) {
   if (!value) {
@@ -82,6 +90,10 @@ function getFrpStatusVariant(frp) {
   }
 }
 
+function getFrpStatusDefaultRank(frp) {
+  return FRP_STATUS_DEFAULT_ORDER[getFrpStatusValue(frp)] ?? Number.MAX_SAFE_INTEGER
+}
+
 function joinClassNames(...classNames) {
   return classNames.filter(Boolean).join(' ')
 }
@@ -117,6 +129,14 @@ function getScaledWidth(value, scale) {
   return value
 }
 
+function getPathValue(source, path) {
+  if (!path || typeof path !== 'string') {
+    return undefined
+  }
+
+  return path.split('.').reduce((currentValue, key) => currentValue?.[key], source)
+}
+
 function scaleTableColumn(column, scale) {
   return {
     ...column,
@@ -126,11 +146,13 @@ function scaleTableColumn(column, scale) {
   }
 }
 
-function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
+function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
+  const hasSparseRows = rowCount <= 5
+
   return {
-    '--users-table-wrapper-max-height': 'min(72dvh, 720px)',
-    '--vendor-banks-table-cell-padding-block': getScaledRem(1, scale),
-    '--vendor-banks-table-cell-padding-inline': getScaledRem(1, scale),
+    '--users-table-wrapper-max-height': hasSparseRows ? 'none' : 'min(64dvh, 640px)',
+    '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
+    '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
     '--vendor-banks-table-body-font-size': getScaledRem(0.92, scale, 0.72),
     '--vendor-banks-table-name-font-size': getScaledRem(0.98, scale, 0.74),
@@ -143,10 +165,132 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    minHeight: 'min(66dvh, 660px)',
-    marginTop: '2rem',
+    flex: hasSparseRows ? '0 0 auto' : '1 1 auto',
+    minHeight: rowCount === 0 ? '180px' : hasSparseRows ? 'auto' : 'min(52dvh, 520px)',
+    marginTop: '0.75rem',
     ...tableWrapperStyle,
   }
+}
+
+function getComparableValue(column, row, index) {
+  if (typeof column.sortAccessor === 'function') {
+    return column.sortAccessor(row, index)
+  }
+
+  if (typeof column.sortAccessor === 'string') {
+    return getPathValue(row, column.sortAccessor)
+  }
+
+  if (typeof column.accessor === 'function') {
+    return column.accessor(row, index)
+  }
+
+  if (typeof column.accessor === 'string') {
+    return getPathValue(row, column.accessor)
+  }
+
+  return getPathValue(row, column.key)
+}
+
+function normalizeComparableValue(value, sortType) {
+  if (value === null || value === undefined || value === '') {
+    return ''
+  }
+
+  if (sortType === 'number') {
+    const numberValue = Number(value)
+
+    return Number.isFinite(numberValue) ? numberValue : 0
+  }
+
+  if (sortType === 'date') {
+    const dateValue = new Date(value).getTime()
+
+    return Number.isNaN(dateValue) ? 0 : dateValue
+  }
+
+  return String(value).toLowerCase()
+}
+
+function sortRows(rows, columns, sortConfig) {
+  if (!sortConfig?.key) {
+    return [...rows].sort((firstRow, secondRow) => {
+      const firstRank = getFrpStatusDefaultRank(firstRow)
+      const secondRank = getFrpStatusDefaultRank(secondRow)
+
+      return firstRank - secondRank
+    })
+  }
+
+  const sortColumn = columns.find((column) => column.key === sortConfig.key)
+
+  if (!sortColumn) {
+    return rows
+  }
+
+  return [...rows].sort((firstRow, secondRow) => {
+    const firstValue = normalizeComparableValue(
+      getComparableValue(sortColumn, firstRow),
+      sortColumn.sortType,
+    )
+    const secondValue = normalizeComparableValue(
+      getComparableValue(sortColumn, secondRow),
+      sortColumn.sortType,
+    )
+
+    if (firstValue < secondValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1
+    }
+
+    if (firstValue > secondValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1
+    }
+
+    return 0
+  })
+}
+
+function SortableHeader({
+  label,
+  columnKey,
+  align,
+  sortConfig,
+  onSortChange,
+}) {
+  const isActive = sortConfig?.key === columnKey
+  const nextDirection = isActive && sortConfig.direction === 'asc' ? 'desc' : 'asc'
+  const tooltipDirection = nextDirection === 'asc' ? 'ascending' : 'descending'
+
+  return (
+    <button
+      type="button"
+      className="frp-table__sort-button"
+      title={`Sort ${label} ${tooltipDirection}`}
+      aria-label={`Sort ${label} ${tooltipDirection}`}
+      aria-sort={isActive ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+      data-align={align || 'left'}
+      onClick={() =>
+        onSortChange({
+          key: columnKey,
+          direction: nextDirection,
+        })
+      }
+    >
+      <span className="frp-table__sort-label">{label}</span>
+      <span className="frp-table__sort-indicator" aria-hidden="true">
+        {isActive && sortConfig.direction === 'asc' ? (
+          <ChevronUp size={13} />
+        ) : isActive ? (
+          <ChevronDown size={13} />
+        ) : (
+          <>
+            <ChevronUp size={10} />
+            <ChevronDown size={10} />
+          </>
+        )}
+      </span>
+    </button>
+  )
 }
 
 function renderBanksStatus(frp, index, {
@@ -226,7 +370,8 @@ const columnsDataTableBanks = [{
     accessor: 'frp_number',
     type: 'identity',
     subtitleAccessor: (frp) => `Date: ${formatDateTime(frp?.created_at)}`,
-    minWidth: 260,
+    sortAccessor: 'frp_number',
+    minWidth: 220,
   },
   {
     key: 'requestor',
@@ -234,7 +379,8 @@ const columnsDataTableBanks = [{
     accessor: 'requested_by_name',
     type: 'identity',
     subtitleAccessor: (frp) => `Division  : ${frp?.department_name_snapshot ?? '-'}`,
-    minWidth: 260,
+    sortAccessor: 'requested_by_name',
+    minWidth: 220,
   },
   {
     key: 'vendor',
@@ -242,6 +388,7 @@ const columnsDataTableBanks = [{
     accessor: 'vendor_name_snapshot',
     nowrap: true,
     type: 'identity',
+    sortAccessor: 'vendor_name_snapshot',
     minWidth: 180,
   },
   {
@@ -249,13 +396,20 @@ const columnsDataTableBanks = [{
     header: 'Total Amount',
     accessor: 'total_amount',
     format: formatRupiah,
-    minWidth: 180,
+    sortAccessor: 'total_amount',
+    sortType: 'number',
+    align: 'right',
+    headerClassName: 'frp-table__amount-header',
+    cellClassName: 'frp-table__amount-cell',
+    minWidth: 160,
   },
   {
     key: 'description',
     header: 'Description',
     accessor: 'description',
-    minWidth: 220,
+    sortAccessor: 'description',
+    cellClassName: 'frp-table__description-cell',
+    minWidth: 200,
   },
   {
     key: 'status',
@@ -264,6 +418,9 @@ const columnsDataTableBanks = [{
     type: 'status',
     variantAccessor: getFrpStatusVariant,
     nowrap: true,
+    sortAccessor: getFrpStatusLabel,
+    align: 'center',
+    minWidth: 120,
   },
   {
     key: 'updatedAt',
@@ -271,7 +428,10 @@ const columnsDataTableBanks = [{
     accessor: 'updated_at',
     format: formatDateTime,
     nowrap: true,
-    minWidth: 170,
+    sortAccessor: 'updated_at',
+    sortType: 'date',
+    align: 'right',
+    minWidth: 160,
   },
 ]
 
@@ -296,10 +456,12 @@ function DataTableFrp({
   SwitchComponent,
   enableStatusSwitch = false,
   mobileCard,
+  pagination,
   className,
   tableWrapperStyle,
   ...props
 }) {
+  const [sortConfig, setSortConfig] = useState(null)
   const shouldRenderStatusSwitch =
     enableStatusSwitch && typeof onStatusChange === 'function' && typeof SwitchComponent === 'function'
   const defaultMobileCard = createMobileCardFrp({
@@ -419,16 +581,50 @@ function DataTableFrp({
   const autoFitColumns = resolvedColumns.map((column) =>
     scaleTableColumn(column, autoFitScale),
   )
+  const sortableColumns = autoFitColumns.map((column) => {
+    if (column.sortable === false) {
+      return column
+    }
+
+    const label = typeof column.header === 'string' ? column.header : column.key
+
+    return {
+      ...column,
+      mobileLabel: column.mobileLabel ?? label,
+      header: (
+        <SortableHeader
+          label={label}
+          columnKey={column.key}
+          align={column.align}
+          sortConfig={sortConfig}
+          onSortChange={setSortConfig}
+        />
+      ),
+    }
+  })
+  const sortedRows = useMemo(
+    () => sortRows(rows, resolvedColumns, sortConfig),
+    [rows, resolvedColumns, sortConfig],
+  )
+  const paginationConfig =
+    pagination === undefined
+      ? {
+          summary: `${rows.length} data FRP`,
+          pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
+          pageSizeOptions: [10, 25, 50, 100],
+        }
+      : pagination
 
   return (
     <DataTableAction
-      rows={rows}
-      columns={autoFitColumns}
+      rows={sortedRows}
+      columns={sortableColumns}
       actions={resolvedActions}
       useDefaultActions={false}
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
+      pagination={paginationConfig}
       mobileCard={resolvedMobileCard}
       actionCellClassName="users-table__action-cell frp-table__action-cell"
       actionCellStyle={{
@@ -437,7 +633,7 @@ function DataTableFrp({
         whiteSpace: 'nowrap',
       }}
       className={joinClassNames('vendor-banks-table--auto-fit frp-table--actions', className)}
-      tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle)}
+      tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle, rows.length)}
       {...props}
     />
   )

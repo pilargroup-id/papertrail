@@ -49,7 +49,7 @@ function TabsVendor({
         <TextField
           label="Destination Bank"
           value={formValues.destination_bank_name}
-          placeholder="BCA"
+          placeholder="Input destination bank"
           leftIcon={Banks}
           required
           disabled={isFormDisabled}
@@ -61,7 +61,7 @@ function TabsVendor({
         <TextField
           label="Destination Account"
           value={formValues.destination_bank_account}
-          placeholder="1234567890"
+          placeholder="Input destination account"
           leftIcon={CreditCard}
           required
           disabled={isFormDisabled}
@@ -73,7 +73,7 @@ function TabsVendor({
         <TextField
           label="Destination Account Name"
           value={formValues.destination_bank_account_name}
-          placeholder="PT Vendor Testing"
+          placeholder="Input destination account name"
           leftIcon={UserBank}
           required
           disabled={isFormDisabled}

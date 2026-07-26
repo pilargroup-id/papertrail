@@ -1,9 +1,10 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
+import { XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-create-frp/TabsInformation.jsx'
 import TabsItems from './tabs-create-frp/TabsItems.jsx'
 import TabsVendor from './tabs-create-frp/TabsVendor.jsx'
@@ -413,7 +414,6 @@ function getBudgetListParams(requesterInfo, canUseCrossBudget) {
 function getUserRequesterInfo(user = {}) {
   const primaryCompany = getPrimaryItem(user.companies)
   const primaryDepartment = getPrimaryItem(user.departments)
-  const companyCode = user.company_code ?? primaryCompany?.code
   const companyName = user.company ?? primaryCompany?.name ?? primaryCompany?.company_name
   const departmentId =
     user.context_department_id ??
@@ -431,7 +431,7 @@ function getUserRequesterInfo(user = {}) {
     user.department ?? primaryDepartment?.name ?? primaryDepartment?.department_name
 
   return {
-    company: [companyCode, companyName].filter(Boolean).join(' - '),
+    company: companyName ?? '',
     division: [departmentCode, departmentName].filter(Boolean).join(' - '),
     request_by: user.name ?? user.full_name ?? user.username ?? '',
     department_id: departmentId,
@@ -494,7 +494,6 @@ function DialogCreateFrp({
     resetDialogState()
     onClose?.()
   }
-  const handleCloseEvent = useEffectEvent(handleClose)
 
   const handleTabChange = (_, nextValue) => {
     setActiveTab(nextValue)
@@ -810,18 +809,10 @@ function DialogCreateFrp({
       }
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        handleCloseEvent()
-      }
-    }
-
     loadOptions()
-    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       controller.abort()
-      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen])
 
@@ -1106,7 +1097,7 @@ function DialogCreateFrp({
   }
 
   const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation" onClick={handleClose}>
+    <div className="dashboard-popup-overlay" role="presentation">
       <div
         className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
         role="dialog"
@@ -1124,6 +1115,16 @@ function DialogCreateFrp({
                 {title}
               </h2>
             </div>
+
+            <button
+              type="button"
+              className="frp-bare-icon-button frp-dialog__close-button"
+              aria-label="Tutup dialog"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              <XClose size={24} />
+            </button>
           </div>
 
           <div className="dashboard-popup__body">
@@ -1198,14 +1199,6 @@ function DialogCreateFrp({
           </div>
 
           <div className="dashboard-popup__actions">
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--secondary"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </button>
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

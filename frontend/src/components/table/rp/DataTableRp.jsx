@@ -24,6 +24,7 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
+const DEFAULT_PAGINATION_PAGE_SIZE = 10
 
 function formatDateTime(value) {
   if (!value) {
@@ -146,8 +147,10 @@ function scaleTableColumn(column, scale) {
 
 function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   return {
-    '--vendor-banks-table-cell-padding-block': getScaledRem(1, scale),
-    '--vendor-banks-table-cell-padding-inline': getScaledRem(1, scale),
+    '--data-table-action-min-height': 'min(52dvh, 520px)',
+    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
+    '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
+    '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
     '--vendor-banks-table-body-font-size': getScaledRem(0.92, scale, 0.72),
     '--vendor-banks-table-name-font-size': getScaledRem(0.98, scale, 0.74),
@@ -160,6 +163,7 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
+    marginTop: '0.75rem',
     ...tableWrapperStyle,
   }
 }
@@ -241,7 +245,8 @@ const columnsDataTableRp = [{
     accessor: 'rp_number',
     type: 'identity',
     subtitleAccessor: (rp) => `Date: ${formatDateTime(rp?.created_at)}`,
-    minWidth: 260,
+    sortAccessor: 'rp_number',
+    minWidth: 220,
   },
   {
     key: 'requestor',
@@ -249,7 +254,8 @@ const columnsDataTableRp = [{
     accessor: 'requested_by_name',
     type: 'identity',
     subtitleAccessor: (rp) => `Division  : ${rp?.department_name_snapshot ?? '-'}`,
-    minWidth: 260,
+    sortAccessor: 'requested_by_name',
+    minWidth: 220,
   },
    {
     key: 'picName',
@@ -257,7 +263,8 @@ const columnsDataTableRp = [{
     accessor: 'pic_name',
     type: 'identity',
     subtitleAccessor: (rp) => `Division  : ${rp?.destination_department_name_snapshot ?? '-'}`,
-    minWidth: 260,
+    sortAccessor: 'pic_name',
+    minWidth: 220,
   },
   {
     key: 'vendor',
@@ -265,6 +272,7 @@ const columnsDataTableRp = [{
     accessor: 'vendor_name_snapshot',
     nowrap: true,
     type: 'identity',
+    sortAccessor: 'vendor_name_snapshot',
     minWidth: 180,
   },
   {
@@ -272,13 +280,19 @@ const columnsDataTableRp = [{
     header: 'Total Amount',
     accessor: 'total_amount',
     format: formatRupiah,
-    minWidth: 180,
+    sortAccessor: 'total_amount',
+    sortType: 'number',
+    align: 'right',
+    cellClassName: 'frp-table__amount-cell',
+    minWidth: 160,
   },
   {
     key: 'description',
     header: 'Description',
     accessor: 'description',
-    minWidth: 220,
+    sortAccessor: 'description',
+    cellClassName: 'frp-table__description-cell',
+    minWidth: 200,
   },
   {
     key: 'status',
@@ -287,6 +301,9 @@ const columnsDataTableRp = [{
     type: 'status',
     variantAccessor: getFrpStatusVariant,
     nowrap: true,
+    sortAccessor: getFrpStatusLabel,
+    align: 'center',
+    minWidth: 120,
   },
   {
     key: 'updatedAt',
@@ -294,7 +311,10 @@ const columnsDataTableRp = [{
     accessor: 'updated_at',
     format: formatDateTime,
     nowrap: true,
-    minWidth: 170,
+    sortAccessor: 'updated_at',
+    sortType: 'date',
+    align: 'right',
+    minWidth: 160,
   },
 ]
 
@@ -303,7 +323,7 @@ function DataTableRp({
   columns = columnsDataTableRp,
   actions,
   getRowId = (rp, index) => rp?.id ?? index,
-  tableLabel = 'FRP table',
+  tableLabel = 'RP table',
   emptyMessage = 'Belum ada data.',
   isStatusUpdating,
   onEdit,
@@ -322,6 +342,7 @@ function DataTableRp({
   SwitchComponent,
   enableStatusSwitch = false,
   mobileCard,
+  pagination,
   className,
   tableWrapperStyle,
   ...props
@@ -417,7 +438,7 @@ function DataTableRp({
     typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
       ? {
           key: 'edit',
-          label: useCheckDataAction ? 'Check Data' : 'Edit FRP',
+          label: useCheckDataAction ? 'Check Data' : 'Edit RP',
           buttonComponent: useCheckDataAction ? ButtonCheckDataRp : ButtonEditRp,
           mobileButtonComponent: MobileButtonEditRp,
           mobilePlacement: 'header-start',
@@ -448,6 +469,14 @@ function DataTableRp({
   const autoFitColumns = resolvedColumns.map((column) =>
     scaleTableColumn(column, autoFitScale),
   )
+  const paginationConfig =
+    pagination === undefined
+      ? {
+          summary: `${rows.length} data RP`,
+          pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
+          pageSizeOptions: [10, 25, 50, 100],
+        }
+      : pagination
 
   return (
     <DataTableAction
@@ -458,6 +487,9 @@ function DataTableRp({
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
+      pagination={paginationConfig}
+      enableSorting
+      compactForSparseRows
       mobileCard={resolvedMobileCard}
       actionCellClassName="users-table__action-cell rp-table__action-cell"
       actionCellStyle={{

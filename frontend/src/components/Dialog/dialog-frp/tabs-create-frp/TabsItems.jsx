@@ -8,6 +8,8 @@ import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
 import { Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
 
 const fallbackCurrencyOptions = [{ value: 'IDR', label: 'IDR - Indonesian Rupiah' }]
+const currenciesPageSize = 100
+const maxCurrencyPages = 100
 
 function toNumber(value) {
   const normalizedValue = Number(value)
@@ -28,8 +30,20 @@ function getRowsFromResponse(response) {
     return response.data.data
   }
 
+  if (Array.isArray(response?.data?.items)) {
+    return response.data.items
+  }
+
+  if (Array.isArray(response?.data?.data?.items)) {
+    return response.data.data.items
+  }
+
   if (Array.isArray(response?.rows)) {
     return response.rows
+  }
+
+  if (Array.isArray(response?.items)) {
+    return response.items
   }
 
   return []
@@ -37,6 +51,97 @@ function getRowsFromResponse(response) {
 
 function getResponseData(response) {
   return response?.data?.data ?? response?.data ?? response ?? {}
+}
+
+function toPositiveInteger(value) {
+  const numberValue = Number(value)
+
+  return Number.isInteger(numberValue) && numberValue > 0 ? numberValue : null
+}
+
+function getFirstPositiveInteger(values) {
+  for (const value of values) {
+    const numberValue = toPositiveInteger(value)
+
+    if (numberValue !== null) {
+      return numberValue
+    }
+  }
+
+  return null
+}
+
+function getTotalCurrencyPages(response, fallbackRowsCount) {
+  const data = getResponseData(response)
+  const pagination = data?.pagination ?? data?.meta ?? response?.pagination ?? response?.meta ?? {}
+  const totalPages = getFirstPositiveInteger([
+    data?.total_pages,
+    data?.totalPages,
+    data?.last_page,
+    data?.lastPage,
+    pagination?.total_pages,
+    pagination?.totalPages,
+    pagination?.last_page,
+    pagination?.lastPage,
+  ])
+
+  if (totalPages !== null) {
+    return totalPages
+  }
+
+  const totalRows = getFirstPositiveInteger([
+    data?.total,
+    data?.total_rows,
+    data?.totalRows,
+    data?.total_items,
+    data?.totalItems,
+    pagination?.total,
+    pagination?.total_rows,
+    pagination?.totalRows,
+    pagination?.total_items,
+    pagination?.totalItems,
+  ])
+
+  if (totalRows !== null) {
+    return Math.max(1, Math.ceil(totalRows / currenciesPageSize))
+  }
+
+  return fallbackRowsCount >= currenciesPageSize ? null : 1
+}
+
+async function loadAllActiveCurrencies(signal) {
+  const currencies = []
+  let page = 1
+  let totalPages = null
+
+  while (page <= (totalPages ?? maxCurrencyPages)) {
+    const response = await api.currencies.list(
+      {
+        page,
+        limit: currenciesPageSize,
+        is_active: 1,
+      },
+      {
+        signal,
+      },
+    )
+    const rows = getRowsFromResponse(response)
+
+    currencies.push(...rows)
+    totalPages = totalPages ?? getTotalCurrencyPages(response, rows.length)
+
+    if (totalPages === null && rows.length < currenciesPageSize) {
+      break
+    }
+
+    if (totalPages !== null && page >= totalPages) {
+      break
+    }
+
+    page += 1
+  }
+
+  return currencies
 }
 
 function mapCurrencyOptions(currencies) {
@@ -119,17 +224,8 @@ function TabsItems({
       setIsCurrenciesLoading(true)
 
       try {
-        const response = await api.currencies.list(
-          {
-            page: 1,
-            limit: 100,
-            is_active: 1,
-          },
-          {
-            signal: controller.signal,
-          },
-        )
-        const nextCurrencyOptions = mapCurrencyOptions(getRowsFromResponse(response))
+        const currencies = await loadAllActiveCurrencies(controller.signal)
+        const nextCurrencyOptions = mapCurrencyOptions(currencies)
 
         setCurrencyOptions(
           nextCurrencyOptions.length > 0 ? nextCurrencyOptions : fallbackCurrencyOptions,
@@ -327,7 +423,7 @@ function TabsItems({
                 <TextField
                   label="Quantity"
                   value={item.quantity}
-                  placeholder="1"
+                  placeholder="Input quantity"
                   leftIcon={Table01}
                   type="number"
                   inputMode="numeric"
@@ -354,7 +450,7 @@ function TabsItems({
                 <TextField
                   label={`Unit Price (${currencyCode || 'IDR'})`}
                   value={item.unit_price}
-                  placeholder="100000"
+                  placeholder="Input unit price"
                   leftIcon={TrendingUp}
                   type="number"
                   min="0"
@@ -378,7 +474,7 @@ function TabsItems({
                 <TextArea
                   label="Memo"
                   value={item.memo}
-                  placeholder="Pembayaran invoice vendor"
+                  placeholder="Input memo"
                   rows={3}
                   required
                   disabled={isFormDisabled}

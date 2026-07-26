@@ -4,6 +4,7 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
+import { XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-create-rp/TabsInformation.jsx'
 import TabsItems from './tabs-create-rp/TabsItems.jsx'
 import TabsVendor from './tabs-create-rp/TabsVendor.jsx'
@@ -804,7 +805,7 @@ function DialogEditRp({
   }
 
   const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation" onClick={handleClose}>
+    <div className="dashboard-popup-overlay" role="presentation">
       <div
         className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
         role="dialog"
@@ -822,6 +823,16 @@ function DialogEditRp({
                 {title}
               </h2>
             </div>
+
+            <button
+              type="button"
+              className="frp-bare-icon-button frp-dialog__close-button"
+              aria-label="Tutup dialog"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              <XClose size={24} />
+            </button>
           </div>
 
           <div className="dashboard-popup__body">
@@ -896,14 +907,6 @@ function DialogEditRp({
           </div>
 
           <div className="dashboard-popup__actions">
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--secondary"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </button>
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

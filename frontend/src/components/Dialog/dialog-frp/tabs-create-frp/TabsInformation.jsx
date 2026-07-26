@@ -67,7 +67,7 @@ function TabsInformation({
         <TextField
           label="Internal PO Number"
           value={formValues.internal_po_number}
-          placeholder="PO-TEST-001"
+          placeholder="Input internal PO number"
           leftIcon={Code}
           disabled={isFormDisabled}
           error={fieldErrors.internal_po_number}
@@ -92,7 +92,7 @@ function TabsInformation({
         <TextField
           label="External Document Number"
           value={formValues.external_document_number}
-          placeholder="INV-TEST-001"
+          placeholder="Input external document number"
           leftIcon={FileText01}
           required
           disabled={isFormDisabled}
@@ -104,7 +104,7 @@ function TabsInformation({
         <TextArea
           label="Description"
           value={formValues.description}
-          placeholder="Pembayaran invoice vendor"
+          placeholder="Input description"
           rows={4}
           required
           disabled={isFormDisabled}

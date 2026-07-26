@@ -94,6 +94,7 @@ function AppLayout({
     : isRpPage
       ? createMobileRpHeaderTabs({
           activeStatus: mobileRpStatusFilter,
+          currentUser,
           onStatusChange: setMobileRpStatusFilter,
         })
     : undefined

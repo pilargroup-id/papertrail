@@ -16,7 +16,7 @@ async function getLatestExchangeRate(req, res) {
     const data = await currencyService.getLatestExchangeRate(
       req.query.currency_code,
       {
-        maxDate: req.query.max_date || null,
+        maxDate: req.query.max_date || req.query.date || null,
       }
     );
 

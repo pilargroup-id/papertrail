@@ -4,6 +4,7 @@ import api from '../../services/api.js';
 import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
+  isManagerUser,
 } from '../../components/table/rp/rp-button-access.js';
 
 // DataTable
@@ -141,6 +142,18 @@ function isCurrentUserDestinationDepartment(rp, user) {
   return getAuthDepartmentIds(user).some(
     (departmentId) => String(departmentId) === String(destinationDepartmentId),
   )
+}
+
+function canCurrentUserDestinationCheckRp(rp, user) {
+  return !isManagerUser(user) && isCurrentUserDestinationDepartment(rp, user)
+}
+
+function canCurrentUserSeeRpStatus(rp, user) {
+  if (getFrpStatusValue(rp) !== 'PENDING_DESTINATION_CHECKER') {
+    return true
+  }
+
+  return canCurrentUserDestinationCheckRp(rp, user)
 }
 
 function getFrpEditLabel(rp) {
@@ -671,17 +684,25 @@ function RpPage(props) {
     [rp],
   )
   const hasActiveRpFilter = Boolean(rpFilters.requestBy || rpFilters.vendor)
-  const rpTabsWithCounts = rpProcessStatusTabs.map((tab) => ({
+  const canUseDestinationChecker = Boolean(currentUser) && !isManagerUser(currentUser)
+  const availableRpProcessStatusTabs = rpProcessStatusTabs.filter(
+    (tab) => tab.id !== 'PENDING_DESTINATION_CHECKER' || canUseDestinationChecker,
+  )
+
+  useEffect(() => {
+    if (activeRpStatus === 'PENDING_DESTINATION_CHECKER' && !canUseDestinationChecker) {
+      setActiveRpStatus(RP_DEFAULT_STATUS)
+    }
+  }, [activeRpStatus, canUseDestinationChecker, setActiveRpStatus])
+
+  const rpTabsWithCounts = availableRpProcessStatusTabs.map((tab) => ({
     ...tab,
     count: rp.filter((rpItem) => {
       const status = getFrpStatusValue(rpItem)
-      const matchesDestinationCheckerDivision =
-        tab.id !== 'PENDING_DESTINATION_CHECKER' ||
-        isCurrentUserDestinationDepartment(rpItem, currentUser)
 
       return (
         matchesStatusFilter(status, tab.id) &&
-        matchesDestinationCheckerDivision &&
+        canCurrentUserSeeRpStatus(rpItem, currentUser) &&
         matchesRpFilters(rpItem, rpFilters)
       )
     }).length,
@@ -689,13 +710,10 @@ function RpPage(props) {
   const visibleFrp = rp.filter((rpItem) => {
     const status = getFrpStatusValue(rpItem)
     const matchesRpStatusFilter = matchesStatusFilter(status, activeRpStatus)
-    const matchesDestinationCheckerDivision =
-      activeRpStatus !== 'PENDING_DESTINATION_CHECKER' ||
-      isCurrentUserDestinationDepartment(rpItem, currentUser)
 
     return (
       matchesRpStatusFilter &&
-      matchesDestinationCheckerDivision &&
+      canCurrentUserSeeRpStatus(rpItem, currentUser) &&
       matchesRpFilters(rpItem, rpFilters)
     )
   })
@@ -818,7 +836,7 @@ function RpPage(props) {
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canCheckData={(row) =>
             getFrpStatusValue(row) === 'PENDING_DESTINATION_CHECKER' &&
-            isCurrentUserDestinationDepartment(row, currentUser)
+            canCurrentUserDestinationCheckRp(row, currentUser)
           }
           useCheckDataAction={isDestinationCheckerTab}
           isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
@@ -835,7 +853,7 @@ function RpPage(props) {
                         isDestinationCheckerTab
                           ? !(
                               getFrpStatusValue(rp) === 'PENDING_DESTINATION_CHECKER' &&
-                              isCurrentUserDestinationDepartment(rp, currentUser)
+                              canCurrentUserDestinationCheckRp(rp, currentUser)
                             )
                           : !canCurrentUserEditFrp(rp, currentUser),
                       onClick: isDestinationCheckerTab ? openCheckDataDialog : openMobileEditPage,

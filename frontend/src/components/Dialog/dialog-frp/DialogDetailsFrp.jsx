@@ -5,7 +5,7 @@ import api from '../../../services/api.js'
 import DataTable from '../../table/DataTable.jsx'
 
 import ButtonAttachmentsFrp from '../../button/button-frp/ButtonAttachmentsFrp.jsx'
-import { Download } from '../../layoute/TemplateIcons.jsx'
+import { Download, XClose } from '../../layoute/TemplateIcons.jsx'
 
 function isBlankValue(value) {
   return value === undefined || value === null || value === ''
@@ -701,7 +701,7 @@ function DialogDetailsFrp({
   const dialogTitle = title || `Detail ${frp?.frp_number ?? frpId ?? 'FRP'}`
 
   const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation" onClick={onClose}>
+    <div className="dashboard-popup-overlay" role="presentation">
       <div
         className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp frp-details-popup"
         role="dialog"
@@ -716,6 +716,15 @@ function DialogDetailsFrp({
               {dialogTitle}
             </h2>
           </div>
+
+          <button
+            type="button"
+            className="frp-bare-icon-button frp-dialog__close-button"
+            aria-label="Tutup dialog"
+            onClick={onClose}
+          >
+            <XClose size={24} />
+          </button>
         </div>
 
         <div className="dashboard-popup__body">
@@ -842,15 +851,6 @@ function DialogDetailsFrp({
           </div>
         </div>
 
-        <div className="dashboard-popup__actions">
-          <button
-            type="button"
-            className="dashboard-popup__button dashboard-popup__button--secondary"
-            onClick={onClose}
-          >
-            Tutup
-          </button>
-        </div>
       </div>
     </div>
   )

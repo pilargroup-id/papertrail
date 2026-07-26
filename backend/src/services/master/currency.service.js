@@ -354,7 +354,7 @@ async function createManualExchangeRate(body = {}, user = {}) {
       buy_rate: body.buy_rate ?? null,
       sell_rate: body.sell_rate ?? null,
       middle_rate: body.middle_rate,
-      source_name: body.source_name || `Manual input by ${user.name || 'user'}`,
+      source_name: body.source_name || body.source || `Manual input by ${user.name || 'user'}`,
       source_url: body.source_url || null,
       fetched_at: new Date(),
     });

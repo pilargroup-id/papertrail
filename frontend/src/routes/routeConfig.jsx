@@ -17,6 +17,7 @@ import VendorBanksPage from '../pages/master/vendors/vendors-banks-account/Vendo
 import BudgetPages from '../pages/master/budgets/budget/BudgetPage.jsx';
 import BudgetTypePage from '../pages/master/budgets/budget-type/BudgetTypePage.jsx';
 import BudgetAccessPage from '../pages/master/budgets/budget-access/BudgetAccessPage.jsx';
+import CurrenciesPage from '../pages/master/budgets/currencies/CurrenciesPage.jsx';
 
 // Document Management
 import FrpDocumentsType from '../pages/master/document-setting/frp-document-types/FrpDocumentsType.jsx';
@@ -24,8 +25,8 @@ import ExternalDocumentTypes from '../pages/master/document-setting/external-doc
 import PaymentMethods from '../pages/master/document-setting/payment-methods/PaymentMethods.jsx';
 
 // Config
-import RpDestinationsDepartments from '../pages/master/config/rp-destination-departments/RpDestinationsDepartments.jsx';
-import RpCheckerRules from '../pages/master/config/rp-checker-rules/RpCheckerRules.jsx';
+// import RpDestinationsDepartments from '../pages/master/config/rp-destination-departments/RpDestinationsDepartments.jsx';
+// import RpCheckerRules from '../pages/master/config/rp-checker-rules/RpCheckerRules.jsx';
 import RpPaymentCategories from '../pages/master/config/rp-payment-categories/RpPaymentCategories.jsx';
 
 // Permission
@@ -55,13 +56,14 @@ export default function RouteConfig() {
         <Route path="Master/Budgets" element={<BudgetPages />} />
         <Route path="Master/Budget-type" element={<BudgetTypePage/>} />
         <Route path="Master/Budget-access" element={<BudgetAccessPage/>} />
+        <Route path="Master/Currencies" element={<CurrenciesPage/>} />
         {/* Documents Management  */}
         <Route path="Master/Frp-docs-type" element={<FrpDocumentsType/>} />
         <Route path="Master/External-document-Types" element={<ExternalDocumentTypes/>} />
         <Route path="Master/Payment-methods" element={<PaymentMethods/>} />
         {/* Config */}
-        <Route path="Master/Rp-destination-departments" element={<RpDestinationsDepartments/>} />
-        <Route path="Master/Rp-checker-rules" element={<RpCheckerRules/>} />
+        {/* <Route path="Master/Rp-destination-departments" element={<RpDestinationsDepartments/>} />
+        <Route path="Master/Rp-checker-rules" element={<RpCheckerRules/>} /> */}
         <Route path="Master/Rp-payment-categories" element={<RpPaymentCategories/>} />
         {/* Permission */}
         <Route path="Master/permission-modules" element={<PermissionModules/>} />

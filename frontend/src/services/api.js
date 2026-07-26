@@ -526,6 +526,8 @@ const api = {
     exchangeRates: {
       latest: (params, options) =>
         api.get('/master/currencies/exchange-rates/latest', { ...options, params }),
+      manualCreate: (data, options) =>
+        api.post('/master/currencies/exchange-rates', data, options),
     },
   },
 

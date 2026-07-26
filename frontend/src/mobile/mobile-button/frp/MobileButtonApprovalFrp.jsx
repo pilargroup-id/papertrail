@@ -1,7 +1,7 @@
 import { Check } from '../../../components/layoute/TemplateIcons.jsx'
 
 function MobileButtonApprovalFrp({
-  label = 'Approval',
+  label = 'Approve',
   description = '',
   icon: Icon = Check,
   size = 16,

@@ -683,7 +683,7 @@ function FrpPage(props) {
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}
           emptyMessage={filteredEmptyMessage}
-          tableWrapperStyle={{ marginTop: '0.75rem' }}
+          tableWrapperStyle={{ marginTop: '0.65rem' }}
           SwitchComponent={Switch}
           onEdit={openEditDialog}
           onDetails={openDetailsDialog}
