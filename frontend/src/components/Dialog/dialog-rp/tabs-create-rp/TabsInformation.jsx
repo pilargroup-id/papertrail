@@ -1,4 +1,3 @@
-import TextArea from '../../../forms/TextArea.jsx'
 import TextField from '../../../forms/TextField.jsx'
 import { Banks, Calendar01, Table01, Users01 } from '../../../layoute/TemplateIcons.jsx'
 
@@ -52,18 +51,6 @@ function TabsInformation({
           disabled={isFormDisabled}
           error={fieldErrors.date_required}
           onChange={(event) => updateValue('date_required', event.target.value)}
-        />
-      </div>
-      <div className="register-user-popup__field register-user-popup__field--full">
-        <TextArea
-          label="Description"
-          value={formValues.description}
-          placeholder="Request pembelian kebutuhan department"
-          rows={4}
-          required
-          disabled={isFormDisabled}
-          error={fieldErrors.description}
-          onChange={(event) => updateValue('description', event.target.value)}
         />
       </div>
     </div>

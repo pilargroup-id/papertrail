@@ -16,6 +16,7 @@ function MobileCreateFrp({
     activeTabId: activeStatus,
     onTabChange: onStatusChange,
     ariaLabel: 'Filter status FRP',
+    variant: 'dropdown',
   }
 }
 

@@ -1694,6 +1694,11 @@ width: var(--sidebar-collapsed-width);
   background: #ffffff;
 }
 
+.dashboard-popup__actions--with-total {
+  justify-content: space-between;
+  align-items: center;
+}
+
 .dashboard-popup__button {
   min-width: 104px;
   display: inline-flex;
@@ -6706,6 +6711,13 @@ width: var(--sidebar-collapsed-width);
   background: rgba(26, 42, 87, 0.06);
 }
 
+.frp-dialog__total-amount--footer {
+  min-height: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
 .frp-dialog__total-amount-icon {
   display: inline-flex;
   align-items: center;
@@ -7928,12 +7940,86 @@ width: var(--sidebar-collapsed-width);
     transform: scaleX(1);
   }
 
+  .mobile-header-tabs__select {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    align-self: center;
+    flex: 0 0 auto;
+    height: 30px;
+    margin-left: 1rem;
+    padding: 0 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .mobile-header-tabs__select:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .mobile-header-tabs__select:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.72);
+    outline-offset: 2px;
+  }
+
+  .mobile-header-tabs-dropdown {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2400;
+    display: grid;
+    max-height: min(60vh, 420px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background: var(--primary-blue);
+  }
+
+  .mobile-header-tabs-dropdown::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .mobile-header-tabs-dropdown__option {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    transition:
+      color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .mobile-header-tabs-dropdown__option:hover,
+  .mobile-header-tabs-dropdown__option:focus-visible {
+    outline: none;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-header-tabs-dropdown__option.active {
+    color: var(--accent-gold);
+  }
+
   .mobile-header-tabs__actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 0.25rem;
     flex: 0 0 auto;
+    margin-left: auto;
     padding: 0 0.85rem 0 0;
   }
 
@@ -8189,6 +8275,53 @@ width: var(--sidebar-collapsed-width);
     line-height: 1.25;
   }
 
+  .frp-mobile-create-page__header.frp-mobile-create-page__header--with-tabs {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+    padding: 0.35rem 0.1rem 0;
+  }
+
+  .frp-mobile-create-page__header--with-tabs .frp-mobile-create-page__header-top {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.6rem;
+    padding-bottom: 0.3rem;
+  }
+
+  .frp-mobile-create-page__header--with-tabs .frp-mobile-create-page__back {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .frp-mobile-create-page__header--with-tabs .frp-mobile-create-page__eyebrow {
+    margin: 0 0 0.08rem;
+    font-size: 0.65rem;
+  }
+
+  .frp-mobile-create-page__header--with-tabs .frp-mobile-create-page__title {
+    font-size: 0.96rem;
+    line-height: 1.2;
+  }
+
+  .frp-mobile-create-page__header--with-tabs .frp-dialog__tabs-shell {
+    position: static;
+    margin: 0 -0.1rem;
+    padding: 0 0.1rem 0.35rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .frp-mobile-create-page__header--with-tabs .frp-dialog__tabs {
+    width: 100%;
+    min-height: 34px;
+  }
+
   .frp-mobile-create-page__form {
     width: 100%;
     border: 0;
@@ -8270,6 +8403,32 @@ width: var(--sidebar-collapsed-width);
 
   .frp-mobile-create-page__body .frp-dialog__mui-tab.Mui-selected {
     border-color: rgba(26, 42, 87, 0.16);
+  }
+
+  .frp-mobile-create-page .frp-dialog__tabs.frp-dialog__tabs--underline .MuiTabs-list {
+    width: 100%;
+    gap: 0.25rem;
+    padding: 0;
+  }
+
+  .frp-mobile-create-page .frp-dialog__mui-tab.frp-dialog__mui-tab--underline {
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #7a869e;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .frp-mobile-create-page .frp-dialog__mui-tab.frp-dialog__mui-tab--underline:hover {
+    background: rgba(26, 42, 87, 0.05);
+  }
+
+  .frp-mobile-create-page .frp-dialog__mui-tab.frp-dialog__mui-tab--underline.Mui-selected {
+    background: transparent;
+    color: var(--primary-blue);
+    font-weight: 800;
   }
 
   .frp-mobile-create-page__body .frp-dialog__panel {

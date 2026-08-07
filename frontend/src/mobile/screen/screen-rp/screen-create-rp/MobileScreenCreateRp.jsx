@@ -4,7 +4,7 @@ import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
 import api from '../../../../services/api.js'
-import { ChevronLeft } from '../../../../components/layoute/TemplateIcons.jsx'
+import { ChevronLeft, FileText01, Table01 } from '../../../../components/layoute/TemplateIcons.jsx'
 import MobileTabsInformation from './tabs-create-mobile/TabsInformation.jsx'
 import MobileTabsItems from './tabs-create-mobile/TabsItems.jsx'
 import MobileTabsVendor from './tabs-create-mobile/TabsVendor.jsx'
@@ -57,15 +57,13 @@ const initialRequesterInfo = {
 const rpTabs = [
   {
     id: 'information',
-    label: 'Information',
-  },
-  {
-    id: 'vendor',
-    label: 'Vendor',
+    label: 'Info & Vendor',
+    icon: FileText01,
   },
   {
     id: 'items',
     label: 'Items',
+    icon: Table01,
   },
 ]
 
@@ -115,12 +113,11 @@ function mapVendorOptions(vendors) {
 function mapPaymentCategoryOptions(categories) {
   return categories.map((category) => {
     const id = getFirstValue(category, ['id', 'payment_category_id'])
-    const code = getFirstValue(category, ['code'])
     const name = getFirstValue(category, ['name'], `Category #${id ?? '-'}`)
 
     return {
       value: id,
-      label: [code, name].filter(Boolean).join(' - '),
+      label: name,
     }
   })
 }
@@ -496,15 +493,15 @@ function MobileScreenCreateRp({
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
 
-      if (nextFieldErrors.date_required || nextFieldErrors.description) {
-        setActiveTab('information')
-      } else if (
+      if (
+        nextFieldErrors.date_required ||
+        nextFieldErrors.description ||
         nextFieldErrors.vendor_id ||
         nextFieldErrors.payment_category_id ||
         nextFieldErrors.destination_department_id ||
         nextFieldErrors.pic_name
       ) {
-        setActiveTab('vendor')
+        setActiveTab('information')
       } else {
         setActiveTab('items')
       }
@@ -556,29 +553,26 @@ function MobileScreenCreateRp({
   const renderActivePanel = () => {
     if (activeTab === 'information') {
       return (
-        <MobileTabsInformation
-          requesterInfo={requesterInfo}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          updateValue={updateValue}
-        />
-      )
-    }
-
-    if (activeTab === 'vendor') {
-      return (
-        <MobileTabsVendor
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          vendorOptions={vendorOptions}
-          paymentCategoryOptions={paymentCategoryOptions}
-          destinationDepartmentOptions={destinationDepartmentOptions}
-          updateValue={updateValue}
-        />
+        <>
+          <MobileTabsInformation
+            requesterInfo={requesterInfo}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            updateValue={updateValue}
+          />
+          <MobileTabsVendor
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            vendorOptions={vendorOptions}
+            paymentCategoryOptions={paymentCategoryOptions}
+            destinationDepartmentOptions={destinationDepartmentOptions}
+            updateValue={updateValue}
+          />
+        </>
       )
     }
 
@@ -595,6 +589,65 @@ function MobileScreenCreateRp({
       />
     )
   }
+
+  const tabsNode = (
+    <div className="frp-dialog__tabs-shell">
+      <Tabs
+        value={activeTab}
+        onChange={handleTabChange}
+        textColor="primary"
+        indicatorColor="primary"
+        aria-label="RP tabs"
+        variant="fullWidth"
+        className={
+          isScreenMode ? 'frp-dialog__tabs frp-dialog__tabs--underline' : 'frp-dialog__tabs'
+        }
+        sx={{
+          minHeight: isScreenMode ? 36 : 44,
+          '& .MuiTabs-indicator': {
+            height: 3,
+            borderRadius: 999,
+            backgroundColor: 'var(--primary-blue)',
+          },
+        }}
+      >
+        {rpTabs.map((tab) => {
+          const TabIcon = tab.icon
+
+          return (
+            <Tab
+              key={tab.id}
+              id={`rp-tab-${tab.id}`}
+              aria-controls={`rp-panel-${tab.id}`}
+              value={tab.id}
+              label={tab.label}
+              icon={TabIcon ? <TabIcon size={15} aria-hidden="true" /> : undefined}
+              iconPosition="start"
+              disableRipple
+              className={
+                isScreenMode
+                  ? 'frp-dialog__mui-tab frp-dialog__mui-tab--underline'
+                  : 'frp-dialog__mui-tab'
+              }
+              sx={{
+                minHeight: isScreenMode ? 36 : 44,
+                minWidth: 0,
+                padding: isScreenMode ? '0.4rem 0.3rem' : undefined,
+                fontSize: isScreenMode ? '0.76rem' : '0.86rem',
+                letterSpacing: 0,
+                textTransform: 'none',
+                gap: '0.3rem',
+                '& .MuiTab-icon': {
+                  marginRight: 0,
+                  flexShrink: 0,
+                },
+              }}
+            />
+          )
+        })}
+      </Tabs>
+    </div>
+  )
 
   const formNode = (
     <form
@@ -625,66 +678,7 @@ function MobileScreenCreateRp({
                         : 'frp-dialog__tabbed-container'
                     }
                   >
-                    <div className="frp-dialog__tabs-shell">
-                      <Tabs
-                        value={activeTab}
-                        onChange={handleTabChange}
-                        textColor="primary"
-                        indicatorColor="primary"
-                        aria-label="RP tabs"
-                        variant={isScreenMode ? 'scrollable' : 'fullWidth'}
-                        scrollButtons={false}
-                        allowScrollButtonsMobile
-                        className="frp-dialog__tabs"
-                        sx={{
-                          minHeight: isScreenMode ? 38 : 44,
-                          '& .MuiTabs-flexContainer': {
-                            gap: isScreenMode ? '0.35rem' : '0.4rem',
-                            justifyContent: isScreenMode ? 'flex-start' : 'initial',
-                          },
-                          '& .MuiTabs-indicator': {
-                            display: isScreenMode ? 'none' : 'block',
-                            height: 2,
-                            borderRadius: 999,
-                            backgroundColor: 'var(--primary-blue)',
-                          },
-                        }}
-                      >
-                        {rpTabs.map((tab) => (
-                          <Tab
-                            key={tab.id}
-                            id={`rp-tab-${tab.id}`}
-                            aria-controls={`rp-panel-${tab.id}`}
-                            value={tab.id}
-                            label={tab.label}
-                            disableRipple
-                            className="frp-dialog__mui-tab"
-                            sx={{
-                              minHeight: isScreenMode ? 36 : 44,
-                              minWidth: isScreenMode ? 'auto' : undefined,
-                              flex: isScreenMode ? '0 0 auto' : undefined,
-                              borderRadius: isScreenMode ? '999px' : '10px 10px 0 0',
-                              padding: isScreenMode ? '0.45rem 0.78rem' : undefined,
-                              color: '#607089',
-                              fontSize: isScreenMode ? '0.78rem' : '0.86rem',
-                              fontWeight: 700,
-                              letterSpacing: 0,
-                              textTransform: 'none',
-                              transition: 'background-color 0.2s ease, color 0.2s ease',
-                              '&.Mui-selected': {
-                                color: 'var(--primary-blue)',
-                                backgroundColor: isScreenMode
-                                  ? '#ffffff'
-                                  : 'rgba(26, 42, 87, 0.08)',
-                                boxShadow: isScreenMode
-                                  ? '0 6px 14px rgba(16, 28, 54, 0.1)'
-                                  : 'none',
-                              },
-                            }}
-                          />
-                        ))}
-                      </Tabs>
-                    </div>
+                    {!isScreenMode ? tabsNode : null}
 
                     <div
                       className="frp-dialog__panel"
@@ -740,22 +734,26 @@ function MobileScreenCreateRp({
   if (isScreenMode) {
     return (
       <section className="frp-mobile-detail-page frp-mobile-create-page" aria-label={title}>
-        <header className="frp-mobile-create-page__header">
-          <button
-            className="frp-mobile-create-page__back"
-            type="button"
-            onClick={handleClose}
-            aria-label="Kembali ke daftar RP"
-            disabled={isSubmitting}
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <div className="frp-mobile-create-page__heading">
-            <p className="frp-mobile-create-page__eyebrow">
-              {eyebrow} - {activeStepLabel}
-            </p>
-            <h2 className="frp-mobile-create-page__title">{title}</h2>
+        <header className="frp-mobile-create-page__header frp-mobile-create-page__header--with-tabs">
+          <div className="frp-mobile-create-page__header-top">
+            <button
+              className="frp-mobile-create-page__back"
+              type="button"
+              onClick={handleClose}
+              aria-label="Kembali ke daftar RP"
+              disabled={isSubmitting}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <div className="frp-mobile-create-page__heading">
+              <p className="frp-mobile-create-page__eyebrow">
+                {eyebrow} - {activeStepLabel}
+              </p>
+              <h2 className="frp-mobile-create-page__title">{title}</h2>
+            </div>
           </div>
+
+          {tabsNode}
         </header>
 
         <div className="register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp frp-mobile-create-page__form">

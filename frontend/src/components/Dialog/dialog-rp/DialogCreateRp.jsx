@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
-import { XClose } from '../../layoute/TemplateIcons.jsx'
+import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-create-rp/TabsInformation.jsx'
 import TabsItems from './tabs-create-rp/TabsItems.jsx'
 import TabsVendor from './tabs-create-rp/TabsVendor.jsx'
@@ -50,11 +50,7 @@ const initialRequesterInfo = {
 const rpTabs = [
   {
     id: 'information',
-    label: 'Information',
-  },
-  {
-    id: 'vendor',
-    label: 'Vendor',
+    label: 'Information & Vendor',
   },
   {
     id: 'items',
@@ -108,12 +104,11 @@ function mapVendorOptions(vendors) {
 function mapPaymentCategoryOptions(categories) {
   return categories.map((category) => {
     const id = getFirstValue(category, ['id', 'payment_category_id'])
-    const code = getFirstValue(category, ['code'])
     const name = getFirstValue(category, ['name'], `Category #${id ?? '-'}`)
 
     return {
       value: id,
-      label: [code, name].filter(Boolean).join(' - '),
+      label: name,
     }
   })
 }
@@ -152,6 +147,48 @@ function mapBudgetOptions(budgets) {
       },
     }
   })
+}
+
+function getUserDisplayName(user) {
+  const name = getFirstValue(user, ['full_name', 'fullName', 'name', 'display_name', 'employee_name'])
+
+  return typeof name === 'string' ? name.trim() : ''
+}
+
+function userBelongsToDepartment(user, departmentId) {
+  const targetId = Number(departmentId)
+
+  if (!targetId) {
+    return false
+  }
+
+  const departments = Array.isArray(user?.departments) ? user.departments : []
+
+  return departments.some((department) => {
+    const departmentIds = [department?.id, department?.department_id, department?.class_department_id]
+
+    return departmentIds.some((id) => Number(id) === targetId)
+  })
+}
+
+function mapPicOptions(users, departmentId) {
+  const seenNames = new Set()
+
+  return users
+    .filter((user) => userBelongsToDepartment(user, departmentId))
+    .reduce((options, user) => {
+      const name = getUserDisplayName(user)
+
+      if (!name || seenNames.has(name)) {
+        return options
+      }
+
+      seenNames.add(name)
+      options.push({ value: name, label: name })
+
+      return options
+    }, [])
+    .sort((a, b) => a.label.localeCompare(b.label))
 }
 
 function getAuthUser(response) {
@@ -199,6 +236,20 @@ function getUserRequesterInfo(user = {}) {
   }
 }
 
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(numberValue)
+}
+
 function isPositiveIntegerInput(value) {
   const normalizedValue = String(value ?? '').trim()
   const numberValue = Number(normalizedValue)
@@ -222,9 +273,15 @@ function DialogCreateRp({
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
+  const [userDirectory, setUserDirectory] = useState([])
   const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
+
+  const picOptions = useMemo(
+    () => mapPicOptions(userDirectory, formValues.destination_department_id),
+    [userDirectory, formValues.destination_department_id],
+  )
 
   const resetDialogState = useCallback(() => {
     setFormValues(createInitialFormValues())
@@ -236,6 +293,7 @@ function DialogCreateRp({
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
     setBudgetOptions([])
+    setUserDirectory([])
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
@@ -247,20 +305,39 @@ function DialogCreateRp({
   }, [onClose, resetDialogState])
 
   const updateValue = (fieldName, value) => {
-    setFormValues((currentValues) => ({
-      ...currentValues,
-      [fieldName]: value,
-    }))
-
-    setFieldErrors((currentErrors) => {
-      if (!currentErrors[fieldName]) {
-        return currentErrors
+    setFormValues((currentValues) => {
+      if (
+        fieldName === 'destination_department_id' &&
+        currentValues.destination_department_id !== value
+      ) {
+        return {
+          ...currentValues,
+          destination_department_id: value,
+          pic_name: '',
+        }
       }
 
       return {
-        ...currentErrors,
-        [fieldName]: '',
+        ...currentValues,
+        [fieldName]: value,
       }
+    })
+
+    setFieldErrors((currentErrors) => {
+      const fieldsToClear =
+        fieldName === 'destination_department_id' ? [fieldName, 'pic_name'] : [fieldName]
+
+      if (!fieldsToClear.some((field) => currentErrors[field])) {
+        return currentErrors
+      }
+
+      const nextErrors = { ...currentErrors }
+
+      fieldsToClear.forEach((field) => {
+        nextErrors[field] = ''
+      })
+
+      return nextErrors
     })
   }
 
@@ -330,6 +407,7 @@ function DialogCreateRp({
           paymentCategoriesResponse,
           destinationDepartmentsResponse,
           budgetsResponse,
+          usersResponse,
         ] = await Promise.all([
           api.auth.me({
             signal: controller.signal,
@@ -374,6 +452,9 @@ function DialogCreateRp({
               signal: controller.signal,
             },
           ),
+          api.directory.users.list(undefined, {
+            signal: controller.signal,
+          }),
         ])
         const authUser = getAuthUser(authResponse)
         const nextRequesterInfo = getUserRequesterInfo(authUser)
@@ -384,7 +465,6 @@ function DialogCreateRp({
           department_id: currentValues.department_id || nextRequesterInfo.department_id || '',
           class_department_id:
             currentValues.class_department_id || nextRequesterInfo.class_department_id || '',
-          pic_name: currentValues.pic_name || nextRequesterInfo.request_by || '',
         }))
         setVendorOptions(mapVendorOptions(getRowsFromResponse(vendorsResponse)))
         setPaymentCategoryOptions(
@@ -394,6 +474,7 @@ function DialogCreateRp({
           mapDestinationDepartmentOptions(getRowsFromResponse(destinationDepartmentsResponse)),
         )
         setBudgetOptions(mapBudgetOptions(getRowsFromResponse(budgetsResponse)))
+        setUserDirectory(getRowsFromResponse(usersResponse))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -403,6 +484,7 @@ function DialogCreateRp({
         setPaymentCategoryOptions([])
         setDestinationDepartmentOptions([])
         setBudgetOptions([])
+        setUserDirectory([])
         setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat pilihan RP.')
       } finally {
@@ -490,15 +572,15 @@ function DialogCreateRp({
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
 
-      if (nextFieldErrors.date_required || nextFieldErrors.description) {
-        setActiveTab('information')
-      } else if (
+      if (
+        nextFieldErrors.date_required ||
+        nextFieldErrors.description ||
         nextFieldErrors.vendor_id ||
         nextFieldErrors.payment_category_id ||
         nextFieldErrors.destination_department_id ||
         nextFieldErrors.pic_name
       ) {
-        setActiveTab('vendor')
+        setActiveTab('information')
       } else {
         setActiveTab('items')
       }
@@ -545,33 +627,37 @@ function DialogCreateRp({
   const isFormDisabled = isSubmitting || isOptionsLoading
   const activeStepIndex = rpTabs.findIndex((tab) => tab.id === activeTab)
   const activeStepLabel = `Step ${activeStepIndex + 1} of ${rpTabs.length}`
+  const totalAmount = formValues.items.reduce((total, item) => {
+    const quantity = Number(item.quantity)
+    const unitPrice = Number(item.unit_price)
+
+    return total + (Number.isFinite(quantity) ? quantity : 0) * (Number.isFinite(unitPrice) ? unitPrice : 0)
+  }, 0)
 
   const renderActivePanel = () => {
     if (activeTab === 'information') {
       return (
-        <TabsInformation
-          requesterInfo={requesterInfo}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          updateValue={updateValue}
-        />
-      )
-    }
-
-    if (activeTab === 'vendor') {
-      return (
-        <TabsVendor
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          vendorOptions={vendorOptions}
-          paymentCategoryOptions={paymentCategoryOptions}
-          destinationDepartmentOptions={destinationDepartmentOptions}
-          updateValue={updateValue}
-        />
+        <>
+          <TabsInformation
+            requesterInfo={requesterInfo}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            updateValue={updateValue}
+          />
+          <TabsVendor
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            vendorOptions={vendorOptions}
+            paymentCategoryOptions={paymentCategoryOptions}
+            destinationDepartmentOptions={destinationDepartmentOptions}
+            picOptions={picOptions}
+            updateValue={updateValue}
+          />
+        </>
       )
     }
 
@@ -691,7 +777,17 @@ function DialogCreateRp({
             </div>
           </div>
 
-          <div className="dashboard-popup__actions">
+          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
+            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
+              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+                <TrendingUp size={18} />
+              </span>
+              <div>
+                <span className="frp-dialog__total-amount-label">Total RP</span>
+                <strong>{formatRupiah(totalAmount)}</strong>
+              </div>
+            </div>
+
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

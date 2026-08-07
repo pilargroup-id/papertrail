@@ -55,25 +55,8 @@ function TabsItems({
   isBudgetDisabled = false,
   canManageItems = true,
 }) {
-  const totalAmount = formValues.items.reduce((total, item) => {
-    const quantity = toNumber(item.quantity)
-    const unitPrice = toNumber(item.unit_price)
-
-    return total + quantity * unitPrice
-  }, 0)
-
   return (
     <div className="frp-dialog__items">
-      <div className="frp-dialog__total-amount" aria-live="polite">
-        <span className="frp-dialog__total-amount-icon" aria-hidden="true">
-          <TrendingUp size={18} />
-        </span>
-        <div>
-          <span className="frp-dialog__total-amount-label">Total RP</span>
-          <strong>{formatRupiah(totalAmount)}</strong>
-        </div>
-      </div>
-
       {formValues.items.map((item, index) => {
         const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
         const budgetRemaining = formatRupiah(getBudgetRemaining(selectedBudgetOption))
@@ -115,7 +98,7 @@ function TabsItems({
                 <TextField
                   label="Qty"
                   value={item.quantity}
-                  placeholder="1"
+                  placeholder="Masukkan qty"
                   leftIcon={Table01}
                   type="number"
                   inputMode="numeric"
@@ -154,16 +137,16 @@ function TabsItems({
               <div className="register-user-popup__field">
                 <TextField
                   label="Nominal"
-                  value={item.unit_price}
-                  placeholder="100000"
+                  value={item.unit_price ? formatRupiah(item.unit_price) : ''}
+                  placeholder="Masukkan nominal"
                   leftIcon={TrendingUp}
-                  type="number"
-                  min="1"
-                  step="1"
+                  inputMode="numeric"
                   required
                   disabled={isFormDisabled}
                   error={fieldErrors[`items.${index}.unit_price`]}
-                  onChange={(event) => updateItemValue(index, 'unit_price', event.target.value)}
+                  onChange={(event) =>
+                    updateItemValue(index, 'unit_price', event.target.value.replace(/\D/g, ''))
+                  }
                 />
               </div>
               <div className="register-user-popup__field">

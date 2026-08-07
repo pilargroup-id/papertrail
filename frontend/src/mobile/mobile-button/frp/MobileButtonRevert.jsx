@@ -2,7 +2,6 @@ import { Revert } from '../../../components/layoute/TemplateIcons.jsx'
 
 function MobileButtonRevert({
   label = 'Revert',
-  description = 'Kembalikan FRP',
   icon: Icon = Revert,
   size = 16,
   className = '',
@@ -20,8 +19,6 @@ function MobileButtonRevert({
     <button
       type={type}
       className={buttonClassName}
-      aria-label={description || label}
-      title={description || label}
       {...buttonProps}
     >
       <span className="frp-mobile-action-button__icon" aria-hidden="true">
@@ -29,9 +26,6 @@ function MobileButtonRevert({
       </span>
       <span className="frp-mobile-action-button__copy">
         <span className="frp-mobile-action-button__label">{label}</span>
-        {description ? (
-          <span className="frp-mobile-action-button__description">{description}</span>
-        ) : null}
       </span>
     </button>
   )

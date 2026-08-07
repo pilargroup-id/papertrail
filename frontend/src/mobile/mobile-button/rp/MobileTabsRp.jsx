@@ -19,6 +19,7 @@ function MobileTabsRp({
     activeTabId: activeStatus,
     onTabChange: onStatusChange,
     ariaLabel: 'Filter status RP',
+    variant: 'dropdown',
   }
 }
 
