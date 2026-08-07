@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import AppLayout from '../layouts/AppLayout';
 
@@ -41,7 +41,7 @@ export default function RouteConfig() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<FormsPage />} />
+        <Route index element={<Navigate to="frp" replace />} />
         <Route path="forms" element={<FormsPage />} />
         <Route path="Forms" element={<FormsPage />} />
 

@@ -9,6 +9,7 @@ import {
   BudgetAccess,
   Permission,
   FileText01,
+  CreditCard,
 } from '../../components/layoute/TemplateIcons.jsx'
 
 export const defaultNavigationPath = '/forms'
@@ -66,7 +67,7 @@ export const primaryNavigationItems = [
     id: 'rp',
     label: 'Rp',
     href: '/Rp',
-    icon: FileText01,
+    icon: CreditCard,
   },
   {
     id: 'master',
