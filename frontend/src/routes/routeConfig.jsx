@@ -34,6 +34,9 @@ import PermissionModules from '../pages/master/permission/permission-modules/Per
 
 import FormsPage from '../pages/forms/FormsPage.jsx';
 
+// Logs Pages
+import LogsPages from '../pages/logs/LogsPages.jsx';
+
 export default function RouteConfig() {
   return (
     <Routes>
@@ -67,7 +70,8 @@ export default function RouteConfig() {
         <Route path="Master/Rp-payment-categories" element={<RpPaymentCategories/>} />
         {/* Permission */}
         <Route path="Master/permission-modules" element={<PermissionModules/>} />
-
+        {/* Logs */}
+        <Route path="Logs" element={<LogsPages/>} />
       </Route>
     </Routes>
   );

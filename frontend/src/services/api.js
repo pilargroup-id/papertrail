@@ -6,6 +6,7 @@ const AUTH_TOKEN_STORAGE_KEYS = [
   'authToken',
   'access_token',
 ];
+const AUTH_TOKEN_URL_PARAM = 'token';
 
 const normalizeBaseUrl = (url) => url.replace(/\/+$/, '');
 const shouldUseStoredAuthToken = () =>
@@ -83,11 +84,37 @@ const getStoredAuthToken = () => {
       }
     }
 
-    return normalizeAuthToken(window.__ITEMBASE_AUTH_TOKEN__ || window.__AUTH_TOKEN__);
+    return normalizeAuthToken(window.__PAPERTRAIL_AUTH_TOKEN__ || window.__AUTH_TOKEN__);
   } catch {
     return null;
   }
 };
+
+// PilarGroup portal hands off auth by redirecting here with ?token=..., since
+// papertrail.pilargroup.id is a separate subdomain and can't read the portal's storage/cookies directly.
+const captureAuthTokenFromUrl = () => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const url = new URL(window.location.href);
+    const tokenFromUrl = normalizeAuthToken(url.searchParams.get(AUTH_TOKEN_URL_PARAM));
+
+    if (!tokenFromUrl) {
+      return;
+    }
+
+    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEYS[0], tokenFromUrl);
+
+    url.searchParams.delete(AUTH_TOKEN_URL_PARAM);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  } catch {
+    // Ignore malformed URLs or storage access errors (e.g. private browsing).
+  }
+};
+
+captureAuthTokenFromUrl();
 
 const buildQueryString = (params = {}) => {
   const searchParams = new URLSearchParams();
