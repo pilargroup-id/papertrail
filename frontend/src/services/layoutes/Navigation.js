@@ -44,6 +44,9 @@ export const implementedNavigationPaths = [
   // PERMISSION
   '/Master/permission-modules',
 
+  // LOGS
+  '/Logs',
+
 ]
 
 export const primaryNavigationItems = [
@@ -55,13 +58,13 @@ export const primaryNavigationItems = [
   // },
   {
     id: 'frp',
-    label: 'Forms Req Payment',
+    label: 'Frp',
     href: '/frp',
     icon: FileText01,
   },
   {
     id: 'rp',
-    label: 'Req Payment',
+    label: 'Rp',
     href: '/Rp',
     icon: FileText01,
   },
@@ -169,6 +172,12 @@ export const primaryNavigationItems = [
         href: '/Master/permission-modules',
       }
     ]
+  },
+  {
+    id: 'logs',
+    label: 'Logs',
+    href: '/Logs',
+    icon: FileText01,
   },
 ]
 

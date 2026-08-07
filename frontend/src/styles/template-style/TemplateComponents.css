@@ -2223,9 +2223,9 @@ width: var(--sidebar-collapsed-width);
 }
 
 .frp-page__desktop-actions .mobile-frp-search--desktop {
-  flex: 1 1 480px;
-  min-width: 340px;
-  max-width: 560px;
+  flex: 0 1 340px;
+  min-width: 240px;
+  max-width: 360px;
 }
 
 .frp-page__desktop-actions .mobile-frp-search--desktop .mobile-frp-search__field,
