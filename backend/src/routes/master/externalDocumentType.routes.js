@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_EXTERNAL_DOCUMENT_TYPE', 'view'),
   ExternalDocumentTypeController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_EXTERNAL_DOCUMENT_TYPE', 'view'),
   ExternalDocumentTypeController.show
 );
 

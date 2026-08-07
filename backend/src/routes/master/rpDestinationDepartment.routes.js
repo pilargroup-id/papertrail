@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_RP_DESTINATION_DEPARTMENT', 'view'),
   RpDestinationDepartmentController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_RP_DESTINATION_DEPARTMENT', 'view'),
   RpDestinationDepartmentController.show
 );
 

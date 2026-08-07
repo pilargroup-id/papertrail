@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_RP_PAYMENT_CATEGORY', 'view'),
   RpPaymentCategoryController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_RP_PAYMENT_CATEGORY', 'view'),
   RpPaymentCategoryController.show
 );
 

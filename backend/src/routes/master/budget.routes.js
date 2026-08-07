@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_BUDGET', 'view'),
   BudgetController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_BUDGET', 'view'),
   BudgetController.show
 );
 

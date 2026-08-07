@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_FRP_DOCUMENT_TYPE', 'view'),
   FrpDocumentTypeController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_FRP_DOCUMENT_TYPE', 'view'),
   FrpDocumentTypeController.show
 );
 

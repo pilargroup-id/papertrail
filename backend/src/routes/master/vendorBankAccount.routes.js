@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_VENDOR_BANK_ACCOUNT', 'view'),
   VendorBankAccountController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_VENDOR_BANK_ACCOUNT', 'view'),
   VendorBankAccountController.show
 );
 

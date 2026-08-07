@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_PAYMENT_METHOD', 'view'),
   PaymentMethodController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_PAYMENT_METHOD', 'view'),
   PaymentMethodController.show
 );
 

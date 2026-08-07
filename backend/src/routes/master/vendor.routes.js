@@ -6,13 +6,11 @@ const { requireModulePermission } = require('../../middleware/modulePermission.m
 
 router.get(
   '/',
-  requireModulePermission('MASTER_VENDOR', 'view'),
   VendorController.index
 );
 
 router.get(
   '/:id',
-  requireModulePermission('MASTER_VENDOR', 'view'),
   VendorController.show
 );
 
