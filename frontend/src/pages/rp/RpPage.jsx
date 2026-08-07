@@ -31,9 +31,9 @@ import {
   RP_MOBILE_DEFAULT_STATUS,
   rpMobileStatusTabs,
 } from '../../mobile/mobile-button/rp/mobileTabsRpConfig.js'
-import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
-import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
-import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
+import MobileScreenDetailRp from '../../mobile/screen/screen-rp/MobileScreenDetailRp.jsx'
+import MobileScreenCreateRp from '../../mobile/screen/screen-rp/screen-create-rp/MobileScreenCreateRp.jsx'
+import MobileScreenEditRp from '../../mobile/screen/screen-rp/screen-edit-rp/MobileScreenEditRp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
 
 const RP_STATUS_ALL = 'ALL'
@@ -786,14 +786,14 @@ function RpPage(props) {
         </SearchFrp>
       ) : null}
 
-      <MobileScreenDetailFrp rp={selectedMobileDetailsFrp} onBack={closeMobileDetailsPage} />
-      <MobileScreenCreateFrp
+      <MobileScreenDetailRp rp={selectedMobileDetailsFrp} onBack={closeMobileDetailsPage} />
+      <MobileScreenCreateRp
         isOpen={isMobileCreateScreenOpen}
         mode="screen"
         onClose={closeMobileCreatePage}
         onCreated={handleFrpCreated}
       />
-      <MobileScreenEditFrp
+      <MobileScreenEditRp
         isOpen={Boolean(selectedMobileEditFrp)}
         mode="screen"
         title={`Edit ${getFrpEditLabel(selectedMobileEditFrp)}`}

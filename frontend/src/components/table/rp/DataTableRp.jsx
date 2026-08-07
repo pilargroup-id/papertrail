@@ -9,7 +9,7 @@ import ButtonRevertRp from '../../button/button-rp/ButtonRevertRp.jsx'
 import ButtonCheckDataRp from '../../button/button-rp/ButtonCheckDataRp.jsx'
 
 // MOBILE
-import createMobileCardRp from '../../../mobile/frp-card/MobileCardFrp.jsx'
+import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
 import MobileButtonApprovalRp from '../../../mobile/mobile-button/frp/MobileButtonApprovalFrp.jsx'
 import MobileButtonEditRp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
 import MobileButtonRejectRp from '../../../mobile/mobile-button/frp/MobileButtonRejectFrp.jsx'

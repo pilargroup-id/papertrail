@@ -22,9 +22,9 @@ import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFr
 
 // Mobile
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
-import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
-import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
-import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
+import MobileScreenDetailFrp from '../../mobile/screen/screen-frp/MobileScreenDetailFrp.jsx'
+import MobileScreenCreateFrp from '../../mobile/screen/screen-frp/screen-create-frp/MobileScreenCreateFrp.jsx'
+import MobileScreenEditFrp from '../../mobile/screen/screen-frp/screen-edit-frp/MobileScreenEditFrp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
 import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreate.jsx'
 

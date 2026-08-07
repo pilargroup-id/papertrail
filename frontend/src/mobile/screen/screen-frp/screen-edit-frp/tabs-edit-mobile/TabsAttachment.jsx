@@ -1,6 +1,6 @@
-import DropdownCheckBox from '../../../../components/forms/dropdown/DropdownCheckBox.jsx'
-import DropdownSearch from '../../../../components/forms/dropdown/DropdownSearch.jsx'
-import { Eye, FileText01, Trash03, Upload } from '../../../../components/layoute/TemplateIcons.jsx'
+import DropdownCheckBox from '../../../../../components/forms/dropdown/DropdownCheckBox.jsx'
+import DropdownSearch from '../../../../../components/forms/dropdown/DropdownSearch.jsx'
+import { Eye, FileText01, Trash03, Upload } from '../../../../../components/layoute/TemplateIcons.jsx'
 
 function formatFileSize(size) {
   if (!Number.isFinite(size) || size <= 0) {

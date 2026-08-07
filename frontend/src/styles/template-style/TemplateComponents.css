@@ -5360,18 +5360,38 @@ width: var(--sidebar-collapsed-width);
   line-height: 1.55;
 }
 
-.frp-mobile-card .detail-card-mobile__header {
-  align-items: center;
-  gap: 0.75rem;
+.frp-mobile-card .detail-card-mobile__header,
+.rp-mobile-card .detail-card-mobile__header {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.5rem;
   padding: 0.85rem 0.95rem 0.55rem;
 }
 
-.frp-mobile-card .detail-card-mobile__header-content {
+.frp-mobile-card .detail-card-mobile__header-content,
+.rp-mobile-card .detail-card-mobile__header-content {
+  width: 100%;
   flex: 1 1 auto;
   gap: 0.45rem;
 }
 
-.frp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button {
+.frp-mobile-card .detail-card-mobile__status,
+.rp-mobile-card .detail-card-mobile__status {
+  align-self: flex-end;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.66rem;
+}
+
+.frp-mobile-card .detail-card-mobile__status-dot,
+.rp-mobile-card .detail-card-mobile__status-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.frp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button,
+.rp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5388,24 +5408,28 @@ width: var(--sidebar-collapsed-width);
   cursor: pointer;
 }
 
-.frp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button:hover {
+.frp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button:hover,
+.rp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button:hover {
   color: #1e40af;
   background: transparent;
   box-shadow: none;
   transform: none;
 }
 
-.frp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button:focus-visible {
+.frp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button:focus-visible,
+.rp-mobile-card .detail-card-mobile__header-actions .frp-bare-icon-button:focus-visible {
   outline: 2px solid rgba(29, 78, 216, 0.35);
   outline-offset: 3px;
   box-shadow: none;
 }
 
-.frp-mobile-card .detail-card-mobile__panel + .detail-card-mobile__panel {
+.frp-mobile-card .detail-card-mobile__panel + .detail-card-mobile__panel,
+.rp-mobile-card .detail-card-mobile__panel + .detail-card-mobile__panel {
   border-top: none;
 }
 
-.frp-mobile-card .detail-card-mobile__eyebrow {
+.frp-mobile-card .detail-card-mobile__eyebrow,
+.rp-mobile-card .detail-card-mobile__eyebrow {
   overflow-wrap: anywhere;
   color: var(--primary-blue);
   font-size: 0.95rem;
@@ -5413,19 +5437,22 @@ width: var(--sidebar-collapsed-width);
   letter-spacing: 0.04em;
 }
 
-.frp-mobile-card .detail-card-mobile__title {
+.frp-mobile-card .detail-card-mobile__title,
+.rp-mobile-card .detail-card-mobile__title {
   overflow-wrap: anywhere;
   font-size: 1.05rem;
   font-weight: 800;
 }
 
-.frp-mobile-card .detail-card-mobile__rows {
+.frp-mobile-card .detail-card-mobile__rows,
+.rp-mobile-card .detail-card-mobile__rows {
   grid-template-columns: 1fr;
   gap: 0.4rem;
   padding: 0.15rem 0.95rem 0.75rem;
 }
 
-.frp-mobile-card .detail-card-mobile__row {
+.frp-mobile-card .detail-card-mobile__row,
+.rp-mobile-card .detail-card-mobile__row {
   display: grid;
   grid-template-columns: minmax(82px, 0.42fr) minmax(0, 1fr);
   align-items: center;
@@ -5435,16 +5462,20 @@ width: var(--sidebar-collapsed-width);
   border-bottom: none;
 }
 
-.frp-mobile-card .detail-card-mobile__row:nth-child(2n) {
+.frp-mobile-card .detail-card-mobile__row:nth-child(2n),
+.rp-mobile-card .detail-card-mobile__row:nth-child(2n) {
   border-right: none;
 }
 
 .frp-mobile-card .detail-card-mobile__row:nth-last-child(2):nth-child(odd),
-.frp-mobile-card .detail-card-mobile__row:last-child {
+.frp-mobile-card .detail-card-mobile__row:last-child,
+.rp-mobile-card .detail-card-mobile__row:nth-last-child(2):nth-child(odd),
+.rp-mobile-card .detail-card-mobile__row:last-child {
   border-bottom: none;
 }
 
-.frp-mobile-card .detail-card-mobile__row-value {
+.frp-mobile-card .detail-card-mobile__row-value,
+.rp-mobile-card .detail-card-mobile__row-value {
   margin-top: 0;
   overflow-wrap: anywhere;
   font-size: 0.88rem;
@@ -5452,63 +5483,74 @@ width: var(--sidebar-collapsed-width);
   text-align: right;
 }
 
-.frp-mobile-card .detail-card-mobile__row-label {
+.frp-mobile-card .detail-card-mobile__row-label,
+.rp-mobile-card .detail-card-mobile__row-label {
   font-size: 0.66rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.frp-mobile-card .detail-card-mobile__row:nth-child(3) .detail-card-mobile__value {
+.frp-mobile-card .detail-card-mobile__row:nth-child(3) .detail-card-mobile__value,
+.rp-mobile-card .detail-card-mobile__row:nth-child(3) .detail-card-mobile__value {
   color: #18786e;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.9rem;
   font-weight: 800;
 }
 
-.frp-mobile-card .detail-card-mobile__summary {
+.frp-mobile-card .detail-card-mobile__summary,
+.rp-mobile-card .detail-card-mobile__summary {
   padding: 0.62rem 0.95rem 0.75rem;
   font-size: 0.8rem;
 }
 
-.frp-mobile-card .detail-card-mobile__details {
+.frp-mobile-card .detail-card-mobile__details,
+.rp-mobile-card .detail-card-mobile__details {
   background: transparent;
 }
 
-.frp-mobile-card .detail-card-mobile__details-content {
+.frp-mobile-card .detail-card-mobile__details-content,
+.rp-mobile-card .detail-card-mobile__details-content {
   gap: 0.5rem;
   padding: 0 0.95rem 0.8rem;
   border-top: none;
   background: transparent;
 }
 
-.frp-mobile-card .detail-card-mobile__sections {
+.frp-mobile-card .detail-card-mobile__sections,
+.rp-mobile-card .detail-card-mobile__sections {
   gap: 0.55rem;
 }
 
-.frp-mobile-card .detail-card-mobile__section {
+.frp-mobile-card .detail-card-mobile__section,
+.rp-mobile-card .detail-card-mobile__section {
   gap: 0.4rem;
   padding: 0;
   border: none;
   background: transparent;
 }
 
-.frp-mobile-card .detail-card-mobile__fields {
+.frp-mobile-card .detail-card-mobile__fields,
+.rp-mobile-card .detail-card-mobile__fields {
   gap: 0.45rem;
 }
 
-.frp-mobile-card .detail-card-mobile__field {
+.frp-mobile-card .detail-card-mobile__field,
+.rp-mobile-card .detail-card-mobile__field {
   grid-template-columns: minmax(82px, 0.42fr) minmax(0, 1fr);
   align-items: start;
   gap: 0.65rem;
 }
 
-.frp-mobile-card .detail-card-mobile__field-value {
+.frp-mobile-card .detail-card-mobile__field-value,
+.rp-mobile-card .detail-card-mobile__field-value {
   text-align: right;
   font-size: 0.86rem;
   line-height: 1.4;
 }
 
-.frp-mobile-card .detail-card-mobile__actions {
+.frp-mobile-card .detail-card-mobile__actions,
+.rp-mobile-card .detail-card-mobile__actions {
   padding: 0.85rem 0.95rem;
   border-top: 1px solid rgba(26, 42, 87, 0.13);
   background: #eef3f8;

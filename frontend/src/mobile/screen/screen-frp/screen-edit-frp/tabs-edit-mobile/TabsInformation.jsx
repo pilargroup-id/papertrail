@@ -1,6 +1,6 @@
-import TextArea from '../../../../components/forms/TextArea.jsx'
-import TextField from '../../../../components/forms/TextField.jsx'
-import DropdownSearch from '../../../../components/forms/dropdown/DropdownSearch.jsx'
+import TextArea from '../../../../../components/forms/TextArea.jsx'
+import TextField from '../../../../../components/forms/TextField.jsx'
+import DropdownSearch from '../../../../../components/forms/dropdown/DropdownSearch.jsx'
 import {
   Banks,
   Calendar01,
@@ -8,7 +8,7 @@ import {
   FileText01,
   Table01,
   Users01,
-} from '../../../../components/layoute/TemplateIcons.jsx'
+} from '../../../../../components/layoute/TemplateIcons.jsx'
 
 function MobileTabsInformation({
   requesterInfo,
