@@ -8020,6 +8020,11 @@ width: var(--sidebar-collapsed-width);
     text-align: center;
   }
 
+  .users-table-layout--with-mobile {
+    overflow: visible;
+    min-height: 0;
+  }
+
   .users-table-layout--with-mobile .users-table-wrapper {
     display: none;
   }

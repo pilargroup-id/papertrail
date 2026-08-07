@@ -1029,7 +1029,7 @@ async function insertRpItemHistory(conn, data) {
         changed_by_job_level_value,
         created_at
       )
-      VALUES (?, ?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?, NOW())
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `,
     [
       data.rp_request_id,
@@ -1065,7 +1065,7 @@ async function insertRpHeaderHistory(conn, data) {
         changed_by_job_level_value,
         created_at
       )
-      VALUES (?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?, NOW())
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `,
     [
       data.rp_request_id,
