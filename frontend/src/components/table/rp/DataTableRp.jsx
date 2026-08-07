@@ -408,7 +408,7 @@ function DataTableRp({
     typeof onApproval === 'function'
       ? {
           key: 'approval',
-          label: 'Approval',
+          label: 'Approve',
           buttonComponent: ButtonApprovalRp,
           mobileButtonComponent: MobileButtonApprovalRp,
           hidden: (rp, index) => isApproveActionHidden(rp, index, currentUser, canApprove),

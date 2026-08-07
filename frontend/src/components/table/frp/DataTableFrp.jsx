@@ -523,7 +523,7 @@ function DataTableFrp({
     typeof onApproval === 'function'
       ? {
           key: 'approval',
-          label: 'Approval',
+          label: 'Approve',
           buttonComponent: ButtonApprovalFrp,
           mobileButtonComponent: MobileButtonApprovalFrp,
           hidden: (frp, index) => isApproveActionHidden(frp, index, currentUser, canApprove),
