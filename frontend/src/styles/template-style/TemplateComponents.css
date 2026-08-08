@@ -6120,7 +6120,7 @@ width: var(--sidebar-collapsed-width);
 }
 
 .entity-form-popup.entity-form-popup--frp {
-  width: min(100%, 1180px);
+  width: min(100%, 1400px);
 }
 
 .entity-form-popup.entity-form-popup--budget .dashboard-popup__body {
@@ -6130,7 +6130,7 @@ width: var(--sidebar-collapsed-width);
 }
 
 .entity-form-popup.entity-form-popup--frp .dashboard-popup__body {
-  max-height: min(78vh, 720px);
+  max-height: min(86vh, 840px);
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -6178,6 +6178,12 @@ width: var(--sidebar-collapsed-width);
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-inline {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-information {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
@@ -6202,6 +6208,12 @@ width: var(--sidebar-collapsed-width);
   .register-user-popup__grid.register-user-popup__grid--frp-information
   > .register-user-popup__field--frp-half {
   grid-column: span 6;
+}
+
+.entity-form-popup
+  .register-user-popup__grid.register-user-popup__grid--frp-information
+  > .register-user-popup__field--frp-quarter {
+  grid-column: span 3;
 }
 
 .entity-form-popup
@@ -6569,10 +6581,58 @@ width: var(--sidebar-collapsed-width);
 
 .frp-dialog__panel {
   display: grid;
-  gap: 0.85rem;
-  min-height: min(540px, calc(78vh - 10rem));
+  gap: 1rem;
+  min-height: min(540px, calc(86vh - 10rem));
   padding: 0;
   align-content: start;
+}
+
+.frp-dialog__section {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.1rem 1.15rem 1.25rem;
+  border: 1px solid rgba(26, 42, 87, 0.08);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(248, 249, 250, 0.9) 0%, #ffffff 100%);
+  min-width: 0;
+}
+
+.frp-dialog__section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.frp-dialog__section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: rgba(26, 42, 87, 0.08);
+  color: var(--primary-blue);
+}
+
+.frp-dialog__section-copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.frp-dialog__section-title {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.frp-dialog__section-desc {
+  margin: 0;
+  color: #5a6b88;
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .frp-dialog__placeholder {
@@ -8883,6 +8943,11 @@ width: var(--sidebar-collapsed-width);
     grid-template-columns: 1fr;
   }
 
+  .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-inline {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+  }
+
   .entity-form-popup
     .register-user-popup__grid.register-user-popup__grid--frp-vendor
     > .register-user-popup__field,
@@ -8915,6 +8980,9 @@ width: var(--sidebar-collapsed-width);
   .entity-form-popup
     .register-user-popup__grid.register-user-popup__grid--frp-information
     > .register-user-popup__field--frp-half,
+  .entity-form-popup
+    .register-user-popup__grid.register-user-popup__grid--frp-information
+    > .register-user-popup__field--frp-quarter,
   .entity-form-popup
     .register-user-popup__grid.register-user-popup__grid--frp-information
     > .register-user-popup__field--full {

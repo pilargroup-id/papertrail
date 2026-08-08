@@ -315,189 +315,223 @@ function TabsItems({
   }, [currencyCode, formValues.frp_date])
 
   return (
-    <div className="frp-dialog__items">
-      <div className="register-user-popup__grid register-user-popup__grid--frp-currency-row">
-        <div className="register-user-popup__field">
-          <Dropdown
-            label="Currency"
-            value={formValues.currency_code}
-            options={currencyOptions}
-            placeholder={isCurrenciesLoading ? 'Memuat currency...' : 'Pilih currency'}
-            required
-            disabled={isFormDisabled || isCurrenciesLoading}
-            error={fieldErrors.currency_code}
-            onChange={(value) => updateValue('currency_code', value)}
-          />
-        </div>
-        <div className="register-user-popup__field">
-          <TextField
-            label="Exchange Rate"
-            value={formValues.exchange_rate}
-            placeholder={isExchangeRateLoading ? 'Memuat exchange rate...' : 'Exchange rate'}
-            leftIcon={TrendingUp}
-            type="number"
-            min="0"
-            step="0.0001"
-            required
-            disabled={isFormDisabled || isExchangeRateLoading}
-            error={fieldErrors.exchange_rate}
-            helperText={exchangeRateMessage}
-            onChange={(event) => updateValue('exchange_rate', event.target.value)}
-          />
-        </div>
-        <div className="frp-dialog__total-amount" aria-live="polite">
-          <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+    <>
+      <section className="frp-dialog__section">
+        <div className="frp-dialog__section-header">
+          <span className="frp-dialog__section-icon" aria-hidden="true">
             <TrendingUp size={18} />
           </span>
-          <div>
-            <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
-            <strong>{formatRupiah(totalAmountIdr)}</strong>
+          <div className="frp-dialog__section-copy">
+            <p className="frp-dialog__section-title">Currency &amp; Summary</p>
+            <p className="frp-dialog__section-desc">
+              Tentukan mata uang dan kurs yang berlaku untuk seluruh item di bawah.
+            </p>
           </div>
         </div>
-      </div>
 
-      {formValues.items.map((item, index) => {
-        const quantity = toNumber(item.quantity)
-        const unitPrice = toNumber(item.unit_price)
-        const amountIdr = quantity * unitPrice * exchangeRate
-        const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
-        const budgetAmount = formatRupiah(getBudgetMetaValue(selectedBudgetOption, 'budgetAmount'))
-        const budgetRemaining = formatRupiah(
-          getBudgetMetaValue(selectedBudgetOption, 'budgetRemaining'),
-        )
-
-        return (
-          <div className="frp-dialog__item" key={`frp-item-${index}`}>
-            <div className="frp-dialog__item-header">
-              <strong>Item {index + 1}</strong>
-              <button
-                type="button"
-                className="frp-dialog__icon-button"
-                aria-label={`Hapus item ${index + 1}`}
-                disabled={isFormDisabled || formValues.items.length === 1}
-                onClick={() => removeItem(index)}
-              >
-                <Trash03 size={16} />
-              </button>
-            </div>
-
-            <div className="register-user-popup__grid register-user-popup__grid--frp-three register-user-popup__grid--frp-budget-row">
-              <div className="register-user-popup__field frp-dialog__budget-field">
-                <DropdownSearch
-                  label="Budget"
-                  value={item.budget_id}
-                  options={budgetOptions}
-                  placeholder={isOptionsLoading ? 'Memuat budget...' : 'Pilih budget'}
-                  searchPlaceholder="Cari budget..."
-                  emptyMessage="Budget aktif tidak ditemukan."
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.budget_id`]}
-                  onChange={(value) => updateItemValue(index, 'budget_id', value)}
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Budget Amount"
-                  value={budgetAmount}
-                  placeholder="-"
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Budget Remaining"
-                  value={budgetRemaining}
-                  placeholder="-"
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-            </div>
-
-            <div className="register-user-popup__grid register-user-popup__grid--frp-three">
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Quantity"
-                  value={item.quantity}
-                  placeholder="Input quantity"
-                  leftIcon={Table01}
-                  type="number"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  min="0"
-                  step="1"
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.quantity`]}
-                  onKeyDown={preventNonIntegerInput}
-                  onPaste={(event) => {
-                    if (!isIntegerInputValue(event.clipboardData.getData('text'))) {
-                      event.preventDefault()
-                    }
-                  }}
-                  onChange={(event) => {
-                    if (isIntegerInputValue(event.target.value)) {
-                      updateItemValue(index, 'quantity', event.target.value)
-                    }
-                  }}
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label={`Unit Price (${currencyCode || 'IDR'})`}
-                  value={item.unit_price}
-                  placeholder="Input unit price"
-                  leftIcon={TrendingUp}
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.unit_price`]}
-                  onChange={(event) => updateItemValue(index, 'unit_price', event.target.value)}
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Amount (IDR)"
-                  value={formatRupiah(Number.isFinite(amountIdr) ? amountIdr : 0)}
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-              <div className="register-user-popup__field register-user-popup__field--full">
-                <TextArea
-                  label="Memo"
-                  value={item.memo}
-                  placeholder="Input memo"
-                  rows={3}
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.memo`]}
-                  onChange={(event) => updateItemValue(index, 'memo', event.target.value)}
-                />
-              </div>
+        <div className="register-user-popup__grid register-user-popup__grid--frp-currency-row">
+          <div className="register-user-popup__field">
+            <Dropdown
+              label="Currency"
+              value={formValues.currency_code}
+              options={currencyOptions}
+              placeholder={isCurrenciesLoading ? 'Memuat currency...' : 'Pilih currency'}
+              required
+              disabled={isFormDisabled || isCurrenciesLoading}
+              error={fieldErrors.currency_code}
+              onChange={(value) => updateValue('currency_code', value)}
+            />
+          </div>
+          <div className="register-user-popup__field">
+            <TextField
+              label="Exchange Rate"
+              value={formValues.exchange_rate}
+              placeholder={isExchangeRateLoading ? 'Memuat exchange rate...' : 'Exchange rate'}
+              leftIcon={TrendingUp}
+              type="number"
+              min="0"
+              step="0.0001"
+              required
+              disabled={isFormDisabled || isExchangeRateLoading}
+              error={fieldErrors.exchange_rate}
+              helperText={exchangeRateMessage}
+              onChange={(event) => updateValue('exchange_rate', event.target.value)}
+            />
+          </div>
+          <div className="frp-dialog__total-amount" aria-live="polite">
+            <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+              <TrendingUp size={18} />
+            </span>
+            <div>
+              <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
+              <strong>{formatRupiah(totalAmountIdr)}</strong>
             </div>
           </div>
-        )
-      })}
+        </div>
+      </section>
 
-      <button
-        type="button"
-        className="dashboard-popup__button dashboard-popup__button--secondary frp-dialog__add-item"
-        disabled={isFormDisabled}
-        onClick={addItem}
-      >
-        <Plus size={16} />
-        Add Item
-      </button>
-      {fieldErrors.items ? <p className="form-control__message">{fieldErrors.items}</p> : null}
-    </div>
+      <section className="frp-dialog__section">
+        <div className="frp-dialog__section-header">
+          <span className="frp-dialog__section-icon" aria-hidden="true">
+            <Table01 size={18} />
+          </span>
+          <div className="frp-dialog__section-copy">
+            <p className="frp-dialog__section-title">Item List</p>
+            <p className="frp-dialog__section-desc">
+              Rincian budget, quantity, dan harga satuan untuk setiap item pembayaran.
+            </p>
+          </div>
+        </div>
+
+        <div className="frp-dialog__items">
+          {formValues.items.map((item, index) => {
+            const quantity = toNumber(item.quantity)
+            const unitPrice = toNumber(item.unit_price)
+            const amountIdr = quantity * unitPrice * exchangeRate
+            const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
+            const budgetAmount = formatRupiah(
+              getBudgetMetaValue(selectedBudgetOption, 'budgetAmount'),
+            )
+            const budgetRemaining = formatRupiah(
+              getBudgetMetaValue(selectedBudgetOption, 'budgetRemaining'),
+            )
+
+            return (
+              <div className="frp-dialog__item" key={`frp-item-${index}`}>
+                <div className="frp-dialog__item-header">
+                  <strong>Item {index + 1}</strong>
+                  <button
+                    type="button"
+                    className="frp-dialog__icon-button"
+                    aria-label={`Hapus item ${index + 1}`}
+                    disabled={isFormDisabled || formValues.items.length === 1}
+                    onClick={() => removeItem(index)}
+                  >
+                    <Trash03 size={16} />
+                  </button>
+                </div>
+
+                <div className="register-user-popup__grid register-user-popup__grid--frp-three register-user-popup__grid--frp-budget-row">
+                  <div className="register-user-popup__field frp-dialog__budget-field">
+                    <DropdownSearch
+                      label="Budget"
+                      value={item.budget_id}
+                      options={budgetOptions}
+                      placeholder={isOptionsLoading ? 'Memuat budget...' : 'Pilih budget'}
+                      searchPlaceholder="Cari budget..."
+                      emptyMessage="Budget aktif tidak ditemukan."
+                      required
+                      disabled={isFormDisabled}
+                      error={fieldErrors[`items.${index}.budget_id`]}
+                      onChange={(value) => updateItemValue(index, 'budget_id', value)}
+                    />
+                  </div>
+                  <div className="register-user-popup__field">
+                    <TextField
+                      label="Budget Amount"
+                      value={budgetAmount}
+                      placeholder="-"
+                      leftIcon={TrendingUp}
+                      disabled
+                      readOnly
+                    />
+                  </div>
+                  <div className="register-user-popup__field">
+                    <TextField
+                      label="Budget Remaining"
+                      value={budgetRemaining}
+                      placeholder="-"
+                      leftIcon={TrendingUp}
+                      disabled
+                      readOnly
+                    />
+                  </div>
+                </div>
+
+                <div className="register-user-popup__grid register-user-popup__grid--frp-three">
+                  <div className="register-user-popup__field">
+                    <TextField
+                      label="Quantity"
+                      value={item.quantity}
+                      placeholder="Input quantity"
+                      leftIcon={Table01}
+                      type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      min="0"
+                      step="1"
+                      required
+                      disabled={isFormDisabled}
+                      error={fieldErrors[`items.${index}.quantity`]}
+                      onKeyDown={preventNonIntegerInput}
+                      onPaste={(event) => {
+                        if (!isIntegerInputValue(event.clipboardData.getData('text'))) {
+                          event.preventDefault()
+                        }
+                      }}
+                      onChange={(event) => {
+                        if (isIntegerInputValue(event.target.value)) {
+                          updateItemValue(index, 'quantity', event.target.value)
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="register-user-popup__field">
+                    <TextField
+                      label={`Unit Price (${currencyCode || 'IDR'})`}
+                      value={item.unit_price}
+                      placeholder="Input unit price"
+                      leftIcon={TrendingUp}
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      disabled={isFormDisabled}
+                      error={fieldErrors[`items.${index}.unit_price`]}
+                      onChange={(event) =>
+                        updateItemValue(index, 'unit_price', event.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="register-user-popup__field">
+                    <TextField
+                      label="Amount (IDR)"
+                      value={formatRupiah(Number.isFinite(amountIdr) ? amountIdr : 0)}
+                      leftIcon={TrendingUp}
+                      disabled
+                      readOnly
+                    />
+                  </div>
+                  <div className="register-user-popup__field register-user-popup__field--full">
+                    <TextArea
+                      label="Memo"
+                      value={item.memo}
+                      placeholder="Input memo"
+                      rows={3}
+                      required
+                      disabled={isFormDisabled}
+                      error={fieldErrors[`items.${index}.memo`]}
+                      onChange={(event) => updateItemValue(index, 'memo', event.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+
+          <button
+            type="button"
+            className="dashboard-popup__button dashboard-popup__button--secondary frp-dialog__add-item"
+            disabled={isFormDisabled}
+            onClick={addItem}
+          >
+            <Plus size={16} />
+            Add Item
+          </button>
+          {fieldErrors.items ? <p className="form-control__message">{fieldErrors.items}</p> : null}
+        </div>
+      </section>
+    </>
   )
 }
 

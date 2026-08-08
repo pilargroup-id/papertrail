@@ -1023,14 +1023,6 @@ function DialogEditFrp({
       nextFieldErrors.vendor_id = 'Vendor wajib dipilih.'
     }
 
-    if (!formValues.external_document_type_id) {
-      nextFieldErrors.external_document_type_id = 'External document type wajib dipilih.'
-    }
-
-    if (!formValues.external_document_number.trim()) {
-      nextFieldErrors.external_document_number = 'External document number wajib diisi.'
-    }
-
     if (!formValues.payment_method_id) {
       nextFieldErrors.payment_method_id = 'Payment method wajib dipilih.'
     }
@@ -1076,12 +1068,7 @@ function DialogEditFrp({
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
 
-      if (
-        nextFieldErrors.frp_date ||
-        nextFieldErrors.description ||
-        nextFieldErrors.external_document_type_id ||
-        nextFieldErrors.external_document_number
-      ) {
+      if (nextFieldErrors.frp_date || nextFieldErrors.description) {
         setActiveTab('information')
       } else if (
         nextFieldErrors.vendor_id ||
