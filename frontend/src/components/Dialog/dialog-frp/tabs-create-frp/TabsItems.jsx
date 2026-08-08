@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 
 import api from '../../../../services/api.js'
-import TextArea from '../../../forms/TextArea.jsx'
 import TextField from '../../../forms/TextField.jsx'
 import Dropdown from '../../../forms/dropdown/Dropdown.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
-import { Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
+import { Copy, Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
 
 const fallbackCurrencyOptions = [{ value: 'IDR', label: 'IDR - Indonesian Rupiah' }]
 const currenciesPageSize = 100
@@ -203,6 +202,7 @@ function TabsItems({
   updateItemValue,
   removeItem,
   addItem,
+  duplicateLastItem,
 }) {
   const [currencyOptions, setCurrencyOptions] = useState(fallbackCurrencyOptions)
   const [isCurrenciesLoading, setIsCurrenciesLoading] = useState(false)
@@ -368,9 +368,9 @@ function TabsItems({
             </div>
           </div>
         </div>
-      </section>
 
-      <section className="frp-dialog__section">
+        <div className="frp-dialog__section-divider" role="separator" aria-hidden="true" />
+
         <div className="frp-dialog__section-header">
           <span className="frp-dialog__section-icon" aria-hidden="true">
             <Table01 size={18} />
@@ -448,12 +448,12 @@ function TabsItems({
                   </div>
                 </div>
 
-                <div className="register-user-popup__grid register-user-popup__grid--frp-three">
+                <div className="register-user-popup__grid register-user-popup__grid--frp-item-row">
                   <div className="register-user-popup__field">
                     <TextField
                       label="Quantity"
                       value={item.quantity}
-                      placeholder="Input quantity"
+                      placeholder="Qty"
                       leftIcon={Table01}
                       type="number"
                       inputMode="numeric"
@@ -502,12 +502,11 @@ function TabsItems({
                       readOnly
                     />
                   </div>
-                  <div className="register-user-popup__field register-user-popup__field--full">
-                    <TextArea
+                  <div className="register-user-popup__field">
+                    <TextField
                       label="Memo"
                       value={item.memo}
                       placeholder="Input memo"
-                      rows={3}
                       required
                       disabled={isFormDisabled}
                       error={fieldErrors[`items.${index}.memo`]}
@@ -519,15 +518,26 @@ function TabsItems({
             )
           })}
 
-          <button
-            type="button"
-            className="dashboard-popup__button dashboard-popup__button--secondary frp-dialog__add-item"
-            disabled={isFormDisabled}
-            onClick={addItem}
-          >
-            <Plus size={16} />
-            Add Item
-          </button>
+          <div className="frp-dialog__item-actions">
+            <button
+              type="button"
+              className="dashboard-popup__button dashboard-popup__button--outline-teal frp-dialog__add-item"
+              disabled={isFormDisabled}
+              onClick={addItem}
+            >
+              <Plus size={16} />
+              Add Item
+            </button>
+            <button
+              type="button"
+              className="dashboard-popup__button dashboard-popup__button--outline-purple frp-dialog__add-item"
+              disabled={isFormDisabled}
+              onClick={duplicateLastItem}
+            >
+              <Copy size={16} />
+              Duplicate
+            </button>
+          </div>
           {fieldErrors.items ? <p className="form-control__message">{fieldErrors.items}</p> : null}
         </div>
       </section>

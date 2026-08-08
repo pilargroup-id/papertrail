@@ -30,6 +30,7 @@ function DropdownSearch({
   emptyMessage = 'Data tidak ditemukan.',
   disabled = false,
   required = false,
+  hideSearch = false,
   className = '',
   onChange,
 }) {
@@ -173,16 +174,18 @@ function DropdownSearch({
               aria-labelledby={buttonId}
               style={menuStyle}
             >
-              <div className="form-dropdown__search">
-                <SearchMd className="form-dropdown__search-icon" size={17} />
-                <input
-                  className="form-dropdown__search-input"
-                  type="search"
-                  value={query}
-                  placeholder={searchPlaceholder}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </div>
+              {hideSearch ? null : (
+                <div className="form-dropdown__search">
+                  <SearchMd className="form-dropdown__search-icon" size={17} />
+                  <input
+                    className="form-dropdown__search-input"
+                    type="search"
+                    value={query}
+                    placeholder={searchPlaceholder}
+                    onChange={(event) => setQuery(event.target.value)}
+                  />
+                </div>
+              )}
 
               <div className="form-dropdown__items">
                 {filteredOptions.length > 0 ? (

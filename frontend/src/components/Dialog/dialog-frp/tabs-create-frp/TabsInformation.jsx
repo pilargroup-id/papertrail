@@ -1,5 +1,6 @@
 import TextArea from '../../../forms/TextArea.jsx'
 import TextField from '../../../forms/TextField.jsx'
+import DropdownCheckBox from '../../../forms/dropdown/DropdownCheckBox.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
 import {
   Banks,
@@ -7,8 +8,10 @@ import {
   Code,
   FileText01,
   Table01,
+  Upload,
   Users01,
 } from '../../../layoute/TemplateIcons.jsx'
+import AttachmentListDropdown from './AttachmentListDropdown.jsx'
 
 function TabsInformation({
   requesterInfo,
@@ -17,8 +20,20 @@ function TabsInformation({
   formValues,
   fieldErrors,
   externalDocumentTypeOptions,
+  frpDocumentTypeDropdownOptions,
+  attachmentDocumentTypeOptions,
+  attachmentDraft,
   updateValue,
+  updateDocumentTypeIds,
+  updateAttachmentDocumentType,
+  updateAttachmentFile,
+  removeAttachmentDraft,
+  previewAttachmentDraft,
 }) {
+  const attachmentFiles = attachmentDraft.files ?? []
+  const attachmentTitle =
+    attachmentFiles.length > 0 ? `${attachmentFiles.length} file dipilih` : 'Pilih file attachment'
+
   return (
     <>
       <section className="frp-dialog__section">
@@ -128,6 +143,75 @@ function TabsInformation({
               error={fieldErrors.internal_po_number}
               onChange={(event) => updateValue('internal_po_number', event.target.value)}
             />
+          </div>
+          <div className="register-user-popup__field register-user-popup__field--frp-third">
+            <DropdownCheckBox
+              label="Required Documents"
+              options={frpDocumentTypeDropdownOptions}
+              value={formValues.document_type_ids.map(String)}
+              placeholder={isOptionsLoading ? 'Memuat document...' : 'Pilih required documents'}
+              emptyMessage="FRP document type aktif tidak ditemukan."
+              hideSearch
+              disabled={isFormDisabled}
+              error={fieldErrors.document_type_ids}
+              onChange={(value) => updateDocumentTypeIds(value.map(String))}
+            />
+          </div>
+          <div className="register-user-popup__field register-user-popup__field--frp-third">
+            <DropdownSearch
+              label="Attachment Document Type"
+              value={attachmentDraft.documentTypeId}
+              options={attachmentDocumentTypeOptions}
+              placeholder={isOptionsLoading ? 'Memuat document...' : 'Pilih document type'}
+              emptyMessage="FRP document type aktif tidak ditemukan."
+              hideSearch
+              disabled={isFormDisabled}
+              error={fieldErrors.attachment_document_type_id}
+              onChange={updateAttachmentDocumentType}
+            />
+          </div>
+          <div className="register-user-popup__field register-user-popup__field--frp-third">
+            <div className="form-control__label">
+              <span>Upload Attachment</span>
+            </div>
+
+            <div className="frp-dialog__upload-row">
+              <div
+                className={`form-upload form-upload--compact${
+                  fieldErrors.attachment_file ? ' form-upload--error' : ''
+                }${isFormDisabled ? ' form-upload--disabled' : ''}`}
+              >
+                <label className="form-upload__dropzone" htmlFor="frp-create-attachment-file">
+                  <input
+                    id="frp-create-attachment-file"
+                    className="form-upload__input"
+                    type="file"
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                    disabled={isFormDisabled}
+                    onClick={(event) => {
+                      event.currentTarget.value = ''
+                    }}
+                    onChange={(event) => updateAttachmentFile(event.target.files)}
+                  />
+                  <span className="form-upload__icon" aria-hidden="true">
+                    <Upload size={16} />
+                  </span>
+                  <span className="form-upload__title">{attachmentTitle}</span>
+                </label>
+              </div>
+
+              <AttachmentListDropdown
+                files={attachmentFiles}
+                disabled={isFormDisabled}
+                onPreview={previewAttachmentDraft}
+                onRemove={removeAttachmentDraft}
+              />
+            </div>
+
+            {fieldErrors.attachment_file ? (
+              <p className="form-control__message">{fieldErrors.attachment_file}</p>
+            ) : null}
           </div>
           <div className="register-user-popup__field register-user-popup__field--full">
             <TextArea

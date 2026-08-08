@@ -6,7 +6,6 @@ import { XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-create-frp/TabsInformation.jsx'
 import TabsItems from './tabs-create-frp/TabsItems.jsx'
 import TabsVendor from './tabs-create-frp/TabsVendor.jsx'
-import TabsAttachment from './tabs-create-frp/TabsAttachment.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -237,6 +236,10 @@ function getSignedUploadHeaders(uploadItem, file) {
 }
 
 function normalizeDocumentTypeId(documentTypeId) {
+  if (documentTypeId === '' || documentTypeId === undefined || documentTypeId === null) {
+    return null
+  }
+
   const numericDocumentTypeId = Number(documentTypeId)
 
   return Number.isFinite(numericDocumentTypeId) ? numericDocumentTypeId : documentTypeId
@@ -628,6 +631,21 @@ function DialogCreateFrp({
     })
   }
 
+  const duplicateLastItem = () => {
+    setFormValues((currentValues) => {
+      const lastItem = currentValues.items[currentValues.items.length - 1]
+
+      if (!lastItem) {
+        return currentValues
+      }
+
+      return {
+        ...currentValues,
+        items: [...currentValues.items, { ...lastItem }],
+      }
+    })
+  }
+
   const handleVendorBankChange = (value, option) => {
     updateValue('vendor_bank_account_id', value)
 
@@ -857,10 +875,6 @@ function DialogCreateFrp({
       nextFieldErrors.destination_bank_account_name = 'Destination account name wajib diisi.'
     }
 
-    if (attachmentDraft.files.length > 0 && !attachmentDraft.documentTypeId) {
-      nextFieldErrors.attachment_document_type_id = 'Attachment document type wajib dipilih.'
-    }
-
     normalizedItems.forEach((item, index) => {
       if (!item.budget_id) {
         nextFieldErrors[`items.${index}.budget_id`] = 'Budget wajib dipilih.'
@@ -1006,7 +1020,15 @@ function DialogCreateFrp({
                       formValues={formValues}
                       fieldErrors={fieldErrors}
                       externalDocumentTypeOptions={externalDocumentTypeOptions}
+                      frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+                      attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
+                      attachmentDraft={attachmentDraft}
                       updateValue={updateValue}
+                      updateDocumentTypeIds={updateDocumentTypeIds}
+                      updateAttachmentDocumentType={updateAttachmentDocumentType}
+                      updateAttachmentFile={updateAttachmentFile}
+                      removeAttachmentDraft={removeAttachmentDraft}
+                      previewAttachmentDraft={previewAttachmentDraft}
                     />
 
                     <TabsVendor
@@ -1031,21 +1053,7 @@ function DialogCreateFrp({
                       updateItemValue={updateItemValue}
                       removeItem={removeItem}
                       addItem={addItem}
-                    />
-
-                    <TabsAttachment
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
-                      attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
-                      attachmentDraft={attachmentDraft}
-                      updateDocumentTypeIds={updateDocumentTypeIds}
-                      updateAttachmentDocumentType={updateAttachmentDocumentType}
-                      updateAttachmentFile={updateAttachmentFile}
-                      removeAttachmentDraft={removeAttachmentDraft}
-                      previewAttachmentDraft={previewAttachmentDraft}
+                      duplicateLastItem={duplicateLastItem}
                     />
                   </div>
 
