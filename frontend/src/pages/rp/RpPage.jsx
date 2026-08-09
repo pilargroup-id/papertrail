@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import {
   canCurrentUserApproveFrp,
+  canCurrentUserCreateFrpFromRp,
   canCurrentUserEditFrp,
   isManagerUser,
 } from '../../components/table/rp/rp-button-access.js';
@@ -25,6 +26,7 @@ import DialogApproveRp from '../../components/Dialog/dialog-rp/DialogApproveRp.j
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsRp from '../../components/Dialog/dialog-rp/DialogDetailsRp.jsx'
+import DialogCreateFrpFromRp from '../../components/Dialog/dialog-rp/DialogCreateFrpFromRp.jsx'
 
 // Mobile Ui
 import {
@@ -286,6 +288,7 @@ function RpPage(props) {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
+  const [isCreateFrpDialogOpen, setIsCreateFrpDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedCheckDataRp, setSelectedCheckDataRp] = useState(null)
@@ -293,6 +296,7 @@ function RpPage(props) {
   const [selectedApprovalRp, setSelectedApprovalRp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
+  const [selectedCreateFrpRp, setSelectedCreateFrpRp] = useState(null)
   const [selectedMobileDetailsFrp, setSelectedMobileDetailsFrp] = useState(null)
   const [selectedMobileEditFrp, setSelectedMobileEditFrp] = useState(null)
   const [isMobileCreateScreenOpen, setIsMobileCreateScreenOpen] = useState(false)
@@ -481,6 +485,21 @@ function RpPage(props) {
     setIsRevertDialogOpen(false)
     setSelectedRevertFrp(null)
     setRevertError('')
+  }
+
+  const openCreateFrpDialog = (rp) => {
+    setSelectedCreateFrpRp(rp)
+    setIsCreateFrpDialogOpen(true)
+  }
+
+  const closeCreateFrpDialog = () => {
+    setIsCreateFrpDialogOpen(false)
+    setSelectedCreateFrpRp(null)
+  }
+
+  const handleRpConvertedToFrp = () => {
+    setReloadToken((currentValue) => currentValue + 1)
+    closeCreateFrpDialog()
   }
 
   const handleVendorUpdated = async (response) => {
@@ -831,9 +850,11 @@ function RpPage(props) {
           onApproval={openApproveDialog}
           onReject={openRejectDialog}
           onRevert={openRevertDialog}
+          onCreateFrp={openCreateFrpDialog}
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
+          canCreateFrp={(row) => canCurrentUserCreateFrpFromRp(row, currentUser)}
           canCheckData={(row) =>
             getFrpStatusValue(row) === 'PENDING_DESTINATION_CHECKER' &&
             canCurrentUserDestinationCheckRp(row, currentUser)
@@ -918,6 +939,15 @@ function RpPage(props) {
         submitError={revertError}
         onClose={closeRevertDialog}
         onRevert={handleFrpReverted}
+      />
+
+      <DialogCreateFrpFromRp
+        key={selectedCreateFrpRp?.id ?? 'create-frp-from-rp'}
+        isOpen={isCreateFrpDialogOpen}
+        title="Create FRP"
+        rp={selectedCreateFrpRp}
+        onClose={closeCreateFrpDialog}
+        onCreated={handleRpConvertedToFrp}
       />
     </section>
 

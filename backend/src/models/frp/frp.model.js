@@ -31,41 +31,45 @@ function buildAccessFilters(query = {}) {
   }
 
   if (
-    access.managerCompanyId &&
+    Array.isArray(access.managerCompanyIds) &&
+    access.managerCompanyIds.length &&
     Array.isArray(access.managerDepartmentContexts) &&
     access.managerDepartmentContexts.length
   ) {
     const contextWhere = access.managerDepartmentContexts
       .map(() => '(fr.department_id = ? AND fr.class_department_id = ?)')
       .join(' OR ');
+    const companyPlaceholders = access.managerCompanyIds.map(() => '?').join(', ');
 
     orWhere.push(`
       (
-        fr.company_id = ?
+        fr.company_id IN (${companyPlaceholders})
         AND (${contextWhere})
       )
     `);
 
-    params.push(access.managerCompanyId);
+    params.push(...access.managerCompanyIds);
 
     access.managerDepartmentContexts.forEach((context) => {
       params.push(context.department_id, context.class_department_id);
     });
   } else if (
-    access.managerCompanyId &&
+    Array.isArray(access.managerCompanyIds) &&
+    access.managerCompanyIds.length &&
     Array.isArray(access.managerDepartmentIds) &&
     access.managerDepartmentIds.length
   ) {
     const departmentPlaceholders = access.managerDepartmentIds.map(() => '?').join(', ');
+    const companyPlaceholders = access.managerCompanyIds.map(() => '?').join(', ');
 
     orWhere.push(`
       (
-        fr.company_id = ?
+        fr.company_id IN (${companyPlaceholders})
         AND fr.department_id IN (${departmentPlaceholders})
       )
     `);
 
-    params.push(access.managerCompanyId, ...access.managerDepartmentIds);
+    params.push(...access.managerCompanyIds, ...access.managerDepartmentIds);
   }
 
   if (Array.isArray(access.budgetDepartmentIds) && access.budgetDepartmentIds.length) {

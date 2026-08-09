@@ -70,9 +70,9 @@ select {
   position: relative;
   display: grid;
   grid-template-columns: var(--sidebar-current-width) minmax(0, 1fr);
-  height: 100dvh;
-  min-height: 100vh;
-  max-height: 100dvh;
+  height: calc(100dvh / var(--app-zoom-scale, 1));
+  min-height: calc(100vh / var(--app-zoom-scale, 1));
+  max-height: calc(100dvh / var(--app-zoom-scale, 1));
   width: 100%;
   max-width: 100%;
   overflow: hidden;
@@ -197,8 +197,8 @@ select {
 .sidebar {
   background: linear-gradient(180deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
   width: var(--sidebar-current-width);
-  height: 100dvh;
-  min-height: 100vh;
+  height: calc(100dvh / var(--app-zoom-scale, 1));
+  min-height: calc(100vh / var(--app-zoom-scale, 1));
   position: sticky;
   top: 0;
   left: 0;
@@ -2207,7 +2207,7 @@ width: var(--sidebar-collapsed-width);
 }
 
 .parents-table-card {
-  height: 100%;
+  height: auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -2420,9 +2420,7 @@ width: var(--sidebar-collapsed-width);
 }
 
 .frp-desktop-tabs__tabs .MuiTabs-indicator {
-  height: 2px;
-  border-radius: 999px 999px 0 0;
-  background: var(--primary-blue);
+  display: none;
 }
 
 .frp-page__filter-button,
@@ -2554,6 +2552,7 @@ width: var(--sidebar-collapsed-width);
 }
 
 .frp-desktop-tabs__tab.MuiTab-root {
+  position: relative;
   min-height: 40px;
   min-width: 0;
   display: inline-flex;
@@ -2575,9 +2574,30 @@ width: var(--sidebar-collapsed-width);
     color 0.2s ease;
 }
 
+.frp-desktop-tabs__tab.MuiTab-root::after {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0;
+  left: 0.4rem;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+  background: var(--primary-blue);
+  content: '';
+  opacity: 0;
+  transform: scaleX(0.6);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
 .frp-desktop-tabs__tab.Mui-selected {
   background: transparent;
   color: var(--primary-blue);
+}
+
+.frp-desktop-tabs__tab.Mui-selected::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .frp-desktop-tabs__tab:not(.Mui-selected):hover {
@@ -3681,6 +3701,18 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-hover-border: rgba(124, 58, 237, 0.44);
   --frp-icon-hover-shadow: rgba(109, 40, 217, 0.16);
   --frp-icon-focus: rgba(124, 58, 237, 0.16);
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--create-frp,
+.users-table-wrapper.rp-table--actions .frp-icon-button--create-frp {
+  --frp-icon-color: #4338ca;
+  --frp-icon-bg: rgba(79, 70, 229, 0.12);
+  --frp-icon-border: rgba(79, 70, 229, 0.3);
+  --frp-icon-shadow: rgba(67, 56, 202, 0.1);
+  --frp-icon-hover-bg: #eef2ff;
+  --frp-icon-hover-border: rgba(79, 70, 229, 0.44);
+  --frp-icon-hover-shadow: rgba(67, 56, 202, 0.16);
+  --frp-icon-focus: rgba(79, 70, 229, 0.16);
 }
 
 .frp-accordion-detail {
@@ -9521,6 +9553,11 @@ width: var(--sidebar-collapsed-width);
   position: fixed;
   right: auto;
   z-index: 1400;
+  /* Portaled to document.body, which still sits inside the zoomed <html>
+     (see --app-zoom-scale in index.css). Its left/top/width are computed
+     from getBoundingClientRect(), i.e. already real screen pixels, so
+     without this reset the inherited zoom would scale them a second time. */
+  zoom: calc(1 / var(--app-zoom-scale));
 }
 
 .form-dropdown__item {
@@ -9627,6 +9664,39 @@ width: var(--sidebar-collapsed-width);
   color: #5a6b88;
   font-size: 0.88rem;
   text-align: center;
+}
+
+.form-dropdown--combobox .form-control__input-shell {
+  cursor: text;
+}
+
+.form-dropdown__item--create {
+  color: var(--accent-teal-dark);
+  font-weight: 700;
+  border-top: 1px solid rgba(26, 42, 87, 0.08);
+  margin-top: 0.2rem;
+  padding-top: 0.75rem;
+}
+
+.form-dropdown__item--create-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.form-dropdown__item--create-content span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-dropdown__create-error {
+  margin: 0.35rem 0.25rem 0;
+  padding: 0 0.5rem;
+  color: #b42318;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .form-dropdown__search {
@@ -9801,6 +9871,8 @@ width: var(--sidebar-collapsed-width);
 .frp-attachment-menu__list {
   position: fixed;
   z-index: 1400;
+  /* Same fixed-position-inside-zoomed-<html> issue as .form-dropdown__menu--portal. */
+  zoom: calc(1 / var(--app-zoom-scale));
   display: grid;
   gap: 0.3rem;
   overflow: auto;

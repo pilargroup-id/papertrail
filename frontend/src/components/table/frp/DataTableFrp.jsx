@@ -22,7 +22,7 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 10
+const DEFAULT_PAGINATION_PAGE_SIZE = 25
 const FRP_STATUS_DEFAULT_ORDER = {
   PENDING: 0,
   APPROVED: 1,
@@ -147,10 +147,8 @@ function scaleTableColumn(column, scale) {
 }
 
 function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
-  const hasSparseRows = rowCount <= 5
-
   return {
-    '--users-table-wrapper-max-height': hasSparseRows ? 'none' : 'min(64dvh, 640px)',
+    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
@@ -165,8 +163,8 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    flex: hasSparseRows ? '0 0 auto' : '1 1 auto',
-    minHeight: rowCount === 0 ? '180px' : hasSparseRows ? 'auto' : 'min(52dvh, 520px)',
+    flex: '0 0 auto',
+    minHeight: rowCount === 0 ? '180px' : 'auto',
     marginTop: '0.75rem',
     ...tableWrapperStyle,
   }

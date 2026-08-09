@@ -640,6 +640,17 @@ export function CheckData(props) {
     </IconBase>
   )
 }
+
+export function CreateFrp(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z" />
+      <path d="M13 3v6h6" />
+      <path d="M12 13v6" />
+      <path d="M9 16h6" />
+    </IconBase>
+  )
+}
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

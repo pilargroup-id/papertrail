@@ -395,6 +395,8 @@ const createRpResource = (path) => ({
   },
   approve: (id, data = {}, options) =>
     api.post(`${path}/${id}/requester-manager-approve`, data, options),
+  createFrp: (id, data = {}, options) =>
+    api.post(`${path}/${id}/create-frp`, data, options),
 });
 
 const request = async (
