@@ -280,6 +280,7 @@ function RpPage(props) {
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
+  const isManager = isManagerUser(currentUser)
   const activePageTitle = activePage?.title
   const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'RP'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
@@ -817,24 +818,28 @@ function RpPage(props) {
               onFilterChange={updateRpFilter}
             />
           </ButtonFilterRp>
-          <ButtonCreateRp
-            variant="create"
-            dialogProps={{
-              onCreated: handleFrpCreated,
-            }}
-          >
-            Create
-          </ButtonCreateRp>
+          {!isManager ? (
+            <ButtonCreateRp
+              variant="create"
+              dialogProps={{
+                onCreated: handleFrpCreated,
+              }}
+            >
+              Create
+            </ButtonCreateRp>
+          ) : null}
 
         </div>
       </div>
 
       {!selectedMobileDetailsFrp && !selectedMobileEditFrp && !isMobileCreateScreenOpen ? (
         <SearchFrp searchProps={searchProps}>
-          <MobileButtonCreate
-            label="Create"
-            onClick={openMobileCreatePage}
-          />
+          {!isManager ? (
+            <MobileButtonCreate
+              label="Create"
+              onClick={openMobileCreatePage}
+            />
+          ) : null}
         </SearchFrp>
       ) : null}
 

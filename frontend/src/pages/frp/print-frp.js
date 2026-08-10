@@ -255,21 +255,25 @@ function buildDocumentPaymentRows(frpDetail) {
   ]
 }
 
-function buildKeyValueTableHtml(rows, columnsPerRow = 3) {
-  const rowsHtml = []
+function buildFieldBoxHtml(label, value) {
+  return `
+    <div class="frp-print__field">
+      <div class="frp-print__field-label">${safe(label)}</div>
+      <div class="frp-print__field-value">${safeMultiline(value)}</div>
+    </div>
+  `
+}
 
-  for (let index = 0; index < rows.length; index += columnsPerRow) {
-    const rowItems = rows.slice(index, index + columnsPerRow)
-    const cellsHtml = rowItems
-      .map(([label, value]) => `<th>${safe(label)}</th><td>${safe(value)}</td>`)
-      .join('')
-    const paddingCount = columnsPerRow - rowItems.length
-    const paddingHtml = paddingCount > 0 ? '<th></th><td></td>'.repeat(paddingCount) : ''
+function buildFieldGridHtml(rows) {
+  const cellsHtml = rows.map(([label, value]) => buildFieldBoxHtml(label, value)).join('')
 
-    rowsHtml.push(`<tr>${cellsHtml}${paddingHtml}</tr>`)
-  }
+  return `<div class="frp-print__grid">${cellsHtml}</div>`
+}
 
-  return rowsHtml.join('')
+function buildFieldStackHtml(rows) {
+  const rowsHtml = rows.map(([label, value]) => buildFieldBoxHtml(label, value)).join('')
+
+  return `<div class="frp-print__stack">${rowsHtml}</div>`
 }
 
 function sumItemsAmount(items) {
@@ -348,31 +352,59 @@ const PRINT_STYLES = `
     color: #333;
     border-bottom: 1px solid #cfd4da;
   }
-  .frp-print__paragraph { margin: 0; font-size: 9px; line-height: 1.4; white-space: pre-wrap; }
-  table.frp-print__kv {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 8px;
-    table-layout: fixed;
-  }
-  .frp-print__kv th, .frp-print__kv td {
+  .frp-print__field {
     border: 1px solid #cfd4da;
-    padding: 2.5px 5px;
-    font-size: 8px;
-    vertical-align: top;
-    text-align: left;
-    word-wrap: break-word;
   }
-  .frp-print__kv th {
-    width: 13%;
+  .frp-print__field-label {
     background: #f4f5f7;
     font-weight: 600;
     color: #333;
     text-transform: uppercase;
     letter-spacing: 0.2px;
     font-size: 7px;
+    padding: 2px 5px;
+    border-bottom: 1px solid #cfd4da;
   }
-  .frp-print__kv td { width: 20.33%; font-weight: 500; color: #111; font-size: 8px; }
+  .frp-print__field-value { padding: 3px 5px; font-size: 8px; line-height: 1.4; white-space: pre-wrap; }
+  .frp-print__grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    margin-bottom: 6px;
+    border-top: 1px solid #cfd4da;
+    border-left: 1px solid #cfd4da;
+  }
+  .frp-print__grid .frp-print__field {
+    margin: 0;
+    border-top: 0;
+    border-left: 0;
+    border-right: 1px solid #cfd4da;
+    border-bottom: 1px solid #cfd4da;
+    page-break-inside: avoid;
+  }
+  .frp-print__stack {
+    border-top: 1px solid #cfd4da;
+    border-left: 1px solid #cfd4da;
+    margin-bottom: 6px;
+  }
+  .frp-print__stack .frp-print__field {
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+    border-top: 0;
+    border-left: 0;
+    border-right: 1px solid #cfd4da;
+    border-bottom: 1px solid #cfd4da;
+    page-break-inside: avoid;
+  }
+  .frp-print__stack .frp-print__field-label {
+    flex: 0 0 90px;
+    display: flex;
+    align-items: center;
+    border-bottom: 0;
+    border-right: 1px solid #cfd4da;
+  }
+  .frp-print__stack .frp-print__field-value { flex: 1; }
   table.frp-print__table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .frp-print__table th, .frp-print__table td {
     border: 1px solid #cfd4da;
@@ -439,21 +471,16 @@ function buildPrintHtml({ frpDetail, items }) {
 
       <section class="frp-print__section">
         <h2>Ringkasan FRP</h2>
-        <table class="frp-print__kv">
-          <tbody>${buildKeyValueTableHtml(buildSummaryRows(frpDetail), 3)}</tbody>
-        </table>
-      </section>
-
-      <section class="frp-print__section">
-        <h2>Description</h2>
-        <p class="frp-print__paragraph">${safeMultiline(description)}</p>
+        ${buildFieldGridHtml(buildSummaryRows(frpDetail))}
       </section>
 
       <section class="frp-print__section">
         <h2>Document &amp; Payment</h2>
-        <table class="frp-print__kv">
-          <tbody>${buildKeyValueTableHtml(buildDocumentPaymentRows(frpDetail), 3)}</tbody>
-        </table>
+        ${buildFieldGridHtml(buildDocumentPaymentRows(frpDetail))}
+      </section>
+
+      <section class="frp-print__section">
+        ${buildFieldStackHtml([['Description', description]])}
       </section>
 
       <section class="frp-print__section">

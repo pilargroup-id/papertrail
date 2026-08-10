@@ -41,7 +41,6 @@ function getLogoUrl() {
 function buildSummaryRows(rpDetail) {
   return [
     ['RP Number', getFirstValue(rpDetail, ['rp_number', 'rpNumber', 'id'])],
-    ['Status', formatStatusLabel(getFirstValue(rpDetail, ['status'], ''))],
     ['RP Date', formatDateValue(getFirstValue(rpDetail, ['date_required', 'dateRequired'], ''))],
     [
       'Request By',
@@ -54,15 +53,6 @@ function buildSummaryRows(rpDetail) {
       ]),
     ],
     [
-      'Company',
-      [
-        getFirstValue(rpDetail, ['company_code_snapshot', 'company_code'], ''),
-        getFirstValue(rpDetail, ['company_name_snapshot', 'company_name'], ''),
-      ]
-        .filter(Boolean)
-        .join(' - ') || '-',
-    ],
-    [
       'Division',
       [
         getFirstValue(rpDetail, ['department_code_snapshot', 'department_code'], ''),
@@ -73,6 +63,15 @@ function buildSummaryRows(rpDetail) {
     ],
     ['Total Amount', formatRupiah(getFirstValue(rpDetail, ['total_amount', 'totalAmount'], ''))],
     ['Created At', formatDateTime(getFirstValue(rpDetail, ['created_at', 'createdAt'], ''))],
+  ]
+}
+
+function buildApprovalColumns(rpDetail) {
+  return [
+    ['Dibuat', getFirstValue(rpDetail, ['requested_by_name', 'request_by_name', 'created_by_name'])],
+    ['Mengetahui', getFirstValue(rpDetail, ['requester_manager_approved_by_name'])],
+    ['Checker', getFirstValue(rpDetail, ['destination_checked_by_name'])],
+    ['Disetujui', getFirstValue(rpDetail, ['destination_manager_approved_by_name'])],
   ]
 }
 
@@ -103,25 +102,39 @@ function buildVendorRows(rpDetail) {
         .join(' - ') || getFirstValue(rpDetail, ['destination_department_id', 'destinationDepartmentId']),
     ],
     ['PIC', getFirstValue(rpDetail, ['pic_name', 'picName'])],
-    ['Vendor Source', getFirstValue(rpDetail, ['vendor_source', 'vendorSource'])],
   ]
 }
 
-function buildKeyValueTableHtml(rows, columnsPerRow = 3) {
-  const rowsHtml = []
+function buildFieldBoxHtml(label, value) {
+  return `
+    <div class="rp-print__field">
+      <div class="rp-print__field-label">${safe(label)}</div>
+      <div class="rp-print__field-value">${safeMultiline(value)}</div>
+    </div>
+  `
+}
 
-  for (let index = 0; index < rows.length; index += columnsPerRow) {
-    const rowItems = rows.slice(index, index + columnsPerRow)
-    const cellsHtml = rowItems
-      .map(([label, value]) => `<th>${safe(label)}</th><td>${safe(value)}</td>`)
-      .join('')
-    const paddingCount = columnsPerRow - rowItems.length
-    const paddingHtml = paddingCount > 0 ? '<th></th><td></td>'.repeat(paddingCount) : ''
+function buildFieldGridHtml(rows) {
+  const cellsHtml = rows.map(([label, value]) => buildFieldBoxHtml(label, value)).join('')
 
-    rowsHtml.push(`<tr>${cellsHtml}${paddingHtml}</tr>`)
-  }
+  return `<div class="rp-print__grid">${cellsHtml}</div>`
+}
 
-  return rowsHtml.join('')
+function buildFieldStackHtml(rows) {
+  const rowsHtml = rows.map(([label, value]) => buildFieldBoxHtml(label, value)).join('')
+
+  return `<div class="rp-print__stack">${rowsHtml}</div>`
+}
+
+function buildApprovalTableHtml(columns) {
+  const headHtml = columns
+    .map(([label]) => `<th class="rp-print__center">${safe(label)}</th>`)
+    .join('')
+  const bodyHtml = columns
+    .map(([, value]) => `<td class="rp-print__center">${safe(value)}</td>`)
+    .join('')
+
+  return `<thead><tr>${headHtml}</tr></thead><tbody><tr>${bodyHtml}</tr></tbody>`
 }
 
 function sumItemsAmount(items) {
@@ -202,31 +215,67 @@ const PRINT_STYLES = `
     color: #333;
     border-bottom: 1px solid #cfd4da;
   }
-  .rp-print__paragraph { margin: 0; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
-  table.rp-print__kv {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 14px;
-    table-layout: fixed;
-  }
-  .rp-print__kv th, .rp-print__kv td {
+  .rp-print__field {
     border: 1px solid #cfd4da;
-    padding: 5px 10px;
-    font-size: 11px;
-    vertical-align: top;
-    text-align: left;
-    word-wrap: break-word;
+    margin-bottom: 14px;
   }
-  .rp-print__kv th {
-    width: 13%;
+  .rp-print__field-label {
     background: #f4f5f7;
     font-weight: 600;
     color: #333;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     font-size: 9.5px;
+    padding: 4px 10px;
+    border-bottom: 1px solid #cfd4da;
   }
-  .rp-print__kv td { width: 20.33%; font-weight: 500; color: #111; }
+  .rp-print__field-value { padding: 6px 10px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+  .rp-print__stack {
+    border-top: 1px solid #cfd4da;
+    border-left: 1px solid #cfd4da;
+    margin-bottom: 10px;
+  }
+  .rp-print__stack .rp-print__field {
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+    border-top: 0;
+    border-left: 0;
+    border-right: 1px solid #cfd4da;
+    border-bottom: 1px solid #cfd4da;
+    page-break-inside: avoid;
+  }
+  .rp-print__stack .rp-print__field-label {
+    flex: 0 0 110px;
+    display: flex;
+    align-items: center;
+    border-bottom: 0;
+    border-right: 1px solid #cfd4da;
+  }
+  .rp-print__stack .rp-print__field-value { flex: 1; }
+  .rp-print__grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    margin-bottom: 10px;
+    border-top: 1px solid #cfd4da;
+    border-left: 1px solid #cfd4da;
+  }
+  .rp-print__grid .rp-print__field {
+    margin: 0;
+    border-top: 0;
+    border-left: 0;
+    border-right: 1px solid #cfd4da;
+    border-bottom: 1px solid #cfd4da;
+    page-break-inside: avoid;
+  }
+  .rp-print__grid .rp-print__field-label { padding: 3px 6px; font-size: 8px; }
+  .rp-print__grid .rp-print__field-value {
+    padding: 4px 6px;
+    font-size: 10px;
+    line-height: 1.3;
+    white-space: normal;
+  }
   table.rp-print__table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .rp-print__table th, .rp-print__table td {
     border: 1px solid #cfd4da;
@@ -245,12 +294,25 @@ const PRINT_STYLES = `
   }
   .rp-print__table tr { page-break-inside: avoid; }
   .rp-print__num { text-align: right; }
+  .rp-print__center { text-align: center; }
   .rp-print__break { word-break: break-all; }
   .rp-print__muted { color: #666; font-size: 10px; }
   .rp-print__empty { text-align: center; color: #777; padding: 14px; }
   .rp-print__table tfoot td {
     font-weight: 700;
     background: #f4f5f7;
+  }
+  .rp-print__table--items th,
+  .rp-print__table--items td {
+    padding: 3px 6px;
+    font-size: 9.5px;
+    line-height: 1.25;
+  }
+  .rp-print__table--items th {
+    font-size: 8.5px;
+  }
+  .rp-print__table--items .rp-print__muted {
+    font-size: 8.5px;
   }
   .rp-print__footer {
     margin-top: 16px;
@@ -294,32 +356,27 @@ function buildPrintHtml({ rpDetail, items }) {
       </header>
 
       <section class="rp-print__section">
-        <h2>Ringkasan RP</h2>
-        <table class="rp-print__kv">
-          <tbody>${buildKeyValueTableHtml(buildSummaryRows(rpDetail), 3)}</tbody>
+        <h2>Ringkasan RP &amp; Vendor</h2>
+        ${buildFieldGridHtml([...buildSummaryRows(rpDetail), ...buildVendorRows(rpDetail)])}
+      </section>
+
+      <section class="rp-print__section">
+        <h2>Approval</h2>
+        <table class="rp-print__table">
+          ${buildApprovalTableHtml(buildApprovalColumns(rpDetail))}
         </table>
       </section>
 
       <section class="rp-print__section">
-        <h2>Description</h2>
-        <p class="rp-print__paragraph">${safeMultiline(description)}</p>
-      </section>
-
-      <section class="rp-print__section">
-        <h2>Vendor &amp; Destination</h2>
-        <table class="rp-print__kv">
-          <tbody>${buildKeyValueTableHtml(buildVendorRows(rpDetail), 3)}</tbody>
-        </table>
-      </section>
-
-      <section class="rp-print__section">
-        <h2>Notes</h2>
-        <p class="rp-print__paragraph">${safeMultiline(notes)}</p>
+        ${buildFieldStackHtml([
+          ['Description', description],
+          ['Notes', notes],
+        ])}
       </section>
 
       <section class="rp-print__section">
         <h2>Items</h2>
-        <table class="rp-print__table">
+        <table class="rp-print__table rp-print__table--items">
           <thead>
             <tr>
               <th style="width:4%;">No</th>

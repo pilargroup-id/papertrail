@@ -6,6 +6,7 @@ import TabsFrpDekstop from './TabsFrpDekstop.jsx'
 import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
+  isManagerUser,
 } from '../../components/table/frp/frp-button-access.js';
 import FrpFilter from './FrpFilter.jsx'
 // Button Frp
@@ -199,6 +200,7 @@ function FrpPage(props) {
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
+  const isManager = isManagerUser(currentUser)
   const activePageTitle = activePage?.title
   const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'FRP'
   const pageEyebrow = activePage?.eyebrow ?? 'Document Transaction'
@@ -662,24 +664,28 @@ function FrpPage(props) {
               onFilterChange={updateFrpFilter}
             />
           </ButtonFilterFrp>
-          <ButtonCreateFrp
-            variant="create"
-            dialogProps={{
-              onCreated: handleFrpCreated,
-            }}
-          >
-            Create
-          </ButtonCreateFrp>
+          {!isManager ? (
+            <ButtonCreateFrp
+              variant="create"
+              dialogProps={{
+                onCreated: handleFrpCreated,
+              }}
+            >
+              Create
+            </ButtonCreateFrp>
+          ) : null}
 
         </div>
       </div>
 
       {!selectedMobileDetailsFrp && !selectedMobileEditFrp && !isMobileCreateScreenOpen ? (
         <SearchFrp searchProps={searchProps}>
-          <MobileButtonCreate
-            label="Create"
-            onClick={openMobileCreatePage}
-          />
+          {!isManager ? (
+            <MobileButtonCreate
+              label="Create"
+              onClick={openMobileCreatePage}
+            />
+          ) : null}
         </SearchFrp>
       ) : null}
 
