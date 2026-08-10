@@ -571,7 +571,7 @@ function DataTableFrp({
           buttonComponent: ButtonEditFrp,
           mobileButtonComponent: MobileButtonEditFrp,
           mobilePlacement: 'header-start',
-          hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser),
+          hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser) || getFrpStatusValue(frp) === 'APPROVED',
           onClick: onEdit,
         }
       : null,

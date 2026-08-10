@@ -402,6 +402,21 @@ function DialogCreateRp({
     })
   }
 
+  const duplicateLastItem = () => {
+    setFormValues((currentValues) => {
+      const lastItem = currentValues.items[currentValues.items.length - 1]
+
+      if (!lastItem) {
+        return currentValues
+      }
+
+      return {
+        ...currentValues,
+        items: [...currentValues.items, { ...lastItem }],
+      }
+    })
+  }
+
   useEffect(() => {
     if (!isOpen) {
       return undefined
@@ -687,6 +702,7 @@ function DialogCreateRp({
                       updateItemValue={updateItemValue}
                       removeItem={removeItem}
                       addItem={addItem}
+                      duplicateLastItem={duplicateLastItem}
                     />
                   </div>
 

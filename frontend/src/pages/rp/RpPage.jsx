@@ -373,6 +373,10 @@ function RpPage(props) {
     setReloadToken((currentValue) => currentValue + 1)
   }
 
+  const handlePrintRp = (rp) => {
+    // TODO: wire up RP print/export logic.
+  }
+
   const updateRpFilter = (filterName, value) => {
     setRpFilters((currentFilters) => ({
       ...currentFilters,
@@ -851,6 +855,7 @@ function RpPage(props) {
           onReject={openRejectDialog}
           onRevert={openRevertDialog}
           onCreateFrp={openCreateFrpDialog}
+          onPrint={handlePrintRp}
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}

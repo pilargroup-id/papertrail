@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
-import { XClose } from '../../layoute/TemplateIcons.jsx'
+import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-edit-frp/TabsInformation.jsx'
 import TabsItems from './tabs-edit-frp/TabsItems.jsx'
 import TabsVendor from './tabs-edit-frp/TabsVendor.jsx'
-import TabsAttachment from './tabs-edit-frp/TabsAttachment.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -31,6 +28,26 @@ function isPositiveIntegerInput(value) {
   const numberValue = Number(normalizedValue)
 
   return /^\d+$/.test(normalizedValue) && Number.isSafeInteger(numberValue) && numberValue > 0
+}
+
+function toNumber(value) {
+  const normalizedValue = Number(value)
+
+  return Number.isFinite(normalizedValue) ? normalizedValue : 0
+}
+
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(numberValue)
 }
 
 const editInitialFormValues = () => ({
@@ -64,30 +81,8 @@ const editAttachmentFileDraft = (file) => ({
   previewUrl: URL.createObjectURL(file),
 })
 
-const initialRequesterInfo = {
-  company: '',
-  division: '',
-  request_by: '',
-}
-
-const frpTabs = [
-  {
-    id: 'information',
-    label: 'Information',
-  },
-  {
-    id: 'vendor',
-    label: 'Vendor',
-  },
-  {
-    id: 'items',
-    label: 'Items',
-  },
-  {
-    id: 'attachment',
-    label: 'Attachment',
-  },
-]
+const FRP_BUDGET_ACCESS_MODULE = 'FRP'
+const CROSS_BUDGET_ACCESS_TYPE = 'CROSS_BUDGET'
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -192,13 +187,23 @@ function stringifyOptionValues(options) {
 function mapBudgetOptions(budgets) {
   return budgets.map((budget) => {
     const id = getFirstValue(budget, ['id', 'budget_id'])
+    const code = getFirstValue(budget, ['budget_code', 'code'])
     const projectName = getFirstValue(budget, ['project_name', 'name'], `Budget #${id ?? '-'}`)
     const budgetAmount = getFirstValue(budget, ['budget_amount', 'amount'])
     const remaining = getFirstValue(budget, ['budget_remaining', 'remaining_amount'])
+    const departmentCode = getFirstValue(
+      budget,
+      ['department_code_snapshot', 'department_code'],
+    )
+    const departmentName = getFirstValue(
+      budget,
+      ['department_name_snapshot', 'department_name'],
+    )
+    const departmentLabel = [departmentCode, departmentName].filter(Boolean).join(' - ')
 
     return {
       value: id,
-      label: projectName,
+      label: [code, projectName, departmentLabel].filter(Boolean).join(' - '),
       meta: {
         budgetAmount,
         budgetRemaining: remaining,
@@ -245,6 +250,24 @@ function getAuthUser(response) {
 
 function getEditFrpId(response) {
   return response?.data?.id ?? response?.data?.data?.id ?? response?.id ?? ''
+}
+
+function getResponseData(response) {
+  return response?.data?.data ?? response?.data ?? response ?? {}
+}
+
+function getResponseItems(response) {
+  const data = getResponseData(response)
+
+  if (Array.isArray(data?.items)) {
+    return data.items
+  }
+
+  if (Array.isArray(response?.items)) {
+    return response.items
+  }
+
+  return []
 }
 
 function getFrpDetailFromResponse(response) {
@@ -416,12 +439,6 @@ function isActiveAttachment(attachment) {
   return getAttachmentUploadStatus(attachment) !== 'CANCELED'
 }
 
-function isUploadedAttachment(attachment) {
-  const uploadStatus = getAttachmentUploadStatus(attachment)
-
-  return !uploadStatus || uploadStatus === 'UPLOADED'
-}
-
 function getAttachmentId(attachment) {
   return attachment?.attachment_id ?? attachment?.id
 }
@@ -449,11 +466,104 @@ function getPrimaryItem(items) {
   return items.find((item) => Number(item?.is_primary) === 1) || items[0]
 }
 
+function normalizeText(value) {
+  return String(value ?? '').trim().toUpperCase()
+}
+
+function isActiveRecord(record) {
+  const isActive = getFirstValue(record, ['is_active', 'isActive'], 1)
+
+  return Number(isActive) !== 0
+}
+
+function getUserDepartmentIds(user = {}) {
+  const departments = Array.isArray(user.departments) ? user.departments : []
+  const departmentIds = [
+    user.context_department_id,
+    user.department_id,
+    user.departmentId,
+    ...departments.map((department) =>
+      getFirstValue(department, ['department_id', 'departmentId', 'id']),
+    ),
+  ]
+
+  return departmentIds.filter(
+    (departmentId) => departmentId !== undefined && departmentId !== null && departmentId !== '',
+  )
+}
+
+function hasCrossBudgetAccess(user = {}, budgetAccessRules = []) {
+  const userDepartmentIds = getUserDepartmentIds(user)
+
+  return budgetAccessRules.some((rule) => {
+    const ruleDepartmentId = getFirstValue(rule, ['department_id', 'departmentId'])
+    const moduleName = normalizeText(getFirstValue(rule, ['module'], FRP_BUDGET_ACCESS_MODULE))
+    const accessType = normalizeText(
+      getFirstValue(rule, ['access_type', 'accessType'], CROSS_BUDGET_ACCESS_TYPE),
+    )
+
+    return (
+      isActiveRecord(rule) &&
+      moduleName === FRP_BUDGET_ACCESS_MODULE &&
+      accessType === CROSS_BUDGET_ACCESS_TYPE &&
+      userDepartmentIds.some((departmentId) => String(departmentId) === String(ruleDepartmentId))
+    )
+  })
+}
+
+function filterBudgetsByRequesterScope(budgets, scopeInfo) {
+  const scopeDepartmentId = scopeInfo.department_id
+  const scopeClassDepartmentId = scopeInfo.class_department_id
+
+  return budgets.filter((budget) => {
+    const budgetDepartmentId = getFirstValue(budget, ['department_id', 'departmentId'])
+    const budgetClassDepartmentId = getFirstValue(
+      budget,
+      ['class_department_id', 'classDepartmentId'],
+    )
+
+    if (!budgetDepartmentId && !budgetClassDepartmentId) {
+      return true
+    }
+
+    return (
+      (scopeDepartmentId && String(budgetDepartmentId) === String(scopeDepartmentId)) ||
+      (scopeClassDepartmentId && String(budgetClassDepartmentId) === String(scopeClassDepartmentId))
+    )
+  })
+}
+
+function getBudgetListParams(scopeInfo, canUseCrossBudget) {
+  const params = {
+    page: 1,
+    limit: 200,
+    is_active: 1,
+  }
+
+  if (!canUseCrossBudget) {
+    params.department_id = scopeInfo.department_id || undefined
+    params.class_department_id = scopeInfo.class_department_id || undefined
+  }
+
+  return params
+}
+
 function getUserRequesterInfo(user = {}) {
   const primaryCompany = getPrimaryItem(user.companies)
   const primaryDepartment = getPrimaryItem(user.departments)
   const companyCode = user.company_code ?? primaryCompany?.code
   const companyName = user.company ?? primaryCompany?.name ?? primaryCompany?.company_name
+  const departmentId =
+    user.context_department_id ??
+    user.department_id ??
+    primaryDepartment?.department_id ??
+    primaryDepartment?.id ??
+    ''
+  const classDepartmentId =
+    user.class_department_id ??
+    primaryDepartment?.class_department_id ??
+    primaryDepartment?.id ??
+    departmentId
   const departmentCode = user.department_code ?? primaryDepartment?.code
   const departmentName =
     user.department ?? primaryDepartment?.name ?? primaryDepartment?.department_name
@@ -462,27 +572,91 @@ function getUserRequesterInfo(user = {}) {
     company: [companyCode, companyName].filter(Boolean).join(' - '),
     division: [departmentCode, departmentName].filter(Boolean).join(' - '),
     request_by: user.name ?? user.full_name ?? user.username ?? '',
+    department_id: departmentId,
+    class_department_id: classDepartmentId,
   }
 }
 
-function getFrpRequesterInfo(frp = {}, fallbackUser = {}) {
-  const fallbackRequesterInfo = getUserRequesterInfo(fallbackUser)
-  const companyCode = getFirstValue(frp, ['company_code_snapshot', 'company_code'], '')
-  const companyName = getFirstValue(frp, ['company_name_snapshot', 'company_name'], '')
-  const departmentCode = getFirstValue(frp, ['department_code_snapshot', 'department_code'], '')
-  const departmentName = getFirstValue(frp, ['department_name_snapshot', 'department_name'], '')
-  const requestedBy = getFirstValue(
-    frp,
-    ['requested_by_name', 'request_by_name', 'request_by', 'created_by_name'],
-    '',
-  )
+function hasHeader(headers, headerName) {
+  return Object.keys(headers).some((key) => key.toLowerCase() === headerName.toLowerCase())
+}
 
-  return {
-    company: [companyCode, companyName].filter(Boolean).join(' - ') || fallbackRequesterInfo.company,
-    division:
-      [departmentCode, departmentName].filter(Boolean).join(' - ') ||
-      fallbackRequesterInfo.division,
-    request_by: requestedBy || fallbackRequesterInfo.request_by,
+function getSignedUploadHeaders(uploadItem, file) {
+  const headers = {
+    ...(uploadItem?.headers || {}),
+  }
+
+  if (!hasHeader(headers, 'Content-Type')) {
+    headers['Content-Type'] = uploadItem?.mime_type || file?.type || 'application/octet-stream'
+  }
+
+  return headers
+}
+
+function normalizeDocumentTypeId(documentTypeId) {
+  if (documentTypeId === '' || documentTypeId === undefined || documentTypeId === null) {
+    return null
+  }
+
+  const numericDocumentTypeId = Number(documentTypeId)
+
+  return Number.isFinite(numericDocumentTypeId) ? numericDocumentTypeId : documentTypeId
+}
+
+async function uploadEditFrpAttachment(frpId, attachment, documentTypeId) {
+  const file = attachment?.file
+  let uploadItem = null
+
+  if (!file) {
+    throw new Error('File attachment tidak tersedia.')
+  }
+
+  try {
+    const signResponse = await api.frp.attachments.signUpload(frpId, {
+      document_type_id: normalizeDocumentTypeId(documentTypeId),
+      original_file_name: file.name,
+      mime_type: file.type || 'application/octet-stream',
+      file_size: file.size,
+    })
+    uploadItem = getResponseItems(signResponse)[0]
+
+    if (!uploadItem?.upload_url) {
+      throw new Error('URL upload attachment tidak tersedia.')
+    }
+
+    try {
+      await api.frp.attachments.uploadToStorage(uploadItem.upload_url, file, {
+        method: uploadItem.method || 'PUT',
+        headers: getSignedUploadHeaders(uploadItem, file),
+      })
+    } catch {
+      await api.frp.attachments.uploadViaBackend(frpId, uploadItem.attachment_id, file)
+    }
+
+    const confirmResponse = await api.frp.attachments.confirm(frpId, {
+      attachment_id: uploadItem.attachment_id,
+      checksum: null,
+    })
+    const confirmedAttachment = getResponseItems(confirmResponse)[0]
+    const uploadStatus = String(
+      confirmedAttachment?.upload_status ?? confirmedAttachment?.status ?? '',
+    ).toUpperCase()
+
+    if (uploadStatus && uploadStatus !== 'UPLOADED') {
+      throw new Error('Attachment belum berhasil dikonfirmasi.')
+    }
+
+    return confirmedAttachment
+  } catch (error) {
+    if (uploadItem?.attachment_id) {
+      try {
+        await api.frp.attachments.cancel(frpId, uploadItem.attachment_id)
+      } catch {
+        // Ignore cleanup errors so the original upload problem stays visible.
+      }
+    }
+
+    throw error
   }
 }
 
@@ -498,14 +672,12 @@ function DialogEditFrp({
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState(frpTabs[0].id)
   const [vendorOptions, setVendorOptions] = useState([])
   const [vendorBankOptions, setVendorBankOptions] = useState([])
   const [externalDocumentTypeOptions, setExternalDocumentTypeOptions] = useState([])
   const [paymentMethodOptions, setPaymentMethodOptions] = useState([])
   const [frpDocumentTypeOptions, setFrpDocumentTypeOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
-  const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
   const [attachmentDraft, setAttachmentDraft] = useState(editInitialAttachmentDraft)
@@ -527,14 +699,12 @@ function DialogEditFrp({
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
-    setActiveTab(frpTabs[0].id)
     setVendorOptions([])
     setVendorBankOptions([])
     setExternalDocumentTypeOptions([])
     setPaymentMethodOptions([])
     setFrpDocumentTypeOptions([])
     setBudgetOptions([])
-    setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
     setAttachmentDraft(editInitialAttachmentDraft())
@@ -545,10 +715,6 @@ function DialogEditFrp({
   const handleClose = () => {
     resetDialogState()
     onClose?.()
-  }
-
-  const handleTabChange = (_, nextValue) => {
-    setActiveTab(nextValue)
   }
 
   const updateValue = (fieldName, value) => {
@@ -662,8 +828,9 @@ function DialogEditFrp({
   const previewExistingAttachment = async (attachment) => {
     const frpId = frp?.id
     const attachmentId = getAttachmentId(attachment)
+    const uploadStatus = getAttachmentUploadStatus(attachment)
 
-    if (!isUploadedAttachment(attachment)) {
+    if (uploadStatus && uploadStatus !== 'UPLOADED') {
       setAttachmentActionError('Attachment belum selesai diupload.')
       return
     }
@@ -758,6 +925,21 @@ function DialogEditFrp({
     })
   }
 
+  const duplicateLastItem = () => {
+    setFormValues((currentValues) => {
+      const lastItem = currentValues.items[currentValues.items.length - 1]
+
+      if (!lastItem) {
+        return currentValues
+      }
+
+      return {
+        ...currentValues,
+        items: [...currentValues.items, { ...lastItem }],
+      }
+    })
+  }
+
   const handleVendorBankChange = (value, option) => {
     updateValue('vendor_bank_account_id', value)
 
@@ -791,12 +973,12 @@ function DialogEditFrp({
         const [
           frpDetailResponse,
           authResponse,
+          budgetAccessRulesResponse,
           vendorsResponse,
           vendorBanksResponse,
           externalDocumentTypesResponse,
           paymentMethodsResponse,
           frpDocumentTypesResponse,
-          budgetsResponse,
         ] = await Promise.all([
           frpId === undefined || frpId === null
             ? Promise.resolve(frp)
@@ -806,6 +988,18 @@ function DialogEditFrp({
           api.auth.me({
             signal: controller.signal,
           }),
+          api.budgetAccessRules.list(
+            {
+              page: 1,
+              limit: 200,
+              module: FRP_BUDGET_ACCESS_MODULE,
+              access_type: CROSS_BUDGET_ACCESS_TYPE,
+              is_active: 1,
+            },
+            {
+              signal: controller.signal,
+            },
+          ),
           api.vendors.list(
             {
               page: 1,
@@ -856,20 +1050,25 @@ function DialogEditFrp({
               signal: controller.signal,
             },
           ),
-          api.budgets.list(
-            {
-              page: 1,
-              limit: 200,
-              is_active: 1,
-            },
-            {
-              signal: controller.signal,
-            },
-          ),
         ])
         const frpDetail = getFrpDetailFromResponse(frpDetailResponse) ?? frp ?? {}
         const authUser = getAuthUser(authResponse)
         const nextFormValues = mapFrpToFormValues(frpDetail)
+        const scopeInfo = getUserRequesterInfo(authUser)
+        const canUseCrossBudget = hasCrossBudgetAccess(
+          authUser,
+          getRowsFromResponse(budgetAccessRulesResponse),
+        )
+        const budgetsResponse = await api.budgets.list(
+          getBudgetListParams(scopeInfo, canUseCrossBudget),
+          {
+            signal: controller.signal,
+          },
+        )
+        const budgetRows = getRowsFromResponse(budgetsResponse)
+        const visibleBudgetRows = canUseCrossBudget
+          ? budgetRows
+          : filterBudgetsByRequesterScope(budgetRows, scopeInfo)
         const nextVendorOptions = ensureOption(
           mapVendorOptions(getRowsFromResponse(vendorsResponse)),
           nextFormValues.vendor_id,
@@ -926,13 +1125,12 @@ function DialogEditFrp({
           frpDetail,
         )
         const nextBudgetOptions = ensureBudgetOptionsForItems(
-          mapBudgetOptions(getRowsFromResponse(budgetsResponse)),
+          mapBudgetOptions(visibleBudgetRows),
           frpDetail?.items,
         )
         const nextExistingAttachments = getFrpAttachments(frpDetail).filter(isActiveAttachment)
 
         setFormValues(nextFormValues)
-        setRequesterInfo(getFrpRequesterInfo(frpDetail, authUser))
         setVendorOptions(nextVendorOptions)
         setVendorBankOptions(nextVendorBankOptions)
         setExternalDocumentTypeOptions(nextExternalDocumentTypeOptions)
@@ -956,7 +1154,6 @@ function DialogEditFrp({
         setPaymentMethodOptions([])
         setFrpDocumentTypeOptions([])
         setBudgetOptions([])
-        setRequesterInfo(initialRequesterInfo)
         setExistingAttachments([])
         setAttachmentDraft(editInitialAttachmentDraft())
         setAttachmentActionError('')
@@ -1043,10 +1240,6 @@ function DialogEditFrp({
       nextFieldErrors.destination_bank_account_name = 'Destination account name wajib diisi.'
     }
 
-    if (attachmentDraft.files.length > 0 && !attachmentDraft.documentTypeId) {
-      nextFieldErrors.attachment_document_type_id = 'Attachment document type wajib dipilih.'
-    }
-
     normalizedItems.forEach((item, index) => {
       if (!item.budget_id) {
         nextFieldErrors[`items.${index}.budget_id`] = 'Budget wajib dipilih.'
@@ -1067,30 +1260,6 @@ function DialogEditFrp({
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
-
-      if (nextFieldErrors.frp_date || nextFieldErrors.description) {
-        setActiveTab('information')
-      } else if (
-        nextFieldErrors.vendor_id ||
-        nextFieldErrors.payment_method_id ||
-        nextFieldErrors.payment_date ||
-        nextFieldErrors.currency_code ||
-        nextFieldErrors.exchange_rate ||
-        nextFieldErrors.destination_bank_name ||
-        nextFieldErrors.destination_bank_account ||
-        nextFieldErrors.destination_bank_account_name
-      ) {
-        setActiveTab('vendor')
-      } else if (
-        nextFieldErrors.document_type_ids ||
-        nextFieldErrors.attachment_document_type_id ||
-        nextFieldErrors.attachment_file
-      ) {
-        setActiveTab('attachment')
-      } else {
-        setActiveTab('items')
-      }
-
       return
     }
 
@@ -1137,15 +1306,13 @@ function DialogEditFrp({
         try {
           await Promise.all(
             attachmentDraft.files.map((attachment) =>
-              api.frp.attachments.upload(updatedFrpId, {
-                file: attachment.file,
-                documentTypeId: attachmentDraft.documentTypeId,
-              }),
+              uploadEditFrpAttachment(updatedFrpId, attachment, attachmentDraft.documentTypeId),
             ),
           )
         } catch (error) {
-          setActiveTab('attachment')
-          throw new Error(error.message || 'FRP berhasil diperbarui, tetapi attachment gagal diupload.')
+          throw new Error(error.message || 'FRP berhasil diperbarui, tetapi attachment gagal diupload.', {
+            cause: error,
+          })
         }
       }
 
@@ -1167,6 +1334,13 @@ function DialogEditFrp({
   }
 
   const isFormDisabled = isSubmitting || isOptionsLoading
+  const exchangeRate = toNumber(formValues.exchange_rate || 1)
+  const totalAmountIdr = formValues.items.reduce((total, item) => {
+    const quantity = toNumber(item.quantity)
+    const unitPrice = toNumber(item.unit_price)
+
+    return total + quantity * unitPrice * exchangeRate
+  }, 0)
   const filteredVendorBankOptions = formValues.vendor_id
     ? vendorBankOptions.filter(
         (option) => !option.vendorId || String(option.vendorId) === String(formValues.vendor_id),
@@ -1183,83 +1357,6 @@ function DialogEditFrp({
           selectedFrpDocumentTypeIds.includes(String(option.value)),
         )
       : frpDocumentTypeDropdownOptions
-  const activeStepIndex = frpTabs.findIndex((tab) => tab.id === activeTab)
-  const activeStepLabel = `Step ${activeStepIndex + 1} of ${frpTabs.length}`
-
-  const renderActivePanel = () => {
-    if (activeTab === 'information') {
-      return (
-        <TabsInformation
-          requesterInfo={requesterInfo}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          externalDocumentTypeOptions={externalDocumentTypeOptions}
-          updateValue={updateValue}
-        />
-      )
-    }
-
-    if (activeTab === 'vendor') {
-      return (
-        <TabsVendor
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          vendorOptions={vendorOptions}
-          filteredVendorBankOptions={filteredVendorBankOptions}
-          paymentMethodOptions={paymentMethodOptions}
-          updateValue={updateValue}
-          handleVendorBankChange={handleVendorBankChange}
-        />
-      )
-    }
-
-    if (activeTab === 'attachment') {
-      return (
-        <TabsAttachment
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
-          attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
-          attachmentDraft={attachmentDraft}
-          existingAttachments={existingAttachments}
-          attachmentActionError={attachmentActionError}
-          updateDocumentTypeIds={updateDocumentTypeIds}
-          updateAttachmentDocumentType={updateAttachmentDocumentType}
-          updateAttachmentFile={updateAttachmentFile}
-          removeAttachmentDraft={removeAttachmentDraft}
-          previewAttachmentDraft={previewAttachmentDraft}
-          previewExistingAttachment={previewExistingAttachment}
-          removeExistingAttachment={removeExistingAttachment}
-        />
-      )
-    }
-
-    return (
-      <TabsItems
-        formValues={formValues}
-        fieldErrors={fieldErrors}
-        isOptionsLoading={isOptionsLoading}
-        isFormDisabled={isFormDisabled}
-        budgetOptions={budgetOptions}
-        attachmentDraft={attachmentDraft}
-        existingAttachments={existingAttachments}
-        attachmentActionError={attachmentActionError}
-        updateItemValue={updateItemValue}
-        removeItem={removeItem}
-        addItem={addItem}
-        removeAttachmentDraft={removeAttachmentDraft}
-        previewAttachmentDraft={previewAttachmentDraft}
-        previewExistingAttachment={previewExistingAttachment}
-        removeExistingAttachment={removeExistingAttachment}
-      />
-    )
-  }
 
   const dialogNode = (
     <div className="dashboard-popup-overlay" role="presentation">
@@ -1273,9 +1370,7 @@ function DialogEditFrp({
         <form onSubmit={handleSubmit}>
           <div className="dashboard-popup__header">
             <div>
-              <p className="dashboard-popup__eyebrow">
-                {eyebrow} · {activeStepLabel}
-              </p>
+              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
               <h2 className="dashboard-popup__title" id="dialog-edit-frp-title">
                 {title}
               </h2>
@@ -1296,64 +1391,52 @@ function DialogEditFrp({
             <div className="register-user-popup__layout">
               <div className="register-user-popup__main">
                 <div className="register-user-popup__form">
-                  <div className="frp-dialog__tabbed-container">
-                    <div className="frp-dialog__tabs-shell">
-                      <Tabs
-                        value={activeTab}
-                        onChange={handleTabChange}
-                        textColor="primary"
-                        indicatorColor="primary"
-                        aria-label="FRP tabs"
-                        variant="fullWidth"
-                        className="frp-dialog__tabs"
-                        sx={{
-                          minHeight: 44,
-                          '& .MuiTabs-flexContainer': {
-                            gap: '0.4rem',
-                          },
-                          '& .MuiTabs-indicator': {
-                            height: 2,
-                            borderRadius: 999,
-                            backgroundColor: 'var(--primary-blue)',
-                          },
-                        }}
-                      >
-                        {frpTabs.map((tab) => (
-                          <Tab
-                            key={tab.id}
-                            id={`frp-tab-${tab.id}`}
-                            aria-controls={`frp-panel-${tab.id}`}
-                            value={tab.id}
-                            label={tab.label}
-                            disableRipple
-                            className="frp-dialog__mui-tab"
-                            sx={{
-                              minHeight: 44,
-                              borderRadius: '10px 10px 0 0',
-                              color: '#607089',
-                              fontSize: '0.86rem',
-                              fontWeight: 700,
-                              letterSpacing: 0,
-                              textTransform: 'none',
-                              transition: 'background-color 0.2s ease, color 0.2s ease',
-                              '&.Mui-selected': {
-                                color: 'var(--primary-blue)',
-                                backgroundColor: 'rgba(26, 42, 87, 0.08)',
-                              },
-                            }}
-                          />
-                        ))}
-                      </Tabs>
-                    </div>
+                  <div className="frp-dialog__panel">
+                    <TabsInformation
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      externalDocumentTypeOptions={externalDocumentTypeOptions}
+                      frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+                      attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
+                      attachmentDraft={attachmentDraft}
+                      existingAttachments={existingAttachments}
+                      attachmentActionError={attachmentActionError}
+                      updateValue={updateValue}
+                      updateDocumentTypeIds={updateDocumentTypeIds}
+                      updateAttachmentDocumentType={updateAttachmentDocumentType}
+                      updateAttachmentFile={updateAttachmentFile}
+                      removeAttachmentDraft={removeAttachmentDraft}
+                      previewAttachmentDraft={previewAttachmentDraft}
+                      previewExistingAttachment={previewExistingAttachment}
+                      removeExistingAttachment={removeExistingAttachment}
+                    />
 
-                    <div
-                      className="frp-dialog__panel"
-                      id={`frp-panel-${activeTab}`}
-                      role="tabpanel"
-                      aria-labelledby={`frp-tab-${activeTab}`}
-                    >
-                      {renderActivePanel()}
-                    </div>
+                    <TabsVendor
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      vendorOptions={vendorOptions}
+                      filteredVendorBankOptions={filteredVendorBankOptions}
+                      paymentMethodOptions={paymentMethodOptions}
+                      updateValue={updateValue}
+                      handleVendorBankChange={handleVendorBankChange}
+                    />
+
+                    <TabsItems
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      budgetOptions={budgetOptions}
+                      updateValue={updateValue}
+                      updateItemValue={updateItemValue}
+                      removeItem={removeItem}
+                      addItem={addItem}
+                      duplicateLastItem={duplicateLastItem}
+                    />
                   </div>
 
                   {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
@@ -1363,7 +1446,17 @@ function DialogEditFrp({
             </div>
           </div>
 
-          <div className="dashboard-popup__actions">
+          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
+            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
+              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+                <TrendingUp size={18} />
+              </span>
+              <div>
+                <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
+                <strong>{formatRupiah(totalAmountIdr)}</strong>
+              </div>
+            </div>
+
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

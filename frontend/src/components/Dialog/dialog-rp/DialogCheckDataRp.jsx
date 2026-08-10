@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
+import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-create-rp/TabsInformation.jsx'
 import TabsItems from './tabs-create-rp/TabsItems.jsx'
 import TabsVendor from './tabs-create-rp/TabsVendor.jsx'
@@ -46,21 +45,6 @@ const initialRequesterInfo = {
   department_id: '',
   class_department_id: '',
 }
-
-const rpTabs = [
-  {
-    id: 'information',
-    label: 'Information',
-  },
-  {
-    id: 'vendor',
-    label: 'Vendor',
-  },
-  {
-    id: 'items',
-    label: 'Items',
-  },
-]
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -377,6 +361,20 @@ function isPositiveIntegerInput(value) {
   return /^\d+$/.test(normalizedValue) && Number.isSafeInteger(numberValue) && numberValue > 0
 }
 
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(numberValue)
+}
+
 function DialogCheckDataRp({
   isOpen = false,
   eyebrow = 'Form request purchase',
@@ -389,7 +387,6 @@ function DialogCheckDataRp({
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState(rpTabs[0].id)
   const [vendorOptions, setVendorOptions] = useState([])
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
@@ -403,7 +400,6 @@ function DialogCheckDataRp({
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
-    setActiveTab(rpTabs[0].id)
     setVendorOptions([])
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
@@ -703,21 +699,6 @@ function DialogCheckDataRp({
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
-
-      if (nextFieldErrors.description) {
-        setActiveTab('information')
-      } else if (
-        nextFieldErrors.date_required ||
-        nextFieldErrors.vendor_id ||
-        nextFieldErrors.payment_category_id ||
-        nextFieldErrors.destination_department_id ||
-        nextFieldErrors.pic_name
-      ) {
-        setActiveTab('vendor')
-      } else {
-        setActiveTab('items')
-      }
-
       return
     }
 
@@ -758,135 +739,68 @@ function DialogCheckDataRp({
   }
 
   const isFormDisabled = isSubmitting || isOptionsLoading
-  const activeStepIndex = rpTabs.findIndex((tab) => tab.id === activeTab)
-  const activeStepLabel = `Step ${activeStepIndex + 1} of ${rpTabs.length}`
+  const totalAmount = formValues.items.reduce((total, item) => {
+    const quantity = Number(item.quantity)
+    const unitPrice = Number(item.unit_price)
 
-  const renderActivePanel = () => {
-    if (activeTab === 'information') {
-      return (
-        <TabsInformation
-          requesterInfo={requesterInfo}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          updateValue={updateValue}
-        />
-      )
-    }
-
-    if (activeTab === 'vendor') {
-      return (
-        <TabsVendor
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          vendorOptions={vendorOptions}
-          paymentCategoryOptions={paymentCategoryOptions}
-          destinationDepartmentOptions={destinationDepartmentOptions}
-          updateValue={updateValue}
-        />
-      )
-    }
-
-    return (
-      <TabsItems
-        formValues={formValues}
-        fieldErrors={fieldErrors}
-        isOptionsLoading={isOptionsLoading}
-        isFormDisabled={isFormDisabled}
-        budgetOptions={budgetOptions}
-        updateItemValue={updateItemValue}
-        removeItem={removeItem}
-        addItem={addItem}
-      />
-    )
-  }
+    return total + (Number.isFinite(quantity) ? quantity : 0) * (Number.isFinite(unitPrice) ? unitPrice : 0)
+  }, 0)
 
   const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation" onClick={handleClose}>
+    <div className="dashboard-popup-overlay" role="presentation">
       <div
         className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="dialog-edit-rp-title"
+        aria-labelledby="dialog-check-data-rp-title"
         onClick={(event) => event.stopPropagation()}
       >
         <form onSubmit={handleSubmit}>
           <div className="dashboard-popup__header">
             <div>
-              <p className="dashboard-popup__eyebrow">
-                {eyebrow} - {activeStepLabel}
-              </p>
-              <h2 className="dashboard-popup__title" id="dialog-edit-rp-title">
+              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
+              <h2 className="dashboard-popup__title" id="dialog-check-data-rp-title">
                 {title}
               </h2>
             </div>
+
+            <button
+              type="button"
+              className="frp-bare-icon-button frp-dialog__close-button"
+              aria-label="Tutup dialog"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              <XClose size={24} />
+            </button>
           </div>
 
           <div className="dashboard-popup__body">
             <div className="register-user-popup__layout">
               <div className="register-user-popup__main">
                 <div className="register-user-popup__form">
-                  <div className="frp-dialog__tabbed-container">
-                    <div className="frp-dialog__tabs-shell">
-                      <Tabs
-                        value={activeTab}
-                        onChange={(_, nextValue) => setActiveTab(nextValue)}
-                        textColor="primary"
-                        indicatorColor="primary"
-                        aria-label="RP tabs"
-                        variant="fullWidth"
-                        className="frp-dialog__tabs"
-                        sx={{
-                          minHeight: 44,
-                          '& .MuiTabs-flexContainer': {
-                            gap: '0.4rem',
-                          },
-                          '& .MuiTabs-indicator': {
-                            height: 2,
-                            borderRadius: 999,
-                            backgroundColor: 'var(--primary-blue)',
-                          },
-                        }}
-                      >
-                        {rpTabs.map((tab) => (
-                          <Tab
-                            key={tab.id}
-                            id={`rp-edit-tab-${tab.id}`}
-                            aria-controls={`rp-edit-panel-${tab.id}`}
-                            value={tab.id}
-                            label={tab.label}
-                            disableRipple
-                            className="frp-dialog__mui-tab"
-                            sx={{
-                              minHeight: 44,
-                              borderRadius: '10px 10px 0 0',
-                              color: '#607089',
-                              fontSize: '0.86rem',
-                              fontWeight: 700,
-                              letterSpacing: 0,
-                              textTransform: 'none',
-                              transition: 'background-color 0.2s ease, color 0.2s ease',
-                              '&.Mui-selected': {
-                                color: 'var(--primary-blue)',
-                                backgroundColor: 'rgba(26, 42, 87, 0.08)',
-                              },
-                            }}
-                          />
-                        ))}
-                      </Tabs>
-                    </div>
-
-                    <div
-                      className="frp-dialog__panel"
-                      id={`rp-edit-panel-${activeTab}`}
-                      role="tabpanel"
-                      aria-labelledby={`rp-edit-tab-${activeTab}`}
-                    >
-                      {renderActivePanel()}
-                    </div>
+                  <div className="frp-dialog__panel">
+                    <TabsInformation requesterInfo={requesterInfo} isOptionsLoading={isOptionsLoading} />
+                    <TabsVendor
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      vendorOptions={vendorOptions}
+                      paymentCategoryOptions={paymentCategoryOptions}
+                      destinationDepartmentOptions={destinationDepartmentOptions}
+                      updateValue={updateValue}
+                    />
+                    <TabsItems
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      budgetOptions={budgetOptions}
+                      updateItemValue={updateItemValue}
+                      removeItem={removeItem}
+                      addItem={addItem}
+                    />
                   </div>
 
                   {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
@@ -896,15 +810,17 @@ function DialogCheckDataRp({
             </div>
           </div>
 
-          <div className="dashboard-popup__actions">
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--secondary"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </button>
+          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
+            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
+              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+                <TrendingUp size={18} />
+              </span>
+              <div>
+                <span className="frp-dialog__total-amount-label">Total RP</span>
+                <strong>{formatRupiah(totalAmount)}</strong>
+              </div>
+            </div>
+
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

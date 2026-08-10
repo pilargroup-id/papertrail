@@ -1,5 +1,6 @@
 import DataTableAction, { DataTableStatus } from '../DataTableAction.jsx'
 import ButtonEditRp from '../../button/button-rp/ButtonEditRp.jsx'
+import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
 import ButtonDetailsRp from '../../button/button-rp/ButtonDetailsRp.jsx'
 
 // Button Action Dekstop
@@ -258,6 +259,10 @@ function isCreateFrpActionHidden(rp, index, currentUser, canCreateFrpAction) {
   )
 }
 
+function isPrintActionHidden(rp) {
+  return getFrpStatusValue(rp) !== 'APPROVED'
+}
+
 const columnsDataTableRp = [{
     key: 'rpNumber',
     header: 'RP Number',
@@ -352,6 +357,7 @@ function DataTableRp({
   onRevert,
   onCheckData,
   onCreateFrp,
+  onPrint,
   canApprove,
   canReject,
   canRevert,
@@ -466,6 +472,16 @@ function DataTableRp({
           onClick: onCreateFrp,
         }
       : null,
+    typeof onPrint === 'function'
+      ? {
+          key: 'print',
+          label: 'Print',
+          buttonComponent: ButtonPrintRp,
+          mobileHidden: true,
+          hidden: (rp) => isPrintActionHidden(rp),
+          onClick: onPrint,
+        }
+      : null,
     typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
       ? {
           key: 'edit',
@@ -476,7 +492,7 @@ function DataTableRp({
           hidden: (rp, index) =>
             useCheckDataAction
               ? typeof canCheckData === 'function' && !canCheckData(rp, index)
-              : !canCurrentUserEditFrp(rp, currentUser),
+              : !canCurrentUserEditFrp(rp, currentUser) || getFrpStatusValue(rp) === 'APPROVED',
           onClick: useCheckDataAction ? onCheckData : onEdit,
         }
       : null,

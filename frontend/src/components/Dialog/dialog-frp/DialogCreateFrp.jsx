@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
-import { XClose } from '../../layoute/TemplateIcons.jsx'
+import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-create-frp/TabsInformation.jsx'
 import TabsItems from './tabs-create-frp/TabsItems.jsx'
 import TabsVendor from './tabs-create-frp/TabsVendor.jsx'
@@ -28,6 +28,26 @@ function isPositiveIntegerInput(value) {
   const numberValue = Number(normalizedValue)
 
   return /^\d+$/.test(normalizedValue) && Number.isSafeInteger(numberValue) && numberValue > 0
+}
+
+function toNumber(value) {
+  const normalizedValue = Number(value)
+
+  return Number.isFinite(normalizedValue) ? normalizedValue : 0
+}
+
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(numberValue)
 }
 
 const createInitialFormValues = () => ({
@@ -963,6 +983,13 @@ function DialogCreateFrp({
   }
 
   const isFormDisabled = isSubmitting || isOptionsLoading
+  const exchangeRate = toNumber(formValues.exchange_rate || 1)
+  const totalAmountIdr = formValues.items.reduce((total, item) => {
+    const quantity = toNumber(item.quantity)
+    const unitPrice = toNumber(item.unit_price)
+
+    return total + quantity * unitPrice * exchangeRate
+  }, 0)
   const filteredVendorBankOptions = formValues.vendor_id
     ? vendorBankOptions.filter(
         (option) => !option.vendorId || String(option.vendorId) === String(formValues.vendor_id),
@@ -1014,7 +1041,6 @@ function DialogCreateFrp({
                 <div className="register-user-popup__form">
                   <div className="frp-dialog__panel">
                     <TabsInformation
-                      requesterInfo={requesterInfo}
                       isOptionsLoading={isOptionsLoading}
                       isFormDisabled={isFormDisabled}
                       formValues={formValues}
@@ -1064,7 +1090,17 @@ function DialogCreateFrp({
             </div>
           </div>
 
-          <div className="dashboard-popup__actions">
+          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
+            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
+              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+                <TrendingUp size={18} />
+              </span>
+              <div>
+                <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
+                <strong>{formatRupiah(totalAmountIdr)}</strong>
+              </div>
+            </div>
+
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

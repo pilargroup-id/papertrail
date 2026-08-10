@@ -4,7 +4,7 @@ import api from '../../../../services/api.js'
 import TextField from '../../../forms/TextField.jsx'
 import Dropdown from '../../../forms/dropdown/Dropdown.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
-import { Copy, Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
+import { Copy, Lock, Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
 
 const fallbackCurrencyOptions = [{ value: 'IDR', label: 'IDR - Indonesian Rupiah' }]
 const currenciesPageSize = 100
@@ -210,12 +210,6 @@ function TabsItems({
   const [exchangeRateMessage, setExchangeRateMessage] = useState('')
   const currencyCode = String(formValues.currency_code || 'IDR').trim().toUpperCase()
   const exchangeRate = toNumber(formValues.exchange_rate || 1)
-  const totalAmountIdr = formValues.items.reduce((total, item) => {
-    const quantity = toNumber(item.quantity)
-    const unitPrice = toNumber(item.unit_price)
-
-    return total + quantity * unitPrice * exchangeRate
-  }, 0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -358,15 +352,6 @@ function TabsItems({
               onChange={(event) => updateValue('exchange_rate', event.target.value)}
             />
           </div>
-          <div className="frp-dialog__total-amount" aria-live="polite">
-            <span className="frp-dialog__total-amount-icon" aria-hidden="true">
-              <TrendingUp size={18} />
-            </span>
-            <div>
-              <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
-              <strong>{formatRupiah(totalAmountIdr)}</strong>
-            </div>
-          </div>
         </div>
 
         <div className="frp-dialog__section-divider" role="separator" aria-hidden="true" />
@@ -429,9 +414,10 @@ function TabsItems({
                   <div className="register-user-popup__field">
                     <TextField
                       label="Budget Amount"
+                      className="form-control--readonly-field"
                       value={budgetAmount}
                       placeholder="-"
-                      leftIcon={TrendingUp}
+                      leftIcon={Lock}
                       disabled
                       readOnly
                     />
@@ -439,9 +425,10 @@ function TabsItems({
                   <div className="register-user-popup__field">
                     <TextField
                       label="Budget Remaining"
+                      className="form-control--readonly-field"
                       value={budgetRemaining}
                       placeholder="-"
-                      leftIcon={TrendingUp}
+                      leftIcon={Lock}
                       disabled
                       readOnly
                     />
@@ -496,8 +483,9 @@ function TabsItems({
                   <div className="register-user-popup__field">
                     <TextField
                       label="Amount (IDR)"
+                      className="form-control--readonly-field"
                       value={formatRupiah(Number.isFinite(amountIdr) ? amountIdr : 0)}
-                      leftIcon={TrendingUp}
+                      leftIcon={Lock}
                       disabled
                       readOnly
                     />

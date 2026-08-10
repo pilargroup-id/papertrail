@@ -6232,12 +6232,12 @@ width: var(--sidebar-collapsed-width);
 }
 
 .entity-form-popup .register-user-popup__grid.register-user-popup__grid--frp-currency-row {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .entity-form-popup
   .register-user-popup__grid.register-user-popup__grid--frp-budget-row {
-  grid-template-columns: minmax(0, 2.1fr) minmax(0, 0.4fr) minmax(0, 0.8fr);
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 0.7fr) minmax(0, 0.5fr);
 }
 
 .entity-form-popup
@@ -9314,6 +9314,31 @@ width: var(--sidebar-collapsed-width);
 .form-control__select:disabled,
 .form-dropdown__trigger:disabled {
   cursor: not-allowed;
+}
+
+.form-control--readonly-field {
+  opacity: 1;
+}
+
+.form-control--readonly-field .form-control__label span {
+  color: #7f8da8;
+}
+
+.form-control--readonly-field .form-control__input-shell {
+  background: #f2f4f7;
+  border-style: dashed;
+  border-color: #d0d5dd;
+}
+
+.form-control--readonly-field .form-control__input:disabled {
+  background: transparent;
+  color: #667085;
+  -webkit-text-fill-color: #667085;
+  font-weight: 600;
+}
+
+.form-control--readonly-field .form-control__icon {
+  color: #98a2b3;
 }
 
 .form-control__message,

@@ -1,7 +1,9 @@
 import TextField from '../../../forms/TextField.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
 import {
+  Copy,
   ExternalLink,
+  Lock,
   Plus,
   Table01,
   Trash03,
@@ -57,6 +59,7 @@ function TabsItems({
   updateItemValue,
   removeItem,
   addItem,
+  duplicateLastItem,
   isBudgetDisabled = false,
   canManageItems = true,
 }) {
@@ -142,9 +145,10 @@ function TabsItems({
                 <div className="register-user-popup__field">
                   <TextField
                     label="Budget Remaining"
+                    className="form-control--readonly-field"
                     value={budgetRemaining}
                     placeholder="-"
-                    leftIcon={TrendingUp}
+                    leftIcon={Lock}
                     disabled
                     readOnly
                   />
@@ -170,8 +174,9 @@ function TabsItems({
                 <div className="register-user-popup__field">
                   <TextField
                     label="Amount"
+                    className="form-control--readonly-field"
                     value={formatRupiah(Number.isFinite(amount) ? amount : 0)}
-                    leftIcon={TrendingUp}
+                    leftIcon={Lock}
                     disabled
                     readOnly
                   />
@@ -203,15 +208,28 @@ function TabsItems({
           )
         })}
 
-        <button
-          type="button"
-          className="dashboard-popup__button dashboard-popup__button--secondary frp-dialog__add-item"
-          disabled={!canManageItems || isFormDisabled}
-          onClick={addItem}
-        >
-          <Plus size={16} />
-          Add Item
-        </button>
+        <div className="frp-dialog__item-actions">
+          <button
+            type="button"
+            className="dashboard-popup__button dashboard-popup__button--outline-teal frp-dialog__add-item"
+            disabled={!canManageItems || isFormDisabled}
+            onClick={addItem}
+          >
+            <Plus size={16} />
+            Add Item
+          </button>
+          {duplicateLastItem ? (
+            <button
+              type="button"
+              className="dashboard-popup__button dashboard-popup__button--outline-purple frp-dialog__add-item"
+              disabled={!canManageItems || isFormDisabled}
+              onClick={duplicateLastItem}
+            >
+              <Copy size={16} />
+              Duplicate
+            </button>
+          ) : null}
+        </div>
         {fieldErrors.items ? <p className="form-control__message">{fieldErrors.items}</p> : null}
       </div>
     </section>

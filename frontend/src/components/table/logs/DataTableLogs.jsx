@@ -345,7 +345,7 @@ function isRevertActionHidden(frp, index, currentUser, canRevertAction) {
   )
 }
 
-const columnsDataTableBanks = [{
+const columnsDataTableLogsBudget  = [{
     key: 'frpNumber',
     header: 'FRP Number',
     accessor: 'frp_number',
