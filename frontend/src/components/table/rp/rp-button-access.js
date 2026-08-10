@@ -152,7 +152,7 @@ function isGeneralProcurementUser(user) {
   return jobPosition === 'GENERAL PROCUREMENT' && jobLevelValue < 4
 }
 
-function getRpFrpConversionStatus(rp) {
+export function getRpFrpConversionStatus(rp) {
   return String(getFirstValue(rp, ['frp_conversion_status', 'frpConversionStatus'], 'NOT_CREATED'))
     .trim()
     .toUpperCase()

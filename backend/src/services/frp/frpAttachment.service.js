@@ -373,8 +373,8 @@ async function uploadPendingAttachment(frpRequestId, attachmentId, fileBuffer, u
       throw new Error('FRP request not found');
     }
 
-    if (frp.status !== 'PENDING') {
-      throw new Error('Attachments can only be uploaded to PENDING FRP');
+    if (!canMutateAttachmentByStatus(frp)) {
+      throw new Error('Attachments can only be uploaded to PENDING FRP or approved FRP from RP');
     }
 
     if (!canManageAttachment(user, frp)) {

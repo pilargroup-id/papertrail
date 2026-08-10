@@ -782,7 +782,7 @@ function DialogCreateFrpFromRp({
         vendor_id: formValues.vendor_id,
         vendor_bank_account_id: formValues.vendor_bank_account_id || null,
         internal_po_number: formValues.internal_po_number.trim(),
-        external_document_type_id: formValues.external_document_type_id,
+        external_document_type_id: formValues.external_document_type_id || null,
         external_document_number: formValues.external_document_number.trim(),
         payment_method_id: formValues.payment_method_id,
         payment_date: formValues.payment_date,

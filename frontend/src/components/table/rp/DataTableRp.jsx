@@ -23,6 +23,7 @@ import {
   canCurrentUserEditFrp,
   canCurrentUserRejectFrp,
   canCurrentUserRevertFrp,
+  getRpFrpConversionStatus,
 } from './rp-button-access.js'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
@@ -80,6 +81,10 @@ function getFrpStatusLabel(rp) {
     return '-'
   }
 
+  if (status === 'APPROVED') {
+    return getRpFrpConversionStatus(rp) === 'CREATED' ? 'FRP Created' : 'Approved'
+  }
+
   if (FRP_STATUS_LABEL_OVERRIDES[status]) {
     return FRP_STATUS_LABEL_OVERRIDES[status]
   }
@@ -104,7 +109,7 @@ function getFrpStatusVariant(rp) {
 
   switch (status) {
     case 'APPROVED':
-      return 'active'
+      return getRpFrpConversionStatus(rp) === 'CREATED' ? 'active' : 'default'
     case 'REJECTED':
       return 'inactive'
     case 'VOIDED':

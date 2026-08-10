@@ -19,6 +19,13 @@ import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFr
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
+import {
+  getFrpDetailFromResponse,
+  getFrpItemsFromResponse,
+  printFrpDocument,
+  showPrintError,
+  showPrintLoading,
+} from './print-frp.js'
 
 // Mobile
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
@@ -281,8 +288,32 @@ function FrpPage(props) {
     return () => controller.abort()
   }, [authDepartmentId, shouldLoadFrp, searchQuery, reloadToken])
 
-  const handlePrintFrp = (frp) => {
-    // TODO: wire up FRP print/export logic.
+  const handlePrintFrp = async (frp) => {
+    const frpId = frp?.id
+
+    if (frpId === undefined || frpId === null) {
+      window.alert('ID FRP tidak tersedia.')
+      return
+    }
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=700')
+
+    if (!printWindow) {
+      window.alert('Popup print diblokir browser. Izinkan popup untuk mencetak FRP.')
+      return
+    }
+
+    showPrintLoading(printWindow)
+
+    try {
+      const response = await api.frp.detail(frpId)
+      const frpDetail = getFrpDetailFromResponse(response) ?? frp
+      const items = getFrpItemsFromResponse(response)
+
+      printFrpDocument(printWindow, { frpDetail, items })
+    } catch (error) {
+      showPrintError(printWindow, error.message || 'Gagal memuat data FRP untuk print.')
+    }
   }
 
   const handleFrpCreated = () => {

@@ -876,7 +876,6 @@ async function reserveItemsBudget(conn, rpId, rpNumber, items = [], headerSnapsh
 
 function validateCreateFrpFromRpPayload(body = {}) {
   assertRequired(body.vendor_id, 'Vendor is required');
-  assertRequired(body.external_document_type_id, 'External document type is required');
   assertRequired(body.payment_method_id, 'Payment method is required');
   assertRequired(body.payment_date, 'Payment date is required');
 

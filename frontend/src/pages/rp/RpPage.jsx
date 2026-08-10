@@ -27,6 +27,11 @@ import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsRp from '../../components/Dialog/dialog-rp/DialogDetailsRp.jsx'
 import DialogCreateFrpFromRp from '../../components/Dialog/dialog-rp/DialogCreateFrpFromRp.jsx'
+import {
+  getRpDetailFromResponse,
+  getRpItemsFromResponse,
+} from '../../components/Dialog/dialog-rp/tabs-details-rp/detailRpUtils.jsx'
+import { printRpDocument, showPrintError, showPrintLoading } from './print-rp.js'
 
 // Mobile Ui
 import {
@@ -373,8 +378,32 @@ function RpPage(props) {
     setReloadToken((currentValue) => currentValue + 1)
   }
 
-  const handlePrintRp = (rp) => {
-    // TODO: wire up RP print/export logic.
+  const handlePrintRp = async (rp) => {
+    const rpId = rp?.id
+
+    if (rpId === undefined || rpId === null) {
+      window.alert('ID RP tidak tersedia.')
+      return
+    }
+
+    const printWindow = window.open('', '_blank', 'width=1200,height=850')
+
+    if (!printWindow) {
+      window.alert('Popup print diblokir browser. Izinkan popup untuk mencetak RP.')
+      return
+    }
+
+    showPrintLoading(printWindow)
+
+    try {
+      const response = await api.rp.detail(rpId)
+      const rpDetail = getRpDetailFromResponse(response) ?? rp
+      const items = getRpItemsFromResponse(response)
+
+      printRpDocument(printWindow, { rpDetail, items })
+    } catch (error) {
+      showPrintError(printWindow, error.message || 'Gagal memuat data RP untuk print.')
+    }
   }
 
   const updateRpFilter = (filterName, value) => {
