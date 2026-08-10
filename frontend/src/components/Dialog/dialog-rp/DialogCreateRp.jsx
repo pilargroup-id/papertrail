@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
 import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
-import TabsInformation from './tabs-create-rp/TabsInformation.jsx'
 import TabsItems from './tabs-create-rp/TabsItems.jsx'
 import TabsVendor from './tabs-create-rp/TabsVendor.jsx'
 
@@ -260,7 +259,7 @@ function DialogCreateRp({
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
   const [userDirectory, setUserDirectory] = useState([])
-  const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
+  const [, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
 
@@ -666,14 +665,6 @@ function DialogCreateRp({
               <div className="register-user-popup__main">
                 <div className="register-user-popup__form">
                   <div className="frp-dialog__panel">
-                    <TabsInformation
-                      requesterInfo={requesterInfo}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      updateValue={updateValue}
-                    />
                     <TabsVendor
                       formValues={formValues}
                       fieldErrors={fieldErrors}

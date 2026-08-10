@@ -281,6 +281,10 @@ function FrpPage(props) {
     return () => controller.abort()
   }, [authDepartmentId, shouldLoadFrp, searchQuery, reloadToken])
 
+  const handlePrintFrp = (frp) => {
+    // TODO: wire up FRP print/export logic.
+  }
+
   const handleFrpCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
   }
@@ -690,6 +694,7 @@ function FrpPage(props) {
           onApproval={openApproveDialog}
           onReject={openRejectDialog}
           onRevert={openRevertDialog}
+          onPrint={handlePrintFrp}
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}

@@ -6,6 +6,7 @@ import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
 import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
+import ButtonPrintFrp from '../../button/button-frp/ButtonPrintFrp.jsx'
 import createMobileCardFrp from '../../../mobile/card/MobileCardFrp.jsx'
 import MobileButtonApprovalFrp from '../../../mobile/mobile-button/frp/MobileButtonApprovalFrp.jsx'
 import MobileButtonEditFrp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
@@ -362,6 +363,10 @@ function isRevertActionHidden(frp, index, currentUser, canRevertAction) {
   )
 }
 
+function isPrintActionHidden(frp) {
+  return getFrpStatusValue(frp) !== 'APPROVED'
+}
+
 const columnsDataTableBanks = [{
     key: 'frpNumber',
     header: 'FRP Number',
@@ -446,6 +451,7 @@ function DataTableFrp({
   onApproval,
   onReject,
   onRevert,
+  onPrint,
   canApprove,
   canReject,
   canRevert,
@@ -546,6 +552,16 @@ function DataTableFrp({
           mobileButtonComponent: MobileButtonRevert,
           hidden: (frp, index) => isRevertActionHidden(frp, index, currentUser, canRevert),
           onClick: onRevert,
+        }
+      : null,
+    typeof onPrint === 'function'
+      ? {
+          key: 'print',
+          label: 'Print',
+          buttonComponent: ButtonPrintFrp,
+          mobileHidden: true,
+          hidden: (frp) => isPrintActionHidden(frp),
+          onClick: onPrint,
         }
       : null,
     typeof onEdit === 'function'

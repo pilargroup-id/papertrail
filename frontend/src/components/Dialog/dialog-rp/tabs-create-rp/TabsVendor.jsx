@@ -1,7 +1,8 @@
 import TextArea from '../../../forms/TextArea.jsx'
+import TextField from '../../../forms/TextField.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
 import DropdownSearchCreate from '../../../forms/dropdown/DropdownSearchCreate.jsx'
-import { Banks } from '../../../layoute/TemplateIcons.jsx'
+import { Banks, Calendar01 } from '../../../layoute/TemplateIcons.jsx'
 
 function TabsVendor({
   formValues,
@@ -63,7 +64,7 @@ function TabsVendor({
             onChange={(value) => updateValue('payment_category_id', value)}
           />
         </div>
-        <div className="register-user-popup__field register-user-popup__field--frp-half">
+        <div className="register-user-popup__field">
           <DropdownSearch
             label="Division To Process"
             value={formValues.destination_department_id}
@@ -77,7 +78,7 @@ function TabsVendor({
             onChange={(value) => updateValue('destination_department_id', value)}
           />
         </div>
-        <div className="register-user-popup__field register-user-popup__field--frp-half">
+        <div className="register-user-popup__field">
           <DropdownSearch
             label="Pic"
             value={formValues.pic_name}
@@ -99,6 +100,18 @@ function TabsVendor({
             disabled={isFormDisabled || !hasDestinationDepartment}
             error={fieldErrors.pic_name}
             onChange={(value) => updateValue('pic_name', value)}
+          />
+        </div>
+        <div className="register-user-popup__field">
+          <TextField
+            label="RP Date"
+            type="date"
+            value={formValues.date_required}
+            leftIcon={Calendar01}
+            required
+            disabled={isFormDisabled}
+            error={fieldErrors.date_required}
+            onChange={(event) => updateValue('date_required', event.target.value)}
           />
         </div>
         <div className="register-user-popup__field register-user-popup__field--full">

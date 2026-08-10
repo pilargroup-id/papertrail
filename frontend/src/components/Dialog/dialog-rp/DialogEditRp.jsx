@@ -698,9 +698,10 @@ function DialogEditRp({
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
 
-      if (nextFieldErrors.date_required || nextFieldErrors.description) {
+      if (nextFieldErrors.description) {
         setActiveTab('information')
       } else if (
+        nextFieldErrors.date_required ||
         nextFieldErrors.vendor_id ||
         nextFieldErrors.payment_category_id ||
         nextFieldErrors.destination_department_id ||

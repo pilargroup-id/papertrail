@@ -3715,6 +3715,18 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-focus: rgba(79, 70, 229, 0.16);
 }
 
+.users-table-wrapper.frp-table--actions .frp-icon-button--print,
+.users-table-wrapper.rp-table--actions .frp-icon-button--print {
+  --frp-icon-color: #334155;
+  --frp-icon-bg: rgba(100, 116, 139, 0.12);
+  --frp-icon-border: rgba(100, 116, 139, 0.3);
+  --frp-icon-shadow: rgba(51, 65, 85, 0.1);
+  --frp-icon-hover-bg: #f1f5f9;
+  --frp-icon-hover-border: rgba(100, 116, 139, 0.44);
+  --frp-icon-hover-shadow: rgba(51, 65, 85, 0.16);
+  --frp-icon-focus: rgba(100, 116, 139, 0.16);
+}
+
 .frp-accordion-detail {
   display: grid;
   gap: 0.95rem;
@@ -6225,7 +6237,7 @@ width: var(--sidebar-collapsed-width);
 
 .entity-form-popup
   .register-user-popup__grid.register-user-popup__grid--frp-budget-row {
-  grid-template-columns: minmax(0, 1.9fr) minmax(0, 0.65fr) minmax(0, 0.65fr);
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 0.4fr) minmax(0, 0.8fr);
 }
 
 .entity-form-popup

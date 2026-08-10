@@ -1,4 +1,3 @@
-import TextArea from '../../../forms/TextArea.jsx'
 import TextField from '../../../forms/TextField.jsx'
 import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
 import {
@@ -189,11 +188,10 @@ function TabsItems({
                   />
                 </div>
                 <div className="register-user-popup__field register-user-popup__field--full">
-                  <TextArea
+                  <TextField
                     label="Memo"
                     value={item.memo}
                     placeholder="Keterangan item pembelian"
-                    rows={3}
                     required
                     disabled={isFormDisabled}
                     error={fieldErrors[`items.${index}.memo`]}
