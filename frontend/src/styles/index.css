@@ -12,6 +12,27 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* Single source of truth for the app-wide zoom-out — change this one
+     number to tune it. Uses the CSS `zoom` property (not a font-size/rem
+     trick) so every element scales together, including components sized
+     in fixed px (sidebar width, avatars, icons) that rem-based scaling
+     can't reach. Also exposed as a variable so full-viewport heights
+     (.dashboard-shell, .sidebar, see TemplateComponents.css) can divide
+     by it and still fill the real viewport after the zoom shrinks them. */
+  --app-zoom-scale: 1;
+}
+
+@media (min-width: 1025px) {
+  :root {
+    --app-zoom-scale: 0.75;
+  }
+
+  html {
+    zoom: var(--app-zoom-scale);
+  }
+}
+
 html,
 body,
 #root {

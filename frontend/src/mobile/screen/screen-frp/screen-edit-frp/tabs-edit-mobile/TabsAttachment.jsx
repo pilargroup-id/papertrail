@@ -1,6 +1,6 @@
-import DropdownCheckBox from '../../../forms/dropdown/DropdownCheckBox.jsx'
-import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
-import { Eye, FileText01, Trash03, Upload } from '../../../layoute/TemplateIcons.jsx'
+import DropdownCheckBox from '../../../../../components/forms/dropdown/DropdownCheckBox.jsx'
+import DropdownSearch from '../../../../../components/forms/dropdown/DropdownSearch.jsx'
+import { Eye, FileText01, Trash03, Upload } from '../../../../../components/layoute/TemplateIcons.jsx'
 
 function formatFileSize(size) {
   if (!Number.isFinite(size) || size <= 0) {
@@ -30,7 +30,45 @@ function getAttachmentPreviewType(file) {
   return 'file'
 }
 
-function TabsAttachment({
+function getExistingAttachmentId(attachment) {
+  return attachment?.attachment_id ?? attachment?.id
+}
+
+function getExistingAttachmentName(attachment) {
+  return (
+    attachment?.original_file_name ??
+    attachment?.file_name ??
+    attachment?.name ??
+    attachment?.document_name_snapshot ??
+    'Attachment'
+  )
+}
+
+function getExistingAttachmentPreviewType(attachment) {
+  const mimeType = String(attachment?.mime_type ?? attachment?.type ?? '').toLowerCase()
+
+  if (mimeType.startsWith('image/')) {
+    return 'image'
+  }
+
+  if (mimeType === 'application/pdf') {
+    return 'pdf'
+  }
+
+  return 'file'
+}
+
+function getExistingAttachmentStatus(attachment) {
+  return String(attachment?.upload_status ?? attachment?.status ?? '').toUpperCase()
+}
+
+function isExistingAttachmentUploaded(attachment) {
+  const uploadStatus = getExistingAttachmentStatus(attachment)
+
+  return !uploadStatus || uploadStatus === 'UPLOADED'
+}
+
+function MobileTabsAttachment({
   formValues,
   fieldErrors,
   isOptionsLoading,
@@ -38,16 +76,20 @@ function TabsAttachment({
   frpDocumentTypeDropdownOptions,
   attachmentDocumentTypeOptions,
   attachmentDraft,
+  existingAttachments = [],
+  attachmentActionError = '',
   updateDocumentTypeIds,
   updateAttachmentDocumentType,
   updateAttachmentFile,
   removeAttachmentDraft,
   previewAttachmentDraft,
+  previewExistingAttachment,
+  removeExistingAttachment,
 }) {
   const attachmentFiles = attachmentDraft.files ?? []
   const attachmentTitle =
     attachmentFiles.length > 0
-      ? `${attachmentFiles.length} file attachment dipilih`
+      ? `${attachmentFiles.length} file attachment baru dipilih`
       : 'Klik untuk memilih file attachment'
 
   return (
@@ -89,9 +131,9 @@ function TabsAttachment({
             <span>Upload Attachment</span>
           </div>
 
-          <label className="form-upload__dropzone" htmlFor="frp-create-attachment-file">
+          <label className="form-upload__dropzone" htmlFor="frp-edit-attachment-file">
             <input
-              id="frp-create-attachment-file"
+              id="frp-edit-attachment-file"
               className="form-upload__input"
               type="file"
               multiple
@@ -108,7 +150,7 @@ function TabsAttachment({
             <span className="form-upload__title">{attachmentTitle}</span>
             <span className="form-upload__meta">
               {fieldErrors.attachment_file ||
-                'PDF, image, Word, atau Excel maksimal 10 MB per file. File akan diupload setelah FRP dibuat.'}
+                'PDF, image, Word, atau Excel maksimal 10 MB per file. File baru akan diupload setelah FRP diperbarui.'}
             </span>
           </label>
         </div>
@@ -184,9 +226,81 @@ function TabsAttachment({
             })}
           </div>
         ) : null}
+
+        {existingAttachments.length > 0 ? (
+          <div className="frp-dialog__attachment-preview-list">
+            {existingAttachments.map((attachment, index) => {
+              const attachmentId = getExistingAttachmentId(attachment) ?? index
+              const attachmentName = getExistingAttachmentName(attachment)
+              const attachmentPreviewType = getExistingAttachmentPreviewType(attachment)
+              const attachmentStatus = getExistingAttachmentStatus(attachment)
+              const isAttachmentUploaded = isExistingAttachmentUploaded(attachment)
+              const attachmentMeta = [
+                attachment.document_name_snapshot ?? attachment.document_type_name_snapshot,
+                attachment.mime_type || 'Unknown type',
+                formatFileSize(Number(attachment.file_size)),
+                attachmentStatus || 'UPLOADED',
+              ]
+                .filter(Boolean)
+                .join(' - ')
+
+              return (
+                <div className="frp-dialog__attachment-preview" key={attachmentId}>
+                  <div className="frp-dialog__attachment-preview-header">
+                    <div className="frp-dialog__attachment-file">
+                      <span className="frp-dialog__attachment-file-icon" aria-hidden="true">
+                        <FileText01 size={18} />
+                      </span>
+                      <div>
+                        <strong>{attachmentName}</strong>
+                        <span>{attachmentMeta}</span>
+                      </div>
+                    </div>
+                    <div className="frp-dialog__attachment-actions">
+                      <button
+                        type="button"
+                        className="frp-dialog__preview-button"
+                        disabled={isFormDisabled || !isAttachmentUploaded}
+                        onClick={() => previewExistingAttachment?.(attachment)}
+                      >
+                        <Eye size={16} />
+                        Preview
+                      </button>
+                      <button
+                        type="button"
+                        className="frp-dialog__icon-button"
+                        aria-label={`Hapus attachment ${attachmentName}`}
+                        disabled={isFormDisabled}
+                        onClick={() => removeExistingAttachment?.(attachment)}
+                      >
+                        <Trash03 size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="frp-dialog__attachment-fallback">
+                    <FileText01 size={22} />
+                    <span>
+                      {!isAttachmentUploaded
+                        ? 'Attachment belum selesai diupload.'
+                        : attachmentPreviewType === 'pdf' || attachmentPreviewType === 'image'
+                        ? 'Preview tersedia lewat tombol Preview.'
+                        : 'File attachment tersimpan.'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
+
+        {attachmentActionError ? (
+          <p className="form-control__message">{attachmentActionError}</p>
+        ) : null}
       </div>
     </div>
   )
 }
 
-export default TabsAttachment
+export default MobileTabsAttachment
+

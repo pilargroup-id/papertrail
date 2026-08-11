@@ -6,7 +6,8 @@ import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
 import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import ButtonRevertFrp from '../../button/button-frp/ButtonRevertFrp.jsx'
-import createMobileCardFrp from '../../../mobile/frp-card/MobileCardFrp.jsx'
+import ButtonPrintFrp from '../../button/button-frp/ButtonPrintFrp.jsx'
+import createMobileCardFrp from '../../../mobile/card/MobileCardFrp.jsx'
 import MobileButtonApprovalFrp from '../../../mobile/mobile-button/frp/MobileButtonApprovalFrp.jsx'
 import MobileButtonEditFrp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
 import MobileButtonRejectFrp from '../../../mobile/mobile-button/frp/MobileButtonRejectFrp.jsx'
@@ -22,7 +23,7 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 10
+const DEFAULT_PAGINATION_PAGE_SIZE = 25
 const FRP_STATUS_DEFAULT_ORDER = {
   PENDING: 0,
   APPROVED: 1,
@@ -147,10 +148,8 @@ function scaleTableColumn(column, scale) {
 }
 
 function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
-  const hasSparseRows = rowCount <= 5
-
   return {
-    '--users-table-wrapper-max-height': hasSparseRows ? 'none' : 'min(64dvh, 640px)',
+    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
@@ -165,8 +164,8 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    flex: hasSparseRows ? '0 0 auto' : '1 1 auto',
-    minHeight: rowCount === 0 ? '180px' : hasSparseRows ? 'auto' : 'min(52dvh, 520px)',
+    flex: '0 0 auto',
+    minHeight: rowCount === 0 ? '180px' : 'auto',
     marginTop: '0.75rem',
     ...tableWrapperStyle,
   }
@@ -364,6 +363,10 @@ function isRevertActionHidden(frp, index, currentUser, canRevertAction) {
   )
 }
 
+function isPrintActionHidden(frp) {
+  return getFrpStatusValue(frp) !== 'APPROVED'
+}
+
 const columnsDataTableBanks = [{
     key: 'frpNumber',
     header: 'FRP Number',
@@ -448,6 +451,7 @@ function DataTableFrp({
   onApproval,
   onReject,
   onRevert,
+  onPrint,
   canApprove,
   canReject,
   canRevert,
@@ -523,7 +527,7 @@ function DataTableFrp({
     typeof onApproval === 'function'
       ? {
           key: 'approval',
-          label: 'Approval',
+          label: 'Approve',
           buttonComponent: ButtonApprovalFrp,
           mobileButtonComponent: MobileButtonApprovalFrp,
           hidden: (frp, index) => isApproveActionHidden(frp, index, currentUser, canApprove),
@@ -550,6 +554,16 @@ function DataTableFrp({
           onClick: onRevert,
         }
       : null,
+    typeof onPrint === 'function'
+      ? {
+          key: 'print',
+          label: 'Print',
+          buttonComponent: ButtonPrintFrp,
+          mobileHidden: true,
+          hidden: (frp) => isPrintActionHidden(frp),
+          onClick: onPrint,
+        }
+      : null,
     typeof onEdit === 'function'
       ? {
           key: 'edit',
@@ -557,7 +571,7 @@ function DataTableFrp({
           buttonComponent: ButtonEditFrp,
           mobileButtonComponent: MobileButtonEditFrp,
           mobilePlacement: 'header-start',
-          hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser),
+          hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser) || getFrpStatusValue(frp) === 'APPROVED',
           onClick: onEdit,
         }
       : null,

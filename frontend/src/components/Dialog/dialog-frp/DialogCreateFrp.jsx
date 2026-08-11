@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
 
 import api from '../../../services/api.js'
-import { XClose } from '../../layoute/TemplateIcons.jsx'
+import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsInformation from './tabs-create-frp/TabsInformation.jsx'
 import TabsItems from './tabs-create-frp/TabsItems.jsx'
 import TabsVendor from './tabs-create-frp/TabsVendor.jsx'
-import TabsAttachment from './tabs-create-frp/TabsAttachment.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -31,6 +28,26 @@ function isPositiveIntegerInput(value) {
   const numberValue = Number(normalizedValue)
 
   return /^\d+$/.test(normalizedValue) && Number.isSafeInteger(numberValue) && numberValue > 0
+}
+
+function toNumber(value) {
+  const normalizedValue = Number(value)
+
+  return Number.isFinite(normalizedValue) ? normalizedValue : 0
+}
+
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(numberValue)
 }
 
 const createInitialFormValues = () => ({
@@ -74,25 +91,6 @@ const initialRequesterInfo = {
 
 const FRP_BUDGET_ACCESS_MODULE = 'FRP'
 const CROSS_BUDGET_ACCESS_TYPE = 'CROSS_BUDGET'
-
-const frpTabs = [
-  {
-    id: 'information',
-    label: 'Information',
-  },
-  {
-    id: 'vendor',
-    label: 'Vendor',
-  },
-  {
-    id: 'items',
-    label: 'Items',
-  },
-  {
-    id: 'attachment',
-    label: 'Attachment',
-  },
-]
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -258,6 +256,10 @@ function getSignedUploadHeaders(uploadItem, file) {
 }
 
 function normalizeDocumentTypeId(documentTypeId) {
+  if (documentTypeId === '' || documentTypeId === undefined || documentTypeId === null) {
+    return null
+  }
+
   const numericDocumentTypeId = Number(documentTypeId)
 
   return Number.isFinite(numericDocumentTypeId) ? numericDocumentTypeId : documentTypeId
@@ -450,7 +452,6 @@ function DialogCreateFrp({
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState(frpTabs[0].id)
   const [vendorOptions, setVendorOptions] = useState([])
   const [vendorBankOptions, setVendorBankOptions] = useState([])
   const [externalDocumentTypeOptions, setExternalDocumentTypeOptions] = useState([])
@@ -477,7 +478,6 @@ function DialogCreateFrp({
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
-    setActiveTab(frpTabs[0].id)
     setVendorOptions([])
     setVendorBankOptions([])
     setExternalDocumentTypeOptions([])
@@ -493,10 +493,6 @@ function DialogCreateFrp({
   const handleClose = () => {
     resetDialogState()
     onClose?.()
-  }
-
-  const handleTabChange = (_, nextValue) => {
-    setActiveTab(nextValue)
   }
 
   const updateValue = (fieldName, value) => {
@@ -651,6 +647,21 @@ function DialogCreateFrp({
       return {
         ...currentValues,
         items: currentValues.items.filter((_, itemIndex) => itemIndex !== index),
+      }
+    })
+  }
+
+  const duplicateLastItem = () => {
+    setFormValues((currentValues) => {
+      const lastItem = currentValues.items[currentValues.items.length - 1]
+
+      if (!lastItem) {
+        return currentValues
+      }
+
+      return {
+        ...currentValues,
+        items: [...currentValues.items, { ...lastItem }],
       }
     })
   }
@@ -864,14 +875,6 @@ function DialogCreateFrp({
       nextFieldErrors.vendor_id = 'Vendor wajib dipilih.'
     }
 
-    if (!formValues.external_document_type_id) {
-      nextFieldErrors.external_document_type_id = 'External document type wajib dipilih.'
-    }
-
-    if (!formValues.external_document_number.trim()) {
-      nextFieldErrors.external_document_number = 'External document number wajib diisi.'
-    }
-
     if (!formValues.payment_method_id) {
       nextFieldErrors.payment_method_id = 'Payment method wajib dipilih.'
     }
@@ -890,10 +893,6 @@ function DialogCreateFrp({
 
     if (!formValues.destination_bank_account_name.trim()) {
       nextFieldErrors.destination_bank_account_name = 'Destination account name wajib diisi.'
-    }
-
-    if (attachmentDraft.files.length > 0 && !attachmentDraft.documentTypeId) {
-      nextFieldErrors.attachment_document_type_id = 'Attachment document type wajib dipilih.'
     }
 
     normalizedItems.forEach((item, index) => {
@@ -916,33 +915,6 @@ function DialogCreateFrp({
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
-
-      if (
-        nextFieldErrors.frp_date ||
-        nextFieldErrors.description ||
-        nextFieldErrors.external_document_type_id ||
-        nextFieldErrors.external_document_number
-      ) {
-        setActiveTab('information')
-      } else if (
-        nextFieldErrors.vendor_id ||
-        nextFieldErrors.payment_method_id ||
-        nextFieldErrors.payment_date ||
-        nextFieldErrors.destination_bank_name ||
-        nextFieldErrors.destination_bank_account ||
-        nextFieldErrors.destination_bank_account_name
-      ) {
-        setActiveTab('vendor')
-      } else if (
-        nextFieldErrors.document_type_ids ||
-        nextFieldErrors.attachment_document_type_id ||
-        nextFieldErrors.attachment_file
-      ) {
-        setActiveTab('attachment')
-      } else {
-        setActiveTab('items')
-      }
-
       return
     }
 
@@ -987,7 +959,6 @@ function DialogCreateFrp({
             ),
           )
         } catch (error) {
-          setActiveTab('attachment')
           throw new Error(error.message || 'FRP berhasil dibuat, tetapi attachment gagal diupload.', {
             cause: error,
           })
@@ -1012,6 +983,13 @@ function DialogCreateFrp({
   }
 
   const isFormDisabled = isSubmitting || isOptionsLoading
+  const exchangeRate = toNumber(formValues.exchange_rate || 1)
+  const totalAmountIdr = formValues.items.reduce((total, item) => {
+    const quantity = toNumber(item.quantity)
+    const unitPrice = toNumber(item.unit_price)
+
+    return total + quantity * unitPrice * exchangeRate
+  }, 0)
   const filteredVendorBankOptions = formValues.vendor_id
     ? vendorBankOptions.filter(
         (option) => !option.vendorId || String(option.vendorId) === String(formValues.vendor_id),
@@ -1028,74 +1006,6 @@ function DialogCreateFrp({
           selectedFrpDocumentTypeIds.includes(String(option.value)),
         )
       : frpDocumentTypeDropdownOptions
-  const activeStepIndex = frpTabs.findIndex((tab) => tab.id === activeTab)
-  const activeStepLabel = `Step ${activeStepIndex + 1} of ${frpTabs.length}`
-
-  const renderActivePanel = () => {
-    if (activeTab === 'information') {
-      return (
-        <TabsInformation
-          requesterInfo={requesterInfo}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          externalDocumentTypeOptions={externalDocumentTypeOptions}
-          updateValue={updateValue}
-        />
-      )
-    }
-
-    if (activeTab === 'vendor') {
-      return (
-        <TabsVendor
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          vendorOptions={vendorOptions}
-          filteredVendorBankOptions={filteredVendorBankOptions}
-          paymentMethodOptions={paymentMethodOptions}
-          updateValue={updateValue}
-          handleVendorBankChange={handleVendorBankChange}
-        />
-      )
-    }
-
-    if (activeTab === 'attachment') {
-      return (
-        <TabsAttachment
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
-          attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
-          attachmentDraft={attachmentDraft}
-          updateDocumentTypeIds={updateDocumentTypeIds}
-          updateAttachmentDocumentType={updateAttachmentDocumentType}
-          updateAttachmentFile={updateAttachmentFile}
-          removeAttachmentDraft={removeAttachmentDraft}
-          previewAttachmentDraft={previewAttachmentDraft}
-        />
-      )
-    }
-
-    return (
-      <TabsItems
-        formValues={formValues}
-        fieldErrors={fieldErrors}
-        isOptionsLoading={isOptionsLoading}
-        isFormDisabled={isFormDisabled}
-        budgetOptions={budgetOptions}
-        updateValue={updateValue}
-        updateItemValue={updateItemValue}
-        removeItem={removeItem}
-        addItem={addItem}
-      />
-    )
-  }
-
   const dialogNode = (
     <div className="dashboard-popup-overlay" role="presentation">
       <div
@@ -1108,9 +1018,7 @@ function DialogCreateFrp({
         <form onSubmit={handleSubmit}>
           <div className="dashboard-popup__header">
             <div>
-              <p className="dashboard-popup__eyebrow">
-                {eyebrow} · {activeStepLabel}
-              </p>
+              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
               <h2 className="dashboard-popup__title" id="dialog-create-frp-title">
                 {title}
               </h2>
@@ -1131,64 +1039,48 @@ function DialogCreateFrp({
             <div className="register-user-popup__layout">
               <div className="register-user-popup__main">
                 <div className="register-user-popup__form">
-                  <div className="frp-dialog__tabbed-container">
-                    <div className="frp-dialog__tabs-shell">
-                      <Tabs
-                        value={activeTab}
-                        onChange={handleTabChange}
-                        textColor="primary"
-                        indicatorColor="primary"
-                        aria-label="FRP tabs"
-                        variant="fullWidth"
-                        className="frp-dialog__tabs"
-                        sx={{
-                          minHeight: 44,
-                          '& .MuiTabs-flexContainer': {
-                            gap: '0.4rem',
-                          },
-                          '& .MuiTabs-indicator': {
-                            height: 2,
-                            borderRadius: 999,
-                            backgroundColor: 'var(--primary-blue)',
-                          },
-                        }}
-                      >
-                        {frpTabs.map((tab) => (
-                          <Tab
-                            key={tab.id}
-                            id={`frp-tab-${tab.id}`}
-                            aria-controls={`frp-panel-${tab.id}`}
-                            value={tab.id}
-                            label={tab.label}
-                            disableRipple
-                            className="frp-dialog__mui-tab"
-                            sx={{
-                              minHeight: 44,
-                              borderRadius: '10px 10px 0 0',
-                              color: '#607089',
-                              fontSize: '0.86rem',
-                              fontWeight: 700,
-                              letterSpacing: 0,
-                              textTransform: 'none',
-                              transition: 'background-color 0.2s ease, color 0.2s ease',
-                              '&.Mui-selected': {
-                                color: 'var(--primary-blue)',
-                                backgroundColor: 'rgba(26, 42, 87, 0.08)',
-                              },
-                            }}
-                          />
-                        ))}
-                      </Tabs>
-                    </div>
+                  <div className="frp-dialog__panel">
+                    <TabsInformation
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      externalDocumentTypeOptions={externalDocumentTypeOptions}
+                      frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+                      attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
+                      attachmentDraft={attachmentDraft}
+                      updateValue={updateValue}
+                      updateDocumentTypeIds={updateDocumentTypeIds}
+                      updateAttachmentDocumentType={updateAttachmentDocumentType}
+                      updateAttachmentFile={updateAttachmentFile}
+                      removeAttachmentDraft={removeAttachmentDraft}
+                      previewAttachmentDraft={previewAttachmentDraft}
+                    />
 
-                    <div
-                      className="frp-dialog__panel"
-                      id={`frp-panel-${activeTab}`}
-                      role="tabpanel"
-                      aria-labelledby={`frp-tab-${activeTab}`}
-                    >
-                      {renderActivePanel()}
-                    </div>
+                    <TabsVendor
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      vendorOptions={vendorOptions}
+                      filteredVendorBankOptions={filteredVendorBankOptions}
+                      paymentMethodOptions={paymentMethodOptions}
+                      updateValue={updateValue}
+                      handleVendorBankChange={handleVendorBankChange}
+                    />
+
+                    <TabsItems
+                      formValues={formValues}
+                      fieldErrors={fieldErrors}
+                      isOptionsLoading={isOptionsLoading}
+                      isFormDisabled={isFormDisabled}
+                      budgetOptions={budgetOptions}
+                      updateValue={updateValue}
+                      updateItemValue={updateItemValue}
+                      removeItem={removeItem}
+                      addItem={addItem}
+                      duplicateLastItem={duplicateLastItem}
+                    />
                   </div>
 
                   {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
@@ -1198,7 +1090,17 @@ function DialogCreateFrp({
             </div>
           </div>
 
-          <div className="dashboard-popup__actions">
+          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
+            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
+              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
+                <TrendingUp size={18} />
+              </span>
+              <div>
+                <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
+                <strong>{formatRupiah(totalAmountIdr)}</strong>
+              </div>
+            </div>
+
             <button
               type="submit"
               className="dashboard-popup__button dashboard-popup__button--primary"

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 
-import api from '../../services/api.js'
-import ButtonAttachmentsFrp from '../../components/button/button-frp/ButtonAttachmentsFrp.jsx'
-import { ChevronLeft, Eye } from '../../components/layoute/TemplateIcons.jsx'
+import api from '../../../services/api.js'
+import ButtonAttachmentsFrp from '../../../components/button/button-frp/ButtonAttachmentsFrp.jsx'
+import { ChevronLeft, Eye } from '../../../components/layoute/TemplateIcons.jsx'
 
 function isBlankValue(value) {
   return value === undefined || value === null || value === ''
@@ -49,10 +49,6 @@ function formatRupiah(value) {
   }
 
   return `Rp ${formatNumber(numberValue)}`
-}
-
-function formatExchangeRate(value) {
-  return isBlankValue(value) ? '-' : formatNumber(value)
 }
 
 function formatDateValue(value) {
@@ -120,7 +116,7 @@ function formatStatusLabel(value) {
     .join(' ')
 }
 
-function getFrpDetailFromResponse(response) {
+function getRpDetailFromResponse(response) {
   const candidates = [
     response?.data?.data,
     response?.data,
@@ -135,8 +131,8 @@ function getFrpDetailFromResponse(response) {
   ) ?? null
 }
 
-function getFrpItemsFromResponse(response) {
-  const detail = getFrpDetailFromResponse(response)
+function getRpItemsFromResponse(response) {
+  const detail = getRpDetailFromResponse(response)
 
   if (Array.isArray(detail?.items)) {
     return detail.items
@@ -149,8 +145,8 @@ function getFrpItemsFromResponse(response) {
   return []
 }
 
-function getFrpAttachmentsFromResponse(response) {
-  const detail = getFrpDetailFromResponse(response)
+function getRpAttachmentsFromResponse(response) {
+  const detail = getRpDetailFromResponse(response)
 
   if (Array.isArray(detail?.attachments)) {
     return detail.attachments
@@ -222,52 +218,6 @@ function isAttachmentVisible(attachment) {
   return uploadStatus !== 'CANCELED'
 }
 
-function getDocumentName(document) {
-  if (typeof document === 'string' || typeof document === 'number') {
-    return String(document)
-  }
-
-  return getFirstValue(
-    document,
-    [
-      'document_name_snapshot',
-      'document_name',
-      'document_type_name_snapshot',
-      'document_type_name',
-      'name',
-      'label',
-      'code',
-      'document_type_id',
-      'frp_document_type_id',
-      'id',
-    ],
-    '',
-  )
-}
-
-function getRequiredDocumentLabels(frpDetail) {
-  const documentCandidates = [
-    frpDetail?.required_documents,
-    frpDetail?.document_types,
-    frpDetail?.documents,
-    frpDetail?.frp_document_types,
-    frpDetail?.document_type_names,
-    frpDetail?.document_type_ids,
-  ]
-
-  for (const candidate of documentCandidates) {
-    if (Array.isArray(candidate) && candidate.length > 0) {
-      return candidate.map(getDocumentName).filter(Boolean)
-    }
-
-    if (typeof candidate === 'string' && candidate.trim()) {
-      return [candidate]
-    }
-  }
-
-  return []
-}
-
 function getUniqueLabels(labels) {
   return [...new Set(labels.filter((label) => !isBlankValue(label) && label !== '-'))]
 }
@@ -293,10 +243,10 @@ function DetailSection({ title, count, children }) {
   )
 }
 
-function MobileScreenDetailFrp({ frp, onBack }) {
-  const frpId = frp?.id
-  const hasValidFrpId = !(frpId === undefined || frpId === null || frpId === '')
-  const [frpDetail, setFrpDetail] = useState(null)
+function MobileScreenDetailRp({ rp, onBack }) {
+  const rpId = rp?.id
+  const hasValidRpId = !(rpId === undefined || rpId === null || rpId === '')
+  const [rpDetail, setRpDetail] = useState(null)
   const [items, setItems] = useState([])
   const [attachments, setAttachments] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -305,41 +255,41 @@ function MobileScreenDetailFrp({ frp, onBack }) {
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null)
 
   useEffect(() => {
-    if (!frp) {
+    if (!rp) {
       return undefined
     }
 
-    if (!hasValidFrpId) {
+    if (!hasValidRpId) {
       return undefined
     }
 
     const controller = new AbortController()
 
-    async function loadFrpDetail() {
+    async function loadRpDetail() {
       setIsLoading(true)
       setErrorMessage('')
       setAttachmentErrorMessage('')
-      setFrpDetail(null)
+      setRpDetail(null)
       setItems([])
       setAttachments([])
 
       try {
-        const response = await api.frp.detail(frpId, undefined, {
+        const response = await api.rp.detail(rpId, undefined, {
           signal: controller.signal,
         })
 
-        setFrpDetail(getFrpDetailFromResponse(response))
-        setItems(getFrpItemsFromResponse(response))
-        setAttachments(getFrpAttachmentsFromResponse(response).filter(isAttachmentVisible))
+        setRpDetail(getRpDetailFromResponse(response))
+        setItems(getRpItemsFromResponse(response))
+        setAttachments(getRpAttachmentsFromResponse(response).filter(isAttachmentVisible))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-        setFrpDetail(null)
+        setRpDetail(null)
         setItems([])
         setAttachments([])
-        setErrorMessage(error.message || 'Gagal memuat item FRP.')
+        setErrorMessage(error.message || 'Gagal memuat item RP.')
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false)
@@ -347,12 +297,12 @@ function MobileScreenDetailFrp({ frp, onBack }) {
       }
     }
 
-    loadFrpDetail()
+    loadRpDetail()
 
     return () => controller.abort()
-  }, [frp, frpId, hasValidFrpId])
+  }, [rp, rpId, hasValidRpId])
 
-  if (!frp) {
+  if (!rp) {
     return null
   }
 
@@ -361,7 +311,7 @@ function MobileScreenDetailFrp({ frp, onBack }) {
 
     const attachmentId = getAttachmentId(attachment)
 
-    if (!attachmentId || !frpId) {
+    if (!attachmentId || !rpId) {
       setAttachmentErrorMessage('Attachment tidak dapat dibuka.')
       return
     }
@@ -379,7 +329,7 @@ function MobileScreenDetailFrp({ frp, onBack }) {
     setAttachmentErrorMessage('')
 
     try {
-      const response = await api.frp.attachments.downloadUrl(frpId, attachmentId)
+      const response = await api.rp.attachments.downloadUrl(rpId, attachmentId)
       const downloadUrl = response?.data?.download_url ?? response?.download_url
 
       if (!downloadUrl) {
@@ -394,128 +344,90 @@ function MobileScreenDetailFrp({ frp, onBack }) {
     }
   }
 
-  const displayedItems = hasValidFrpId ? items : []
-  const displayedAttachments = hasValidFrpId ? attachments : []
-  const effectiveErrorMessage = hasValidFrpId
+  const displayedItems = hasValidRpId ? items : []
+  const displayedAttachments = hasValidRpId ? attachments : []
+  const effectiveErrorMessage = hasValidRpId
     ? errorMessage
-    : 'ID FRP tidak tersedia.'
-  const resolvedFrpDetail = hasValidFrpId ? frpDetail ?? frp ?? {} : frp ?? {}
-  const requiredDocumentLabels = getRequiredDocumentLabels(resolvedFrpDetail)
+    : 'ID RP tidak tersedia.'
+  const resolvedRpDetail = hasValidRpId ? rpDetail ?? rp ?? {} : rp ?? {}
   const attachmentDocumentTypeLabels = getUniqueLabels(
     displayedAttachments.map(getAttachmentDocumentTypeName),
   )
   const summaryFields = [
-    ['FRP Number', getFirstValue(resolvedFrpDetail, ['frp_number', 'frpNumber', 'id'])],
+    ['RP Number', getFirstValue(resolvedRpDetail, ['rp_number', 'rpNumber', 'id'])],
     [
       'Request by',
       getFirstValue(
-        resolvedFrpDetail,
+        resolvedRpDetail,
         ['requested_by_name', 'request_by_name', 'request_by', 'created_by_name', 'created_by'],
       ),
     ],
     [
+      'Company',
+      [
+        getFirstValue(resolvedRpDetail, ['company_code_snapshot', 'company_code'], ''),
+        getFirstValue(resolvedRpDetail, ['company_name_snapshot', 'company_name'], ''),
+      ].filter(Boolean).join(' - ') || '-',
+    ],
+    [
+      'Division',
+      [
+        getFirstValue(resolvedRpDetail, ['department_code_snapshot', 'department_code'], ''),
+        getFirstValue(resolvedRpDetail, ['department_name_snapshot', 'department_name'], ''),
+      ].filter(Boolean).join(' - ') || '-',
+    ],
+    ['RP Date', formatDateValue(getFirstValue(resolvedRpDetail, ['date_required', 'dateRequired'], ''))],
+    ['Status', formatStatusLabel(getFirstValue(resolvedRpDetail, ['status'], ''))],
+    ['Total Amount', formatRupiah(getFirstValue(resolvedRpDetail, ['total_amount', 'totalAmount'], ''))],
+    ['Created At', formatDateTime(getFirstValue(resolvedRpDetail, ['created_at', 'createdAt'], ''))],
+    ['Updated At', formatDateTime(getFirstValue(resolvedRpDetail, ['updated_at', 'updatedAt'], ''))],
+  ]
+  const vendorFields = [
+    [
       'Vendor',
-      getFirstValue(
-        resolvedFrpDetail,
-        ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id'],
-      ),
-    ],
-    ['Created At', formatDateTime(getFirstValue(resolvedFrpDetail, ['created_at', 'createdAt'], ''))],
-    ['Status', formatStatusLabel(getFirstValue(resolvedFrpDetail, ['status'], ''))],
-    ['Updated At', formatDateTime(getFirstValue(resolvedFrpDetail, ['updated_at', 'updatedAt'], ''))],
-    ['Total Amount', formatRupiah(getFirstValue(resolvedFrpDetail, ['total_amount', 'totalAmount'], ''))],
-  ]
-  const documentFields = [
-    [
-      'Internal PO Number',
-      getFirstValue(resolvedFrpDetail, ['internal_po_number', 'internal_po_number_snapshot']),
+      [
+        getFirstValue(resolvedRpDetail, ['vendor_code_snapshot', 'vendor_code'], ''),
+        getFirstValue(resolvedRpDetail, ['vendor_name_snapshot', 'vendor_name'], ''),
+      ].filter(Boolean).join(' - ') || getFirstValue(resolvedRpDetail, ['vendor_id', 'vendorId']),
     ],
     [
-      'External Document Type',
-      getFirstValue(
-        resolvedFrpDetail,
-        [
-          'external_document_type_name_snapshot',
-          'external_document_type_name',
-          'external_document_type_code_snapshot',
-          'external_document_type_code',
-          'external_document_type_id',
-          'externalDocumentTypeId',
-        ],
-      ),
+      'Payment Category',
+      getFirstValue(resolvedRpDetail, ['payment_category_name_snapshot', 'payment_category_name'], '') ||
+        getFirstValue(resolvedRpDetail, ['payment_category_id', 'paymentCategoryId']),
     ],
     [
-      'External Document Number',
-      getFirstValue(
-        resolvedFrpDetail,
-        ['external_document_number', 'external_document_number_snapshot'],
-      ),
+      'Destination Division',
+      [
+        getFirstValue(resolvedRpDetail, ['destination_department_code_snapshot'], ''),
+        getFirstValue(resolvedRpDetail, ['destination_department_name_snapshot'], ''),
+        getFirstValue(resolvedRpDetail, ['destination_department_class_snapshot'], ''),
+      ].filter(Boolean).join(' - ') ||
+        getFirstValue(resolvedRpDetail, ['destination_department_id', 'destinationDepartmentId']),
     ],
-  ]
-  const paymentFields = [
-    [
-      'Destination Bank',
-      getFirstValue(
-        resolvedFrpDetail,
-        ['destination_bank_name', 'destination_bank_name_snapshot', 'bank_name_snapshot'],
-      ),
-    ],
-    [
-      'Destination Account',
-      getFirstValue(
-        resolvedFrpDetail,
-        ['destination_bank_account', 'destination_bank_account_snapshot', 'account_number_snapshot'],
-      ),
-    ],
-    [
-      'Destination Account Name',
-      getFirstValue(
-        resolvedFrpDetail,
-        [
-          'destination_bank_account_name',
-          'destination_bank_account_name_snapshot',
-          'account_name_snapshot',
-        ],
-      ),
-    ],
-    [
-      'Payment Method',
-      getFirstValue(
-        resolvedFrpDetail,
-        [
-          'payment_method_name_snapshot',
-          'payment_method_name',
-          'payment_method_code_snapshot',
-          'payment_method_code',
-          'payment_method_id',
-        ],
-      ),
-    ],
-    ['Payment Date', formatDateValue(getFirstValue(resolvedFrpDetail, ['payment_date'], ''))],
-    ['Currency', getFirstValue(resolvedFrpDetail, ['currency_code', 'currency'], '-')],
-    ['Exchange Rate', formatExchangeRate(getFirstValue(resolvedFrpDetail, ['exchange_rate'], ''))],
+    ['PIC', getFirstValue(resolvedRpDetail, ['pic_name', 'picName'])],
+    ['Notes', getFirstValue(resolvedRpDetail, ['notes'])],
   ]
 
   return (
     <section
       className="frp-mobile-detail-page frp-mobile-create-page"
-      aria-label={`Detail ${formatDisplayValue(frp?.frp_number ?? frpId)}`}
+      aria-label={`Detail ${formatDisplayValue(rp?.rp_number ?? rpId)}`}
     >
       <header className="frp-mobile-create-page__header">
         <button
           className="frp-mobile-create-page__back"
           type="button"
           onClick={onBack}
-          aria-label="Kembali ke daftar FRP"
+          aria-label="Kembali ke daftar RP"
         >
           <ChevronLeft size={20} />
         </button>
         <div className="frp-mobile-create-page__heading">
           <p className="frp-mobile-create-page__eyebrow">
-            FRP Detail - {formatStatusLabel(getFirstValue(resolvedFrpDetail, ['status'], ''))}
+            RP Detail - {formatStatusLabel(getFirstValue(resolvedRpDetail, ['status'], ''))}
           </p>
           <h2 className="frp-mobile-create-page__title">
-            {formatDisplayValue(getFirstValue(resolvedFrpDetail, ['frp_number', 'frpNumber', 'id']))}
+            {formatDisplayValue(getFirstValue(resolvedRpDetail, ['rp_number', 'rpNumber', 'id']))}
           </h2>
         </div>
       </header>
@@ -532,7 +444,7 @@ function MobileScreenDetailFrp({ frp, onBack }) {
 
       <section className="frp-mobile-detail-page__description">
         <p>Description</p>
-        <div>{formatDisplayValue(getFirstValue(resolvedFrpDetail, ['description']))}</div>
+        <div>{formatDisplayValue(getFirstValue(resolvedRpDetail, ['description']))}</div>
       </section>
 
       <DetailSection title="Items" count={isLoading ? '...' : displayedItems.length}>
@@ -549,30 +461,22 @@ function MobileScreenDetailFrp({ frp, onBack }) {
                   <DetailRow label="Memo" value={item?.memo} />
                   <DetailRow label="Qty" value={formatNumber(item?.quantity)} />
                   <DetailRow label="Unit Price" value={formatRupiah(item?.unit_price)} />
-                  <DetailRow label="Remaining Before" value={formatRupiah(item?.budget_remaining_before)} />
-                  <DetailRow label="Remaining After" value={formatRupiah(item?.budget_remaining_after)} />
+                  <DetailRow label="Purchase Link" value={item?.purchase_link} />
+                  <DetailRow label="Budget Remaining" value={formatRupiah(item?.budget_remaining_after ?? item?.budget_remaining)} />
                 </dl>
               </article>
             ))}
           </div>
         ) : (
           <p className="frp-mobile-detail-page__empty">
-            {isLoading ? 'Memuat item FRP...' : effectiveErrorMessage || 'Belum ada item FRP.'}
+            {isLoading ? 'Memuat item RP...' : effectiveErrorMessage || 'Belum ada item RP.'}
           </p>
         )}
       </DetailSection>
 
-      <DetailSection title="Document">
+      <DetailSection title="Vendor & Destination">
         <dl className="frp-mobile-detail-page__list frp-mobile-detail-page__list--section">
-          {documentFields.map(([label, value]) => (
-            <DetailRow key={label} label={label} value={value} />
-          ))}
-        </dl>
-      </DetailSection>
-
-      <DetailSection title="Payment Details">
-        <dl className="frp-mobile-detail-page__list frp-mobile-detail-page__list--section">
-          {paymentFields.map(([label, value]) => (
+          {vendorFields.map(([label, value]) => (
             <DetailRow key={label} label={label} value={value} />
           ))}
         </dl>
@@ -580,10 +484,6 @@ function MobileScreenDetailFrp({ frp, onBack }) {
 
       <DetailSection title="Attachment" count={displayedAttachments.length}>
         <dl className="frp-mobile-detail-page__list frp-mobile-detail-page__list--section">
-          <DetailRow
-            label="Required Documents"
-            value={requiredDocumentLabels.length > 0 ? requiredDocumentLabels.join(', ') : '-'}
-          />
           <DetailRow
             label="Attachment Document Type"
             value={
@@ -595,7 +495,7 @@ function MobileScreenDetailFrp({ frp, onBack }) {
         </dl>
 
         {displayedAttachments.length > 0 ? (
-          <div className="frp-mobile-detail-page__attachments" aria-label="FRP attachments">
+          <div className="frp-mobile-detail-page__attachments" aria-label="RP attachments">
             {displayedAttachments.map((attachment, index) => {
               const attachmentId = getAttachmentId(attachment) ?? index
               const attachmentName = getAttachmentName(attachment)
@@ -638,4 +538,4 @@ function MobileScreenDetailFrp({ frp, onBack }) {
   )
 }
 
-export default MobileScreenDetailFrp
+export default MobileScreenDetailRp

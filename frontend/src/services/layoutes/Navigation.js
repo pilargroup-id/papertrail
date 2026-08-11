@@ -59,13 +59,13 @@ export const primaryNavigationItems = [
   // },
   {
     id: 'frp',
-    label: 'Frp',
+    label: 'FRP',
     href: '/frp',
     icon: FileText01,
   },
   {
     id: 'rp',
-    label: 'Rp',
+    label: 'RP',
     href: '/Rp',
     icon: CreditCard,
   },

@@ -54,18 +54,20 @@ function buildAccessFilters(query = {}) {
     params.push(access.userId);
   }
 
-  if (access.managerCompanyId && Array.isArray(access.managerDepartmentContexts) && access.managerDepartmentContexts.length) {
+  if (Array.isArray(access.managerCompanyIds) && access.managerCompanyIds.length && Array.isArray(access.managerDepartmentContexts) && access.managerDepartmentContexts.length) {
     const context = buildContextWhere('rr', access.managerDepartmentContexts);
 
     if (context.sql) {
+      const companyPlaceholders = access.managerCompanyIds.map(() => '?').join(', ');
+
       orWhere.push(`
         (
-          rr.company_id = ?
+          rr.company_id IN (${companyPlaceholders})
           AND (${context.sql})
         )
       `);
 
-      params.push(access.managerCompanyId, ...context.params);
+      params.push(...access.managerCompanyIds, ...context.params);
     }
   }
 

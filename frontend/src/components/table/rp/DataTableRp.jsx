@@ -1,5 +1,6 @@
 import DataTableAction, { DataTableStatus } from '../DataTableAction.jsx'
 import ButtonEditRp from '../../button/button-rp/ButtonEditRp.jsx'
+import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
 import ButtonDetailsRp from '../../button/button-rp/ButtonDetailsRp.jsx'
 
 // Button Action Dekstop
@@ -7,9 +8,10 @@ import ButtonApprovalRp from '../../button/button-rp/ButtonApprovalRp.jsx'
 import ButtonRejectRp from '../../button/button-rp/ButtonRejectRp.jsx'
 import ButtonRevertRp from '../../button/button-rp/ButtonRevertRp.jsx'
 import ButtonCheckDataRp from '../../button/button-rp/ButtonCheckDataRp.jsx'
+import ButtonCreateFrpRp from '../../button/button-rp/ButtonCreateFrpRp.jsx'
 
 // MOBILE
-import createMobileCardRp from '../../../mobile/frp-card/MobileCardFrp.jsx'
+import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
 import MobileButtonApprovalRp from '../../../mobile/mobile-button/frp/MobileButtonApprovalFrp.jsx'
 import MobileButtonEditRp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
 import MobileButtonRejectRp from '../../../mobile/mobile-button/frp/MobileButtonRejectFrp.jsx'
@@ -17,14 +19,16 @@ import MobileButtonRevert from '../../../mobile/mobile-button/frp/MobileButtonRe
 import {
   canAccessFrpButton,
   canCurrentUserApproveRp,
+  canCurrentUserCreateFrpFromRp,
   canCurrentUserEditFrp,
   canCurrentUserRejectFrp,
   canCurrentUserRevertFrp,
+  getRpFrpConversionStatus,
 } from './rp-button-access.js'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 10
+const DEFAULT_PAGINATION_PAGE_SIZE = 25
 
 function formatDateTime(value) {
   if (!value) {
@@ -64,11 +68,25 @@ function getFrpStatusValue(rp) {
     .toUpperCase()
 }
 
+const FRP_STATUS_LABEL_OVERRIDES = {
+  PENDING_REQUESTER_MANAGER: 'Req. Mgr',
+  PENDING_DESTINATION_CHECKER: 'Dest. Checker',
+  PENDING_DESTINATION_MANAGER: 'Dest. Mgr',
+}
+
 function getFrpStatusLabel(rp) {
   const status = getFrpStatusValue(rp)
 
   if (!status) {
     return '-'
+  }
+
+  if (status === 'APPROVED') {
+    return getRpFrpConversionStatus(rp) === 'CREATED' ? 'FRP Created' : 'Approved'
+  }
+
+  if (FRP_STATUS_LABEL_OVERRIDES[status]) {
+    return FRP_STATUS_LABEL_OVERRIDES[status]
   }
 
   return status
@@ -91,7 +109,7 @@ function getFrpStatusVariant(rp) {
 
   switch (status) {
     case 'APPROVED':
-      return 'active'
+      return getRpFrpConversionStatus(rp) === 'CREATED' ? 'active' : 'default'
     case 'REJECTED':
       return 'inactive'
     case 'VOIDED':
@@ -239,6 +257,17 @@ function isRevertActionHidden(rp, index, currentUser, canRevertAction) {
   )
 }
 
+function isCreateFrpActionHidden(rp, index, currentUser, canCreateFrpAction) {
+  return !(
+    canCurrentUserCreateFrpFromRp(rp, currentUser) &&
+    (typeof canCreateFrpAction !== 'function' || canCreateFrpAction(rp, index))
+  )
+}
+
+function isPrintActionHidden(rp) {
+  return getFrpStatusValue(rp) !== 'APPROVED'
+}
+
 const columnsDataTableRp = [{
     key: 'rpNumber',
     header: 'RP Number',
@@ -332,10 +361,13 @@ function DataTableRp({
   onReject,
   onRevert,
   onCheckData,
+  onCreateFrp,
+  onPrint,
   canApprove,
   canReject,
   canRevert,
   canCheckData,
+  canCreateFrp,
   useCheckDataAction = false,
   currentUser,
   onStatusChange,
@@ -408,7 +440,7 @@ function DataTableRp({
     typeof onApproval === 'function'
       ? {
           key: 'approval',
-          label: 'Approval',
+          label: 'Approve',
           buttonComponent: ButtonApprovalRp,
           mobileButtonComponent: MobileButtonApprovalRp,
           hidden: (rp, index) => isApproveActionHidden(rp, index, currentUser, canApprove),
@@ -435,6 +467,26 @@ function DataTableRp({
           onClick: onRevert,
         }
       : null,
+    typeof onCreateFrp === 'function'
+      ? {
+          key: 'createFrp',
+          label: 'Create FRP',
+          buttonComponent: ButtonCreateFrpRp,
+          mobileHidden: true,
+          hidden: (rp, index) => isCreateFrpActionHidden(rp, index, currentUser, canCreateFrp),
+          onClick: onCreateFrp,
+        }
+      : null,
+    typeof onPrint === 'function'
+      ? {
+          key: 'print',
+          label: 'Print',
+          buttonComponent: ButtonPrintRp,
+          mobileHidden: true,
+          hidden: (rp) => isPrintActionHidden(rp),
+          onClick: onPrint,
+        }
+      : null,
     typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
       ? {
           key: 'edit',
@@ -445,7 +497,7 @@ function DataTableRp({
           hidden: (rp, index) =>
             useCheckDataAction
               ? typeof canCheckData === 'function' && !canCheckData(rp, index)
-              : !canCurrentUserEditFrp(rp, currentUser),
+              : !canCurrentUserEditFrp(rp, currentUser) || getFrpStatusValue(rp) === 'APPROVED',
           onClick: useCheckDataAction ? onCheckData : onEdit,
         }
       : null,

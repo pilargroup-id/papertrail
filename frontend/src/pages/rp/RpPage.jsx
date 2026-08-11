@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import {
   canCurrentUserApproveFrp,
+  canCurrentUserCreateFrpFromRp,
   canCurrentUserEditFrp,
   isManagerUser,
 } from '../../components/table/rp/rp-button-access.js';
@@ -25,15 +26,21 @@ import DialogApproveRp from '../../components/Dialog/dialog-rp/DialogApproveRp.j
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsRp from '../../components/Dialog/dialog-rp/DialogDetailsRp.jsx'
+import DialogCreateFrpFromRp from '../../components/Dialog/dialog-rp/DialogCreateFrpFromRp.jsx'
+import {
+  getRpDetailFromResponse,
+  getRpItemsFromResponse,
+} from '../../components/Dialog/dialog-rp/tabs-details-rp/detailRpUtils.jsx'
+import { printRpDocument, showPrintError, showPrintLoading } from './print-rp.js'
 
 // Mobile Ui
 import {
   RP_MOBILE_DEFAULT_STATUS,
   rpMobileStatusTabs,
 } from '../../mobile/mobile-button/rp/mobileTabsRpConfig.js'
-import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
-import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
-import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
+import MobileScreenDetailRp from '../../mobile/screen/screen-rp/MobileScreenDetailRp.jsx'
+import MobileScreenCreateRp from '../../mobile/screen/screen-rp/screen-create-rp/MobileScreenCreateRp.jsx'
+import MobileScreenEditRp from '../../mobile/screen/screen-rp/screen-edit-rp/MobileScreenEditRp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
 
 const RP_STATUS_ALL = 'ALL'
@@ -273,6 +280,7 @@ function RpPage(props) {
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
+  const isManager = isManagerUser(currentUser)
   const activePageTitle = activePage?.title
   const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'RP'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
@@ -286,6 +294,7 @@ function RpPage(props) {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
+  const [isCreateFrpDialogOpen, setIsCreateFrpDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedCheckDataRp, setSelectedCheckDataRp] = useState(null)
@@ -293,6 +302,7 @@ function RpPage(props) {
   const [selectedApprovalRp, setSelectedApprovalRp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
+  const [selectedCreateFrpRp, setSelectedCreateFrpRp] = useState(null)
   const [selectedMobileDetailsFrp, setSelectedMobileDetailsFrp] = useState(null)
   const [selectedMobileEditFrp, setSelectedMobileEditFrp] = useState(null)
   const [isMobileCreateScreenOpen, setIsMobileCreateScreenOpen] = useState(false)
@@ -367,6 +377,34 @@ function RpPage(props) {
 
   const handleFrpCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
+  }
+
+  const handlePrintRp = async (rp) => {
+    const rpId = rp?.id
+
+    if (rpId === undefined || rpId === null) {
+      window.alert('ID RP tidak tersedia.')
+      return
+    }
+
+    const printWindow = window.open('', '_blank', 'width=1200,height=850')
+
+    if (!printWindow) {
+      window.alert('Popup print diblokir browser. Izinkan popup untuk mencetak RP.')
+      return
+    }
+
+    showPrintLoading(printWindow)
+
+    try {
+      const response = await api.rp.detail(rpId)
+      const rpDetail = getRpDetailFromResponse(response) ?? rp
+      const items = getRpItemsFromResponse(response)
+
+      printRpDocument(printWindow, { rpDetail, items })
+    } catch (error) {
+      showPrintError(printWindow, error.message || 'Gagal memuat data RP untuk print.')
+    }
   }
 
   const updateRpFilter = (filterName, value) => {
@@ -481,6 +519,21 @@ function RpPage(props) {
     setIsRevertDialogOpen(false)
     setSelectedRevertFrp(null)
     setRevertError('')
+  }
+
+  const openCreateFrpDialog = (rp) => {
+    setSelectedCreateFrpRp(rp)
+    setIsCreateFrpDialogOpen(true)
+  }
+
+  const closeCreateFrpDialog = () => {
+    setIsCreateFrpDialogOpen(false)
+    setSelectedCreateFrpRp(null)
+  }
+
+  const handleRpConvertedToFrp = () => {
+    setReloadToken((currentValue) => currentValue + 1)
+    closeCreateFrpDialog()
   }
 
   const handleVendorUpdated = async (response) => {
@@ -765,35 +818,39 @@ function RpPage(props) {
               onFilterChange={updateRpFilter}
             />
           </ButtonFilterRp>
-          <ButtonCreateRp
-            variant="create"
-            dialogProps={{
-              onCreated: handleFrpCreated,
-            }}
-          >
-            Create
-          </ButtonCreateRp>
+          {!isManager ? (
+            <ButtonCreateRp
+              variant="create"
+              dialogProps={{
+                onCreated: handleFrpCreated,
+              }}
+            >
+              Create
+            </ButtonCreateRp>
+          ) : null}
 
         </div>
       </div>
 
       {!selectedMobileDetailsFrp && !selectedMobileEditFrp && !isMobileCreateScreenOpen ? (
         <SearchFrp searchProps={searchProps}>
-          <MobileButtonCreate
-            label="Create"
-            onClick={openMobileCreatePage}
-          />
+          {!isManager ? (
+            <MobileButtonCreate
+              label="Create"
+              onClick={openMobileCreatePage}
+            />
+          ) : null}
         </SearchFrp>
       ) : null}
 
-      <MobileScreenDetailFrp rp={selectedMobileDetailsFrp} onBack={closeMobileDetailsPage} />
-      <MobileScreenCreateFrp
+      <MobileScreenDetailRp rp={selectedMobileDetailsFrp} onBack={closeMobileDetailsPage} />
+      <MobileScreenCreateRp
         isOpen={isMobileCreateScreenOpen}
         mode="screen"
         onClose={closeMobileCreatePage}
         onCreated={handleFrpCreated}
       />
-      <MobileScreenEditFrp
+      <MobileScreenEditRp
         isOpen={Boolean(selectedMobileEditFrp)}
         mode="screen"
         title={`Edit ${getFrpEditLabel(selectedMobileEditFrp)}`}
@@ -831,9 +888,12 @@ function RpPage(props) {
           onApproval={openApproveDialog}
           onReject={openRejectDialog}
           onRevert={openRevertDialog}
+          onCreateFrp={openCreateFrpDialog}
+          onPrint={handlePrintRp}
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
+          canCreateFrp={(row) => canCurrentUserCreateFrpFromRp(row, currentUser)}
           canCheckData={(row) =>
             getFrpStatusValue(row) === 'PENDING_DESTINATION_CHECKER' &&
             canCurrentUserDestinationCheckRp(row, currentUser)
@@ -918,6 +978,15 @@ function RpPage(props) {
         submitError={revertError}
         onClose={closeRevertDialog}
         onRevert={handleFrpReverted}
+      />
+
+      <DialogCreateFrpFromRp
+        key={selectedCreateFrpRp?.id ?? 'create-frp-from-rp'}
+        isOpen={isCreateFrpDialogOpen}
+        title="Create FRP"
+        rp={selectedCreateFrpRp}
+        onClose={closeCreateFrpDialog}
+        onCreated={handleRpConvertedToFrp}
       />
     </section>
 

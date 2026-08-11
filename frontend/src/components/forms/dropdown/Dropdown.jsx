@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { Check, ChevronDown } from '../../layoute/TemplateIcons.jsx'
 
@@ -35,6 +36,9 @@ function Dropdown({
   const menuId = `${buttonId}-menu`
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
+  const menuRef = useRef(null)
+  const triggerRef = useRef(null)
+  const [menuStyle, setMenuStyle] = useState(null)
   const normalizedOptions = options.map(normalizeOption)
   const selectedOption = normalizedOptions.find((option) => option.value === value)
   const message = typeof error === 'string' ? error : helperText
@@ -43,7 +47,10 @@ function Dropdown({
 
   useEffect(() => {
     const handlePointerDown = (event) => {
-      if (!rootRef.current?.contains(event.target)) {
+      if (
+        !rootRef.current?.contains(event.target) &&
+        !menuRef.current?.contains(event.target)
+      ) {
         setOpen(false)
       }
     }
@@ -54,6 +61,53 @@ function Dropdown({
       document.removeEventListener('pointerdown', handlePointerDown)
     }
   }, [])
+
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') {
+      return undefined
+    }
+
+    const updateMenuPosition = () => {
+      const triggerRect = triggerRef.current?.getBoundingClientRect()
+
+      if (!triggerRect) {
+        return
+      }
+
+      const offset = 8
+      const minMenuHeight = 160
+      const viewportPadding = 16
+      const availableBelow = window.innerHeight - triggerRect.bottom - viewportPadding - offset
+      const availableAbove = triggerRect.top - viewportPadding - offset
+      const shouldOpenUp = availableBelow < minMenuHeight && availableAbove > availableBelow
+
+      if (shouldOpenUp) {
+        setMenuStyle({
+          left: triggerRect.left,
+          width: triggerRect.width,
+          bottom: Math.max(viewportPadding, window.innerHeight - triggerRect.top + offset),
+          maxHeight: Math.max(minMenuHeight, availableAbove),
+        })
+        return
+      }
+
+      setMenuStyle({
+        left: triggerRect.left,
+        width: triggerRect.width,
+        top: triggerRect.bottom + offset,
+        maxHeight: Math.max(minMenuHeight, availableBelow),
+      })
+    }
+
+    updateMenuPosition()
+    window.addEventListener('resize', updateMenuPosition)
+    window.addEventListener('scroll', updateMenuPosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updateMenuPosition)
+      window.removeEventListener('scroll', updateMenuPosition, true)
+    }
+  }, [open])
 
   const wrapperClassName = [
     'form-dropdown',
@@ -78,6 +132,7 @@ function Dropdown({
         id={buttonId}
         className="form-dropdown__trigger"
         type="button"
+        ref={triggerRef}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={menuId}
@@ -92,35 +147,45 @@ function Dropdown({
         <ChevronDown className="form-dropdown__chevron" size={18} />
       </button>
 
-      {open ? (
-        <div className="form-dropdown__menu" id={menuId} role="listbox" aria-labelledby={buttonId}>
-          {normalizedOptions.length > 0 ? (
-            normalizedOptions.map((option, index) => {
-              const selected = option.value === value
+      {open && typeof document !== 'undefined' && menuStyle
+        ? createPortal(
+            <div
+              className="form-dropdown__menu form-dropdown__menu--portal"
+              id={menuId}
+              ref={menuRef}
+              role="listbox"
+              aria-labelledby={buttonId}
+              style={menuStyle}
+            >
+              {normalizedOptions.length > 0 ? (
+                normalizedOptions.map((option, index) => {
+                  const selected = option.value === value
 
-              return (
-                <button
-                  className={`form-dropdown__item${selected ? ' form-dropdown__item--selected' : ''}`}
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  disabled={option.disabled}
-                  key={getOptionRenderKey(option, index)}
-                  onClick={() => {
-                    onChange?.(option.value, option)
-                    setOpen(false)
-                  }}
-                >
-                  <span>{option.label}</span>
-                  {selected ? <Check size={16} /> : null}
-                </button>
-              )
-            })
-          ) : (
-            <div className="form-dropdown__empty">Tidak ada data.</div>
-          )}
-        </div>
-      ) : null}
+                  return (
+                    <button
+                      className={`form-dropdown__item${selected ? ' form-dropdown__item--selected' : ''}`}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      disabled={option.disabled}
+                      key={getOptionRenderKey(option, index)}
+                      onClick={() => {
+                        onChange?.(option.value, option)
+                        setOpen(false)
+                      }}
+                    >
+                      <span>{option.label}</span>
+                      {selected ? <Check size={16} /> : null}
+                    </button>
+                  )
+                })
+              ) : (
+                <div className="form-dropdown__empty">Tidak ada data.</div>
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
 
       {message ? (
         <p className="form-control__message" id={messageId}>

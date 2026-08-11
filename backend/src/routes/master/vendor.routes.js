@@ -16,7 +16,6 @@ router.get(
 
 router.post(
   '/',
-  requireModulePermission('MASTER_VENDOR', 'create'),
   VendorController.store
 );
 

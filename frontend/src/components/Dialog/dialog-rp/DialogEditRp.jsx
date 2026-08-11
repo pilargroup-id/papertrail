@@ -108,12 +108,11 @@ function mapVendorOptions(vendors) {
 function mapPaymentCategoryOptions(categories) {
   return categories.map((category) => {
     const id = getFirstValue(category, ['id', 'payment_category_id'])
-    const code = getFirstValue(category, ['code'])
     const name = getFirstValue(category, ['name'], `Category #${id ?? '-'}`)
 
     return {
       value: id,
-      label: [code, name].filter(Boolean).join(' - '),
+      label: name,
     }
   })
 }
@@ -699,9 +698,10 @@ function DialogEditRp({
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
 
-      if (nextFieldErrors.date_required || nextFieldErrors.description) {
+      if (nextFieldErrors.description) {
         setActiveTab('information')
       } else if (
+        nextFieldErrors.date_required ||
         nextFieldErrors.vendor_id ||
         nextFieldErrors.payment_category_id ||
         nextFieldErrors.destination_department_id ||

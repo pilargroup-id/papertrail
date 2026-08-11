@@ -35,12 +35,20 @@ function HeaderMobile({
   const hasSearch = Boolean(searchProps)
   const hasNotification = Boolean(notificationProps)
   const hasHeaderTabs = Array.isArray(headerTabs?.tabs) && headerTabs.tabs.length > 0
+  const isHeaderTabsDropdown = hasHeaderTabs && headerTabs.variant === 'dropdown'
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false)
   const [isDepartmentDropdownOpen, setIsDepartmentDropdownOpen] = useState(false)
   const [departmentDropdownStyle, setDepartmentDropdownStyle] = useState(null)
+  const [isHeaderTabsDropdownOpen, setIsHeaderTabsDropdownOpen] = useState(false)
+  const [headerTabsDropdownStyle, setHeaderTabsDropdownStyle] = useState(null)
   const breadcrumbFilterRef = useRef(null)
   const departmentDropdownTriggerRef = useRef(null)
   const departmentDropdownRef = useRef(null)
+  const headerTabsDropdownTriggerRef = useRef(null)
+  const headerTabsDropdownRef = useRef(null)
+  const activeHeaderTab = hasHeaderTabs
+    ? headerTabs.tabs.find((tab) => String(tab.id) === String(headerTabs.activeTabId))
+    : null
 
   const departmentFilterOptions = useMemo(() => {
     if (!departmentFilterProps) {
@@ -149,6 +157,109 @@ function HeaderMobile({
       window.removeEventListener('scroll', updateDropdownPosition, true)
     }
   }, [isDepartmentDropdownOpen])
+
+  const isHeaderTabsDropdownVisible = isHeaderTabsDropdown && isHeaderTabsDropdownOpen
+
+  useEffect(() => {
+    if (!isHeaderTabsDropdownVisible) {
+      return undefined
+    }
+
+    const handlePointerDown = (event) => {
+      if (headerTabsDropdownTriggerRef.current?.contains(event.target)) {
+        return
+      }
+
+      if (headerTabsDropdownRef.current?.contains(event.target)) {
+        return
+      }
+
+      setIsHeaderTabsDropdownOpen(false)
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsHeaderTabsDropdownOpen(false)
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isHeaderTabsDropdownVisible])
+
+  useLayoutEffect(() => {
+    if (!isHeaderTabsDropdownVisible) {
+      return undefined
+    }
+
+    const updateDropdownPosition = () => {
+      const triggerElement = headerTabsDropdownTriggerRef.current
+
+      if (!triggerElement) {
+        return
+      }
+
+      const triggerBounds = triggerElement.getBoundingClientRect()
+      const minimumWidth = 200
+      const preferredWidth = Math.max(triggerBounds.width, minimumWidth)
+      const viewportWidth = window.innerWidth
+      const nextLeft = Math.min(
+        triggerBounds.left,
+        Math.max(12, viewportWidth - preferredWidth - 12),
+      )
+
+      setHeaderTabsDropdownStyle({
+        top: triggerBounds.bottom + 8,
+        left: Math.max(12, nextLeft),
+        minWidth: preferredWidth,
+      })
+    }
+
+    updateDropdownPosition()
+
+    window.addEventListener('resize', updateDropdownPosition)
+    window.addEventListener('scroll', updateDropdownPosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition)
+      window.removeEventListener('scroll', updateDropdownPosition, true)
+    }
+  }, [isHeaderTabsDropdownVisible])
+
+  const headerTabsDropdownPortal =
+    isHeaderTabsDropdownVisible && typeof document !== 'undefined' && headerTabsDropdownStyle
+      ? createPortal(
+          <div
+            className="mobile-header-tabs-dropdown"
+            id="mobile-header-tabs-dropdown"
+            role="menu"
+            ref={headerTabsDropdownRef}
+            style={headerTabsDropdownStyle}
+          >
+            {headerTabs.tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`mobile-header-tabs-dropdown__option${
+                  String(tab.id) === String(headerTabs.activeTabId) ? ' active' : ''
+                }`}
+                onClick={() => {
+                  headerTabs.onTabChange?.(tab.id)
+                  setIsHeaderTabsDropdownOpen(false)
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )
+      : null
 
   const departmentDropdownPortal =
     isDepartmentDropdownOpen && typeof document !== 'undefined' && departmentDropdownStyle
@@ -314,26 +425,46 @@ function HeaderMobile({
 
         {hasHeaderTabs ? (
           <div className="mobile-header-tabs-row">
-            <nav
-              className="mobile-header-tabs"
-              aria-label={headerTabs.ariaLabel ?? 'Header tabs'}
-            >
-              {headerTabs.tabs.map((tab) => {
-                const isActive = String(tab.id) === String(headerTabs.activeTabId)
+            {isHeaderTabsDropdown ? (
+              <button
+                ref={headerTabsDropdownTriggerRef}
+                type="button"
+                className="mobile-header-tabs__select"
+                aria-haspopup="listbox"
+                aria-expanded={isHeaderTabsDropdownOpen}
+                aria-controls="mobile-header-tabs-dropdown"
+                aria-label={headerTabs.ariaLabel ?? 'Header tabs'}
+                onClick={() => setIsHeaderTabsDropdownOpen((currentValue) => !currentValue)}
+              >
+                <span>{activeHeaderTab?.label ?? 'All'}</span>
+                <ChevronDown
+                  size={14}
+                  aria-hidden="true"
+                  className={`breadcrumb-dropdown-icon${isHeaderTabsDropdownOpen ? ' open' : ''}`}
+                />
+              </button>
+            ) : (
+              <nav
+                className="mobile-header-tabs"
+                aria-label={headerTabs.ariaLabel ?? 'Header tabs'}
+              >
+                {headerTabs.tabs.map((tab) => {
+                  const isActive = String(tab.id) === String(headerTabs.activeTabId)
 
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    className={`mobile-header-tabs__button${isActive ? ' active' : ''}`}
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => headerTabs.onTabChange?.(tab.id)}
-                  >
-                    {tab.label}
-                  </button>
-                )
-              })}
-            </nav>
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`mobile-header-tabs__button${isActive ? ' active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => headerTabs.onTabChange?.(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </nav>
+            )}
 
             {hasNotification || onRefresh ? (
               <div className="mobile-header-tabs__actions">
@@ -380,6 +511,7 @@ function HeaderMobile({
       ) : null}
 
       {departmentDropdownPortal}
+      {headerTabsDropdownPortal}
     </header>
   )
 }

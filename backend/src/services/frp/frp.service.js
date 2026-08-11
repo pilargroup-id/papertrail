@@ -59,6 +59,24 @@ function getPrimaryCompany(user = {}) {
   );
 }
 
+function getUserCompanyIds(user = {}) {
+  const ids = [];
+
+  if (user.company_id) {
+    ids.push(user.company_id);
+  }
+
+  const companies = Array.isArray(user.companies) ? user.companies : [];
+
+  companies.forEach((company) => {
+    if (company.id) {
+      ids.push(company.id);
+    }
+  });
+
+  return [...new Set(ids)];
+}
+
 function getUserDepartmentIds(user = {}) {
   const ids = [];
 
@@ -245,7 +263,22 @@ function isUserInItDepartment(user = {}) {
 }
 
 function isManagerLevel(user = {}) {
-  return Number(user.job_level_value || 0) >= 4;
+  const explicitManagerFlag = user.is_manager ?? user.isManager ?? null;
+
+  if (explicitManagerFlag !== null && explicitManagerFlag !== undefined) {
+    return ['1', 'true', 'yes'].includes(normalizeString(explicitManagerFlag).toLowerCase());
+  }
+
+  if (Number(user.job_level_value || 0) >= 4) {
+    return true;
+  }
+
+  const roleText = [user.job_position, user.job_level, user.role, user.userRole]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return roleText.includes('manager');
 }
 
 function userHasCompanyScope(user = {}, companyId) {
@@ -400,7 +433,7 @@ function buildListAccessQuery(user = {}) {
   return {
     canViewAll: canViewAllFrp(user),
     userId: user.id || null,
-    managerCompanyId: isManagerLevel(user) ? user.company_id || null : null,
+    managerCompanyIds: isManagerLevel(user) ? getUserCompanyIds(user) : [],
     managerDepartmentIds: isManagerLevel(user) ? departmentIds : [],
     managerDepartmentContexts: isManagerLevel(user) ? departmentContexts : [],
     budgetDepartmentIds: departmentIds,

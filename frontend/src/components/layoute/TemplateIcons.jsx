@@ -640,6 +640,27 @@ export function CheckData(props) {
     </IconBase>
   )
 }
+
+export function CreateFrp(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z" />
+      <path d="M13 3v6h6" />
+      <path d="M12 13v6" />
+      <path d="M9 16h6" />
+    </IconBase>
+  )
+}
+
+export function Printer(props) {
+  return (
+    <IconBase {...props}>
+      <polyline points="6 9 6 2 18 2 18 9" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <rect x="6" y="14" width="12" height="8" />
+    </IconBase>
+  )
+}
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

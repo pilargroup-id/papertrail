@@ -143,6 +143,21 @@ function canRequesterManagerApprove(rp, currentUser) {
   )
 }
 
+function isGeneralProcurementUser(user) {
+  const jobPosition = String(getFirstValue(user, ['job_position', 'jobPosition'], ''))
+    .trim()
+    .toUpperCase()
+  const jobLevelValue = Number(getFirstValue(user, ['job_level_value', 'jobLevelValue'], 0))
+
+  return jobPosition === 'GENERAL PROCUREMENT' && jobLevelValue < 4
+}
+
+export function getRpFrpConversionStatus(rp) {
+  return String(getFirstValue(rp, ['frp_conversion_status', 'frpConversionStatus'], 'NOT_CREATED'))
+    .trim()
+    .toUpperCase()
+}
+
 function canDestinationManagerApprove(rp, currentUser) {
   return (
     userHasCompanyScope(currentUser, rp) &&
@@ -198,3 +213,11 @@ export function canCurrentUserRevertRp(rp, currentUser) {
 export const canCurrentUserApproveFrp = canCurrentUserApproveRp
 export const canCurrentUserRejectFrp = canCurrentUserRejectRp
 export const canCurrentUserRevertFrp = canCurrentUserRevertRp
+
+export function canCurrentUserCreateFrpFromRp(rp, currentUser) {
+  return (
+    getRpStatusValue(rp) === 'APPROVED' &&
+    getRpFrpConversionStatus(rp) === 'NOT_CREATED' &&
+    isGeneralProcurementUser(currentUser)
+  )
+}

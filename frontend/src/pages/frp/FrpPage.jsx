@@ -6,6 +6,7 @@ import TabsFrpDekstop from './TabsFrpDekstop.jsx'
 import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
+  isManagerUser,
 } from '../../components/table/frp/frp-button-access.js';
 import FrpFilter from './FrpFilter.jsx'
 // Button Frp
@@ -19,12 +20,19 @@ import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFr
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
+import {
+  getFrpDetailFromResponse,
+  getFrpItemsFromResponse,
+  printFrpDocument,
+  showPrintError,
+  showPrintLoading,
+} from './print-frp.js'
 
 // Mobile
 import { FRP_MOBILE_STATUS_ALL } from '../../mobile/mobile-button/frp/MobileTabsFrp.jsx'
-import MobileScreenDetailFrp from '../../mobile/screen/MobileScreenDetailFrp.jsx'
-import MobileScreenCreateFrp from '../../mobile/screen/screen-create-frp/MobileScreenCreateFrp.jsx'
-import MobileScreenEditFrp from '../../mobile/screen/screen-edit-frp/MobileScreenEditFrp.jsx'
+import MobileScreenDetailFrp from '../../mobile/screen/screen-frp/MobileScreenDetailFrp.jsx'
+import MobileScreenCreateFrp from '../../mobile/screen/screen-frp/screen-create-frp/MobileScreenCreateFrp.jsx'
+import MobileScreenEditFrp from '../../mobile/screen/screen-frp/screen-edit-frp/MobileScreenEditFrp.jsx'
 import SearchFrp from '../../mobile/search-mobile/SearchFrp.jsx'
 import MobileButtonCreate from '../../mobile/mobile-button/frp/MobileButtonCreate.jsx'
 
@@ -192,6 +200,7 @@ function FrpPage(props) {
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
   const authDepartmentId = getAuthDepartmentId(currentUser)
   const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
+  const isManager = isManagerUser(currentUser)
   const activePageTitle = activePage?.title
   const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'FRP'
   const pageEyebrow = activePage?.eyebrow ?? 'Document Transaction'
@@ -280,6 +289,34 @@ function FrpPage(props) {
 
     return () => controller.abort()
   }, [authDepartmentId, shouldLoadFrp, searchQuery, reloadToken])
+
+  const handlePrintFrp = async (frp) => {
+    const frpId = frp?.id
+
+    if (frpId === undefined || frpId === null) {
+      window.alert('ID FRP tidak tersedia.')
+      return
+    }
+
+    const printWindow = window.open('', '_blank', 'width=1000,height=700')
+
+    if (!printWindow) {
+      window.alert('Popup print diblokir browser. Izinkan popup untuk mencetak FRP.')
+      return
+    }
+
+    showPrintLoading(printWindow)
+
+    try {
+      const response = await api.frp.detail(frpId)
+      const frpDetail = getFrpDetailFromResponse(response) ?? frp
+      const items = getFrpItemsFromResponse(response)
+
+      printFrpDocument(printWindow, { frpDetail, items })
+    } catch (error) {
+      showPrintError(printWindow, error.message || 'Gagal memuat data FRP untuk print.')
+    }
+  }
 
   const handleFrpCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
@@ -627,24 +664,28 @@ function FrpPage(props) {
               onFilterChange={updateFrpFilter}
             />
           </ButtonFilterFrp>
-          <ButtonCreateFrp
-            variant="create"
-            dialogProps={{
-              onCreated: handleFrpCreated,
-            }}
-          >
-            Create
-          </ButtonCreateFrp>
+          {!isManager ? (
+            <ButtonCreateFrp
+              variant="create"
+              dialogProps={{
+                onCreated: handleFrpCreated,
+              }}
+            >
+              Create
+            </ButtonCreateFrp>
+          ) : null}
 
         </div>
       </div>
 
       {!selectedMobileDetailsFrp && !selectedMobileEditFrp && !isMobileCreateScreenOpen ? (
         <SearchFrp searchProps={searchProps}>
-          <MobileButtonCreate
-            label="Create"
-            onClick={openMobileCreatePage}
-          />
+          {!isManager ? (
+            <MobileButtonCreate
+              label="Create"
+              onClick={openMobileCreatePage}
+            />
+          ) : null}
         </SearchFrp>
       ) : null}
 
@@ -690,6 +731,7 @@ function FrpPage(props) {
           onApproval={openApproveDialog}
           onReject={openRejectDialog}
           onRevert={openRevertDialog}
+          onPrint={handlePrintFrp}
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
