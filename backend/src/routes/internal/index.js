@@ -5,6 +5,8 @@ const config = require('../../config');
 const DirectoryController = require('../../controllers/directory.controller');
 const { authenticate, requireApp } = require('../../middleware/auth.middleware');
 
+router.use('/currency', require('./currencySync.routes'));
+
 router.use(authenticate);
 router.use(requireApp(config.app.slug));
 
