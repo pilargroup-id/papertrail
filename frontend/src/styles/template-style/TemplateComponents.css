@@ -4802,6 +4802,16 @@ width: var(--sidebar-collapsed-width);
   padding-top: 12px;
 }
 
+@media (min-width: 769px) {
+  /* Logs tables size their wrapper to their row count instead of stretching to
+     fill the card, so the default margin-top:auto anchors pagination to the
+     bottom of the (viewport-stretched) card, leaving a large gap above it.
+     Keep pagination right under the table instead. */
+  .logs-page .users-table-pagination-shell {
+    margin-top: 16px;
+  }
+}
+
 .users-table-pagination-shell .users-table-pagination,
 .users-table-pagination-shell .mobile-pagination {
   margin-top: 0;

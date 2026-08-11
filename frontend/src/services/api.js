@@ -610,6 +610,14 @@ const api = {
     companies: createReadOnlyResource('/internal/directory/companies'),
     users: createReadOnlyResource('/internal/directory/users'),
   },
+
+  // =====================
+  // Logs (read-only, IT users only)
+  // =====================
+  logs: {
+    activities: createReadOnlyResource('/logs/activities'),
+    budgetUsages: createReadOnlyResource('/logs/budget-usages'),
+  },
 };
 
 export default api;
