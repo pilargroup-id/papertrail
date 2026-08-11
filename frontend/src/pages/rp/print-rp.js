@@ -182,7 +182,7 @@ function buildItemsTableRowsHtml(items) {
 
 const PRINT_STYLES = `
   * { box-sizing: border-box; }
-  @page { size: A4 landscape; margin: 12mm; }
+  @page { size: A4 landscape; margin: 0; }
   html, body {
     margin: 0;
     padding: 0;
@@ -191,6 +191,7 @@ const PRINT_STYLES = `
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  .rp-print { padding: 12mm; }
   .rp-print__header {
     display: flex;
     align-items: center;
@@ -200,11 +201,13 @@ const PRINT_STYLES = `
     margin-bottom: 14px;
     border-bottom: 2px solid #1a1a1a;
   }
-  .rp-print__header-left { display: flex; align-items: center; gap: 14px; }
+  .rp-print__header-left { display: flex; align-items: center; }
   .rp-print__logo { height: 48px; width: auto; object-fit: contain; }
+  .rp-print__header-right { text-align: right; }
+  .rp-print__heading { margin-bottom: 6px; }
   .rp-print__heading h1 { margin: 0; font-size: 18px; letter-spacing: 0.4px; text-transform: uppercase; }
   .rp-print__heading p { margin: 2px 0 0; font-size: 12px; color: #444; }
-  .rp-print__header-right { text-align: right; font-size: 11px; color: #555; }
+  .rp-print__printed { font-size: 11px; color: #555; }
   .rp-print__section { margin-bottom: 14px; }
   .rp-print__section h2 {
     margin: 0 0 6px;
@@ -315,12 +318,18 @@ const PRINT_STYLES = `
     font-size: 8.5px;
   }
   .rp-print__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
     margin-top: 16px;
     padding-top: 8px;
     border-top: 1px solid #cfd4da;
     font-size: 10px;
     color: #666;
-    text-align: right;
+  }
+  .rp-print__footer .rp-print__printed {
+    white-space: nowrap;
   }
 `
 
@@ -344,14 +353,12 @@ function buildPrintHtml({ rpDetail, items }) {
       <header class="rp-print__header">
         <div class="rp-print__header-left">
           <img class="rp-print__logo" src="${escapeHtml(getLogoUrl())}" alt="Logo" />
+        </div>
+        <div class="rp-print__header-right">
           <div class="rp-print__heading">
             <h1>Request Payment (RP)</h1>
             <p>No. ${safe(rpNumber)} &bull; ${safe(statusLabel)}</p>
           </div>
-        </div>
-        <div class="rp-print__header-right">
-          <div>Dicetak pada</div>
-          <div>${escapeHtml(printedAt)}</div>
         </div>
       </header>
 
@@ -402,7 +409,8 @@ function buildPrintHtml({ rpDetail, items }) {
       </section>
 
       <footer class="rp-print__footer">
-        Papertrail &bull; Dokumen ini dihasilkan otomatis oleh sistem
+        <div class="rp-print__printed">Dicetak pada ${escapeHtml(printedAt)}</div>
+        <div>Papertrail &bull; Dokumen ini dihasilkan otomatis oleh sistem</div>
       </footer>
     </div>
   </body>
