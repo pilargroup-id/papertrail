@@ -75,6 +75,7 @@ export const primaryNavigationItems = [
     label: 'Convert FRP from RP',
     href: '/rp-to-frp',
     icon: CreditCard,
+    allowedRoles: ['General Procurement'],
   },
   {
     id: 'master',

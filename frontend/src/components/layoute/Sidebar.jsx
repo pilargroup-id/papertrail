@@ -34,6 +34,36 @@ function isItemActive(item, currentPath) {
   return item.children?.some((child) => isItemActive(child, currentPath)) ?? false
 }
 
+function normalizeRole(role) {
+  return (role ?? '').toString().trim().toUpperCase()
+}
+
+function isItemVisible(item, userRole) {
+  if (!item.allowedRoles?.length) {
+    return true
+  }
+
+  const normalizedUserRole = normalizeRole(userRole)
+
+  return item.allowedRoles.some((role) => normalizeRole(role) === normalizedUserRole)
+}
+
+function filterNavigationItems(items, userRole) {
+  return items.reduce((visibleItems, item) => {
+    if (!isItemVisible(item, userRole)) {
+      return visibleItems
+    }
+
+    if (item.children?.length) {
+      visibleItems.push({ ...item, children: filterNavigationItems(item.children, userRole) })
+      return visibleItems
+    }
+
+    visibleItems.push(item)
+    return visibleItems
+  }, [])
+}
+
 function getInitiallyExpandedGroups(items, currentPath) {
   return items.reduce((expandedGroups, item) => {
     if (item.children?.length && isItemActive(item, currentPath)) {
@@ -166,9 +196,17 @@ function Sidebar({
 }) {
   const [expandedGroups, setExpandedGroups] = useState({})
   const initials = getInitials(userName)
+  const visiblePrimaryItems = useMemo(
+    () => filterNavigationItems(primaryItems, userRole),
+    [primaryItems, userRole],
+  )
+  const visibleSecondaryItems = useMemo(
+    () => filterNavigationItems(secondaryItems, userRole),
+    [secondaryItems, userRole],
+  )
   const activeExpandedGroups = useMemo(
-    () => getInitiallyExpandedGroups([...primaryItems, ...secondaryItems], activePath),
-    [activePath, primaryItems, secondaryItems],
+    () => getInitiallyExpandedGroups([...visiblePrimaryItems, ...visibleSecondaryItems], activePath),
+    [activePath, visiblePrimaryItems, visibleSecondaryItems],
   )
   const visibleExpandedGroups = useMemo(
     () => ({
@@ -272,7 +310,7 @@ function Sidebar({
       </div>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
-        {primaryItems.map((item) => (
+        {visiblePrimaryItems.map((item) => (
           <SidebarNavItem
             key={getItemKey(item)}
             item={item}
@@ -286,7 +324,7 @@ function Sidebar({
       </nav>
 
       <div className="sidebar-bottom">
-          {secondaryItems.map((item) => (
+          {visibleSecondaryItems.map((item) => (
             <SidebarNavItem
               key={getItemKey(item)}
               item={item}
