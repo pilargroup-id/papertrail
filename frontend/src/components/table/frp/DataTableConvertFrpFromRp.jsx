@@ -1,30 +1,14 @@
-import DataTableAction, { DataTableStatus } from '../DataTableAction.jsx'
-import ButtonEditRp from '../../button/button-rp/ButtonEditRp.jsx'
-import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
-import ButtonDetailsRp from '../../button/button-rp/ButtonDetailsRp.jsx'
-
-// Button Action Dekstop
-import ButtonApprovalRp from '../../button/button-rp/ButtonApprovalRp.jsx'
-import ButtonRejectRp from '../../button/button-rp/ButtonRejectRp.jsx'
-import ButtonRevertRp from '../../button/button-rp/ButtonRevertRp.jsx'
-import ButtonCheckDataRp from '../../button/button-rp/ButtonCheckDataRp.jsx'
+import DataTableAction from '../DataTableAction.jsx'
 import ButtonCreateFrpRp from '../../button/button-rp/ButtonCreateFrpRp.jsx'
+import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
 
 // MOBILE
 import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
-import MobileButtonApprovalRp from '../../../mobile/mobile-button/frp/MobileButtonApprovalFrp.jsx'
-import MobileButtonEditRp from '../../../mobile/mobile-button/frp/MobileButtonEditFrp.jsx'
-import MobileButtonRejectRp from '../../../mobile/mobile-button/frp/MobileButtonRejectFrp.jsx'
-import MobileButtonRevert from '../../../mobile/mobile-button/frp/MobileButtonRevert.jsx'
 import {
-  canAccessFrpButton,
-  canCurrentUserApproveRp,
   canCurrentUserCreateFrpFromRp,
-  canCurrentUserEditFrp,
-  canCurrentUserRejectFrp,
-  canCurrentUserRevertFrp,
   getRpFrpConversionStatus,
-} from './rp-button-access.js'
+  isGeneralProcurementUser,
+} from '../rp/rp-button-access.js'
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -68,12 +52,6 @@ function getFrpStatusValue(rp) {
     .toUpperCase()
 }
 
-const FRP_STATUS_LABEL_OVERRIDES = {
-  PENDING_REQUESTER_MANAGER: 'Req. Mgr',
-  PENDING_DESTINATION_CHECKER: 'Dest. Checker',
-  PENDING_DESTINATION_MANAGER: 'Dest. Mgr',
-}
-
 function getFrpStatusLabel(rp) {
   const status = getFrpStatusValue(rp)
 
@@ -82,11 +60,7 @@ function getFrpStatusLabel(rp) {
   }
 
   if (status === 'APPROVED') {
-    return getRpFrpConversionStatus(rp) === 'CREATED' ? 'FRP Created' : 'Approved'
-  }
-
-  if (FRP_STATUS_LABEL_OVERRIDES[status]) {
-    return FRP_STATUS_LABEL_OVERRIDES[status]
+    return getRpFrpConversionStatus(rp) === 'CREATED' ? 'Create FRP' : 'Approved'
   }
 
   return status
@@ -96,16 +70,8 @@ function getFrpStatusLabel(rp) {
     .join(' ')
 }
 
-function isFrpPendingStatus(rp) {
-  return getFrpStatusValue(rp).startsWith('PENDING')
-}
-
 function getFrpStatusVariant(rp) {
   const status = getFrpStatusValue(rp)
-
-  if (status.startsWith('PENDING')) {
-    return 'pending'
-  }
 
   switch (status) {
     case 'APPROVED':
@@ -115,7 +81,7 @@ function getFrpStatusVariant(rp) {
     case 'VOIDED':
       return 'default'
     default:
-      return 'default'
+      return status.startsWith('PENDING') ? 'pending' : 'default'
   }
 }
 
@@ -186,77 +152,6 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   }
 }
 
-function renderBanksStatus(rp, index, {
-  isStatusUpdating,
-  onStatusChange,
-  SwitchComponent,
-}) {
-  const isActive = getFrpStatusValue(rp) === 'APPROVED'
-  const isUpdating =
-    typeof isStatusUpdating === 'function'
-      ? Boolean(isStatusUpdating(rp, index))
-      : false
-  const isDisabled = rp?.id === undefined || rp?.id === null || isUpdating
-  const statusLabel = getFrpStatusLabel(rp)
-  const statusPill = (
-    <DataTableStatus
-      className="banks-status-toggle__pill"
-      variant={getFrpStatusVariant(rp)}
-    >
-      {statusLabel}
-    </DataTableStatus>
-  )
-
-  return (
-    <>
-      {SwitchComponent ? (
-        <SwitchComponent
-          className="banks-status-toggle__switch"
-          label={statusPill}
-          checked={isActive}
-          disabled={isDisabled}
-          aria-label={`Ubah status FRP ${rp?.rp_number ?? rp?.id ?? index}`}
-          onClick={(event) => event.stopPropagation()}
-          onChange={(event) => {
-            event.stopPropagation()
-            onStatusChange?.(rp, event.target.checked ? 1 : 0, index)
-          }}
-        />
-      ) : (
-        statusPill
-      )}
-    </>
-  )
-}
-
-function isApproveActionHidden(rp, index, currentUser, canApproveAction) {
-  const isPending = isFrpPendingStatus(rp)
-
-  return !(
-    isPending &&
-    canCurrentUserApproveRp(rp, currentUser) &&
-    (typeof canApproveAction !== 'function' || canApproveAction(rp, index))
-  )
-}
-
-function isRejectActionHidden(rp, index, currentUser, canRejectAction) {
-  const isPending = isFrpPendingStatus(rp)
-
-  return !(
-    isPending &&
-    canCurrentUserRejectFrp(rp, currentUser) &&
-    (typeof canRejectAction !== 'function' || canRejectAction(rp, index))
-  )
-}
-
-function isRevertActionHidden(rp, index, currentUser, canRevertAction) {
-  return !(
-    getFrpStatusValue(rp) === 'APPROVED' &&
-    canCurrentUserRevertFrp(rp, currentUser) &&
-    (typeof canRevertAction !== 'function' || canRevertAction(rp, index))
-  )
-}
-
 function isCreateFrpActionHidden(rp, index, currentUser, canCreateFrpAction) {
   return !(
     canCurrentUserCreateFrpFromRp(rp, currentUser) &&
@@ -264,11 +159,11 @@ function isCreateFrpActionHidden(rp, index, currentUser, canCreateFrpAction) {
   )
 }
 
-function isPrintActionHidden(rp) {
-  return getFrpStatusValue(rp) !== 'APPROVED'
+function isPrintActionHidden(rp, currentUser) {
+  return getFrpStatusValue(rp) !== 'APPROVED' || !isGeneralProcurementUser(currentUser)
 }
 
-const columnsDataTableFrpFromRp = [{
+const columnsDataTableConvertFrpFromRp = [{
     key: 'rpNumber',
     header: 'RP Number',
     accessor: 'rp_number',
@@ -286,14 +181,13 @@ const columnsDataTableFrpFromRp = [{
     sortAccessor: 'requested_by_name',
     minWidth: 220,
   },
-   {
-    key: 'picName',
+  {
+    key: 'destination',
     header: 'Destination',
-    accessor: 'pic_name',
+    accessor: 'destination_department_name_snapshot',
     type: 'identity',
-    subtitleAccessor: (rp) => `Division  : ${rp?.destination_department_name_snapshot ?? '-'}`,
-    sortAccessor: 'pic_name',
-    minWidth: 220,
+    sortAccessor: 'destination_department_name_snapshot',
+    minWidth: 180,
   },
   {
     key: 'vendor',
@@ -347,40 +241,23 @@ const columnsDataTableFrpFromRp = [{
   },
 ]
 
-function columnsDataTableFrpFromRp({
+function DataTableConvertFrpFromRp({
   rows = [],
-  columns = columnsDataTableFrpFromRp,
+  columns = columnsDataTableConvertFrpFromRp,
   actions,
   getRowId = (rp, index) => rp?.id ?? index,
-  tableLabel = 'FRP from RP table',
-  emptyMessage = 'Belum ada data.',
-  isStatusUpdating,
-  onEdit,
-  onDetails,
-  onApproval,
-  onReject,
-  onRevert,
-  onCheckData,
+  tableLabel = 'Convert FRP from RP table',
+  emptyMessage = 'Belum ada RP yang siap dibuatkan FRP.',
   onCreateFrp,
-  onPrint,
-  canApprove,
-  canReject,
-  canRevert,
-  canCheckData,
   canCreateFrp,
-  useCheckDataAction = false,
+  onPrint,
   currentUser,
-  onStatusChange,
-  SwitchComponent,
-  enableStatusSwitch = false,
   mobileCard,
   pagination,
   className,
   tableWrapperStyle,
   ...props
 }) {
-  const shouldRenderStatusSwitch =
-    enableStatusSwitch && typeof onStatusChange === 'function' && typeof SwitchComponent === 'function'
   const defaultMobileCard = createMobileCardRp({
     formatDateTime,
     formatRupiah,
@@ -388,7 +265,7 @@ function columnsDataTableFrpFromRp({
     getFrpStatusVariant,
     onMoreInfo: mobileCard?.onMoreInfo,
   })
-  const baseMobileCard =
+  const resolvedMobileCard =
     mobileCard === false
       ? false
       : {
@@ -406,67 +283,8 @@ function columnsDataTableFrpFromRp({
           sections: mobileCard?.sections ?? defaultMobileCard.sections,
           metadata: mobileCard?.metadata ?? defaultMobileCard.metadata,
         }
-  const resolvedColumns = shouldRenderStatusSwitch
-    ? columns.map((column) =>
-        column.key === 'status'
-          ? {
-              ...column,
-              render: (rp, index) =>
-                renderBanksStatus(rp, index, {
-                  isStatusUpdating,
-                  onStatusChange,
-                  SwitchComponent,
-                }),
-            }
-          : column,
-      )
-    : columns
-  const resolvedMobileCard =
-    shouldRenderStatusSwitch && baseMobileCard !== false
-      ? {
-          ...(baseMobileCard ?? {}),
-          header: {
-            ...(baseMobileCard?.header ?? {}),
-            status: {
-              label: (rp) => getFrpStatusLabel(rp),
-              variant: (rp) => getFrpStatusVariant(rp),
-              ...(baseMobileCard?.header?.status ?? {}),
-            },
-          },
-        }
-      : baseMobileCard
 
   const defaultActions = [
-    typeof onApproval === 'function'
-      ? {
-          key: 'approval',
-          label: 'Approve',
-          buttonComponent: ButtonApprovalRp,
-          mobileButtonComponent: MobileButtonApprovalRp,
-          hidden: (rp, index) => isApproveActionHidden(rp, index, currentUser, canApprove),
-          onClick: onApproval,
-        }
-      : null,
-    typeof onReject === 'function'
-      ? {
-          key: 'reject',
-          label: 'Reject',
-          buttonComponent: ButtonRejectRp,
-          mobileButtonComponent: MobileButtonRejectRp,
-          hidden: (rp, index) => isRejectActionHidden(rp, index, currentUser, canReject),
-          onClick: onReject,
-        }
-      : null,
-    typeof onRevert === 'function'
-      ? {
-          key: 'revert',
-          label: 'Revert',
-          buttonComponent: ButtonRevertRp,
-          mobileButtonComponent: MobileButtonRevert,
-          hidden: (rp, index) => isRevertActionHidden(rp, index, currentUser, canRevert),
-          onClick: onRevert,
-        }
-      : null,
     typeof onCreateFrp === 'function'
       ? {
           key: 'createFrp',
@@ -483,44 +301,17 @@ function columnsDataTableFrpFromRp({
           label: 'Print',
           buttonComponent: ButtonPrintRp,
           mobileHidden: true,
-          hidden: (rp) => isPrintActionHidden(rp),
+          hidden: (rp) => isPrintActionHidden(rp, currentUser),
           onClick: onPrint,
-        }
-      : null,
-    typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
-      ? {
-          key: 'edit',
-          label: useCheckDataAction ? 'Check Data' : 'Edit RP',
-          buttonComponent: useCheckDataAction ? ButtonCheckDataRp : ButtonEditRp,
-          mobileButtonComponent: MobileButtonEditRp,
-          mobilePlacement: 'header-start',
-          hidden: (rp, index) =>
-            useCheckDataAction
-              ? typeof canCheckData === 'function' && !canCheckData(rp, index)
-              : !canCurrentUserEditFrp(rp, currentUser) || getFrpStatusValue(rp) === 'APPROVED',
-          onClick: useCheckDataAction ? onCheckData : onEdit,
-        }
-      : null,
-    typeof onDetails === 'function'
-      ? {
-          key: 'details',
-          label: 'Details RP',
-          buttonComponent: ButtonDetailsRp,
-          mobileHidden: true,
-          hidden: () => !canAccessFrpButton(currentUser, 'details'),
-          onClick: onDetails,
         }
       : null,
   ].filter(Boolean)
 
   //For Action
   const resolvedActions = Array.isArray(actions) ? actions : defaultActions
-  const autoFitColumnCount =
-    resolvedColumns.length + (resolvedActions.length > 0 ? 1 : 0)
+  const autoFitColumnCount = columns.length + (resolvedActions.length > 0 ? 1 : 0)
   const autoFitScale = getAutoFitScale(autoFitColumnCount)
-  const autoFitColumns = resolvedColumns.map((column) =>
-    scaleTableColumn(column, autoFitScale),
-  )
+  const autoFitColumns = columns.map((column) => scaleTableColumn(column, autoFitScale))
   const paginationConfig =
     pagination === undefined
       ? {
@@ -556,4 +347,4 @@ function columnsDataTableFrpFromRp({
   )
 }
 
-export default DataTableFrpFromRp
+export default DataTableConvertFrpFromRp

@@ -20,7 +20,7 @@ export const implementedNavigationPaths = [
   '/frp',
   '/rp',
   '/Rp',
-  '/frp-from-rp',
+  '/rp-to-frp',
 
   // VENDOR MANAGEMENT
   '/Master/Vendor',
@@ -72,7 +72,7 @@ export const primaryNavigationItems = [
   },
   {
     id: 'rp-to-frp',
-    label: 'RP to FRP',
+    label: 'Convert FRP from RP',
     href: '/rp-to-frp',
     icon: CreditCard,
   },

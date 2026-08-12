@@ -397,6 +397,24 @@ const createRpResource = (path) => ({
     api.post(`${path}/${id}/requester-manager-approve`, data, options),
   createFrp: (id, data = {}, options) =>
     api.post(`${path}/${id}/create-frp`, data, options),
+  listReadyForFrp: (params, options) =>
+    api.get(path, {
+      ...options,
+      params: {
+        ...params,
+        status: 'APPROVED',
+        frp_conversion_status: 'NOT_CREATED',
+      },
+    }),
+  listConvertedToFrp: (params, options) =>
+    api.get(path, {
+      ...options,
+      params: {
+        ...params,
+        status: 'APPROVED',
+        frp_conversion_status: 'CREATED',
+      },
+    }),
 });
 
 const request = async (

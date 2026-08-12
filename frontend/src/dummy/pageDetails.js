@@ -65,6 +65,12 @@ export const pageDetails = {
     value: '0',
     detail: 'Daftar transaksi RP.',
   },
+  '/rp-to-frp': {
+    title: 'Convert FRP from RP',
+    eyebrow: 'Document Transaction',
+    value: '0',
+    detail: 'Daftar RP approved yang siap dibuatkan FRP.',
+  },
   '/Master/Vendor': {
     title: 'Vendor',
     eyebrow: 'Master Data',

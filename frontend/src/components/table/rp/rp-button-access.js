@@ -143,7 +143,7 @@ function canRequesterManagerApprove(rp, currentUser) {
   )
 }
 
-function isGeneralProcurementUser(user) {
+export function isGeneralProcurementUser(user) {
   const jobPosition = String(getFirstValue(user, ['job_position', 'jobPosition'], ''))
     .trim()
     .toUpperCase()

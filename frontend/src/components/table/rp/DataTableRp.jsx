@@ -8,7 +8,6 @@ import ButtonApprovalRp from '../../button/button-rp/ButtonApprovalRp.jsx'
 import ButtonRejectRp from '../../button/button-rp/ButtonRejectRp.jsx'
 import ButtonRevertRp from '../../button/button-rp/ButtonRevertRp.jsx'
 import ButtonCheckDataRp from '../../button/button-rp/ButtonCheckDataRp.jsx'
-import ButtonCreateFrpRp from '../../button/button-rp/ButtonCreateFrpRp.jsx'
 
 // MOBILE
 import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
@@ -19,7 +18,6 @@ import MobileButtonRevert from '../../../mobile/mobile-button/frp/MobileButtonRe
 import {
   canAccessFrpButton,
   canCurrentUserApproveRp,
-  canCurrentUserCreateFrpFromRp,
   canCurrentUserEditFrp,
   canCurrentUserRejectFrp,
   canCurrentUserRevertFrp,
@@ -257,13 +255,6 @@ function isRevertActionHidden(rp, index, currentUser, canRevertAction) {
   )
 }
 
-function isCreateFrpActionHidden(rp, index, currentUser, canCreateFrpAction) {
-  return !(
-    canCurrentUserCreateFrpFromRp(rp, currentUser) &&
-    (typeof canCreateFrpAction !== 'function' || canCreateFrpAction(rp, index))
-  )
-}
-
 function isPrintActionHidden(rp) {
   return getFrpStatusValue(rp) !== 'APPROVED'
 }
@@ -361,13 +352,11 @@ function DataTableRp({
   onReject,
   onRevert,
   onCheckData,
-  onCreateFrp,
   onPrint,
   canApprove,
   canReject,
   canRevert,
   canCheckData,
-  canCreateFrp,
   useCheckDataAction = false,
   currentUser,
   onStatusChange,
@@ -465,16 +454,6 @@ function DataTableRp({
           mobileButtonComponent: MobileButtonRevert,
           hidden: (rp, index) => isRevertActionHidden(rp, index, currentUser, canRevert),
           onClick: onRevert,
-        }
-      : null,
-    typeof onCreateFrp === 'function'
-      ? {
-          key: 'createFrp',
-          label: 'Create FRP',
-          buttonComponent: ButtonCreateFrpRp,
-          mobileHidden: true,
-          hidden: (rp, index) => isCreateFrpActionHidden(rp, index, currentUser, canCreateFrp),
-          onClick: onCreateFrp,
         }
       : null,
     typeof onPrint === 'function'
