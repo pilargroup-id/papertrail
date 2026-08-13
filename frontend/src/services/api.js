@@ -397,6 +397,8 @@ const createRpResource = (path) => ({
     api.post(`${path}/${id}/requester-manager-approve`, data, options),
   createFrp: (id, data = {}, options) =>
     api.post(`${path}/${id}/create-frp`, data, options),
+  procurementVoid: (id, data = {}, options) =>
+    api.post(`${path}/${id}/procurement-void`, data, options),
   listReadyForFrp: (params, options) =>
     api.get(path, {
       ...options,
@@ -413,6 +415,14 @@ const createRpResource = (path) => ({
         ...params,
         status: 'APPROVED',
         frp_conversion_status: 'CREATED',
+      },
+    }),
+  listVoided: (params, options) =>
+    api.get(path, {
+      ...options,
+      params: {
+        ...params,
+        status: 'VOIDED',
       },
     }),
 });

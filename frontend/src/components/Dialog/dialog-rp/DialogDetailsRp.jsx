@@ -254,13 +254,6 @@ function DialogDetailsRp({
           <div className="frp-detail-dialog frp-accordion-detail">
             <TabsInformation rpDetail={resolvedRpDetail} />
 
-            <TabsItems
-              items={items}
-              rpId={rpId}
-              rpNumber={resolvedRpDetail?.rp_number}
-              emptyMessage={emptyMessage}
-            />
-
             <div className="frp-accordion-detail__cards">
               <TabsVendor rpDetail={resolvedRpDetail} />
 
@@ -271,6 +264,13 @@ function DialogDetailsRp({
                 onAttachmentClick={handleAttachmentClick}
               />
             </div>
+
+            <TabsItems
+              items={items}
+              rpId={rpId}
+              rpNumber={resolvedRpDetail?.rp_number}
+              emptyMessage={emptyMessage}
+            />
           </div>
         </div>
 

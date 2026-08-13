@@ -221,3 +221,11 @@ export function canCurrentUserCreateFrpFromRp(rp, currentUser) {
     isGeneralProcurementUser(currentUser)
   )
 }
+
+export function canCurrentUserVoidRpFromRp(rp, currentUser) {
+  return (
+    getRpStatusValue(rp) === 'APPROVED' &&
+    getRpFrpConversionStatus(rp) === 'NOT_CREATED' &&
+    isGeneralProcurementUser(currentUser)
+  )
+}

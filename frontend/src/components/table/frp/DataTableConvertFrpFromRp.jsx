@@ -1,11 +1,13 @@
 import DataTableAction from '../DataTableAction.jsx'
 import ButtonCreateFrpRp from '../../button/button-rp/ButtonCreateFrpRp.jsx'
 import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
+import ButtonVoidedRp from '../../button/button-rp/ButtonVoidedRp.jsx'
 
 // MOBILE
 import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
 import {
   canCurrentUserCreateFrpFromRp,
+  canCurrentUserVoidRpFromRp,
   getRpFrpConversionStatus,
   isGeneralProcurementUser,
 } from '../rp/rp-button-access.js'
@@ -163,6 +165,13 @@ function isPrintActionHidden(rp, currentUser) {
   return getFrpStatusValue(rp) !== 'APPROVED' || !isGeneralProcurementUser(currentUser)
 }
 
+function isVoidActionHidden(rp, index, currentUser, canVoidAction) {
+  return !(
+    canCurrentUserVoidRpFromRp(rp, currentUser) &&
+    (typeof canVoidAction !== 'function' || canVoidAction(rp, index))
+  )
+}
+
 const columnsDataTableConvertFrpFromRp = [{
     key: 'rpNumber',
     header: 'RP Number',
@@ -251,6 +260,8 @@ function DataTableConvertFrpFromRp({
   onCreateFrp,
   canCreateFrp,
   onPrint,
+  onVoid,
+  canVoid,
   currentUser,
   mobileCard,
   pagination,
@@ -293,6 +304,16 @@ function DataTableConvertFrpFromRp({
           mobileHidden: true,
           hidden: (rp, index) => isCreateFrpActionHidden(rp, index, currentUser, canCreateFrp),
           onClick: onCreateFrp,
+        }
+      : null,
+    typeof onVoid === 'function'
+      ? {
+          key: 'voided',
+          label: 'Voided',
+          buttonComponent: ButtonVoidedRp,
+          mobileHidden: true,
+          hidden: (rp, index) => isVoidActionHidden(rp, index, currentUser, canVoid),
+          onClick: onVoid,
         }
       : null,
     typeof onPrint === 'function'

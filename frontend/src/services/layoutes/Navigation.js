@@ -10,6 +10,12 @@ import {
   Permission,
   FileText01,
   CreditCard,
+  SwitchHorizontal01,
+  Config,
+  Tool,
+  ExternalLink,
+  Filter,
+  LayoutDashboard,
 } from '../../components/layoute/TemplateIcons.jsx'
 
 export const defaultNavigationPath = '/forms'
@@ -74,7 +80,7 @@ export const primaryNavigationItems = [
     id: 'rp-to-frp',
     label: 'Convert FRP from RP',
     href: '/rp-to-frp',
-    icon: CreditCard,
+    icon: SwitchHorizontal01,
     allowedRoles: ['General Procurement'],
   },
   {
@@ -144,28 +150,31 @@ export const primaryNavigationItems = [
     id: 'config-frp',
     label: 'Config',
     href: '/Master',
-    icon: Settings01,
+    icon: Tool,
     children: [
       {
         id: 'frp-docs-type',
         label: 'Doc Types (FRP)',
         href: '/Master/Frp-docs-type',
+        icon: FileText01,
       },
       {
         id: 'external-document-types',
         label: 'Doc Types (Ext)',
         href: '/Master/External-document-types',
+        icon: ExternalLink,
       },
       {
         id: 'payment-methods',
         label: 'Payment Methods',
         href: '/Master/Payment-methods',
- 
+        icon: CreditCard,
       },
       {
         id: 'rp-payment-categories',
         label: 'Categories Payment (Rp)',
         href: '/Master/Rp-payment-categories',
+        icon: Filter,
       }
     ]
   },
@@ -179,6 +188,7 @@ export const primaryNavigationItems = [
         id: 'permission-modules',
         label: 'Modules',
         href: '/Master/permission-modules',
+        icon: LayoutDashboard,
       }
     ]
   },

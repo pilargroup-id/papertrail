@@ -661,6 +661,34 @@ export function Printer(props) {
     </IconBase>
   )
 }
+
+export function Voided(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M6.5 6.5l11 11" />
+    </IconBase>
+  )
+}
+
+export function Tool(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </IconBase>
+  )
+}
+
+export function SwitchHorizontal01(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M7 7h11" />
+      <path d="m15 3 4 4-4 4" />
+      <path d="M17 17H6" />
+      <path d="m9 21-4-4 4-4" />
+    </IconBase>
+  )
+}
 // export function Trash(props) {
 //   return (
 //     <IconBase {...props}>

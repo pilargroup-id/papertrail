@@ -14,6 +14,7 @@ import { printRpDocument, showPrintError, showPrintLoading } from '../rp/print-r
 
 // Dialog
 import DialogCreateFrpFromRp from '../../components/Dialog/dialog-rp/DialogCreateFrpFromRp.jsx'
+import DialogVoidedRp from '../../components/Dialog/dialog-rp/DialogVoidedRp.jsx'
 
 // Mobile
 import MobileScreenDetailRp from '../../mobile/screen/screen-rp/MobileScreenDetailRp.jsx'
@@ -82,7 +83,20 @@ function removeRpRecord(rp, rpId) {
 const conversionStatusTabs = [
   { id: 'NOT_CREATED', label: 'Approved' },
   { id: 'CREATED', label: 'Create FRP' },
+  { id: 'VOIDED', label: 'Voided' },
 ]
+
+function getListRpForConversionStatus(conversionStatus) {
+  if (conversionStatus === 'CREATED') {
+    return api.rp.listConvertedToFrp
+  }
+
+  if (conversionStatus === 'VOIDED') {
+    return api.rp.listVoided
+  }
+
+  return api.rp.listReadyForFrp
+}
 
 function ConvertFrpFromRp(props) {
   const outletContext = useOutletContext() ?? {}
@@ -102,6 +116,10 @@ function ConvertFrpFromRp(props) {
   const [reloadToken, setReloadToken] = useState(0)
   const [isCreateFrpDialogOpen, setIsCreateFrpDialogOpen] = useState(false)
   const [selectedCreateFrpRp, setSelectedCreateFrpRp] = useState(null)
+  const [isVoidDialogOpen, setIsVoidDialogOpen] = useState(false)
+  const [selectedVoidRp, setSelectedVoidRp] = useState(null)
+  const [isVoiding, setIsVoiding] = useState(false)
+  const [voidError, setVoidError] = useState('')
   const [selectedMobileDetailsRp, setSelectedMobileDetailsRp] = useState(null)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [rpFilters, setRpFilters] = useState({
@@ -130,8 +148,7 @@ function ConvertFrpFromRp(props) {
       setErrorMessage('')
 
       try {
-        const listRp =
-          activeConversionStatus === 'CREATED' ? api.rp.listConvertedToFrp : api.rp.listReadyForFrp
+        const listRp = getListRpForConversionStatus(activeConversionStatus)
         const response = await listRp(
           {
             page: 1,
@@ -185,6 +202,22 @@ function ConvertFrpFromRp(props) {
     setSelectedCreateFrpRp(null)
   }
 
+  const openVoidDialog = (rpRow) => {
+    setSelectedVoidRp(rpRow)
+    setVoidError('')
+    setIsVoidDialogOpen(true)
+  }
+
+  const closeVoidDialog = () => {
+    if (isVoiding) {
+      return
+    }
+
+    setIsVoidDialogOpen(false)
+    setSelectedVoidRp(null)
+    setVoidError('')
+  }
+
   const openMobileDetailsPage = (rpRow) => {
     setSelectedMobileDetailsRp(rpRow)
   }
@@ -233,6 +266,29 @@ function ConvertFrpFromRp(props) {
     closeCreateFrpDialog()
   }
 
+  const handleVoidRp = async ({ rp: targetRp, reason }) => {
+    const target = targetRp ?? selectedVoidRp
+    const rpId = target?.id
+
+    if (rpId === undefined || rpId === null) {
+      setVoidError('ID RP tidak tersedia.')
+      return
+    }
+
+    setVoidError('')
+    setIsVoiding(true)
+
+    try {
+      await api.rp.procurementVoid(rpId, { reason })
+      setRp((currentRp) => removeRpRecord(currentRp, rpId))
+      closeVoidDialog()
+    } catch (error) {
+      setVoidError(error.message || 'Gagal void RP.')
+    } finally {
+      setIsVoiding(false)
+    }
+  }
+
   const authGateMessage = isAuthLoading
     ? 'Memuat profil auth...'
     : !currentUser
@@ -241,7 +297,9 @@ function ConvertFrpFromRp(props) {
   const defaultEmptyMessage =
     activeConversionStatus === 'CREATED'
       ? 'Belum ada RP yang sudah dibuatkan FRP.'
-      : 'Belum ada RP yang siap dibuatkan FRP.'
+      : activeConversionStatus === 'VOIDED'
+        ? 'Belum ada RP yang divoid.'
+        : 'Belum ada RP yang siap dibuatkan FRP.'
   const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : defaultEmptyMessage))
@@ -322,6 +380,7 @@ function ConvertFrpFromRp(props) {
           tableWrapperStyle={{ marginTop: '0.75rem' }}
           onCreateFrp={openCreateFrpDialog}
           onPrint={handlePrintRp}
+          onVoid={openVoidDialog}
           currentUser={currentUser}
           canCreateFrp={(row) => canCurrentUserCreateFrpFromRp(row, currentUser)}
           mobileCard={{
@@ -337,6 +396,17 @@ function ConvertFrpFromRp(props) {
         rp={selectedCreateFrpRp}
         onClose={closeCreateFrpDialog}
         onCreated={handleRpConvertedToFrp}
+      />
+
+      <DialogVoidedRp
+        key={selectedVoidRp?.id ?? 'void-rp'}
+        isOpen={isVoidDialogOpen}
+        title={`Voided ${selectedVoidRp?.rp_number ?? selectedVoidRp?.id ?? 'RP'}`}
+        rp={selectedVoidRp}
+        isSubmitting={isVoiding}
+        submitError={voidError}
+        onClose={closeVoidDialog}
+        onVoid={handleVoidRp}
       />
     </section>
   )

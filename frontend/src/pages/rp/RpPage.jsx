@@ -720,7 +720,9 @@ function RpPage(props) {
   const hasActiveRpFilter = Boolean(rpFilters.requestBy || rpFilters.vendor)
   const canUseDestinationChecker = Boolean(currentUser) && !isManagerUser(currentUser)
   const availableRpProcessStatusTabs = rpProcessStatusTabs.filter(
-    (tab) => tab.id !== 'PENDING_DESTINATION_CHECKER' || canUseDestinationChecker,
+    (tab) =>
+      tab.id !== 'VOIDED' &&
+      (tab.id !== 'PENDING_DESTINATION_CHECKER' || canUseDestinationChecker),
   )
 
   useEffect(() => {

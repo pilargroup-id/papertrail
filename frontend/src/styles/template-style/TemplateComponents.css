@@ -3727,6 +3727,18 @@ width: var(--sidebar-collapsed-width);
   --frp-icon-focus: rgba(100, 116, 139, 0.16);
 }
 
+.users-table-wrapper.frp-table--actions .frp-icon-button--voided,
+.users-table-wrapper.rp-table--actions .frp-icon-button--voided {
+  --frp-icon-color: #b42318;
+  --frp-icon-bg: rgba(239, 68, 68, 0.12);
+  --frp-icon-border: rgba(239, 68, 68, 0.3);
+  --frp-icon-shadow: rgba(180, 35, 24, 0.1);
+  --frp-icon-hover-bg: #fff1f3;
+  --frp-icon-hover-border: rgba(239, 68, 68, 0.44);
+  --frp-icon-hover-shadow: rgba(180, 35, 24, 0.16);
+  --frp-icon-focus: rgba(239, 68, 68, 0.16);
+}
+
 .frp-accordion-detail {
   display: grid;
   gap: 0.95rem;
