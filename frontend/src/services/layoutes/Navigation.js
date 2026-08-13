@@ -20,6 +20,7 @@ export const implementedNavigationPaths = [
   '/frp',
   '/rp',
   '/Rp',
+  '/rp-to-frp',
 
   // VENDOR MANAGEMENT
   '/Master/Vendor',
@@ -68,6 +69,13 @@ export const primaryNavigationItems = [
     label: 'RP',
     href: '/Rp',
     icon: CreditCard,
+  },
+  {
+    id: 'rp-to-frp',
+    label: 'Convert FRP from RP',
+    href: '/rp-to-frp',
+    icon: CreditCard,
+    allowedRoles: ['General Procurement'],
   },
   {
     id: 'master',

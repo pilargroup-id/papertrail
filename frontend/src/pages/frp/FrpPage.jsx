@@ -96,19 +96,6 @@ function getFirstValue(source, keys, fallback = '') {
   return matchedKey ? source[matchedKey] : fallback
 }
 
-function getAuthDepartmentId(user) {
-  const departments = Array.isArray(user?.departments) ? user.departments : []
-  const primaryDepartment =
-    departments.find((department) => Number(department?.is_primary) === 1) ||
-    departments[0] ||
-    null
-
-  return (
-    getFirstValue(user, ['department_id', 'departmentId']) ||
-    getFirstValue(primaryDepartment, ['department_id', 'departmentId', 'id'])
-  )
-}
-
 function getFrpEditLabel(frp) {
   return frp?.frp_number ?? frp?.id ?? 'FRP ini'
 }
@@ -198,8 +185,7 @@ function FrpPage(props) {
     outletContext.mobileFrpStatusFilter ??
     FRP_MOBILE_STATUS_ALL
   const isAuthLoading = props.isAuthLoading ?? outletContext.isAuthLoading ?? false
-  const authDepartmentId = getAuthDepartmentId(currentUser)
-  const shouldLoadFrp = !isAuthLoading && Boolean(currentUser) && authDepartmentId !== ''
+  const shouldLoadFrp = !isAuthLoading && Boolean(currentUser)
   const isManager = isManagerUser(currentUser)
   const activePageTitle = activePage?.title
   const pageTitle = activePageTitle && !['Page1', 'Page 1'].includes(activePageTitle) ? activePageTitle : 'FRP'
@@ -263,7 +249,6 @@ function FrpPage(props) {
             page: 1,
             limit: 100,
             search: searchQuery,
-            department_id: authDepartmentId,
           },
           {
             signal: controller.signal,
@@ -288,7 +273,7 @@ function FrpPage(props) {
     loadVendors()
 
     return () => controller.abort()
-  }, [authDepartmentId, shouldLoadFrp, searchQuery, reloadToken])
+  }, [shouldLoadFrp, searchQuery, reloadToken])
 
   const handlePrintFrp = async (frp) => {
     const frpId = frp?.id
@@ -589,9 +574,7 @@ function FrpPage(props) {
     ? 'Memuat profil auth...'
     : !currentUser
       ? 'Profil auth tidak tersedia.'
-      : authDepartmentId === ''
-        ? 'Department auth tidak tersedia.'
-        : ''
+      : ''
   const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP checker rules...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : 'Belum ada data.'))

@@ -397,6 +397,24 @@ const createRpResource = (path) => ({
     api.post(`${path}/${id}/requester-manager-approve`, data, options),
   createFrp: (id, data = {}, options) =>
     api.post(`${path}/${id}/create-frp`, data, options),
+  listReadyForFrp: (params, options) =>
+    api.get(path, {
+      ...options,
+      params: {
+        ...params,
+        status: 'APPROVED',
+        frp_conversion_status: 'NOT_CREATED',
+      },
+    }),
+  listConvertedToFrp: (params, options) =>
+    api.get(path, {
+      ...options,
+      params: {
+        ...params,
+        status: 'APPROVED',
+        frp_conversion_status: 'CREATED',
+      },
+    }),
 });
 
 const request = async (
@@ -609,6 +627,14 @@ const api = {
     departments: createReadOnlyResource('/internal/directory/departments'),
     companies: createReadOnlyResource('/internal/directory/companies'),
     users: createReadOnlyResource('/internal/directory/users'),
+  },
+
+  // =====================
+  // Logs (read-only, IT users only)
+  // =====================
+  logs: {
+    activities: createReadOnlyResource('/logs/activities'),
+    budgetUsages: createReadOnlyResource('/logs/budget-usages'),
   },
 };
 

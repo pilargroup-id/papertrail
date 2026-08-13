@@ -5,6 +5,7 @@ import AppLayout from '../layouts/AppLayout';
 // =========MASTER PAGES=========
 // frp
 import FrpPage from '../pages/frp/FrpPage.jsx';
+import ConvertFrpFromRp from '../pages/frp/ConvertFrpFromRp.jsx';
 // rp
 import RpPage from '../pages/rp/RpPage.jsx';
 
@@ -48,6 +49,8 @@ export default function RouteConfig() {
         <Route path="frp" element={<FrpPage />} />
         <Route path="rp" element={<RpPage />} />
         <Route path="Rp" element={<RpPage />} />
+        <Route path="Create" element={<RpPage />} />
+        <Route path="rp-to-frp" element={<ConvertFrpFromRp />} />
 
         {/* master pages */}
 
