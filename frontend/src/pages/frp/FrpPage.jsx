@@ -20,6 +20,7 @@ import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFr
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
+import DialogCreateFrp from '../../components/Dialog/dialog-frp/DialogCreateFrp.jsx'
 import {
   getFrpDetailFromResponse,
   getFrpItemsFromResponse,
@@ -196,12 +197,14 @@ function FrpPage(props) {
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
+  const [duplicateSourceFrp, setDuplicateSourceFrp] = useState(null)
   const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
@@ -332,6 +335,18 @@ function FrpPage(props) {
   const closeDetailsDialog = () => {
     setIsDetailsDialogOpen(false)
     setSelectedDetailsFrp(null)
+  }
+
+  const openDuplicateDialog = (frp) => {
+    setDuplicateSourceFrp(frp)
+    setIsDetailsDialogOpen(false)
+    setSelectedDetailsFrp(null)
+    setIsDuplicateDialogOpen(true)
+  }
+
+  const closeDuplicateDialog = () => {
+    setIsDuplicateDialogOpen(false)
+    setDuplicateSourceFrp(null)
   }
 
   const openMobileDetailsPage = (frp) => {
@@ -750,6 +765,16 @@ function FrpPage(props) {
         title={`Detail ${getFrpEditLabel(selectedDetailsFrp)}`}
         frp={selectedDetailsFrp}
         onClose={closeDetailsDialog}
+        onDuplicate={openDuplicateDialog}
+      />
+
+      <DialogCreateFrp
+        key={duplicateSourceFrp?.id ?? 'duplicate-frp'}
+        isOpen={isDuplicateDialogOpen}
+        title={`Duplicate ${getFrpEditLabel(duplicateSourceFrp)}`}
+        duplicateFrom={duplicateSourceFrp}
+        onClose={closeDuplicateDialog}
+        onCreated={handleFrpCreated}
       />
 
       <DialogApproveFrp

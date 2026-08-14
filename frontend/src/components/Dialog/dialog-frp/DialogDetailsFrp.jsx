@@ -5,7 +5,7 @@ import api from '../../../services/api.js'
 import DataTable from '../../table/DataTable.jsx'
 
 import ButtonAttachmentsFrp from '../../button/button-frp/ButtonAttachmentsFrp.jsx'
-import { Download, XClose } from '../../layoute/TemplateIcons.jsx'
+import { Copy, Download, Printer, XClose } from '../../layoute/TemplateIcons.jsx'
 
 function isBlankValue(value) {
   return value === undefined || value === null || value === ''
@@ -40,6 +40,19 @@ function formatNumber(value) {
 
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numberValue)
+}
+
+function formatQuantity(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return '-'
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(numberValue)
 }
@@ -404,7 +417,7 @@ const itemColumns = [
     key: 'quantity',
     header: 'Qty',
     accessor: 'quantity',
-    format: formatNumber,
+    format: formatQuantity,
     minWidth: 64,
     nowrap: true,
   },
@@ -442,12 +455,20 @@ const itemColumns = [
   },
 ]
 
+function getFrpStatusValue(frpDetail) {
+  return String(getFirstValue(frpDetail, ['status'], ''))
+    .trim()
+    .toUpperCase()
+}
+
 function DialogDetailsFrp({
   isOpen = false,
   eyebrow = 'FRP Detail',
   title = 'Detail FRP',
   frp = null,
   onClose,
+  onDuplicate,
+  onPrint,
 }) {
   const frpId = frp?.id
   const [frpDetail, setFrpDetail] = useState(null)
@@ -699,6 +720,7 @@ function DialogDetailsFrp({
     ? 'Memuat item FRP...'
     : errorMessage || 'Belum ada item FRP.'
   const dialogTitle = title || `Detail ${frp?.frp_number ?? frpId ?? 'FRP'}`
+  const canPrint = getFrpStatusValue(resolvedFrpDetail) === 'APPROVED'
 
   const dialogNode = (
     <div className="dashboard-popup-overlay" role="presentation">
@@ -851,6 +873,27 @@ function DialogDetailsFrp({
           </div>
         </div>
 
+        <div className="dashboard-popup__actions">
+          <button
+            type="button"
+            className="dashboard-popup__button dashboard-popup__button--primary"
+            onClick={() => onDuplicate?.(resolvedFrpDetail)}
+          >
+            <Copy size={16} aria-hidden="true" />
+            Duplicate
+          </button>
+
+          {canPrint ? (
+            <button
+              type="button"
+              className="dashboard-popup__button dashboard-popup__button--outline-teal"
+              onClick={() => onPrint?.(resolvedFrpDetail)}
+            >
+              <Printer size={16} aria-hidden="true" />
+              Print
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   )

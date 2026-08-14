@@ -25,6 +25,7 @@ import DialogApproveRp from '../../components/Dialog/dialog-rp/DialogApproveRp.j
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsRp from '../../components/Dialog/dialog-rp/DialogDetailsRp.jsx'
+import DialogCreateRp from '../../components/Dialog/dialog-rp/DialogCreateRp.jsx'
 import {
   getRpDetailFromResponse,
   getRpItemsFromResponse,
@@ -289,6 +290,7 @@ function RpPage(props) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isCheckDataDialogOpen, setIsCheckDataDialogOpen] = useState(false)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
@@ -296,6 +298,7 @@ function RpPage(props) {
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedCheckDataRp, setSelectedCheckDataRp] = useState(null)
   const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
+  const [duplicateSourceRp, setDuplicateSourceRp] = useState(null)
   const [selectedApprovalRp, setSelectedApprovalRp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
@@ -438,6 +441,18 @@ function RpPage(props) {
   const closeDetailsDialog = () => {
     setIsDetailsDialogOpen(false)
     setSelectedDetailsFrp(null)
+  }
+
+  const openDuplicateDialog = (rp) => {
+    setDuplicateSourceRp(rp)
+    setIsDetailsDialogOpen(false)
+    setSelectedDetailsFrp(null)
+    setIsDuplicateDialogOpen(true)
+  }
+
+  const closeDuplicateDialog = () => {
+    setIsDuplicateDialogOpen(false)
+    setDuplicateSourceRp(null)
   }
 
   const openMobileDetailsPage = (rp) => {
@@ -926,6 +941,17 @@ function RpPage(props) {
         title={`Detail ${getFrpEditLabel(selectedDetailsFrp)}`}
         rp={selectedDetailsFrp}
         onClose={closeDetailsDialog}
+        onDuplicate={openDuplicateDialog}
+        onPrint={handlePrintRp}
+      />
+
+      <DialogCreateRp
+        key={duplicateSourceRp?.id ?? 'duplicate-rp'}
+        isOpen={isDuplicateDialogOpen}
+        title={`Duplicate ${getFrpEditLabel(duplicateSourceRp)}`}
+        duplicateFrom={duplicateSourceRp}
+        onClose={closeDuplicateDialog}
+        onCreated={handleFrpCreated}
       />
 
       <DialogApproveRp

@@ -338,10 +338,104 @@ function isPositiveIntegerInput(value) {
   return /^\d+$/.test(normalizedValue) && Number.isSafeInteger(numberValue) && numberValue > 0
 }
 
+function hasOptionValue(options, value) {
+  if (value === undefined || value === null || value === '') {
+    return true
+  }
+
+  return options.some((option) => String(option.value) === String(value))
+}
+
+function ensureOption(options, value, label, extra = {}) {
+  if (hasOptionValue(options, value)) {
+    return options
+  }
+
+  return [
+    {
+      value,
+      label: label || `Selected #${value}`,
+      ...extra,
+    },
+    ...options,
+  ]
+}
+
+function ensureOptions(options, values, getLabel) {
+  return values.reduce((currentOptions, value, index) => {
+    const optionValue = typeof value === 'object' ? value?.value : value
+    const optionLabel = typeof getLabel === 'function' ? getLabel(value, index) : ''
+
+    return ensureOption(currentOptions, optionValue, optionLabel)
+  }, options)
+}
+
+function ensureBudgetOptionsForItems(options, items) {
+  if (!Array.isArray(items)) {
+    return options
+  }
+
+  const budgetOptionsFromItems = items.map((item) => {
+    const code = getFirstValue(item, ['budget_code_snapshot', 'budget_code'], '')
+    const name = getFirstValue(
+      item,
+      ['budget_project_name_snapshot', 'budget_name_snapshot', 'project_name', 'name'],
+      '',
+    )
+
+    return {
+      value: getFirstValue(item, ['budget_id', 'budgetId'], ''),
+      label: [code, name].filter(Boolean).join(' - '),
+    }
+  })
+
+  return ensureOptions(options, budgetOptionsFromItems, (item) => item.label)
+}
+
+function normalizeQuantityInputValue(value) {
+  const numberValue = Number(value)
+
+  return String(Number.isFinite(numberValue) ? Math.trunc(numberValue) : 1)
+}
+
+function mapDuplicateItems(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return [createInitialItem()]
+  }
+
+  return items.map((item) => ({
+    budget_id: getFirstValue(item, ['budget_id', 'budgetId'], ''),
+    memo: getFirstValue(item, ['memo'], ''),
+    purchase_link: getFirstValue(item, ['purchase_link', 'purchaseLink'], ''),
+    quantity: normalizeQuantityInputValue(getFirstValue(item, ['quantity'], '1')),
+    unit_price: String(getFirstValue(item, ['unit_price', 'unitPrice'], '')),
+  }))
+}
+
+function mapRpToDuplicateFormValues(rp) {
+  return {
+    department_id: '',
+    class_department_id: '',
+    date_required: getTodayDateValue(),
+    description: getFirstValue(rp, ['description'], ''),
+    vendor_id: getFirstValue(rp, ['vendor_id', 'vendorId'], ''),
+    payment_category_id: getFirstValue(rp, ['payment_category_id', 'paymentCategoryId'], ''),
+    destination_department_id: getFirstValue(
+      rp,
+      ['destination_department_id', 'destinationDepartmentId'],
+      '',
+    ),
+    pic_name: getFirstValue(rp, ['pic_name', 'picName'], ''),
+    items: mapDuplicateItems(rp?.items),
+    notes: 'Submit RP',
+  }
+}
+
 function DialogCreateRp({
   isOpen = false,
   eyebrow = 'Form request purchase',
   title = 'Create RP',
+  duplicateFrom = null,
   onClose,
   onCreated,
 }) {
@@ -597,22 +691,63 @@ function DialogCreateRp({
         const visibleBudgetRows = canUseCrossBudget
           ? budgetRows
           : filterBudgetsByRequesterScope(budgetRows, nextRequesterInfo)
+        const duplicateFormValues = duplicateFrom ? mapRpToDuplicateFormValues(duplicateFrom) : null
+
+        let nextVendorOptions = mapVendorOptions(getRowsFromResponse(vendorsResponse))
+        let nextPaymentCategoryOptions = mapPaymentCategoryOptions(
+          getRowsFromResponse(paymentCategoriesResponse),
+        )
+        let nextDestinationDepartmentOptions = mapDestinationDepartmentOptions(
+          getRowsFromResponse(destinationDepartmentsResponse),
+        )
+        let nextBudgetOptions = mapBudgetOptions(visibleBudgetRows)
+
+        if (duplicateFormValues) {
+          nextVendorOptions = ensureOption(
+            nextVendorOptions,
+            duplicateFormValues.vendor_id,
+            [
+              getFirstValue(duplicateFrom, ['vendor_code_snapshot', 'vendor_code'], ''),
+              getFirstValue(duplicateFrom, ['vendor_name_snapshot', 'vendor_name'], ''),
+            ]
+              .filter(Boolean)
+              .join(' - '),
+          )
+          nextPaymentCategoryOptions = ensureOption(
+            nextPaymentCategoryOptions,
+            duplicateFormValues.payment_category_id,
+            getFirstValue(
+              duplicateFrom,
+              ['payment_category_name_snapshot', 'payment_category_name'],
+              '',
+            ),
+          )
+          nextDestinationDepartmentOptions = ensureOption(
+            nextDestinationDepartmentOptions,
+            duplicateFormValues.destination_department_id,
+            [
+              getFirstValue(duplicateFrom, ['destination_department_code_snapshot'], ''),
+              getFirstValue(duplicateFrom, ['destination_department_name_snapshot'], ''),
+              getFirstValue(duplicateFrom, ['destination_department_class_snapshot'], ''),
+            ]
+              .filter(Boolean)
+              .join(' - '),
+          )
+          nextBudgetOptions = ensureBudgetOptionsForItems(nextBudgetOptions, duplicateFrom?.items)
+        }
 
         setRequesterInfo(nextRequesterInfo)
         setFormValues((currentValues) => ({
           ...currentValues,
+          ...(duplicateFormValues ?? {}),
           department_id: currentValues.department_id || nextRequesterInfo.department_id || '',
           class_department_id:
             currentValues.class_department_id || nextRequesterInfo.class_department_id || '',
         }))
-        setVendorOptions(mapVendorOptions(getRowsFromResponse(vendorsResponse)))
-        setPaymentCategoryOptions(
-          mapPaymentCategoryOptions(getRowsFromResponse(paymentCategoriesResponse)),
-        )
-        setDestinationDepartmentOptions(
-          mapDestinationDepartmentOptions(getRowsFromResponse(destinationDepartmentsResponse)),
-        )
-        setBudgetOptions(mapBudgetOptions(visibleBudgetRows))
+        setVendorOptions(nextVendorOptions)
+        setPaymentCategoryOptions(nextPaymentCategoryOptions)
+        setDestinationDepartmentOptions(nextDestinationDepartmentOptions)
+        setBudgetOptions(nextBudgetOptions)
         setUserDirectory(getRowsFromResponse(usersResponse))
       } catch (error) {
         if (error.name === 'AbortError') {
@@ -646,7 +781,7 @@ function DialogCreateRp({
       controller.abort()
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleClose, isOpen])
+  }, [handleClose, isOpen, duplicateFrom])
 
   const handleSubmit = async (event) => {
     event.preventDefault()

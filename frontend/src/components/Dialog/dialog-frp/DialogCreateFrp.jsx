@@ -213,6 +213,189 @@ function mapBudgetOptions(budgets) {
   })
 }
 
+function formatDateInputValue(value) {
+  if (!value) {
+    return ''
+  }
+
+  return String(value).slice(0, 10)
+}
+
+function formatDuplicateQuantity(value) {
+  const numberValue = Number(value)
+
+  return Number.isFinite(numberValue) ? String(numberValue) : '1'
+}
+
+function mapDuplicateItems(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return [createInitialItem()]
+  }
+
+  return items.map((item) => ({
+    budget_id: getFirstValue(item, ['budget_id', 'budgetId'], ''),
+    memo: getFirstValue(item, ['memo', 'description'], ''),
+    quantity: formatDuplicateQuantity(getFirstValue(item, ['quantity'], '1')),
+    unit_price: String(getFirstValue(item, ['unit_price', 'unitPrice'], '')),
+  }))
+}
+
+function getDocumentTypeIds(frp) {
+  if (Array.isArray(frp?.document_type_ids)) {
+    return frp.document_type_ids.map(String)
+  }
+
+  if (Array.isArray(frp?.document_types)) {
+    return frp.document_types
+      .map((documentType) =>
+        getFirstValue(documentType, ['document_type_id', 'frp_document_type_id', 'id'], ''),
+      )
+      .filter((documentTypeId) => documentTypeId !== '')
+      .map(String)
+  }
+
+  if (Array.isArray(frp?.documents)) {
+    return frp.documents
+      .map((document) =>
+        getFirstValue(document, ['document_type_id', 'frp_document_type_id', 'id'], ''),
+      )
+      .filter((documentTypeId) => documentTypeId !== '')
+      .map(String)
+  }
+
+  return []
+}
+
+function getDocumentTypesFromFrp(frp) {
+  if (Array.isArray(frp?.document_types)) {
+    return frp.document_types
+  }
+
+  if (Array.isArray(frp?.documents)) {
+    return frp.documents
+  }
+
+  return []
+}
+
+function hasOptionValue(options, value) {
+  if (value === undefined || value === null || value === '') {
+    return true
+  }
+
+  return options.some((option) => String(option.value) === String(value))
+}
+
+function ensureOption(options, value, label, extra = {}) {
+  if (hasOptionValue(options, value)) {
+    return options
+  }
+
+  return [
+    {
+      value,
+      label: label || `Selected #${value}`,
+      ...extra,
+    },
+    ...options,
+  ]
+}
+
+function ensureOptions(options, values, getLabel) {
+  return values.reduce((currentOptions, value, index) => {
+    const optionValue = typeof value === 'object' ? value?.value : value
+    const optionLabel = typeof getLabel === 'function' ? getLabel(value, index) : ''
+
+    return ensureOption(currentOptions, optionValue, optionLabel)
+  }, options)
+}
+
+function stringifyOptionValues(options) {
+  return options.map((option) => ({
+    ...option,
+    value: String(option.value),
+  }))
+}
+
+function ensureBudgetOptionsForItems(options, items) {
+  if (!Array.isArray(items)) {
+    return options
+  }
+
+  const budgetOptions = items.map((item) => {
+    const code = getFirstValue(item, ['budget_code_snapshot', 'budget_code'], '')
+    const name = getFirstValue(
+      item,
+      ['budget_project_name_snapshot', 'budget_name_snapshot', 'project_name', 'name'],
+      '',
+    )
+
+    return {
+      value: getFirstValue(item, ['budget_id', 'budgetId'], ''),
+      label: [code, name].filter(Boolean).join(' - '),
+    }
+  })
+
+  return ensureOptions(options, budgetOptions, (item) => item.label)
+}
+
+function ensureDocumentTypeOptions(options, frp) {
+  const documentTypes = getDocumentTypesFromFrp(frp).map((documentType) => ({
+    value: getFirstValue(documentType, ['document_type_id', 'frp_document_type_id', 'id'], ''),
+    label: getFirstValue(
+      documentType,
+      ['document_name_snapshot', 'document_name', 'document_type_name_snapshot', 'name'],
+      '',
+    ),
+  }))
+
+  return ensureOptions(options, documentTypes, (documentType) => documentType.label)
+}
+
+function mapFrpToDuplicateFormValues(frp) {
+  return {
+    frp_date: getTodayDateValue(),
+    description: getFirstValue(frp, ['description'], ''),
+    currency_code: getFirstValue(frp, ['currency_code'], 'IDR'),
+    exchange_rate: String(getFirstValue(frp, ['exchange_rate'], '1')),
+    vendor_id: getFirstValue(frp, ['vendor_id', 'vendorId'], ''),
+    vendor_bank_account_id: getFirstValue(
+      frp,
+      ['vendor_bank_account_id', 'vendorBankAccountId'],
+      '',
+    ),
+    internal_po_number: getFirstValue(frp, ['internal_po_number'], ''),
+    external_document_type_id: String(
+      getFirstValue(frp, ['external_document_type_id', 'externalDocumentTypeId'], ''),
+    ),
+    external_document_number: getFirstValue(frp, ['external_document_number'], ''),
+    payment_method_id: getFirstValue(frp, ['payment_method_id', 'paymentMethodId'], ''),
+    payment_date: formatDateInputValue(getFirstValue(frp, ['payment_date'], '')),
+    destination_bank_name: getFirstValue(
+      frp,
+      ['destination_bank_name', 'destination_bank_name_snapshot', 'bank_name_snapshot'],
+      '',
+    ),
+    destination_bank_account: getFirstValue(
+      frp,
+      ['destination_bank_account', 'destination_bank_account_snapshot', 'account_number_snapshot'],
+      '',
+    ),
+    destination_bank_account_name: getFirstValue(
+      frp,
+      [
+        'destination_bank_account_name',
+        'destination_bank_account_name_snapshot',
+        'account_name_snapshot',
+      ],
+      '',
+    ),
+    document_type_ids: getDocumentTypeIds(frp),
+    items: mapDuplicateItems(frp?.items),
+    notes: '',
+  }
+}
+
 function getAuthUser(response) {
   return response?.data?.data ?? response?.data ?? response ?? {}
 }
@@ -445,6 +628,7 @@ function DialogCreateFrp({
   isOpen = false,
   eyebrow = 'Form request payment',
   title = 'Create FRP',
+  duplicateFrom = null,
   onClose,
   onCreated,
 }) {
@@ -786,20 +970,92 @@ function DialogCreateFrp({
         const visibleBudgetRows = canUseCrossBudget
           ? budgetRows
           : filterBudgetsByRequesterScope(budgetRows, nextRequesterInfo)
+        const duplicateFormValues = duplicateFrom ? mapFrpToDuplicateFormValues(duplicateFrom) : null
 
-        setRequesterInfo(nextRequesterInfo)
-        setVendorOptions(mapVendorOptions(getRowsFromResponse(vendorsResponse)))
-        setVendorBankOptions(mapVendorBankOptions(getRowsFromResponse(vendorBanksResponse)))
-        setExternalDocumentTypeOptions(
+        let nextVendorOptions = mapVendorOptions(getRowsFromResponse(vendorsResponse))
+        let nextVendorBankOptions = mapVendorBankOptions(getRowsFromResponse(vendorBanksResponse))
+        let nextExternalDocumentTypeOptions = stringifyOptionValues(
           mapCodeNameOptions(getRowsFromResponse(externalDocumentTypesResponse), 'External document'),
         )
-        setPaymentMethodOptions(
-          mapCodeNameOptions(getRowsFromResponse(paymentMethodsResponse), 'Payment method'),
+        let nextPaymentMethodOptions = mapCodeNameOptions(
+          getRowsFromResponse(paymentMethodsResponse),
+          'Payment method',
         )
-        setFrpDocumentTypeOptions(
-          mapNameOptions(getRowsFromResponse(frpDocumentTypesResponse), 'FRP document'),
+        let nextFrpDocumentTypeOptions = mapNameOptions(
+          getRowsFromResponse(frpDocumentTypesResponse),
+          'FRP document',
         )
-        setBudgetOptions(mapBudgetOptions(visibleBudgetRows))
+        let nextBudgetOptions = mapBudgetOptions(visibleBudgetRows)
+
+        if (duplicateFormValues) {
+          nextVendorOptions = ensureOption(
+            nextVendorOptions,
+            duplicateFormValues.vendor_id,
+            [
+              getFirstValue(duplicateFrom, ['vendor_code_snapshot', 'vendor_code'], ''),
+              getFirstValue(duplicateFrom, ['vendor_name_snapshot', 'vendor_name'], ''),
+            ]
+              .filter(Boolean)
+              .join(' - '),
+          )
+          nextVendorBankOptions = ensureOption(
+            nextVendorBankOptions,
+            duplicateFormValues.vendor_bank_account_id,
+            [
+              duplicateFormValues.destination_bank_name,
+              duplicateFormValues.destination_bank_account,
+              duplicateFormValues.destination_bank_account_name,
+            ]
+              .filter(Boolean)
+              .join(' - '),
+            {
+              vendorId: duplicateFormValues.vendor_id,
+              meta: {
+                bankName: duplicateFormValues.destination_bank_name,
+                accountNumber: duplicateFormValues.destination_bank_account,
+                accountName: duplicateFormValues.destination_bank_account_name,
+              },
+            },
+          )
+          nextExternalDocumentTypeOptions = ensureOption(
+            nextExternalDocumentTypeOptions,
+            duplicateFormValues.external_document_type_id,
+            [
+              getFirstValue(duplicateFrom, ['external_document_type_code_snapshot'], ''),
+              getFirstValue(duplicateFrom, ['external_document_type_name_snapshot'], ''),
+            ]
+              .filter(Boolean)
+              .join(' - '),
+          )
+          nextPaymentMethodOptions = ensureOption(
+            nextPaymentMethodOptions,
+            duplicateFormValues.payment_method_id,
+            [
+              getFirstValue(duplicateFrom, ['payment_method_code_snapshot'], ''),
+              getFirstValue(duplicateFrom, ['payment_method_name_snapshot'], ''),
+            ]
+              .filter(Boolean)
+              .join(' - '),
+          )
+          nextFrpDocumentTypeOptions = ensureDocumentTypeOptions(nextFrpDocumentTypeOptions, duplicateFrom)
+          nextBudgetOptions = ensureBudgetOptionsForItems(nextBudgetOptions, duplicateFrom?.items)
+        }
+
+        setRequesterInfo(nextRequesterInfo)
+        setVendorOptions(nextVendorOptions)
+        setVendorBankOptions(nextVendorBankOptions)
+        setExternalDocumentTypeOptions(nextExternalDocumentTypeOptions)
+        setPaymentMethodOptions(nextPaymentMethodOptions)
+        setFrpDocumentTypeOptions(nextFrpDocumentTypeOptions)
+        setBudgetOptions(nextBudgetOptions)
+
+        if (duplicateFormValues) {
+          setFormValues(duplicateFormValues)
+          setAttachmentDraft({
+            files: [],
+            documentTypeId: duplicateFormValues.document_type_ids[0] || '',
+          })
+        }
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -825,7 +1081,7 @@ function DialogCreateFrp({
     return () => {
       controller.abort()
     }
-  }, [isOpen])
+  }, [isOpen, duplicateFrom])
 
   useEffect(() => {
     attachmentFilesRef.current = attachmentDraft.files

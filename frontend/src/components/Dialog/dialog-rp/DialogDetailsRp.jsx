@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
-import { XClose } from '../../layoute/TemplateIcons.jsx'
+import { Copy, Printer, XClose } from '../../layoute/TemplateIcons.jsx'
 import TabsAttachment from './tabs-details-rp/TabsAttachment.jsx'
 import TabsInformation from './tabs-details-rp/TabsInformation.jsx'
 import TabsItems from './tabs-details-rp/TabsItems.jsx'
@@ -35,6 +35,10 @@ function isAttachmentReady(attachment) {
 
 function isAttachmentVisible(attachment) {
   return getAttachmentUploadStatus(attachment) !== 'CANCELED'
+}
+
+function getRpStatusValue(rpDetail) {
+  return String(rpDetail?.status ?? '').trim().toUpperCase()
 }
 
 function getAttachmentDownloadUrlFromResponse(response) {
@@ -95,6 +99,8 @@ function DialogDetailsRp({
   title = 'Detail RP',
   rp = null,
   onClose,
+  onDuplicate,
+  onPrint,
 }) {
   const rpId = rp?.id
   const [rpDetail, setRpDetail] = useState(null)
@@ -222,6 +228,7 @@ function DialogDetailsRp({
     ? 'Memuat item RP...'
     : errorMessage || 'Belum ada item RP.'
   const dialogTitle = title || `Detail ${rp?.rp_number ?? rpId ?? 'RP'}`
+  const canPrint = getRpStatusValue(resolvedRpDetail) === 'APPROVED'
 
   const dialogNode = (
     <div className="dashboard-popup-overlay" role="presentation">
@@ -274,6 +281,27 @@ function DialogDetailsRp({
           </div>
         </div>
 
+        <div className="dashboard-popup__actions">
+          <button
+            type="button"
+            className="dashboard-popup__button dashboard-popup__button--primary"
+            onClick={() => onDuplicate?.(resolvedRpDetail)}
+          >
+            <Copy size={16} aria-hidden="true" />
+            Duplicate
+          </button>
+
+          {canPrint ? (
+            <button
+              type="button"
+              className="dashboard-popup__button dashboard-popup__button--outline-teal"
+              onClick={() => onPrint?.(resolvedRpDetail)}
+            >
+              <Printer size={16} aria-hidden="true" />
+              Print
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   )
