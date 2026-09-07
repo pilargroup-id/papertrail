@@ -164,7 +164,6 @@ function scaleTableColumn(column, scale) {
 function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   return {
     '--data-table-action-min-height': 'min(52dvh, 520px)',
-    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),

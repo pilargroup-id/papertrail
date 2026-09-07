@@ -147,9 +147,9 @@ function scaleTableColumn(column, scale) {
   }
 }
 
-function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
+function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   return {
-    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
+    '--data-table-action-min-height': 'min(52dvh, 520px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
@@ -164,8 +164,6 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    flex: '0 0 auto',
-    minHeight: rowCount === 0 ? '180px' : 'auto',
     marginTop: '0.75rem',
     ...tableWrapperStyle,
   }
@@ -647,7 +645,7 @@ function DataTableFrp({
         whiteSpace: 'nowrap',
       }}
       className={joinClassNames('vendor-banks-table--auto-fit frp-table--actions', className)}
-      tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle, rows.length)}
+      tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle)}
       {...props}
     />
   )

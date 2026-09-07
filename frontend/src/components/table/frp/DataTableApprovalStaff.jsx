@@ -171,7 +171,7 @@ function isVoidActionHidden(rp, index, currentUser, canVoidAction) {
   )
 }
 
-const columnsDataTableConvertFrpFromRp = [{
+const columnsDaaTableApprovalStaff = [{
     key: 'rpNumber',
     header: 'RP Number',
     accessor: 'rp_number',
@@ -249,7 +249,7 @@ const columnsDataTableConvertFrpFromRp = [{
   },
 ]
 
-function DataTableConvertFrpFromRp({
+function DataTableApprovalStaff({
   rows = [],
   columns = columnsDataTableConvertFrpFromRp,
   actions,
@@ -367,4 +367,4 @@ function DataTableConvertFrpFromRp({
   )
 }
 
-export default DataTableConvertFrpFromRp
+export default DataTableApprovalStaff

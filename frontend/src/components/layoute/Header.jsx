@@ -1,7 +1,6 @@
 import { Menu01 } from './TemplateIcons.jsx'
 
 import logoPiagam from '../../images/logo-piagam2.svg'
-import logoPiagamTransparent from '../../images/logo-piagam.svg'
 import '../../styles/template-style/TemplateComponents.css'
 
 function Header({
@@ -11,13 +10,6 @@ function Header({
 }) {
   return (
     <header className="header-main">
-      <img
-        src={logoPiagamTransparent}
-        alt=""
-        aria-hidden="true"
-        className="header-accent-logo"
-      />
-
       <div className="header-content">
         <div className="header-left">
           {showMenuButton ? (
