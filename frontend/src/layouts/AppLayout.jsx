@@ -3,7 +3,6 @@ import { Outlet, useLocation } from 'react-router-dom'
 
 import BackgroundMain from '../components/layoute/BackgroundMain.jsx'
 import Header from '../components/layoute/Header.jsx'
-import Sidebar from '../components/layoute/Sidebar.jsx'
 import { pageDetails } from '../dummy/pageDetails.js'
 import createMobileFrpHeaderTabs, {
   FRP_MOBILE_STATUS_ALL,
@@ -12,6 +11,7 @@ import createMobileRpHeaderTabs from '../mobile/mobile-button/rp/MobileTabsRp.js
 import { RP_MOBILE_DEFAULT_STATUS } from '../mobile/mobile-button/rp/mobileTabsRpConfig.js'
 import HeaderMobile from '../mobile/layoutes-mobile/HeaderMobile.jsx'
 import api from '../services/api.js'
+import { redirectToCentralLogin } from '../services/authRedirect.js'
 
 const defaultActivePage = {
   title: 'Page1',
@@ -54,8 +54,6 @@ function AppLayout({
   onSearchChange,
 }) {
   const location = useLocation()
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const [mobileFrpStatusFilter, setMobileFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
   const [mobileRpStatusFilter, setMobileRpStatusFilter] = useState(RP_MOBILE_DEFAULT_STATUS)
@@ -67,6 +65,7 @@ function AppLayout({
   })
   const [currentUser, setCurrentUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
+  const [isRedirectingToLogin, setIsRedirectingToLogin] = useState(false)
 
   const resolvedActivePath = activePath ?? location.pathname
   const resolvedActivePage = pageDetails[resolvedActivePath] ?? activePage ?? defaultActivePage
@@ -77,7 +76,6 @@ function AppLayout({
 
   const shellClassName = [
     'dashboard-shell',
-    sidebarCollapsed ? 'dashboard-shell--sidebar-collapsed' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -122,6 +120,15 @@ function AppLayout({
           return
         }
 
+        // The backend may still authenticate via its own fallback (e.g. dev
+        // auto-login) even when no token is present client-side, so only a
+        // real 401 from the auth check counts as "not logged in".
+        if (error.status === 401) {
+          setIsRedirectingToLogin(true)
+          redirectToCentralLogin()
+          return
+        }
+
         setAuthProfile({
           userName: '',
           userRole: '',
@@ -145,40 +152,26 @@ function AppLayout({
     }
   }, [isFrpPage])
 
+  if (isRedirectingToLogin) {
+    return null
+  }
+
   return (
     <div className={shellClassName}>
       <BackgroundMain />
-
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        mobileOpen={mobileSidebarOpen}
-        activePath={resolvedActivePath}
-        userName={authProfile.userName}
-        userRole={authProfile.userRole}
-        onToggleCollapse={() => setSidebarCollapsed((currentValue) => !currentValue)}
-        onCloseMobile={() => setMobileSidebarOpen(false)}
-      />
-
-      <button
-        type="button"
-        className={`sidebar-overlay${mobileSidebarOpen ? ' active' : ''}`}
-        aria-label="Close sidebar"
-        onClick={() => setMobileSidebarOpen(false)}
-      />
 
       <div className="dashboard-stage">
         <div className="dashboard-header-desktop">
           <Header
             title="Papertrail"
-            showMenuButton
-            onMenuToggle={() => setMobileSidebarOpen(true)}
+            activePath={resolvedActivePath}
+            userName={authProfile.userName}
+            userRole={authProfile.userRole}
           />
         </div>
 
         {!isMobileHeaderHidden ? (
           <HeaderMobile
-            showMenuButton
-            onMenuToggle={() => setMobileSidebarOpen(true)}
             breadcrumb={[
               { label: 'Papertrail', href: '#' },
               { label: resolvedPageTitle, href: '#', active: true },

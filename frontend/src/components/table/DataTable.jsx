@@ -869,6 +869,7 @@ function DataTable({
                 const detailEyebrow = resolveTemplateValue(detail?.eyebrow, row, index)
                 const rowClassName = [
                   'users-table__row',
+                  index % 2 === 1 ? 'users-table__row--zebra' : '',
                   isRowInteractive ? 'users-table__row--interactive' : '',
                   isExpanded ? 'users-table__row--expanded' : '',
                   getRowClassName?.(row, index),
