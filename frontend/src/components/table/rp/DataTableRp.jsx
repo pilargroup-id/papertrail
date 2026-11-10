@@ -26,7 +26,7 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 25
+const DEFAULT_PAGINATION_PAGE_SIZE = 50
 
 function formatDateTime(value) {
   if (!value) {
@@ -504,7 +504,7 @@ function DataTableRp({
       ? {
           summary: `${rows.length} data RP`,
           pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
-          pageSizeOptions: [10, 25, 50, 100],
+          pageSizeOptions: [50, 100, 250, 500],
         }
       : pagination
 

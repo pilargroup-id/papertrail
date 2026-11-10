@@ -1,6 +1,6 @@
 import DataTableAction from '../DataTableAction.jsx'
 
-const DEFAULT_PAGINATION_PAGE_SIZE = 25
+const DEFAULT_PAGINATION_PAGE_SIZE = 50
 const TRANSACTION_TYPE_VARIANTS = {
   RESERVE: 'pending',
   RELEASE: 'inactive',
@@ -131,7 +131,7 @@ function DataTableLogBudget({
       ? {
           summary: `${rows.length} budget usage log`,
           pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
-          pageSizeOptions: [10, 25, 50, 100],
+          pageSizeOptions: [50, 100, 250, 500],
         }
       : pagination
 

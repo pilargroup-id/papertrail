@@ -1,10 +1,17 @@
 import { Fragment, isValidElement, useState } from 'react'
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TablePagination,
+  TableRow,
+} from '@mui/material'
 
 import CreateButton from '../button/ButtonCreate.jsx'
-import PaginationTable from '../forms/PaginationTable.jsx'
 import { ChevronDown, ChevronUp } from '../layoute/TemplateIcons.jsx'
 import DetailCard from '../../mobile/data-card/DetailCard.jsx'
-import MobilePagination from '../../mobile/layoutes-mobile/MobilePagination.jsx'
 
 function getInitials(value = '') {
   return String(value)
@@ -45,6 +52,23 @@ function getPathValue(source, path) {
   }
 
   return path.split('.').reduce((currentValue, key) => currentValue?.[key], source)
+}
+
+function getRowsPerPageOptions(options, pageSize) {
+  const normalizedOptions = (Array.isArray(options) ? options : [50, 100, 250, 500])
+    .map((option) => Number(option))
+    .filter((option) => Number.isInteger(option) && option > 0)
+  const normalizedPageSize = Number(pageSize)
+
+  if (
+    Number.isInteger(normalizedPageSize) &&
+    normalizedPageSize > 0 &&
+    !normalizedOptions.includes(normalizedPageSize)
+  ) {
+    return [...normalizedOptions, normalizedPageSize].sort((a, b) => a - b)
+  }
+
+  return normalizedOptions
 }
 
 function getDefaultPaginationConfig(pagination) {
@@ -695,7 +719,7 @@ function DataTable({
   const [expandedRowKey, setExpandedRowKey] = useState(null)
   const [localPage, setLocalPage] = useState(1)
   const [localPageSize, setLocalPageSize] = useState(
-    getDefaultPaginationConfig(pagination).pageSize ?? 25,
+    getDefaultPaginationConfig(pagination).pageSize ?? 50,
   )
   const hasDetail = Boolean(detail)
   const detailToggleInFirstCell =
@@ -720,6 +744,7 @@ function DataTable({
     Math.max(1, Number(paginationConfig.currentPage ?? localPage) || 1),
     totalPages,
   )
+  const rowsPerPageOptions = getRowsPerPageOptions(paginationConfig.pageSizeOptions, effectivePageSize)
   const displayRows =
     hasPagination && !isControlledPagination
       ? rows.slice((currentPage - 1) * effectivePageSize, currentPage * effectivePageSize)
@@ -789,13 +814,18 @@ function DataTable({
     setLocalPage((page) => Math.min(totalPages, page + 1))
   }
 
-  const handleSelectPage = (page) => {
-    if (typeof paginationConfig.onSelect === 'function') {
-      paginationConfig.onSelect(page)
-      return
-    }
+  const handleTablePageChange = (event, newPage) => {
+    const nextPage = newPage + 1
 
-    setLocalPage(page)
+    if (nextPage < currentPage) {
+      handlePreviousPage()
+    } else if (nextPage > currentPage) {
+      handleNextPage()
+    }
+  }
+
+  const handleTableRowsPerPageChange = (event) => {
+    handlePageSizeChange(event.target.value)
   }
 
   const renderDetailToggleButton = (rowKey, isExpanded, accordionId, className = '') => (
@@ -827,33 +857,35 @@ function DataTable({
         hasMobileCard ? 'users-table-layout--with-mobile' : '',
       )}
     >
-      <div
+      <Paper
         className={['users-table-wrapper', className].filter(Boolean).join(' ')}
         style={tableWrapperStyle}
+        elevation={1}
       >
-        <table className="users-table" aria-label={tableLabel}>
-          <thead>
-            <tr>
+        <Table className="users-table" aria-label={tableLabel}>
+          <TableHead>
+            <TableRow>
               {columns.map((column, columnIndex) => (
-                <th
+                <TableCell
+                  component="th"
                   key={getColumnKey(column, columnIndex)}
                   scope="col"
                   className={getColumnClassName(column, 'header')}
                   style={getColumnStyle(column, 'header')}
                 >
                   {column.header}
-                </th>
+                </TableCell>
               ))}
 
               {showDetailColumn ? (
-                <th scope="col" className="users-table__detail-header">
+                <TableCell component="th" scope="col" className="users-table__detail-header">
                   {detail.columnLabel ?? 'Detail'}
-                </th>
+                </TableCell>
               ) : null}
-            </tr>
-          </thead>
+            </TableRow>
+          </TableHead>
 
-          <tbody>
+          <TableBody>
             {displayRows.length > 0 ? (
               displayRows.map((row, index) => {
                 const rowId = getRowId(row, index)
@@ -879,7 +911,8 @@ function DataTable({
 
                 return (
                   <Fragment key={rowRenderKey}>
-                    <tr
+                    <TableRow
+                      hover={isRowInteractive}
                       className={rowClassName}
                       onClick={
                         isRowInteractive ? () => handleRowClick(row, index, rowKey) : undefined
@@ -894,7 +927,7 @@ function DataTable({
                         const showInlineToggle = detailToggleInFirstCell && columnIndex === 0
 
                         return (
-                          <td
+                          <TableCell
                             key={getColumnKey(column, columnIndex)}
                             className={getColumnClassName(column, 'cell')}
                             style={getColumnStyle(column, 'cell')}
@@ -912,20 +945,20 @@ function DataTable({
                             ) : (
                               columnValue
                             )}
-                          </td>
+                          </TableCell>
                         )
                       })}
 
                       {showDetailColumn ? (
-                        <td className="users-table__detail-cell">
+                        <TableCell className="users-table__detail-cell">
                           {renderDetailToggleButton(rowKey, isExpanded, accordionId)}
-                        </td>
+                        </TableCell>
                       ) : null}
-                    </tr>
+                    </TableRow>
 
                     {hasDetail && isExpanded ? (
-                      <tr className="users-table__accordion-row">
-                        <td colSpan={colSpan}>
+                      <TableRow className="users-table__accordion-row">
+                        <TableCell colSpan={colSpan}>
                           <div className="users-table__accordion" id={accordionId}>
                             <div className="users-table__accordion-header">
                               <div className="users-table__accordion-copy">
@@ -1020,22 +1053,22 @@ function DataTable({
                               </div>
                             ) : null}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : null}
                   </Fragment>
                 )
               })
             ) : (
-              <tr>
-                <td colSpan={colSpan}>
+              <TableRow>
+                <TableCell colSpan={colSpan}>
                   <div className="users-table__empty">{resolvedEmptyMessage}</div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Paper>
 
       {hasMobileCard ? (
         <div className="users-table-mobile">
@@ -1072,40 +1105,34 @@ function DataTable({
 
       {hasPagination ? (
         <div className="users-table-pagination-shell">
-          <PaginationTable
+          <TablePagination
             id={idPrefix}
-            summary={paginationConfig.summary}
-            totalRows={totalRows}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={effectivePageSize}
-            pageSizeOptions={paginationConfig.pageSizeOptions}
-            pageSizeLabel={paginationConfig.pageSizeLabel ?? 'Rows per page'}
-            pageSizeAriaLabel={
-              paginationConfig.pageSizeAriaLabel ?? 'Jumlah baris per halaman'
+            component="div"
+            className="users-table-pagination"
+            count={totalRows}
+            page={currentPage - 1}
+            onPageChange={handleTablePageChange}
+            rowsPerPage={effectivePageSize}
+            onRowsPerPageChange={handleTableRowsPerPageChange}
+            rowsPerPageOptions={rowsPerPageOptions}
+            labelRowsPerPage={paginationConfig.pageSizeLabel ?? 'Rows per page'}
+            SelectProps={{
+              MenuProps: {
+                anchorOrigin: { vertical: 'top', horizontal: 'left' },
+                transformOrigin: { vertical: 'bottom', horizontal: 'left' },
+              },
+            }}
+            labelDisplayedRows={
+              paginationConfig.summary
+                ? () => paginationConfig.summary
+                : ({ from, to, count }) => `${from}–${to} of ${count}`
             }
-            pageSizeSuffix={paginationConfig.pageSizeSuffix}
-            ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
-            items={paginationConfig.items}
-            previousLabel={paginationConfig.previousLabel ?? 'Previous'}
-            nextLabel={paginationConfig.nextLabel ?? 'Next'}
-            onPageSizeChange={handlePageSizeChange}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-            onSelectPage={handleSelectPage}
-          />
-
-          <MobilePagination
-            summary={paginationConfig.summary}
-            totalRows={totalRows}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={effectivePageSize}
-            previousLabel={paginationConfig.mobilePreviousLabel ?? 'Prev'}
-            nextLabel={paginationConfig.mobileNextLabel ?? 'Next'}
-            ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
+            getItemAriaLabel={(type) =>
+              type === 'previous'
+                ? (paginationConfig.previousLabel ?? 'Previous')
+                : (paginationConfig.nextLabel ?? 'Next')
+            }
+            aria-label={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
           />
         </div>
       ) : null}

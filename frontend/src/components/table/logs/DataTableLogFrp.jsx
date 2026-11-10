@@ -5,7 +5,7 @@ import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 import { ChevronDown, ChevronUp } from '../../layoute/TemplateIcons.jsx'
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 25
+const DEFAULT_PAGINATION_PAGE_SIZE = 50
 const FRP_STATUS_DEFAULT_ORDER = {
   PENDING: 0,
   APPROVED: 1,
@@ -537,7 +537,7 @@ function columnsDataTableLogsFrp({
       ? {
           summary: `${rows.length} data FRP`,
           pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
-          pageSizeOptions: [10, 25, 50, 100],
+          pageSizeOptions: [50, 100, 250, 500],
         }
       : pagination
 
