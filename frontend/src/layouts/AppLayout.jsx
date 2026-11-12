@@ -84,6 +84,7 @@ function AppLayout({
   const normalizedActivePath = resolvedActivePath.toLowerCase()
   const isFrpPage = normalizedActivePath === '/frp'
   const isRpPage = normalizedActivePath === '/rp'
+  const isFrpTableCardPage = isFrpPage || isRpPage || normalizedActivePath === '/rp-to-frp'
   const mobileHeaderTabs = isFrpPage
     ? createMobileFrpHeaderTabs({
         activeStatus: mobileFrpStatusFilter,
@@ -189,7 +190,11 @@ function AppLayout({
         <main className={`dashboard-main${isMyTicketsPage ? ' dashboard-main--mytickets' : ''}`}>
           <div
             className={`dashboard-content${
-              isMyTicketsPage ? ' dashboard-content--mytickets' : ''
+              isMyTicketsPage
+                ? ' dashboard-content--mytickets'
+                : isFrpTableCardPage
+                  ? ' dashboard-content--frp'
+                  : ''
             }`}
           >
             {children ?? (

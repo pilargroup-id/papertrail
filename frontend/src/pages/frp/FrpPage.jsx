@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
-import TabsFrpDekstop from './TabsFrpDekstop.jsx'
 import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
@@ -217,9 +216,9 @@ function FrpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
-  const [desktopFrpStatusFilter, setDesktopFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [frpFilters, setFrpFilters] = useState({
+    status: FRP_MOBILE_STATUS_ALL,
     requestBy: '',
     vendor: '',
     createdAt: '',
@@ -601,14 +600,19 @@ function FrpPage(props) {
     () => getFilterOptions(frp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
     [frp],
   )
-  const hasActiveFrpFilter = Boolean(frpFilters.requestBy || frpFilters.vendor || frpFilters.createdAt)
+  const hasActiveFrpFilter = Boolean(
+    frpFilters.requestBy ||
+      frpFilters.vendor ||
+      frpFilters.createdAt ||
+      frpFilters.status !== FRP_MOBILE_STATUS_ALL,
+  )
   const visibleFrp = frp.filter((frpItem) => {
     const matchesMobileStatus =
       mobileFrpStatusFilter === FRP_MOBILE_STATUS_ALL ||
       getFrpStatusValue(frpItem) === mobileFrpStatusFilter
     const matchesDesktopStatus =
-      desktopFrpStatusFilter === FRP_MOBILE_STATUS_ALL ||
-      getFrpStatusValue(frpItem) === desktopFrpStatusFilter
+      frpFilters.status === FRP_MOBILE_STATUS_ALL ||
+      getFrpStatusValue(frpItem) === frpFilters.status
 
     return matchesMobileStatus && matchesDesktopStatus && matchesFrpFilters(frpItem, frpFilters)
   })
@@ -621,8 +625,8 @@ function FrpPage(props) {
       : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
-    desktopFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
-      ? `Belum ada FRP berstatus ${desktopFrpStatusFilter.toLowerCase()}.`
+    frpFilters.status !== FRP_MOBILE_STATUS_ALL
+      ? `Belum ada FRP berstatus ${frpFilters.status.toLowerCase()}.`
       : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
@@ -648,11 +652,8 @@ function FrpPage(props) {
             dialogId="frp-desktop-filter"
             dialogLabel="Filter FRP"
             isOpen={isDesktopFilterOpen}
+            isActive={hasActiveFrpFilter}
             onClose={() => setIsDesktopFilterOpen(false)}
-            className={[
-              'frp-page__filter-button',
-              hasActiveFrpFilter ? 'frp-page__filter-button--active' : '',
-            ].filter(Boolean).join(' ')}
             onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
           >
             <FrpFilter
@@ -664,7 +665,6 @@ function FrpPage(props) {
           </ButtonFilterFrp>
           {!isManager ? (
             <ButtonCreateFrp
-              variant="create"
               dialogProps={{
                 onCreated: handleFrpCreated,
               }}
@@ -711,13 +711,6 @@ function FrpPage(props) {
             : '',
         ].filter(Boolean).join(' ')}
       >
-        <div className="frp-page__tabs-toolbar">
-          <TabsFrpDekstop
-            activeStatus={desktopFrpStatusFilter}
-            onStatusChange={setDesktopFrpStatusFilter}
-          />
-        </div>
-
         <DataTableFrp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}

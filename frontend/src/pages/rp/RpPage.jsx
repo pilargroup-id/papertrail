@@ -8,7 +8,6 @@ import {
 } from '../../components/table/rp/rp-button-access.js';
 
 // DataTable
-import TabsProcessRp from './TabsProcessRp.jsx'
 import RpFilter from './RpFilter.jsx'
 import DataTableRp from '../../components/table/rp/DataTableRp.jsx';
 
@@ -311,14 +310,15 @@ function RpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
-  const [internalActiveRpStatus, setInternalActiveRpStatus] = useState(RP_DEFAULT_STATUS)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [rpFilters, setRpFilters] = useState({
+    status: RP_DEFAULT_STATUS,
     requestBy: '',
     vendor: '',
   })
-  const activeRpStatus = mobileRpStatusFilter ?? internalActiveRpStatus
-  const setActiveRpStatus = setMobileRpStatusFilter ?? setInternalActiveRpStatus
+  const [prevCanUseDestinationChecker, setPrevCanUseDestinationChecker] = useState(
+    Boolean(currentUser) && !isManagerUser(currentUser),
+  )
 
   useEffect(() => {
     setMobileHeaderHidden?.(
@@ -732,7 +732,9 @@ function RpPage(props) {
     () => getFilterOptions(rp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
     [rp],
   )
-  const hasActiveRpFilter = Boolean(rpFilters.requestBy || rpFilters.vendor)
+  const hasActiveRpFilter = Boolean(
+    rpFilters.requestBy || rpFilters.vendor || rpFilters.status !== RP_STATUS_ALL,
+  )
   const canUseDestinationChecker = Boolean(currentUser) && !isManagerUser(currentUser)
   const availableRpProcessStatusTabs = rpProcessStatusTabs.filter(
     (tab) =>
@@ -740,37 +742,37 @@ function RpPage(props) {
       (tab.id !== 'PENDING_DESTINATION_CHECKER' || canUseDestinationChecker),
   )
 
-  useEffect(() => {
-    if (activeRpStatus === 'PENDING_DESTINATION_CHECKER' && !canUseDestinationChecker) {
-      setActiveRpStatus(RP_DEFAULT_STATUS)
+  if (prevCanUseDestinationChecker !== canUseDestinationChecker) {
+    setPrevCanUseDestinationChecker(canUseDestinationChecker)
+
+    if (!canUseDestinationChecker) {
+      if (rpFilters.status === 'PENDING_DESTINATION_CHECKER') {
+        setRpFilters((currentFilters) => ({ ...currentFilters, status: RP_DEFAULT_STATUS }))
+      }
+
+      if (mobileRpStatusFilter === 'PENDING_DESTINATION_CHECKER') {
+        setMobileRpStatusFilter?.(RP_DEFAULT_STATUS)
+      }
     }
-  }, [activeRpStatus, canUseDestinationChecker, setActiveRpStatus])
+  }
 
-  const rpTabsWithCounts = availableRpProcessStatusTabs.map((tab) => ({
-    ...tab,
-    count: rp.filter((rpItem) => {
-      const status = getFrpStatusValue(rpItem)
-
-      return (
-        matchesStatusFilter(status, tab.id) &&
-        canCurrentUserSeeRpStatus(rpItem, currentUser) &&
-        matchesRpFilters(rpItem, rpFilters)
-      )
-    }).length,
-  }))
   const visibleFrp = rp.filter((rpItem) => {
     const status = getFrpStatusValue(rpItem)
-    const matchesRpStatusFilter = matchesStatusFilter(status, activeRpStatus)
+    const matchesMobileStatus = matchesStatusFilter(status, mobileRpStatusFilter)
+    const matchesDesktopStatus = matchesStatusFilter(status, rpFilters.status)
 
     return (
-      matchesRpStatusFilter &&
+      matchesMobileStatus &&
+      matchesDesktopStatus &&
       canCurrentUserSeeRpStatus(rpItem, currentUser) &&
       matchesRpFilters(rpItem, rpFilters)
     )
   })
-  const hasRpStatusFilter = activeRpStatus !== RP_STATUS_ALL
-  const isDestinationCheckerTab = activeRpStatus === 'PENDING_DESTINATION_CHECKER'
-  const filteredStatusLabel = getRpStatusFilterLabel(activeRpStatus)
+  const isDestinationCheckerTab =
+    rpFilters.status === 'PENDING_DESTINATION_CHECKER' ||
+    mobileRpStatusFilter === 'PENDING_DESTINATION_CHECKER'
+  const filteredStatusLabel = getRpStatusFilterLabel(rpFilters.status)
+  const filteredMobileStatusLabel = getRpStatusFilterLabel(mobileRpStatusFilter)
   const filteredEmptyMessage =
     !authGateMessage &&
     !isLoading &&
@@ -780,8 +782,13 @@ function RpPage(props) {
       : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
-    hasRpStatusFilter
+    rpFilters.status !== RP_STATUS_ALL
       ? `Belum ada RP pada status ${filteredStatusLabel}.`
+      : !authGateMessage &&
+    !isLoading &&
+    !errorMessage &&
+    mobileRpStatusFilter !== RP_STATUS_ALL
+      ? `Belum ada RP pada status ${filteredMobileStatusLabel}.`
       : emptyMessage
 
   return (
@@ -802,15 +809,13 @@ function RpPage(props) {
             dialogId="rp-desktop-filter"
             dialogLabel="Filter RP"
             isOpen={isDesktopFilterOpen}
+            isActive={hasActiveRpFilter}
             onClose={() => setIsDesktopFilterOpen(false)}
-            className={[
-              'rp-page__filter-button',
-              hasActiveRpFilter ? 'rp-page__filter-button--active' : '',
-            ].filter(Boolean).join(' ')}
             onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
           >
             <RpFilter
               filters={rpFilters}
+              statusOptions={availableRpProcessStatusTabs}
               requestByOptions={requestByFilterOptions}
               vendorOptions={vendorFilterOptions}
               onFilterChange={updateRpFilter}
@@ -818,7 +823,6 @@ function RpPage(props) {
           </ButtonFilterRp>
           {!isManager ? (
             <ButtonCreateRp
-              variant="create"
               dialogProps={{
                 onCreated: handleFrpCreated,
               }}
@@ -865,15 +869,6 @@ function RpPage(props) {
             : '',
         ].filter(Boolean).join(' ')}
       >
-        <div className="rp-page__tabs-toolbar">
-          <TabsProcessRp
-            activeStatus={activeRpStatus}
-            onStatusChange={setActiveRpStatus}
-            tabs={rpTabsWithCounts}
-            variant="desktop"
-          />
-        </div>
-
         <DataTableRp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}

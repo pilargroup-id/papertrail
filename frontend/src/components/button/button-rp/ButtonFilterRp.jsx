@@ -1,87 +1,99 @@
-import { useEffect, useId, useRef } from 'react'
-
-import { Filter } from '../../layoute/TemplateIcons.jsx'
+import { useId } from 'react'
+import Badge from '@mui/material/Badge'
+import Box from '@mui/material/Box'
+import Divider from '@mui/material/Divider'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded'
 
 function ButtonFilterRp({
   label = 'Filter',
-  icon: Icon = Filter,
-  size = 16,
-  className = '',
-  dialogClassName = '',
   dialogId,
-  dialogLabel = 'Filter FRP',
+  dialogLabel = 'Filter RP',
   isOpen = false,
+  isActive = false,
   onClose,
-  type = 'button',
+  onClick,
   children,
+  sx,
   ...buttonProps
 }) {
   const generatedId = useId()
-  const wrapperRef = useRef(null)
-  const resolvedDialogId = dialogId || buttonProps['aria-controls'] || `frp-filter-dialog-${generatedId}`
-
-  const buttonClassName = [
-    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--edit',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ')
-  const panelClassName = ['frp-filter-dialog', dialogClassName].filter(Boolean).join(' ')
-
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined
-    }
-
-    const handlePointerDown = (event) => {
-      if (wrapperRef.current?.contains(event.target)) {
-        return
-      }
-
-      onClose?.()
-    }
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose?.()
-      }
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, onClose])
+  const resolvedDialogId = dialogId || `rp-filter-drawer-${generatedId}`
 
   return (
-    <div className="frp-filter-dialog-anchor" ref={wrapperRef}>
-      <button
-        type={type}
-        className={buttonClassName}
-        aria-label={label}
-        title={label}
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        aria-controls={resolvedDialogId}
-        {...buttonProps}
-      >
-        <Icon size={size} aria-hidden="true" />
-      </button>
-
-      {isOpen && children ? (
-        <div
-          className={panelClassName}
-          id={resolvedDialogId}
-          role="dialog"
-          aria-label={dialogLabel}
+    <>
+      <Tooltip title={label}>
+        <IconButton
+          aria-label={label}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? resolvedDialogId : undefined}
+          onClick={onClick}
+          sx={[
+            {
+              width: 44,
+              height: 44,
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: isOpen || isActive ? 'var(--accent-teal)' : 'rgba(26, 42, 87, 0.16)',
+              color: isOpen || isActive ? 'var(--accent-teal-dark)' : 'var(--primary-blue)',
+              bgcolor: isOpen ? 'rgba(42, 157, 143, 0.08)' : '#fff',
+              '&:hover': { bgcolor: 'rgba(42, 157, 143, 0.08)' },
+            },
+            ...(Array.isArray(sx) ? sx : [sx]),
+          ]}
+          {...buttonProps}
         >
-          {children}
-        </div>
-      ) : null}
-    </div>
+          <Badge color="primary" variant="dot" invisible={!isActive}>
+            <FilterListRoundedIcon fontSize="small" />
+          </Badge>
+        </IconButton>
+      </Tooltip>
+
+      <Drawer
+        anchor="left"
+        open={isOpen}
+        onClose={onClose}
+        slotProps={{
+          root: { keepMounted: true },
+          paper: {
+            id: resolvedDialogId,
+            role: 'dialog',
+            'aria-label': dialogLabel,
+            sx: {
+              width: 'min(340px, 100vw)',
+            },
+          },
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            px: 2,
+            py: 1.5,
+          }}
+        >
+          <Typography component="h2" sx={{ fontWeight: 700, fontSize: '1rem' }}>
+            {dialogLabel}
+          </Typography>
+
+          <IconButton aria-label="Tutup filter" size="small" onClick={onClose}>
+            <CloseRoundedIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <Divider />
+
+        <Box sx={{ p: 2, overflowY: 'auto' }}>{children}</Box>
+      </Drawer>
+    </>
   )
 }
 

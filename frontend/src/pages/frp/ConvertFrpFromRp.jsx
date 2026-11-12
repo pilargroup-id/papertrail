@@ -336,11 +336,8 @@ function ConvertFrpFromRp(props) {
             dialogId="convert-frp-from-rp-desktop-filter"
             dialogLabel="Filter RP"
             isOpen={isDesktopFilterOpen}
+            isActive={hasActiveRpFilter}
             onClose={() => setIsDesktopFilterOpen(false)}
-            className={[
-              'rp-page__filter-button',
-              hasActiveRpFilter ? 'rp-page__filter-button--active' : '',
-            ].filter(Boolean).join(' ')}
             onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
           >
             <RpFilter

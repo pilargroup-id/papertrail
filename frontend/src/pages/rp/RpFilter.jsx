@@ -1,29 +1,56 @@
+import Box from '@mui/material/Box'
 import MenuItem from '@mui/material/MenuItem'
-import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '0.875rem' },
+  '& .MuiInputLabel-root': { fontSize: '0.875rem' },
+}
 
 function RpFilter({
   filters,
+  statusOptions = [],
   requestByOptions,
   vendorOptions,
   onFilterChange,
   id,
 }) {
   return (
-    <Stack
+    <Box
       id={id}
-      className="rp-page__filters"
-      direction="row"
-      spacing={1}
       aria-label="Filter RP"
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: 2,
+      }}
     >
+      {statusOptions.length > 0 ? (
+        <TextField
+          select
+          size="small"
+          label="Status"
+          value={filters.status}
+          onChange={(event) => onFilterChange('status', event.target.value)}
+          slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+          sx={fieldSx}
+        >
+          {statusOptions.map((tab) => (
+            <MenuItem key={tab.id} value={tab.id}>
+              {tab.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      ) : null}
+
       <TextField
         select
-        fullWidth
-        label="Request By"
         size="small"
+        label="Request By"
         value={filters.requestBy}
         onChange={(event) => onFilterChange('requestBy', event.target.value)}
+        slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+        sx={fieldSx}
       >
         <MenuItem value="">All Request By</MenuItem>
         {requestByOptions.map((requestBy) => (
@@ -35,11 +62,12 @@ function RpFilter({
 
       <TextField
         select
-        fullWidth
-        label="Vendor"
         size="small"
+        label="Vendor"
         value={filters.vendor}
         onChange={(event) => onFilterChange('vendor', event.target.value)}
+        slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+        sx={fieldSx}
       >
         <MenuItem value="">All Vendor</MenuItem>
         {vendorOptions.map((vendor) => (
@@ -48,7 +76,7 @@ function RpFilter({
           </MenuItem>
         ))}
       </TextField>
-    </Stack>
+    </Box>
   )
 }
 

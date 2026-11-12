@@ -23,6 +23,7 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
+const AUTO_FIT_SHRINK_STEP = 0.04
 const DEFAULT_PAGINATION_PAGE_SIZE = 50
 const FRP_STATUS_DEFAULT_ORDER = {
   PENDING: 0,
@@ -101,7 +102,7 @@ function joinClassNames(...classNames) {
 
 function getAutoFitScale(columnCount) {
   const extraColumnCount = Math.max(0, columnCount - AUTO_FIT_BASE_COLUMN_COUNT)
-  const scale = 1 - extraColumnCount * 0.08
+  const scale = 1 - extraColumnCount * AUTO_FIT_SHRINK_STEP
 
   return Math.max(AUTO_FIT_MIN_SCALE, Number(scale.toFixed(2)))
 }
@@ -369,8 +370,9 @@ const columnsDataTableBanks = [{
     key: 'frpNumber',
     header: 'FRP Number',
     accessor: 'frp_number',
-    type: 'identity',
-    subtitleAccessor: (frp) => `Date: ${formatDateTime(frp?.created_at)}`,
+    render: (frp) => (
+      <strong className="users-table__name">{frp?.frp_number ?? '-'}</strong>
+    ),
     sortAccessor: 'frp_number',
     minWidth: 220,
   },
@@ -422,6 +424,17 @@ const columnsDataTableBanks = [{
     sortAccessor: getFrpStatusLabel,
     align: 'center',
     minWidth: 120,
+  },
+  {
+    key: 'createdAt',
+    header: 'Created At',
+    accessor: 'created_at',
+    format: formatDateTime,
+    nowrap: true,
+    sortAccessor: 'created_at',
+    sortType: 'date',
+    align: 'right',
+    minWidth: 160,
   },
   {
     key: 'updatedAt',
@@ -638,6 +651,7 @@ function DataTableFrp({
       emptyMessage={emptyMessage}
       pagination={paginationConfig}
       mobileCard={resolvedMobileCard}
+      actionColumnPosition="start"
       actionCellClassName="users-table__action-cell frp-table__action-cell"
       actionCellStyle={{
         width: '1%',

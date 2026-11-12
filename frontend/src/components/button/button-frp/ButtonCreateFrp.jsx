@@ -1,24 +1,14 @@
 import { useState } from 'react'
+import Button from '@mui/material/Button'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
 
 import DialogCreateFrp from '../../Dialog/dialog-frp/DialogCreateFrp.jsx'
 
-const buttonClassNames = {
-  create: 'dashboard-popup__button dashboard-popup__button--primary',
-  detail: 'users-table__detail-button',
-  accordion: 'users-table__accordion-button',
-  icon: 'users-table__icon-button',
-  pagination: 'users-table-pagination__button',
-}
-
 function ButtonCreateFrp({
-  children = 'Create Frp',
-  className = '',
-  variant = 'accordion',
-  tone = 'default',
-  active = false,
-  type = 'button',
+  children = 'Create',
   onClick,
   dialogProps = {},
+  sx,
   ...buttonProps
 }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -31,37 +21,50 @@ function ButtonCreateFrp({
     }
   }
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false)
-  }
-
-  const buttonClassName = [
-    buttonClassNames[variant] ?? buttonClassNames.accordion,
-    variant === 'accordion' && tone === 'danger' ? 'users-table__accordion-button--danger' : '',
-    variant === 'icon' && tone === 'danger' ? 'users-table__icon-button--danger' : '',
-    variant === 'pagination' && active ? 'users-table-pagination__button--active' : '',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ')
-
   return (
     <>
-      <button
-        type={type}
-        className={buttonClassName}
+      <Button
+        variant="contained"
+        startIcon={<AddRoundedIcon />}
         onClick={handleOpenDialog}
         aria-haspopup="dialog"
         aria-expanded={isDialogOpen}
+        sx={[
+          {
+            height: 44,
+            minWidth: 118,
+            px: 2.25,
+            borderRadius: '8px',
+            textTransform: 'none',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            bgcolor: 'var(--accent-teal)',
+            boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+            '&:hover': {
+              bgcolor: 'var(--accent-teal-dark)',
+              boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+              transform: 'translateY(-1px)',
+            },
+            '&:active': {
+              transform: 'translateY(0)',
+            },
+            '&:focus-visible': {
+              boxShadow: '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
+            },
+          },
+          ...(Array.isArray(sx) ? sx : [sx]),
+        ]}
         {...buttonProps}
       >
         {children}
-      </button>
+      </Button>
 
       <DialogCreateFrp
         {...dialogProps}
         isOpen={isDialogOpen}
-        onClose={handleCloseDialog}
+        onClose={() => setIsDialogOpen(false)}
       />
     </>
   )
