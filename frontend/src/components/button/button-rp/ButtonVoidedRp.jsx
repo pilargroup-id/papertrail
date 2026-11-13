@@ -2,6 +2,7 @@ import { Voided } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonVoidedRp({
   label = 'Voided',
+  showLabel = false,
   icon: Icon = Voided,
   size = 16,
   className = '',
@@ -10,6 +11,7 @@ function ButtonVoidedRp({
 }) {
   const buttonClassName = [
     'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--voided',
+    showLabel && 'frp-icon-button--with-label',
     className,
   ]
     .filter(Boolean)
@@ -24,6 +26,7 @@ function ButtonVoidedRp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }

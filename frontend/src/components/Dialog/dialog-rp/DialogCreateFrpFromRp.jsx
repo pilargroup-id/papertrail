@@ -1,10 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import MuiTextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
 
 import api from '../../../services/api.js'
-import { XClose, Table01, TrendingUp } from '../../layoute/TemplateIcons.jsx'
-import TextArea from '../../forms/TextArea.jsx'
-import TextField from '../../forms/TextField.jsx'
+import { XClose } from '../../layoute/TemplateIcons.jsx'
+import SectionHeader from '../dialog-frp/tabs-create-frp/SectionHeader.jsx'
 import TabsInformation from '../dialog-frp/tabs-create-frp/TabsInformation.jsx'
 import TabsVendor from '../dialog-frp/tabs-create-frp/TabsVendor.jsx'
 
@@ -312,98 +326,141 @@ function formatRupiah(value) {
   }).format(numberValue)}`
 }
 
+const rpItemTableSx = {
+  minWidth: 880,
+  tableLayout: 'fixed',
+  '& .MuiTableCell-root': {
+    px: 1,
+    py: 1,
+    verticalAlign: 'top',
+    borderColor: 'divider',
+    fontSize: '0.8125rem',
+  },
+  '& .MuiTableCell-root:first-of-type': { pl: 1.5 },
+  '& .MuiTableCell-root:last-of-type': { pr: 1.5 },
+  '& .MuiTableHead-root .MuiTableCell-root': {
+    py: 1.25,
+    bgcolor: 'rgba(52, 73, 104, 0.04)',
+    color: 'text.secondary',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    verticalAlign: 'middle',
+  },
+  '& .MuiTableBody-root .MuiTableRow-root:last-of-type .MuiTableCell-root': {
+    borderBottom: 0,
+  },
+  '& .MuiInputBase-input': { fontSize: '0.8125rem' },
+  '& input[type="number"]': { textAlign: 'right' },
+  '& .MuiFormHelperText-root': { mx: 0, mt: 0.5, lineHeight: 1.35 },
+}
+
+const rpItemTextCellSx = { pt: '14px', overflowWrap: 'anywhere' }
+
 function RpItemsSection({ items, fieldErrors, isFormDisabled, updateItemFrpAmount }) {
-  const totalFrpAmount = items.reduce((total, item) => total + (Number(item.frpAmount) || 0), 0)
-
   return (
-    <section className="frp-dialog__section">
-      <div className="frp-dialog__section-header">
-        <span className="frp-dialog__section-icon" aria-hidden="true">
-          <Table01 size={18} />
-        </span>
-        <div className="frp-dialog__section-copy">
-          <p className="frp-dialog__section-title">RP Items</p>
-          <p className="frp-dialog__section-desc">
-            Item diambil dari RP. Sesuaikan FRP Amount bila jumlah yang dibayar berbeda dari RP.
-          </p>
-        </div>
-      </div>
+    <Box component="section" sx={{ mb: 4 }}>
+      <SectionHeader title="RP Items" />
+      <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5, mb: 2 }}>
+        Item diambil dari RP. Sesuaikan FRP Amount bila jumlah yang dibayar berbeda dari RP.
+      </Typography>
 
-      <div className="frp-dialog__items">
-        {items.map((item, index) => (
-          <div className="frp-dialog__item" key={item.rpItemId ?? index}>
-            <div className="frp-dialog__item-header">
-              <strong>Item {index + 1}</strong>
-            </div>
+      <Stack spacing={2}>
+        <TableContainer
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '8px',
+          }}
+        >
+          <Table size="small" sx={rpItemTableSx}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: 44 }} align="center">
+                  #
+                </TableCell>
+                <TableCell sx={{ minWidth: 240 }}>Budget</TableCell>
+                <TableCell sx={{ minWidth: 180 }}>Memo</TableCell>
+                <TableCell sx={{ width: 72 }} align="right">
+                  Qty
+                </TableCell>
+                <TableCell sx={{ width: 150 }} align="right">
+                  Unit Price
+                </TableCell>
+                <TableCell sx={{ width: 150 }} align="right">
+                  RP Amount
+                </TableCell>
+                <TableCell sx={{ width: 170 }} align="right">
+                  FRP Amount (IDR)
+                </TableCell>
+              </TableRow>
+            </TableHead>
 
-            <div className="register-user-popup__grid register-user-popup__grid--frp-three register-user-popup__grid--frp-budget-row">
-              <div className="register-user-popup__field frp-dialog__budget-field">
-                <TextField
-                  label="Budget"
-                  value={[item.budgetCode, item.projectName].filter(Boolean).join(' - ')}
-                  disabled
-                  readOnly
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField label="Memo" value={item.memo} disabled readOnly />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField label="Quantity" value={item.quantity} disabled readOnly />
-              </div>
-            </div>
+            <TableBody>
+              {items.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                    Tidak ada item RP.
+                  </TableCell>
+                </TableRow>
+              ) : null}
 
-            <div className="register-user-popup__grid register-user-popup__grid--frp-item-row">
-              <div className="register-user-popup__field">
-                <TextField
-                  label="Unit Price"
-                  value={formatRupiah(item.unitPrice)}
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="RP Amount"
-                  value={formatRupiah(item.rpAmount)}
-                  leftIcon={TrendingUp}
-                  disabled
-                  readOnly
-                />
-              </div>
-              <div className="register-user-popup__field">
-                <TextField
-                  label="FRP Amount"
-                  value={item.frpAmount}
-                  placeholder="Input FRP amount"
-                  leftIcon={TrendingUp}
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                  disabled={isFormDisabled}
-                  error={fieldErrors[`items.${index}.frp_amount`]}
-                  onChange={(event) => updateItemFrpAmount(index, event.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        ))}
+              {items.map((item, index) => {
+                const frpAmountError = fieldErrors[`items.${index}.frp_amount`]
 
-        {fieldErrors.items ? <p className="form-control__message">{fieldErrors.items}</p> : null}
+                return (
+                  <TableRow key={item.rpItemId ?? index}>
+                    <TableCell align="center" sx={{ color: 'text.secondary', pt: '14px' }}>
+                      {index + 1}
+                    </TableCell>
+                    <TableCell sx={rpItemTextCellSx}>
+                      {[item.budgetCode, item.projectName].filter(Boolean).join(' - ') || '-'}
+                    </TableCell>
+                    <TableCell sx={rpItemTextCellSx}>{item.memo || '-'}</TableCell>
+                    <TableCell align="right" sx={{ pt: '14px' }}>
+                      {item.quantity}
+                    </TableCell>
+                    <TableCell align="right" sx={{ pt: '14px', whiteSpace: 'nowrap' }}>
+                      {formatRupiah(item.unitPrice)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ pt: '14px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {formatRupiah(item.rpAmount)}
+                    </TableCell>
+                    <TableCell>
+                      <MuiTextField
+                        fullWidth
+                        size="small"
+                        type="number"
+                        required
+                        placeholder="0"
+                        value={item.frpAmount}
+                        disabled={isFormDisabled}
+                        error={Boolean(frpAmountError)}
+                        helperText={frpAmountError}
+                        onChange={(event) => updateItemFrpAmount(index, event.target.value)}
+                        slotProps={{
+                          htmlInput: {
+                            min: 0,
+                            step: 1,
+                            'aria-label': `FRP amount item ${index + 1}`,
+                          },
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-        <div className="frp-dialog__total-amount" aria-live="polite">
-          <span className="frp-dialog__total-amount-icon" aria-hidden="true">
-            <TrendingUp size={18} />
-          </span>
-          <div>
-            <span className="frp-dialog__total-amount-label">Total FRP Amount (IDR)</span>
-            <strong>{formatRupiah(totalFrpAmount)}</strong>
-          </div>
-        </div>
-      </div>
-    </section>
+        {fieldErrors.items ? (
+          <Typography variant="caption" color="error">
+            {fieldErrors.items}
+          </Typography>
+        ) : null}
+      </Stack>
+    </Box>
   )
 }
 
@@ -832,10 +889,6 @@ function DialogCreateFrpFromRp({
     }
   }
 
-  if (!isOpen || typeof document === 'undefined') {
-    return null
-  }
-
   const isFormDisabled = isSubmitting || isOptionsLoading
   const filteredVendorBankOptions = formValues.vendor_id
     ? vendorBankOptions.filter(
@@ -855,111 +908,199 @@ function DialogCreateFrpFromRp({
       : frpDocumentTypeDropdownOptions
   const rpLabel = rp?.rp_number ?? rp?.id ?? 'RP'
 
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation">
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-create-frp-from-rp-title"
-        onClick={(event) => event.stopPropagation()}
+  const totalFrpAmount = items.reduce((total, item) => total + (Number(item.frpAmount) || 0), 0)
+
+  return (
+    <Drawer
+      anchor="right"
+      open={isOpen}
+      onClose={handleClose}
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
+            maxWidth: '100%',
+          },
+        },
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
-        <form onSubmit={handleSubmit}>
-          <div className="dashboard-popup__header">
-            <div>
-              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-              <h2 className="dashboard-popup__title" id="dialog-create-frp-from-rp-title">
-                {title} dari {rpLabel}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="frp-bare-icon-button frp-dialog__close-button"
-              aria-label="Tutup dialog"
-              onClick={handleClose}
-              disabled={isSubmitting}
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            px: 3,
+            py: 2,
+            bgcolor: '#344968',
+            color: '#fff',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                lineHeight: 1.6,
+                letterSpacing: 0.5,
+                color: 'rgba(255, 255, 255, 0.72)',
+              }}
             >
-              <XClose size={24} />
-            </button>
-          </div>
+              {eyebrow}
+            </Typography>
+            <Typography
+              variant="h6"
+              id="dialog-create-frp-from-rp-title"
+              sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
+            >
+              {title} dari {rpLabel}
+            </Typography>
+          </Box>
 
-          <div className="dashboard-popup__body">
-            <div className="register-user-popup__layout">
-              <div className="register-user-popup__main">
-                <div className="register-user-popup__form">
-                  <div className="frp-dialog__panel">
-                    <TabsInformation
-                      requesterInfo={requesterInfo}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      externalDocumentTypeOptions={externalDocumentTypeOptions}
-                      frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
-                      attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
-                      attachmentDraft={attachmentDraft}
-                      updateValue={updateValue}
-                      updateDocumentTypeIds={updateDocumentTypeIds}
-                      updateAttachmentDocumentType={updateAttachmentDocumentType}
-                      updateAttachmentFile={updateAttachmentFile}
-                      removeAttachmentDraft={removeAttachmentDraft}
-                      previewAttachmentDraft={previewAttachmentDraft}
-                    />
+          <IconButton
+            aria-label="Tutup dialog"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            sx={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              borderRadius: '5px',
+              color: '#fff',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
+            }}
+          >
+            <XClose size={20} />
+          </IconButton>
+        </Stack>
 
-                    <TabsVendor
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      vendorOptions={vendorOptions}
-                      filteredVendorBankOptions={filteredVendorBankOptions}
-                      paymentMethodOptions={paymentMethodOptions}
-                      updateValue={updateValue}
-                      handleVendorBankChange={handleVendorBankChange}
-                    />
+        <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
+          <TabsInformation
+            requesterInfo={requesterInfo}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            externalDocumentTypeOptions={externalDocumentTypeOptions}
+            frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+            attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
+            attachmentDraft={attachmentDraft}
+            updateValue={updateValue}
+            updateDocumentTypeIds={updateDocumentTypeIds}
+            updateAttachmentDocumentType={updateAttachmentDocumentType}
+            updateAttachmentFile={updateAttachmentFile}
+            removeAttachmentDraft={removeAttachmentDraft}
+            previewAttachmentDraft={previewAttachmentDraft}
+          />
 
-                    <RpItemsSection
-                      items={items}
-                      fieldErrors={fieldErrors}
-                      isFormDisabled={isFormDisabled}
-                      updateItemFrpAmount={updateItemFrpAmount}
-                    />
+          <TabsVendor
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            vendorOptions={vendorOptions}
+            filteredVendorBankOptions={filteredVendorBankOptions}
+            paymentMethodOptions={paymentMethodOptions}
+            updateValue={updateValue}
+            handleVendorBankChange={handleVendorBankChange}
+          />
 
-                    <section className="frp-dialog__section">
-                      <TextArea
-                        label="Notes"
-                        value={formValues.notes}
-                        placeholder={`Create FRP from RP ${rpLabel}`}
-                        rows={3}
-                        disabled={isFormDisabled}
-                        onChange={(event) => updateValue('notes', event.target.value)}
-                      />
-                    </section>
-                  </div>
+          <RpItemsSection
+            items={items}
+            fieldErrors={fieldErrors}
+            isFormDisabled={isFormDisabled}
+            updateItemFrpAmount={updateItemFrpAmount}
+          />
 
-                  {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
-                  {submitError ? <p className="form-control__message">{submitError}</p> : null}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="dashboard-popup__actions">
-            <button
-              type="submit"
-              className="dashboard-popup__button dashboard-popup__button--primary"
+          <Box component="section" sx={{ mb: 2 }}>
+            <MuiTextField
+              fullWidth
+              label="Notes"
+              multiline
+              minRows={4}
+              placeholder={`Create FRP from RP ${rpLabel}`}
+              value={formValues.notes}
               disabled={isFormDisabled}
-            >
-              {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create FRP'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+              error={Boolean(fieldErrors.notes)}
+              helperText={fieldErrors.notes}
+              onChange={(event) => updateValue('notes', event.target.value)}
+            />
+          </Box>
 
-  return createPortal(dialogNode, document.body)
+          {optionsError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {optionsError}
+            </Alert>
+          ) : null}
+          {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+        </Box>
+
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            py: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Total FRP Amount (IDR)
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {formatRupiah(totalFrpAmount)}
+            </Typography>
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            disabled={isFormDisabled}
+            sx={{
+              height: 44,
+              minWidth: 118,
+              px: 2.25,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              bgcolor: 'var(--accent-teal, #2a9d8f)',
+              boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+              '&:hover': {
+                bgcolor: 'var(--accent-teal-dark, #21867a)',
+                boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                transform: 'translateY(-1px)',
+              },
+              '&:active': {
+                transform: 'translateY(0)',
+              },
+              '&:focus-visible': {
+                boxShadow:
+                  '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
+              },
+              '&.Mui-disabled': {
+                boxShadow: 'none',
+              },
+            }}
+          >
+            {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create FRP'}
+          </Button>
+        </Stack>
+      </Box>
+    </Drawer>
+  )
 }
 
 export default DialogCreateFrpFromRp

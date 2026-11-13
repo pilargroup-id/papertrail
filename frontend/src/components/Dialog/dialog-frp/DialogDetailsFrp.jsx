@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
-import DataTable from '../../table/DataTable.jsx'
-
-import ButtonAttachmentsFrp from '../../button/button-frp/ButtonAttachmentsFrp.jsx'
-import { Copy, Download, Printer, XClose } from '../../layoute/TemplateIcons.jsx'
+import DetailAttachmentList from '../details/DetailAttachmentList.jsx'
+import DetailDrawer from '../details/DetailDrawer.jsx'
+import DetailFields from '../details/DetailFields.jsx'
+import DetailItemsTable from '../details/DetailItemsTable.jsx'
+import DetailSection from '../details/DetailSection.jsx'
 
 function isBlankValue(value) {
   return value === undefined || value === null || value === ''
@@ -25,10 +25,6 @@ function getFirstValue(source, keys, fallback = '-') {
   }
 
   return fallback
-}
-
-function formatDisplayValue(value) {
-  return isBlankValue(value) ? '-' : String(value)
 }
 
 function formatNumber(value) {
@@ -356,40 +352,6 @@ function getUniqueLabels(labels) {
   return [...new Set(labels.filter((label) => !isBlankValue(label) && label !== '-'))]
 }
 
-function DetailField({ label, value, className = '' }) {
-  const fieldClassName = ['frp-accordion-detail__field', className].filter(Boolean).join(' ')
-
-  return (
-    <div className={fieldClassName}>
-      <span>{label}</span>
-      <strong>{formatDisplayValue(value)}</strong>
-    </div>
-  )
-}
-
-function DetailCard({ title, className = '', children }) {
-  const cardClassName = ['frp-accordion-detail__card', className].filter(Boolean).join(' ')
-
-  return (
-    <section className={cardClassName} aria-label={title}>
-      <div className="frp-accordion-detail__card-header">
-        <h4>{title}</h4>
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function DetailSectionHeader({ title, count }) {
-  return (
-    <div className="frp-accordion-detail__section-header">
-      <h4>
-        {title} <span>({count})</span>
-      </h4>
-    </div>
-  )
-}
-
 const itemColumns = [
   {
     key: 'budgetCode',
@@ -416,6 +378,7 @@ const itemColumns = [
   {
     key: 'quantity',
     header: 'Qty',
+    align: 'right',
     accessor: 'quantity',
     format: formatQuantity,
     minWidth: 64,
@@ -423,7 +386,8 @@ const itemColumns = [
   },
   {
     key: 'unitPrice',
-    header: 'Unit Price',
+    header: 'Unit Price (IDR)',
+    align: 'right',
     accessor: 'unit_price',
     format: formatRupiah,
     minWidth: 112,
@@ -431,7 +395,8 @@ const itemColumns = [
   },
   {
     key: 'amount',
-    header: 'Amount',
+    header: 'Amount (IDR)',
+    align: 'right',
     accessor: 'amount',
     format: formatRupiah,
     minWidth: 112,
@@ -440,6 +405,7 @@ const itemColumns = [
   {
     key: 'remainingBefore',
     header: 'Remaining Before',
+    align: 'right',
     accessor: 'budget_remaining_before',
     format: formatRupiah,
     minWidth: 126,
@@ -448,6 +414,7 @@ const itemColumns = [
   {
     key: 'remainingAfter',
     header: 'Remaining After',
+    align: 'right',
     accessor: 'budget_remaining_after',
     format: formatRupiah,
     minWidth: 126,
@@ -478,24 +445,6 @@ function DialogDetailsFrp({
   const [errorMessage, setErrorMessage] = useState('')
   const [attachmentErrorMessage, setAttachmentErrorMessage] = useState('')
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null)
-
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined
-    }
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose?.()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, onClose])
 
   useEffect(() => {
     if (!isOpen) {
@@ -602,7 +551,7 @@ function DialogDetailsFrp({
       value: getFirstValue(resolvedFrpDetail, ['frp_number', 'frpNumber', 'id']),
     },
     {
-      label: 'Request by',
+      label: 'Request By',
       value: getFirstValue(
         resolvedFrpDetail,
         ['requested_by_name', 'request_by_name', 'request_by', 'created_by_name', 'created_by'],
@@ -620,11 +569,6 @@ function DialogDetailsFrp({
       value: formatDateTime(getFirstValue(resolvedFrpDetail, ['created_at', 'createdAt'], '')),
     },
     {
-      label: 'Description',
-      value: getFirstValue(resolvedFrpDetail, ['description']),
-      className: 'frp-accordion-detail__field--wide',
-    },
-    {
       label: 'Status',
       value: formatStatusLabel(getFirstValue(resolvedFrpDetail, ['status'], '')),
     },
@@ -635,6 +579,11 @@ function DialogDetailsFrp({
     {
       label: 'Total Amount',
       value: formatRupiah(getFirstValue(resolvedFrpDetail, ['total_amount', 'totalAmount'], '')),
+    },
+    {
+      label: 'Description',
+      value: getFirstValue(resolvedFrpDetail, ['description']),
+      fullWidth: true,
     },
   ]
   const documentFields = [
@@ -722,183 +671,72 @@ function DialogDetailsFrp({
   const dialogTitle = title || `Detail ${frp?.frp_number ?? frpId ?? 'FRP'}`
   const canPrint = getFrpStatusValue(resolvedFrpDetail) === 'APPROVED'
 
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation">
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp frp-details-popup"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-details-frp-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="dashboard-popup__header">
-          <div>
-            <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-            <h2 className="dashboard-popup__title" id="dialog-details-frp-title">
-              {dialogTitle}
-            </h2>
-          </div>
+  return (
+    <DetailDrawer
+      isOpen={isOpen}
+      titleId="dialog-details-frp-title"
+      eyebrow={eyebrow}
+      title={dialogTitle}
+      totalLabel="Total FRP (IDR)"
+      total={isLoading ? 'Memuat...' : formatRupiah(getFirstValue(resolvedFrpDetail, ['total_amount', 'totalAmount']))}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      canPrint={canPrint}
+      onClose={onClose}
+      onDuplicate={onDuplicate ? () => onDuplicate(resolvedFrpDetail) : undefined}
+      onPrint={onPrint ? () => onPrint(resolvedFrpDetail) : undefined}
+    >
+      <DetailSection title="FRP Information">
+        <DetailFields fields={summaryFields} />
+      </DetailSection>
+      <DetailSection title="Document Details">
+        <DetailFields fields={documentFields} />
+      </DetailSection>
+      <DetailSection title="Payment Details">
+        <DetailFields fields={paymentFields} />
+      </DetailSection>
+      <DetailSection title={`Item List (${items.length})`}>
+        <DetailItemsTable
+          items={items}
+          columns={itemColumns}
+          tableLabel={`FRP ${resolvedFrpDetail?.frp_number ?? frpId ?? ''} items`}
+          emptyMessage={emptyMessage}
+        />
+      </DetailSection>
+      <DetailSection title={`Attachment (${attachments.length})`}>
+        <DetailFields fields={[
+          {
+            label: 'Required Documents',
+            value: requiredDocumentLabels.length > 0 ? requiredDocumentLabels.join(', ') : '-',
+          },
+          {
+            label: 'Attachment Document Type',
+            value: attachmentDocumentTypeLabels.length > 0 ? attachmentDocumentTypeLabels.join(', ') : '-',
+          },
+        ]} />
+        <DetailAttachmentList
+          errorMessage={attachmentErrorMessage}
+          attachments={attachments.map((attachment, index) => {
+            const attachmentId = getAttachmentId(attachment) ?? index
+            const attachmentStatus = getFirstValue(attachment, ['upload_status', 'status'], '')
 
-          <button
-            type="button"
-            className="frp-bare-icon-button frp-dialog__close-button"
-            aria-label="Tutup dialog"
-            onClick={onClose}
-          >
-            <XClose size={24} />
-          </button>
-        </div>
-
-        <div className="dashboard-popup__body">
-          <div className="frp-detail-dialog frp-accordion-detail">
-            <DetailCard title="FRP Summary" className="frp-accordion-detail__card--wide">
-              <div className="frp-accordion-detail__field-grid frp-accordion-detail__field-grid--summary">
-                {summaryFields.map((field) => (
-                  <DetailField
-                    key={field.label}
-                    label={field.label}
-                    value={field.value}
-                    className={field.className}
-                  />
-                ))}
-              </div>
-            </DetailCard>
-
-            <section className="frp-accordion-detail__items" aria-label="FRP items">
-              <DetailSectionHeader title="Items" count={items.length} />
-              <DataTable
-                rows={items}
-                columns={itemColumns}
-                getRowId={(item, index) => item?.id ?? index}
-                tableLabel={`FRP ${frp?.frp_number ?? frpId ?? ''} items`}
-                emptyMessage={emptyMessage}
-                pagination={false}
-                mobileCard={false}
-                className="frp-accordion-detail__table"
-              />
-            </section>
-
-            <DetailCard title="Document" className="frp-accordion-detail__card--wide">
-              <div className="frp-accordion-detail__field-grid frp-accordion-detail__field-grid--document">
-                {documentFields.map((field) => (
-                  <DetailField key={field.label} label={field.label} value={field.value} />
-                ))}
-              </div>
-            </DetailCard>
-
-            <div className="frp-accordion-detail__cards">
-              <DetailCard title="Payment Details">
-                <div className="frp-accordion-detail__field-grid">
-                  {paymentFields.map((field) => (
-                    <DetailField key={field.label} label={field.label} value={field.value} />
-                  ))}
-                </div>
-              </DetailCard>
-
-              <DetailCard title={`Attachment (${attachments.length})`}>
-                <div className="frp-accordion-detail__field-grid frp-accordion-detail__field-grid--attachment">
-                  <DetailField
-                    label="Required Documents"
-                    value={
-                      requiredDocumentLabels.length > 0
-                        ? requiredDocumentLabels.join(', ')
-                        : '-'
-                    }
-                  />
-                  <DetailField
-                    label="Attachment Document Type"
-                    value={
-                      attachmentDocumentTypeLabels.length > 0
-                        ? attachmentDocumentTypeLabels.join(', ')
-                        : '-'
-                    }
-                  />
-                </div>
-
-                <div className="frp-accordion-detail__attachments" aria-label="FRP attachments">
-                  <span className="frp-accordion-detail__attachment-label">
-                    Download Attachment
-                  </span>
-                  {attachments.length > 0 ? (
-                    <div className="frp-accordion-detail__attachment-list">
-                      {attachments.map((attachment, index) => {
-                        const attachmentId = getAttachmentId(attachment) ?? index
-                        const attachmentName = getAttachmentName(attachment)
-                        const attachmentStatus = getFirstValue(
-                          attachment,
-                          ['upload_status', 'status'],
-                          '',
-                        )
-                        const attachmentMeta = [
-                          getAttachmentDocumentTypeName(attachment),
-                          attachmentStatus ? `Status: ${formatStatusLabel(attachmentStatus)}` : '',
-                          attachment?.mime_type,
-                          formatFileSize(attachment?.file_size),
-                        ].filter((value) => value && value !== '-')
-                        const isDownloading = downloadingAttachmentId === attachmentId
-
-                        return (
-                          <ButtonAttachmentsFrp
-                            key={attachmentId}
-                            className="frp-accordion-detail__attachment-button"
-                            icon={Download}
-                            label={`Download attachment ${attachmentName}`}
-                            disabled={isDownloading}
-                            onClick={(event) => handleAttachmentClick(attachment, event)}
-                          >
-                            <span className="frp-accordion-detail__attachment-copy">
-                              <strong>{attachmentName}</strong>
-                              {attachmentMeta.length > 0 ? (
-                                <span>{attachmentMeta.join(' - ')}</span>
-                              ) : null}
-                            </span>
-                          </ButtonAttachmentsFrp>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <p className="frp-accordion-detail__attachment-empty">
-                      Belum ada attachment.
-                    </p>
-                  )}
-
-                  {attachmentErrorMessage ? (
-                    <p className="frp-accordion-detail__attachment-error">
-                      {attachmentErrorMessage}
-                    </p>
-                  ) : null}
-                </div>
-              </DetailCard>
-            </div>
-          </div>
-        </div>
-
-        <div className="dashboard-popup__actions">
-          <button
-            type="button"
-            className="dashboard-popup__button dashboard-popup__button--primary"
-            onClick={() => onDuplicate?.(resolvedFrpDetail)}
-          >
-            <Copy size={16} aria-hidden="true" />
-            Duplicate
-          </button>
-
-          {canPrint ? (
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--outline-teal"
-              onClick={() => onPrint?.(resolvedFrpDetail)}
-            >
-              <Printer size={16} aria-hidden="true" />
-              Print
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </div>
+            return {
+              id: attachmentId,
+              name: getAttachmentName(attachment),
+              meta: [
+                getAttachmentDocumentTypeName(attachment),
+                attachmentStatus ? `Status: ${formatStatusLabel(attachmentStatus)}` : '',
+                attachment?.mime_type,
+                formatFileSize(attachment?.file_size),
+              ].filter((value) => value && value !== '-').join(' · '),
+              isDownloading: downloadingAttachmentId === attachmentId,
+              onClick: (event) => handleAttachmentClick(attachment, event),
+            }
+          })}
+        />
+      </DetailSection>
+    </DetailDrawer>
   )
-
-  return createPortal(dialogNode, document.body)
 }
 
 export default DialogDetailsFrp

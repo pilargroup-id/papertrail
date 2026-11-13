@@ -31,6 +31,18 @@ const FRP_STATUS_DEFAULT_ORDER = {
   REJECTED: 2,
 }
 
+function EditActionButton(props) {
+  return <ButtonEditFrp {...props} showLabel />
+}
+
+function DetailActionButton(props) {
+  return <ButtonDetailsFrp {...props} showLabel />
+}
+
+function PrintActionButton(props) {
+  return <ButtonPrintFrp {...props} showLabel />
+}
+
 function formatDateTime(value) {
   if (!value) {
     return '-'
@@ -569,7 +581,7 @@ function DataTableFrp({
       ? {
           key: 'print',
           label: 'Print',
-          buttonComponent: ButtonPrintFrp,
+          buttonComponent: PrintActionButton,
           mobileHidden: true,
           hidden: (frp) => isPrintActionHidden(frp),
           onClick: onPrint,
@@ -578,8 +590,8 @@ function DataTableFrp({
     typeof onEdit === 'function'
       ? {
           key: 'edit',
-          label: 'Edit FRP',
-          buttonComponent: ButtonEditFrp,
+          label: 'Edit',
+          buttonComponent: EditActionButton,
           mobileButtonComponent: MobileButtonEditFrp,
           mobilePlacement: 'header-start',
           hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser) || getFrpStatusValue(frp) === 'APPROVED',
@@ -589,8 +601,8 @@ function DataTableFrp({
     typeof onDetails === 'function'
       ? {
           key: 'details',
-          label: 'Details FRP',
-          buttonComponent: ButtonDetailsFrp,
+          label: 'Detail',
+          buttonComponent: DetailActionButton,
           mobileHidden: true,
           hidden: () => !canAccessFrpButton(currentUser, 'details'),
           onClick: onDetails,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import useMediaQuery from '@mui/material/useMediaQuery'
 
 import BackgroundMain from '../components/layoute/BackgroundMain.jsx'
 import Header from '../components/layoute/Header.jsx'
@@ -9,6 +10,7 @@ import createMobileFrpHeaderTabs, {
 } from '../mobile/mobile-button/frp/MobileTabsFrp.jsx'
 import createMobileRpHeaderTabs from '../mobile/mobile-button/rp/MobileTabsRp.jsx'
 import { RP_MOBILE_DEFAULT_STATUS } from '../mobile/mobile-button/rp/mobileTabsRpConfig.js'
+import BottomNavMobile from '../mobile/layoutes-mobile/BottomNavMobile.jsx'
 import HeaderMobile from '../mobile/layoutes-mobile/HeaderMobile.jsx'
 import api from '../services/api.js'
 import { redirectToCentralLogin } from '../services/authRedirect.js'
@@ -54,6 +56,7 @@ function AppLayout({
   onSearchChange,
 }) {
   const location = useLocation()
+  const isMobileViewport = useMediaQuery('(max-width:768px)')
   const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const [mobileFrpStatusFilter, setMobileFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
   const [mobileRpStatusFilter, setMobileRpStatusFilter] = useState(RP_MOBILE_DEFAULT_STATUS)
@@ -217,6 +220,10 @@ function AppLayout({
             )}
           </div>
         </main>
+
+        {isMobileViewport && !isMobileHeaderHidden ? (
+          <BottomNavMobile activePath={resolvedActivePath} userRole={authProfile.userRole} />
+        ) : null}
       </div>
     </div>
   )

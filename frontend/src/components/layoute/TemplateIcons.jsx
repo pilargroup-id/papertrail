@@ -652,6 +652,17 @@ export function CreateFrp(props) {
   )
 }
 
+export function FilePlus02(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7" />
+      <path d="M14 2v6h6M20 12V8l-6-6" />
+      <path d="M8 12h4M8 16h2" />
+      <path d="M18 15v6M15 18h6" />
+    </IconBase>
+  )
+}
+
 export function Printer(props) {
   return (
     <IconBase {...props}>

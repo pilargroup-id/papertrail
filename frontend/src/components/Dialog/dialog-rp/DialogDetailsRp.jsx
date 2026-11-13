@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
-import { Copy, Printer, XClose } from '../../layoute/TemplateIcons.jsx'
+import DetailDrawer from '../details/DetailDrawer.jsx'
 import TabsAttachment from './tabs-details-rp/TabsAttachment.jsx'
 import TabsInformation from './tabs-details-rp/TabsInformation.jsx'
 import TabsItems from './tabs-details-rp/TabsItems.jsx'
 import TabsVendor from './tabs-details-rp/TabsVendor.jsx'
 import {
   formatStatusLabel,
+  formatRupiah,
+  getFirstValue,
   getRpAttachmentsFromResponse,
   getRpDetailFromResponse,
   getRpItemsFromResponse,
@@ -116,24 +117,6 @@ function DialogDetailsRp({
       return undefined
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose?.()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, onClose])
-
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined
-    }
-
     if (rpId === undefined || rpId === null || rpId === '') {
       setRpDetail(null)
       setItems([])
@@ -230,83 +213,37 @@ function DialogDetailsRp({
   const dialogTitle = title || `Detail ${rp?.rp_number ?? rpId ?? 'RP'}`
   const canPrint = getRpStatusValue(resolvedRpDetail) === 'APPROVED'
 
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation">
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp frp-details-popup"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-details-rp-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="dashboard-popup__header">
-          <div>
-            <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-            <h2 className="dashboard-popup__title" id="dialog-details-rp-title">
-              {dialogTitle}
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            className="frp-bare-icon-button frp-dialog__close-button"
-            aria-label="Tutup dialog"
-            onClick={onClose}
-          >
-            <XClose size={24} />
-          </button>
-        </div>
-
-        <div className="dashboard-popup__body">
-          <div className="frp-detail-dialog frp-accordion-detail">
-            <TabsInformation rpDetail={resolvedRpDetail} />
-
-            <div className="frp-accordion-detail__cards">
-              <TabsVendor rpDetail={resolvedRpDetail} />
-
-              <TabsAttachment
-                attachments={attachments}
-                attachmentErrorMessage={attachmentErrorMessage}
-                downloadingAttachmentId={downloadingAttachmentId}
-                onAttachmentClick={handleAttachmentClick}
-              />
-            </div>
-
-            <TabsItems
-              items={items}
-              rpId={rpId}
-              rpNumber={resolvedRpDetail?.rp_number}
-              emptyMessage={emptyMessage}
-            />
-          </div>
-        </div>
-
-        <div className="dashboard-popup__actions">
-          <button
-            type="button"
-            className="dashboard-popup__button dashboard-popup__button--primary"
-            onClick={() => onDuplicate?.(resolvedRpDetail)}
-          >
-            <Copy size={16} aria-hidden="true" />
-            Duplicate
-          </button>
-
-          {canPrint ? (
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--outline-teal"
-              onClick={() => onPrint?.(resolvedRpDetail)}
-            >
-              <Printer size={16} aria-hidden="true" />
-              Print
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </div>
+  return (
+    <DetailDrawer
+      isOpen={isOpen}
+      titleId="dialog-details-rp-title"
+      eyebrow={eyebrow}
+      title={dialogTitle}
+      totalLabel="Total RP (IDR)"
+      total={isLoading ? 'Memuat...' : formatRupiah(getFirstValue(resolvedRpDetail, ['total_amount', 'totalAmount']))}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      canPrint={canPrint}
+      onClose={onClose}
+      onDuplicate={onDuplicate ? () => onDuplicate(resolvedRpDetail) : undefined}
+      onPrint={onPrint ? () => onPrint(resolvedRpDetail) : undefined}
+    >
+      <TabsInformation rpDetail={resolvedRpDetail} />
+      <TabsVendor rpDetail={resolvedRpDetail} />
+      <TabsItems
+        items={items}
+        rpId={rpId}
+        rpNumber={resolvedRpDetail?.rp_number}
+        emptyMessage={emptyMessage}
+      />
+      <TabsAttachment
+        attachments={attachments}
+        attachmentErrorMessage={attachmentErrorMessage}
+        downloadingAttachmentId={downloadingAttachmentId}
+        onAttachmentClick={handleAttachmentClick}
+      />
+    </DetailDrawer>
   )
-
-  return createPortal(dialogNode, document.body)
 }
 
 export default DialogDetailsRp

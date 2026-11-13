@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 
 import api from '../../../services/api.js'
-import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
-import TabsItems from './tabs-create-rp/TabsItems.jsx'
-import TabsVendor from './tabs-create-rp/TabsVendor.jsx'
+import { XClose } from '../../layoute/TemplateIcons.jsx'
+import TabsItemsCreate from './tabs-create-rp/TabsItemsCreate.jsx'
+import TabsVendorCreate from './tabs-create-rp/TabsVendorCreate.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -126,6 +133,7 @@ function mapBudgetOptions(budgets) {
     const id = getFirstValue(budget, ['id', 'budget_id'])
     const code = getFirstValue(budget, ['budget_code', 'code'])
     const projectName = getFirstValue(budget, ['project_name', 'name'], `Budget #${id ?? '-'}`)
+    const budgetAmount = getFirstValue(budget, ['budget_amount', 'amount'])
     const remaining = getFirstValue(budget, ['budget_remaining', 'remaining_amount'])
     const departmentCode = getFirstValue(
       budget,
@@ -141,6 +149,7 @@ function mapBudgetOptions(budgets) {
       value: id,
       label: [code, projectName, departmentLabel].filter(Boolean).join(' - '),
       meta: {
+        budgetAmount,
         budgetRemaining: remaining,
       },
     }
@@ -768,20 +777,12 @@ function DialogCreateRp({
       }
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        handleClose()
-      }
-    }
-
     loadOptions()
-    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       controller.abort()
-      window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleClose, isOpen, duplicateFrom])
+  }, [isOpen, duplicateFrom])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -880,10 +881,6 @@ function DialogCreateRp({
     }
   }
 
-  if (!isOpen || typeof document === 'undefined') {
-    return null
-  }
-
   const isFormDisabled = isSubmitting || isOptionsLoading
   const totalAmount = formValues.items.reduce((total, item) => {
     const quantity = Number(item.quantity)
@@ -892,98 +889,169 @@ function DialogCreateRp({
     return total + (Number.isFinite(quantity) ? quantity : 0) * (Number.isFinite(unitPrice) ? unitPrice : 0)
   }, 0)
 
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation">
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-create-rp-title"
-        onClick={(event) => event.stopPropagation()}
+  return (
+    <Drawer
+      anchor="right"
+      open={isOpen}
+      onClose={isSubmitting ? undefined : handleClose}
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
+            maxWidth: '100%',
+          },
+        },
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
-        <form onSubmit={handleSubmit}>
-          <div className="dashboard-popup__header">
-            <div>
-              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-              <h2 className="dashboard-popup__title" id="dialog-create-rp-title">
-                {title}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="frp-bare-icon-button frp-dialog__close-button"
-              aria-label="Tutup dialog"
-              onClick={handleClose}
-              disabled={isSubmitting}
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            px: 3,
+            py: 2,
+            bgcolor: '#344968',
+            color: '#fff',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                lineHeight: 1.6,
+                letterSpacing: 0.5,
+                color: 'rgba(255, 255, 255, 0.72)',
+              }}
             >
-              <XClose size={24} />
-            </button>
-          </div>
-
-          <div className="dashboard-popup__body">
-            <div className="register-user-popup__layout">
-              <div className="register-user-popup__main">
-                <div className="register-user-popup__form">
-                  <div className="frp-dialog__panel">
-                    <TabsVendor
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      vendorOptions={vendorOptions}
-                      onSearchVendors={searchVendorOptions}
-                      onCreateVendor={createVendorOption}
-                      paymentCategoryOptions={paymentCategoryOptions}
-                      destinationDepartmentOptions={destinationDepartmentOptions}
-                      picOptions={picOptions}
-                      updateValue={updateValue}
-                    />
-                    <TabsItems
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      budgetOptions={budgetOptions}
-                      updateItemValue={updateItemValue}
-                      removeItem={removeItem}
-                      addItem={addItem}
-                      duplicateLastItem={duplicateLastItem}
-                    />
-                  </div>
-
-                  {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
-                  {submitError ? <p className="form-control__message">{submitError}</p> : null}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
-            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
-              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
-                <TrendingUp size={18} />
-              </span>
-              <div>
-                <span className="frp-dialog__total-amount-label">Total RP</span>
-                <strong>{formatRupiah(totalAmount)}</strong>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="dashboard-popup__button dashboard-popup__button--primary"
-              disabled={isFormDisabled}
+              {eyebrow}
+            </Typography>
+            <Typography
+              variant="h6"
+              id="dialog-create-rp-title"
+              sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
             >
-              {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              {title}
+            </Typography>
+          </Box>
+
+          <IconButton
+            aria-label="Tutup dialog"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            sx={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              borderRadius: '5px',
+              color: '#fff',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
+            }}
+          >
+            <XClose size={20} />
+          </IconButton>
+        </Stack>
+
+        <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
+          <TabsVendorCreate
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            vendorOptions={vendorOptions}
+            onSearchVendors={searchVendorOptions}
+            onCreateVendor={createVendorOption}
+            paymentCategoryOptions={paymentCategoryOptions}
+            destinationDepartmentOptions={destinationDepartmentOptions}
+            picOptions={picOptions}
+            updateValue={updateValue}
+          />
+
+          <TabsItemsCreate
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            budgetOptions={budgetOptions}
+            updateItemValue={updateItemValue}
+            removeItem={removeItem}
+            addItem={addItem}
+            duplicateLastItem={duplicateLastItem}
+          />
+
+          {optionsError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {optionsError}
+            </Alert>
+          ) : null}
+          {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+        </Box>
+
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            py: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Total RP (IDR)
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {formatRupiah(totalAmount)}
+            </Typography>
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isFormDisabled}
+            sx={{
+              height: 44,
+              minWidth: 140,
+              px: 2.25,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              bgcolor: 'var(--accent-teal, #2a9d8f)',
+              boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+              '&:hover': {
+                bgcolor: 'var(--accent-teal-dark, #21867a)',
+                boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                transform: 'translateY(-1px)',
+              },
+              '&:active': {
+                transform: 'translateY(0)',
+              },
+              '&:focus-visible': {
+                boxShadow:
+                  '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
+              },
+              '&.Mui-disabled': {
+                boxShadow: 'none',
+              },
+            }}
+          >
+            {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
+          </Button>
+        </Stack>
+      </Box>
+    </Drawer>
   )
-
-  return createPortal(dialogNode, document.body)
 }
 
 export default DialogCreateRp

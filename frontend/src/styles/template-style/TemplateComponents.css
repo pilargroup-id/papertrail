@@ -3386,7 +3386,9 @@ width: var(--sidebar-collapsed-width);
 }
 
 .users-table-wrapper {
-  flex: 1 1 auto;
+  /* Tidak melebar mengisi sisa tinggi: tinggi wrapper mengikuti jumlah baris,
+     tapi tetap bisa menyusut + scroll saat datanya banyak. */
+  flex: 0 1 auto;
   width: 100%;
   min-width: 0;
   min-height: 0;
@@ -3493,7 +3495,9 @@ table.users-table {
 }
 
 .users-table-wrapper.frp-table--actions .users-table__header-cell--action,
-.users-table-wrapper.frp-table--actions .frp-table__action-cell {
+.users-table-wrapper.frp-table--actions .frp-table__action-cell,
+.users-table-wrapper.rp-table--actions .users-table__header-cell--action,
+.users-table-wrapper.rp-table--actions .rp-table__action-cell {
   text-align: left;
 }
 
@@ -3611,6 +3615,33 @@ table.users-table {
     0 10px 22px var(--frp-icon-hover-shadow, rgba(26, 42, 87, 0.12));
 }
 
+.users-table-wrapper.frp-table--actions .frp-icon-button--with-label,
+.users-table-wrapper.rp-table--actions .frp-icon-button--with-label {
+  width: auto;
+  gap: 0.35rem;
+  padding-inline: 0.65rem;
+  border-radius: 6px;
+  background: var(--frp-icon-bg);
+  box-shadow: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--with-label:hover,
+.users-table-wrapper.rp-table--actions .frp-icon-button--with-label:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.users-table-wrapper.frp-table--actions .frp-icon-button--with-label:focus-visible,
+.users-table-wrapper.rp-table--actions .frp-icon-button--with-label:focus-visible {
+  outline: 2px solid var(--frp-icon-color);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
 .users-table-wrapper.frp-table--actions .frp-icon-button--approval,
 .users-table-wrapper.rp-table--actions .frp-icon-button--approval {
   --frp-icon-color: #15803d;
@@ -3694,6 +3725,17 @@ table.users-table {
   --frp-icon-hover-border: rgba(79, 70, 229, 0.44);
   --frp-icon-hover-shadow: rgba(67, 56, 202, 0.16);
   --frp-icon-focus: rgba(79, 70, 229, 0.16);
+}
+
+.users-table-wrapper.rp-table--actions .frp-icon-button--create-frp-green {
+  --frp-icon-color: #15803d;
+  --frp-icon-bg: rgba(34, 197, 94, 0.13);
+  --frp-icon-border: rgba(34, 197, 94, 0.3);
+  --frp-icon-shadow: rgba(21, 128, 61, 0.12);
+  --frp-icon-hover-bg: #ecfdf3;
+  --frp-icon-hover-border: rgba(34, 197, 94, 0.46);
+  --frp-icon-hover-shadow: rgba(21, 128, 61, 0.18);
+  --frp-icon-focus: rgba(34, 197, 94, 0.18);
 }
 
 .users-table-wrapper.frp-table--actions .frp-icon-button--print,
@@ -4985,7 +5027,8 @@ table.users-table {
   flex: 0 0 auto;
   width: 100%;
   min-width: 0;
-  margin-top: auto;
+  /* Menempel langsung di bawah tabel, ikut naik saat data sedikit. */
+  margin-top: 0;
   padding: 8px 16px;
   border-top: 1px solid rgba(26, 42, 87, 0.1);
   background: #fff;
@@ -5006,14 +5049,6 @@ table.users-table {
   .users-table-pagination .MuiTablePagination-toolbar {
     min-height: 48px;
     padding-inline: 0;
-  }
-
-  /* Logs tables size their wrapper to their row count instead of stretching to
-     fill the card, so the default margin-top:auto anchors pagination to the
-     bottom of the (viewport-stretched) card, leaving a large gap above it.
-     Keep pagination right under the table instead. */
-  .logs-page .users-table-pagination-shell {
-    margin-top: 16px;
   }
 }
 
@@ -7954,7 +7989,7 @@ table.users-table {
     left: 0;
     height: 3px;
     border-radius: 999px 999px 0 0;
-    background: var(--accent-gold);
+    background: #fff;
     content: '';
     opacity: 0;
     transform: scaleX(0.5);
@@ -8018,7 +8053,12 @@ table.users-table {
     overscroll-behavior: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    background: var(--primary-blue);
+    padding: 6px;
+    border: 1px solid #dfe4ed;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(14, 27, 61, 0.14);
+    color: var(--text);
   }
 
   .mobile-header-tabs-dropdown::-webkit-scrollbar {
@@ -8029,8 +8069,9 @@ table.users-table {
   .mobile-header-tabs-dropdown__option {
     width: 100%;
     border: none;
+    border-radius: 4px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.8);
+    color: inherit;
     font-size: 0.85rem;
     font-weight: 600;
     text-align: left;
@@ -8044,12 +8085,14 @@ table.users-table {
   .mobile-header-tabs-dropdown__option:hover,
   .mobile-header-tabs-dropdown__option:focus-visible {
     outline: none;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--primary-blue);
+    background: #f1f4f8;
   }
 
   .mobile-header-tabs-dropdown__option.active {
-    color: var(--accent-gold);
+    background: #edf2fa;
+    color: var(--primary-blue);
+    font-weight: 700;
   }
 
   .mobile-header-tabs__actions {
@@ -9982,5 +10025,119 @@ table.users-table {
 
   .form-switch {
     gap: 0.9rem;
+  }
+}
+
+/* Mobile header */
+@media (max-width: 768px) {
+  .header-main.header-main--mobile {
+    height: auto;
+    overflow: visible;
+    background: #344968;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: none;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .header-main--mobile .header-breadcrumb {
+    padding: 0.5rem 1rem 0.65rem;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .header-main--mobile .header-breadcrumb-content {
+    min-height: 44px;
+    gap: 0.75rem;
+  }
+
+  .header-main--mobile .mobile-header-logo {
+    width: clamp(104px, 30vw, 128px);
+    max-width: 40vw;
+    filter: none;
+  }
+
+  .mobile-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+  }
+
+  .mobile-header__actions .mobile-header-tabs__action {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #fff;
+  }
+
+  .mobile-header__actions .mobile-header-tabs__action:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: none;
+  }
+
+  .header-main--mobile .mobile-header-tabs-row {
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 40px;
+    margin: 0.5rem 0 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .mobile-header__title {
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .header-main--mobile .mobile-header-tabs__select {
+    margin-left: auto;
+    height: 32px;
+    padding: 0 0.8rem;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+  }
+
+  .header-main--mobile .mobile-header-tabs__select:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .header-main--mobile .mobile-header-tabs {
+    padding-left: 0;
+    justify-content: flex-end;
+  }
+
+  .mobile-header-search-row {
+    margin-top: 0.5rem;
+  }
+
+  .header-main--mobile .mobile-header-search {
+    display: flex;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .header-main--mobile .header-search__input {
+    border-radius: 5px;
+    backdrop-filter: none;
+  }
+
+  .header-main--mobile .header-search__input:focus {
+    border-color: #fff;
+    box-shadow: none;
+  }
+
+  .header-main--mobile .mobile-header-search .header-search__icon {
+    color: rgba(255, 255, 255, 0.75);
+    z-index: 1;
   }
 }

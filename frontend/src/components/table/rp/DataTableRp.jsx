@@ -28,6 +28,22 @@ const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
 const DEFAULT_PAGINATION_PAGE_SIZE = 50
 
+function EditActionButton(props) {
+  return <ButtonEditRp {...props} showLabel />
+}
+
+function DetailActionButton(props) {
+  return <ButtonDetailsRp {...props} showLabel />
+}
+
+function PrintActionButton(props) {
+  return <ButtonPrintRp {...props} showLabel />
+}
+
+function CheckDataActionButton(props) {
+  return <ButtonCheckDataRp {...props} showLabel />
+}
+
 function formatDateTime(value) {
   if (!value) {
     return '-'
@@ -459,7 +475,7 @@ function DataTableRp({
       ? {
           key: 'print',
           label: 'Print',
-          buttonComponent: ButtonPrintRp,
+          buttonComponent: PrintActionButton,
           mobileHidden: true,
           hidden: (rp) => isPrintActionHidden(rp),
           onClick: onPrint,
@@ -468,8 +484,8 @@ function DataTableRp({
     typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
       ? {
           key: 'edit',
-          label: useCheckDataAction ? 'Check Data' : 'Edit RP',
-          buttonComponent: useCheckDataAction ? ButtonCheckDataRp : ButtonEditRp,
+          label: useCheckDataAction ? 'Check Data' : 'Edit',
+          buttonComponent: useCheckDataAction ? CheckDataActionButton : EditActionButton,
           mobileButtonComponent: MobileButtonEditRp,
           mobilePlacement: 'header-start',
           hidden: (rp, index) =>
@@ -482,8 +498,8 @@ function DataTableRp({
     typeof onDetails === 'function'
       ? {
           key: 'details',
-          label: 'Details RP',
-          buttonComponent: ButtonDetailsRp,
+          label: 'Detail',
+          buttonComponent: DetailActionButton,
           mobileHidden: true,
           hidden: () => !canAccessFrpButton(currentUser, 'details'),
           onClick: onDetails,
@@ -521,6 +537,7 @@ function DataTableRp({
       enableSorting
       compactForSparseRows
       mobileCard={resolvedMobileCard}
+      actionColumnPosition="start"
       actionCellClassName="users-table__action-cell rp-table__action-cell"
       actionCellStyle={{
         width: '1%',

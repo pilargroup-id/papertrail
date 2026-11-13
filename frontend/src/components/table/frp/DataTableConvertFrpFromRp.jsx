@@ -2,6 +2,7 @@ import DataTableAction from '../DataTableAction.jsx'
 import ButtonCreateFrpRp from '../../button/button-rp/ButtonCreateFrpRp.jsx'
 import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
 import ButtonVoidedRp from '../../button/button-rp/ButtonVoidedRp.jsx'
+import { FilePlus02 } from '../../layoute/TemplateIcons.jsx'
 
 // MOBILE
 import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
@@ -15,6 +16,25 @@ import {
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
 const DEFAULT_PAGINATION_PAGE_SIZE = 50
+
+function CreateFrpActionButton(props) {
+  return (
+    <ButtonCreateFrpRp
+      {...props}
+      icon={FilePlus02}
+      className={joinClassNames('frp-icon-button--create-frp-green', props.className)}
+      showLabel
+    />
+  )
+}
+
+function VoidActionButton(props) {
+  return <ButtonVoidedRp {...props} showLabel />
+}
+
+function PrintActionButton(props) {
+  return <ButtonPrintRp {...props} showLabel />
+}
 
 function formatDateTime(value) {
   if (!value) {
@@ -175,8 +195,28 @@ const columnsDataTableConvertFrpFromRp = [{
     key: 'rpNumber',
     header: 'RP Number',
     accessor: 'rp_number',
-    type: 'identity',
-    subtitleAccessor: (rp) => `Date: ${formatDateTime(rp?.created_at)}`,
+    render: (rp) => (
+      <div className="users-table__identity-copy">
+        <div className="users-table__name-row">
+          <strong className="users-table__name">{rp?.rp_number ?? '-'}</strong>
+        </div>
+        <p
+          className="users-table__meta"
+          style={{
+            margin: 0,
+            color: '#4b5563',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            fontFamily: 'inherit',
+            lineHeight: 1.5,
+            letterSpacing: 'normal',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          Create: {formatDateTime(rp?.created_at)}
+        </p>
+      </div>
+    ),
     sortAccessor: 'rp_number',
     minWidth: 220,
   },
@@ -299,7 +339,7 @@ function DataTableConvertFrpFromRp({
       ? {
           key: 'createFrp',
           label: 'Create FRP',
-          buttonComponent: ButtonCreateFrpRp,
+          buttonComponent: CreateFrpActionButton,
           mobileHidden: true,
           hidden: (rp, index) => isCreateFrpActionHidden(rp, index, currentUser, canCreateFrp),
           onClick: onCreateFrp,
@@ -309,7 +349,7 @@ function DataTableConvertFrpFromRp({
       ? {
           key: 'voided',
           label: 'Voided',
-          buttonComponent: ButtonVoidedRp,
+          buttonComponent: VoidActionButton,
           mobileHidden: true,
           hidden: (rp, index) => isVoidActionHidden(rp, index, currentUser, canVoid),
           onClick: onVoid,
@@ -319,7 +359,7 @@ function DataTableConvertFrpFromRp({
       ? {
           key: 'print',
           label: 'Print',
-          buttonComponent: ButtonPrintRp,
+          buttonComponent: PrintActionButton,
           mobileHidden: true,
           hidden: (rp) => isPrintActionHidden(rp, currentUser),
           onClick: onPrint,
@@ -354,6 +394,7 @@ function DataTableConvertFrpFromRp({
       enableSorting
       compactForSparseRows
       mobileCard={resolvedMobileCard}
+      actionColumnPosition="start"
       actionCellClassName="users-table__action-cell rp-table__action-cell"
       actionCellStyle={{
         width: '1%',

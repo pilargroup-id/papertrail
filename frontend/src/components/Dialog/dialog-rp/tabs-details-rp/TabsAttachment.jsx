@@ -1,8 +1,7 @@
-import ButtonAttachmentsFrp from '../../../button/button-frp/ButtonAttachmentsFrp.jsx'
-import { Download } from '../../../layoute/TemplateIcons.jsx'
+import DetailAttachmentList from '../../details/DetailAttachmentList.jsx'
+import DetailFields from '../../details/DetailFields.jsx'
+import DetailSection from '../../details/DetailSection.jsx'
 import {
-  DetailCard,
-  DetailField,
   formatStatusLabel,
   getFirstValue,
 } from './detailRpUtils.jsx'
@@ -61,7 +60,6 @@ function getUniqueLabels(labels) {
 function TabsAttachment({
   attachments = [],
   attachmentErrorMessage = '',
-  className = '',
   downloadingAttachmentId = null,
   onAttachmentClick,
 }) {
@@ -70,60 +68,34 @@ function TabsAttachment({
   )
 
   return (
-    <DetailCard title={`Attachment (${attachments.length})`} className={className}>
-      <div className="frp-accordion-detail__field-grid frp-accordion-detail__field-grid--attachment">
-        <DetailField
-          label="Attachment Document Type"
-          value={
-            attachmentDocumentTypeLabels.length > 0
-              ? attachmentDocumentTypeLabels.join(', ')
-              : '-'
+    <DetailSection title={`Attachment (${attachments.length})`}>
+      <DetailFields fields={[
+        {
+          label: 'Attachment Document Type',
+          value: attachmentDocumentTypeLabels.length > 0 ? attachmentDocumentTypeLabels.join(', ') : '-',
+        },
+      ]} />
+      <DetailAttachmentList
+        errorMessage={attachmentErrorMessage}
+        attachments={attachments.map((attachment, index) => {
+          const attachmentId = getAttachmentId(attachment) ?? index
+          const attachmentStatus = getFirstValue(attachment, ['upload_status', 'status'], '')
+
+          return {
+            id: attachmentId,
+            name: getAttachmentName(attachment),
+            meta: [
+              getAttachmentDocumentTypeName(attachment),
+              attachmentStatus ? `Status: ${formatStatusLabel(attachmentStatus)}` : '',
+              attachment?.mime_type,
+              formatFileSize(attachment?.file_size),
+            ].filter((value) => value && value !== '-').join(' · '),
+            isDownloading: downloadingAttachmentId === attachmentId,
+            onClick: (event) => onAttachmentClick?.(attachment, event),
           }
-        />
-      </div>
-
-      <div className="frp-accordion-detail__attachments" aria-label="RP attachments">
-        <span className="frp-accordion-detail__attachment-label">Download Attachment</span>
-        {attachments.length > 0 ? (
-          <div className="frp-accordion-detail__attachment-list">
-            {attachments.map((attachment, index) => {
-              const attachmentId = getAttachmentId(attachment) ?? index
-              const attachmentName = getAttachmentName(attachment)
-              const attachmentStatus = getFirstValue(attachment, ['upload_status', 'status'], '')
-              const attachmentMeta = [
-                getAttachmentDocumentTypeName(attachment),
-                attachmentStatus ? `Status: ${formatStatusLabel(attachmentStatus)}` : '',
-                attachment?.mime_type,
-                formatFileSize(attachment?.file_size),
-              ].filter((value) => value && value !== '-')
-              const isDownloading = downloadingAttachmentId === attachmentId
-
-              return (
-                <ButtonAttachmentsFrp
-                  key={attachmentId}
-                  className="frp-accordion-detail__attachment-button"
-                  icon={Download}
-                  label={`Download attachment ${attachmentName}`}
-                  disabled={isDownloading}
-                  onClick={(event) => onAttachmentClick?.(attachment, event)}
-                >
-                  <span className="frp-accordion-detail__attachment-copy">
-                    <strong>{attachmentName}</strong>
-                    {attachmentMeta.length > 0 ? <span>{attachmentMeta.join(' - ')}</span> : null}
-                  </span>
-                </ButtonAttachmentsFrp>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="frp-accordion-detail__attachment-empty">Belum ada attachment.</p>
-        )}
-
-        {attachmentErrorMessage ? (
-          <p className="frp-accordion-detail__attachment-error">{attachmentErrorMessage}</p>
-        ) : null}
-      </div>
-    </DetailCard>
+        })}
+      />
+    </DetailSection>
   )
 }
 

@@ -2,6 +2,7 @@ import { Printer } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonPrintFrp({
   label = 'Print',
+  showLabel = false,
   icon: Icon = Printer,
   size = 16,
   className = '',
@@ -10,6 +11,7 @@ function ButtonPrintFrp({
 }) {
   const buttonClassName = [
     'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--print',
+    showLabel && 'frp-icon-button--with-label',
     className,
   ]
     .filter(Boolean)
@@ -24,6 +26,7 @@ function ButtonPrintFrp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }

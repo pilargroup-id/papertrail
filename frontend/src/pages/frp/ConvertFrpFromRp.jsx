@@ -4,7 +4,6 @@ import api from '../../services/api.js';
 import DataTableConvertFrpFromRp from '../../components/table/frp/DataTableConvertFrpFromRp.jsx';
 import { canCurrentUserCreateFrpFromRp } from '../../components/table/rp/rp-button-access.js';
 import RpFilter from '../rp/RpFilter.jsx'
-import TabsProcessRp from '../rp/TabsProcessRp.jsx'
 import ButtonFilterRp from '../../components/button/button-rp/ButtonFilterRp.jsx'
 import {
   getRpDetailFromResponse,
@@ -80,7 +79,7 @@ function removeRpRecord(rp, rpId) {
   return rp.filter((rpItem) => String(rpItem?.id) !== String(rpId))
 }
 
-const conversionStatusTabs = [
+const conversionStatusOptions = [
   { id: 'NOT_CREATED', label: 'Approved' },
   { id: 'CREATED', label: 'Create FRP' },
   { id: 'VOIDED', label: 'Voided' },
@@ -123,10 +122,10 @@ function ConvertFrpFromRp(props) {
   const [selectedMobileDetailsRp, setSelectedMobileDetailsRp] = useState(null)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [rpFilters, setRpFilters] = useState({
+    status: conversionStatusOptions[0].id,
     requestBy: '',
     vendor: '',
   })
-  const [activeConversionStatus, setActiveConversionStatus] = useState(conversionStatusTabs[0].id)
 
   useEffect(() => {
     setMobileHeaderHidden?.(Boolean(selectedMobileDetailsRp))
@@ -148,7 +147,7 @@ function ConvertFrpFromRp(props) {
       setErrorMessage('')
 
       try {
-        const listRp = getListRpForConversionStatus(activeConversionStatus)
+        const listRp = getListRpForConversionStatus(rpFilters.status)
         const response = await listRp(
           {
             page: 1,
@@ -178,18 +177,14 @@ function ConvertFrpFromRp(props) {
     loadRp()
 
     return () => controller.abort()
-  }, [shouldLoadRp, searchQuery, reloadToken, activeConversionStatus])
+  }, [shouldLoadRp, searchQuery, reloadToken, rpFilters.status])
 
   const updateRpFilter = (filterName, value) => {
-    setRpFilters((currentFilters) => ({
-      ...currentFilters,
-      [filterName]: value,
-    }))
-  }
-
-  const handleConversionStatusTabChange = (nextStatus) => {
-    setActiveConversionStatus(nextStatus)
-    setRpFilters({ requestBy: '', vendor: '' })
+    setRpFilters((currentFilters) => (
+      filterName === 'status'
+        ? { status: value, requestBy: '', vendor: '' }
+        : { ...currentFilters, [filterName]: value }
+    ))
   }
 
   const openCreateFrpDialog = (rpRow) => {
@@ -295,9 +290,9 @@ function ConvertFrpFromRp(props) {
       ? 'Profil auth tidak tersedia.'
       : ''
   const defaultEmptyMessage =
-    activeConversionStatus === 'CREATED'
+    rpFilters.status === 'CREATED'
       ? 'Belum ada RP yang sudah dibuatkan FRP.'
-      : activeConversionStatus === 'VOIDED'
+      : rpFilters.status === 'VOIDED'
         ? 'Belum ada RP yang divoid.'
         : 'Belum ada RP yang siap dibuatkan FRP.'
   const emptyMessage = authGateMessage || (isLoading
@@ -311,7 +306,9 @@ function ConvertFrpFromRp(props) {
     () => getFilterOptions(rp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
     [rp],
   )
-  const hasActiveRpFilter = Boolean(rpFilters.requestBy || rpFilters.vendor)
+  const hasActiveRpFilter = Boolean(
+    rpFilters.status !== conversionStatusOptions[0].id || rpFilters.requestBy || rpFilters.vendor,
+  )
   const visibleRp = rp.filter((rpItem) => matchesRpFilters(rpItem, rpFilters))
   const filteredEmptyMessage =
     !authGateMessage && !isLoading && !errorMessage && hasActiveRpFilter
@@ -342,6 +339,7 @@ function ConvertFrpFromRp(props) {
           >
             <RpFilter
               filters={rpFilters}
+              statusOptions={conversionStatusOptions}
               requestByOptions={requestByFilterOptions}
               vendorOptions={vendorFilterOptions}
               onFilterChange={updateRpFilter}
@@ -360,16 +358,6 @@ function ConvertFrpFromRp(props) {
           selectedMobileDetailsRp ? 'rp-page__mobile-list--hidden' : '',
         ].filter(Boolean).join(' ')}
       >
-        <div className="rp-page__tabs-toolbar">
-          <TabsProcessRp
-            activeStatus={activeConversionStatus}
-            onStatusChange={handleConversionStatusTabChange}
-            tabs={conversionStatusTabs}
-            variant="desktop"
-            ariaLabel="Filter status Convert FRP from RP"
-          />
-        </div>
-
         <DataTableConvertFrpFromRp
           rows={shouldLoadRp ? visibleRp : []}
           tableLabel={`${pageTitle} table`}

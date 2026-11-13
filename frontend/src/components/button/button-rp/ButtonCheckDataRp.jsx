@@ -2,6 +2,7 @@ import { CheckData } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonCheckDataRp({
   label = 'Check Data   ',
+  showLabel = false,
   icon: Icon = CheckData,
   size = 16,
   className = '',
@@ -10,6 +11,7 @@ function ButtonCheckDataRp({
 }) {
   const buttonClassName = [
     'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--edit',
+    showLabel && 'frp-icon-button--with-label',
     className,
   ]
     .filter(Boolean)
@@ -24,6 +26,7 @@ function ButtonCheckDataRp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }

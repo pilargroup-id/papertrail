@@ -1,6 +1,8 @@
-import { DetailCard, DetailField, getFirstValue } from './detailRpUtils.jsx'
+import DetailFields from '../../details/DetailFields.jsx'
+import DetailSection from '../../details/DetailSection.jsx'
+import { getFirstValue } from './detailRpUtils.jsx'
 
-function TabsVendor({ rpDetail, className = '' }) {
+function TabsVendor({ rpDetail }) {
   const vendorFields = [
     {
       label: 'Vendor',
@@ -10,13 +12,13 @@ function TabsVendor({ rpDetail, className = '' }) {
       ].filter(Boolean).join(' - ') || getFirstValue(rpDetail, ['vendor_id', 'vendorId']),
     },
     {
-      label: 'Payment Category',
+      label: 'Category Payment',
       value:
         getFirstValue(rpDetail, ['payment_category_name_snapshot', 'payment_category_name'], '') ||
         getFirstValue(rpDetail, ['payment_category_id', 'paymentCategoryId']),
     },
     {
-      label: 'Destination Division',
+      label: 'Division To Process',
       value: [
         getFirstValue(rpDetail, ['destination_department_code_snapshot'], ''),
         getFirstValue(rpDetail, ['destination_department_name_snapshot'], ''),
@@ -35,23 +37,14 @@ function TabsVendor({ rpDetail, className = '' }) {
     {
       label: 'Notes',
       value: getFirstValue(rpDetail, ['notes']),
-      className: 'frp-accordion-detail__field--wide',
+      fullWidth: true,
     },
   ]
 
   return (
-    <DetailCard title="Vendor & Destination" className={className}>
-      <div className="frp-accordion-detail__field-grid frp-accordion-detail__field-grid--document">
-        {vendorFields.map((field) => (
-          <DetailField
-            key={field.label}
-            label={field.label}
-            value={field.value}
-            className={field.className}
-          />
-        ))}
-      </div>
-    </DetailCard>
+    <DetailSection title="Vendor & Process Information">
+      <DetailFields fields={vendorFields} />
+    </DetailSection>
   )
 }
 

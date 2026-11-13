@@ -1,13 +1,17 @@
-import { useCallback, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 
 import api from '../../../services/api.js'
 import { XClose } from '../../layoute/TemplateIcons.jsx'
-import TabsInformation from './tabs-create-rp/TabsInformation.jsx'
-import TabsItems from './tabs-create-rp/TabsItems.jsx'
-import TabsVendor from './tabs-create-rp/TabsVendor.jsx'
+import TabsItemsCreate from './tabs-create-rp/TabsItemsCreate.jsx'
+import TabsVendorCreate from './tabs-create-rp/TabsVendorCreate.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -46,21 +50,6 @@ const initialRequesterInfo = {
   department_id: '',
   class_department_id: '',
 }
-
-const rpTabs = [
-  {
-    id: 'information',
-    label: 'Information',
-  },
-  {
-    id: 'vendor',
-    label: 'Vendor',
-  },
-  {
-    id: 'items',
-    label: 'Items',
-  },
-]
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -140,16 +129,77 @@ function mapBudgetOptions(budgets) {
     const id = getFirstValue(budget, ['id', 'budget_id'])
     const code = getFirstValue(budget, ['budget_code', 'code'])
     const projectName = getFirstValue(budget, ['project_name', 'name'], `Budget #${id ?? '-'}`)
+    const budgetAmount = getFirstValue(budget, ['budget_amount', 'amount'])
     const remaining = getFirstValue(budget, ['budget_remaining', 'remaining_amount'])
+    const departmentCode = getFirstValue(budget, ['department_code_snapshot', 'department_code'])
+    const departmentName = getFirstValue(budget, ['department_name_snapshot', 'department_name'])
+    const departmentLabel = [departmentCode, departmentName].filter(Boolean).join(' - ')
 
     return {
       value: id,
-      label: [code, projectName].filter(Boolean).join(' - '),
+      label: [code, projectName, departmentLabel].filter(Boolean).join(' - '),
       meta: {
+        budgetAmount,
         budgetRemaining: remaining,
       },
     }
   })
+}
+
+function getUserDisplayName(user) {
+  const name = getFirstValue(user, ['full_name', 'fullName', 'name', 'display_name', 'employee_name'])
+
+  return typeof name === 'string' ? name.trim() : ''
+}
+
+function userBelongsToDepartment(user, departmentId) {
+  const targetId = Number(departmentId)
+
+  if (!targetId) {
+    return false
+  }
+
+  const departments = Array.isArray(user?.departments) ? user.departments : []
+
+  return departments.some((department) => {
+    const departmentIds = [department?.id, department?.department_id, department?.class_department_id]
+
+    return departmentIds.some((id) => Number(id) === targetId)
+  })
+}
+
+function mapPicOptions(users, departmentId) {
+  const seenNames = new Set()
+
+  return users
+    .filter((user) => userBelongsToDepartment(user, departmentId))
+    .reduce((options, user) => {
+      const name = getUserDisplayName(user)
+
+      if (!name || seenNames.has(name)) {
+        return options
+      }
+
+      seenNames.add(name)
+      options.push({ value: name, label: name })
+
+      return options
+    }, [])
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
+function formatRupiah(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(numberValue)
 }
 
 function hasOptionValue(options, value) {
@@ -384,25 +434,73 @@ function DialogEditRp({
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState(rpTabs[0].id)
   const [vendorOptions, setVendorOptions] = useState([])
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
-  const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
+  const [userDirectory, setUserDirectory] = useState([])
+  const [initialPicName, setInitialPicName] = useState({ departmentId: '', name: '' })
+  const [, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
+
+  const picOptions = useMemo(() => {
+    const options = mapPicOptions(userDirectory, formValues.destination_department_id)
+    const savedPicName = initialPicName.name
+
+    // Keep the PIC saved on this RP selectable even if the user directory no
+    // longer lists them under the destination division.
+    if (
+      savedPicName &&
+      String(initialPicName.departmentId) === String(formValues.destination_department_id) &&
+      !options.some((option) => option.value === savedPicName)
+    ) {
+      return [{ value: savedPicName, label: savedPicName }, ...options]
+    }
+
+    return options
+  }, [userDirectory, formValues.destination_department_id, initialPicName])
+
+  const searchVendorOptions = useCallback(async (query, { signal } = {}) => {
+    const response = await api.vendors.list(
+      {
+        q: query,
+        is_active: 1,
+        limit: 20,
+      },
+      { signal },
+    )
+
+    return mapVendorOptions(getRowsFromResponse(response))
+  }, [])
+
+  const createVendorOption = useCallback(async (name) => {
+    const response = await api.vendors.create({ name })
+    const vendor = response?.data ?? response
+    const [option] = mapVendorOptions([vendor])
+
+    setVendorOptions((currentOptions) => {
+      if (currentOptions.some((existing) => existing.value === option.value)) {
+        return currentOptions
+      }
+
+      return [...currentOptions, option].sort((a, b) => a.label.localeCompare(b.label))
+    })
+
+    return option
+  }, [])
 
   const resetDialogState = useCallback(() => {
     setFormValues(editInitialFormValues())
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
-    setActiveTab(rpTabs[0].id)
     setVendorOptions([])
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
     setBudgetOptions([])
+    setUserDirectory([])
+    setInitialPicName({ departmentId: '', name: '' })
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
@@ -414,20 +512,39 @@ function DialogEditRp({
   }, [onClose, resetDialogState])
 
   const updateValue = (fieldName, value) => {
-    setFormValues((currentValues) => ({
-      ...currentValues,
-      [fieldName]: value,
-    }))
-
-    setFieldErrors((currentErrors) => {
-      if (!currentErrors[fieldName]) {
-        return currentErrors
+    setFormValues((currentValues) => {
+      if (
+        fieldName === 'destination_department_id' &&
+        String(currentValues.destination_department_id) !== String(value)
+      ) {
+        return {
+          ...currentValues,
+          destination_department_id: value,
+          pic_name: '',
+        }
       }
 
       return {
-        ...currentErrors,
-        [fieldName]: '',
+        ...currentValues,
+        [fieldName]: value,
       }
+    })
+
+    setFieldErrors((currentErrors) => {
+      const fieldsToClear =
+        fieldName === 'destination_department_id' ? [fieldName, 'pic_name'] : [fieldName]
+
+      if (!fieldsToClear.some((field) => currentErrors[field])) {
+        return currentErrors
+      }
+
+      const nextErrors = { ...currentErrors }
+
+      fieldsToClear.forEach((field) => {
+        nextErrors[field] = ''
+      })
+
+      return nextErrors
     })
   }
 
@@ -479,6 +596,21 @@ function DialogEditRp({
     })
   }
 
+  const duplicateLastItem = () => {
+    setFormValues((currentValues) => {
+      const lastItem = currentValues.items[currentValues.items.length - 1]
+
+      if (!lastItem) {
+        return currentValues
+      }
+
+      return {
+        ...currentValues,
+        items: [...currentValues.items, { ...lastItem }],
+      }
+    })
+  }
+
   useEffect(() => {
     if (!isOpen) {
       return undefined
@@ -501,6 +633,7 @@ function DialogEditRp({
           paymentCategoriesResponse,
           destinationDepartmentsResponse,
           budgetsResponse,
+          usersResponse,
         ] = await Promise.all([
           rpId === undefined || rpId === null || rpId === ''
             ? Promise.resolve(rp)
@@ -550,6 +683,9 @@ function DialogEditRp({
               signal: controller.signal,
             },
           ),
+          api.directory.users.list(undefined, {
+            signal: controller.signal,
+          }),
         ])
         const rpDetail = getRpFromResponse(rpDetailResponse) ?? rp ?? {}
         const authUser = getAuthUser(authResponse)
@@ -590,18 +726,25 @@ function DialogEditRp({
           getRpItems(rpDetail),
         )
 
+        const nextPicName = nextFormValues.pic_name || nextRequesterInfo.request_by || ''
+
         setRequesterInfo(nextRequesterInfo)
         setFormValues({
           ...nextFormValues,
           department_id: nextFormValues.department_id || nextRequesterInfo.department_id || '',
           class_department_id:
             nextFormValues.class_department_id || nextRequesterInfo.class_department_id || '',
-          pic_name: nextFormValues.pic_name || nextRequesterInfo.request_by || '',
+          pic_name: nextPicName,
+        })
+        setInitialPicName({
+          departmentId: nextFormValues.destination_department_id,
+          name: nextPicName,
         })
         setVendorOptions(nextVendorOptions)
         setPaymentCategoryOptions(nextPaymentCategoryOptions)
         setDestinationDepartmentOptions(nextDestinationDepartmentOptions)
         setBudgetOptions(nextBudgetOptions)
+        setUserDirectory(getRowsFromResponse(usersResponse))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -611,6 +754,7 @@ function DialogEditRp({
         setPaymentCategoryOptions([])
         setDestinationDepartmentOptions([])
         setBudgetOptions([])
+        setUserDirectory([])
         setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat pilihan RP.')
       } finally {
@@ -620,20 +764,12 @@ function DialogEditRp({
       }
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        handleClose()
-      }
-    }
-
     loadOptions()
-    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       controller.abort()
-      window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleClose, isOpen, rp])
+  }, [isOpen, rp])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -697,21 +833,6 @@ function DialogEditRp({
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors)
-
-      if (nextFieldErrors.description) {
-        setActiveTab('information')
-      } else if (
-        nextFieldErrors.date_required ||
-        nextFieldErrors.vendor_id ||
-        nextFieldErrors.payment_category_id ||
-        nextFieldErrors.destination_department_id ||
-        nextFieldErrors.pic_name
-      ) {
-        setActiveTab('vendor')
-      } else {
-        setActiveTab('items')
-      }
-
       return
     }
 
@@ -753,174 +874,180 @@ function DialogEditRp({
     }
   }
 
-  if (!isOpen || typeof document === 'undefined') {
-    return null
-  }
-
   const isFormDisabled = isSubmitting || isOptionsLoading
-  const activeStepIndex = rpTabs.findIndex((tab) => tab.id === activeTab)
-  const activeStepLabel = `Step ${activeStepIndex + 1} of ${rpTabs.length}`
-
-  const renderActivePanel = () => {
-    if (activeTab === 'information') {
-      return (
-        <TabsInformation
-          requesterInfo={requesterInfo}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          updateValue={updateValue}
-        />
-      )
-    }
-
-    if (activeTab === 'vendor') {
-      return (
-        <TabsVendor
-          formValues={formValues}
-          fieldErrors={fieldErrors}
-          isOptionsLoading={isOptionsLoading}
-          isFormDisabled={isFormDisabled}
-          vendorOptions={vendorOptions}
-          paymentCategoryOptions={paymentCategoryOptions}
-          destinationDepartmentOptions={destinationDepartmentOptions}
-          updateValue={updateValue}
-        />
-      )
-    }
+  const totalAmount = formValues.items.reduce((total, item) => {
+    const quantity = Number(item.quantity)
+    const unitPrice = Number(item.unit_price)
 
     return (
-      <TabsItems
-        formValues={formValues}
-        fieldErrors={fieldErrors}
-        isOptionsLoading={isOptionsLoading}
-        isFormDisabled={isFormDisabled}
-        budgetOptions={budgetOptions}
-        updateItemValue={updateItemValue}
-        removeItem={removeItem}
-        addItem={addItem}
-      />
+      total +
+      (Number.isFinite(quantity) ? quantity : 0) * (Number.isFinite(unitPrice) ? unitPrice : 0)
     )
-  }
+  }, 0)
 
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation">
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-edit-rp-title"
-        onClick={(event) => event.stopPropagation()}
+  return (
+    <Drawer
+      anchor="right"
+      open={isOpen}
+      onClose={isSubmitting ? undefined : handleClose}
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
+            maxWidth: '100%',
+          },
+        },
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
-        <form onSubmit={handleSubmit}>
-          <div className="dashboard-popup__header">
-            <div>
-              <p className="dashboard-popup__eyebrow">
-                {eyebrow} - {activeStepLabel}
-              </p>
-              <h2 className="dashboard-popup__title" id="dialog-edit-rp-title">
-                {title}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="frp-bare-icon-button frp-dialog__close-button"
-              aria-label="Tutup dialog"
-              onClick={handleClose}
-              disabled={isSubmitting}
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            px: 3,
+            py: 2,
+            bgcolor: '#344968',
+            color: '#fff',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                lineHeight: 1.6,
+                letterSpacing: 0.5,
+                color: 'rgba(255, 255, 255, 0.72)',
+              }}
             >
-              <XClose size={24} />
-            </button>
-          </div>
-
-          <div className="dashboard-popup__body">
-            <div className="register-user-popup__layout">
-              <div className="register-user-popup__main">
-                <div className="register-user-popup__form">
-                  <div className="frp-dialog__tabbed-container">
-                    <div className="frp-dialog__tabs-shell">
-                      <Tabs
-                        value={activeTab}
-                        onChange={(_, nextValue) => setActiveTab(nextValue)}
-                        textColor="primary"
-                        indicatorColor="primary"
-                        aria-label="RP tabs"
-                        variant="fullWidth"
-                        className="frp-dialog__tabs"
-                        sx={{
-                          minHeight: 44,
-                          '& .MuiTabs-flexContainer': {
-                            gap: '0.4rem',
-                          },
-                          '& .MuiTabs-indicator': {
-                            height: 2,
-                            borderRadius: 999,
-                            backgroundColor: 'var(--primary-blue)',
-                          },
-                        }}
-                      >
-                        {rpTabs.map((tab) => (
-                          <Tab
-                            key={tab.id}
-                            id={`rp-edit-tab-${tab.id}`}
-                            aria-controls={`rp-edit-panel-${tab.id}`}
-                            value={tab.id}
-                            label={tab.label}
-                            disableRipple
-                            className="frp-dialog__mui-tab"
-                            sx={{
-                              minHeight: 44,
-                              borderRadius: '10px 10px 0 0',
-                              color: '#607089',
-                              fontSize: '0.86rem',
-                              fontWeight: 700,
-                              letterSpacing: 0,
-                              textTransform: 'none',
-                              transition: 'background-color 0.2s ease, color 0.2s ease',
-                              '&.Mui-selected': {
-                                color: 'var(--primary-blue)',
-                                backgroundColor: 'rgba(26, 42, 87, 0.08)',
-                              },
-                            }}
-                          />
-                        ))}
-                      </Tabs>
-                    </div>
-
-                    <div
-                      className="frp-dialog__panel"
-                      id={`rp-edit-panel-${activeTab}`}
-                      role="tabpanel"
-                      aria-labelledby={`rp-edit-tab-${activeTab}`}
-                    >
-                      {renderActivePanel()}
-                    </div>
-                  </div>
-
-                  {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
-                  {submitError ? <p className="form-control__message">{submitError}</p> : null}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="dashboard-popup__actions">
-            <button
-              type="submit"
-              className="dashboard-popup__button dashboard-popup__button--primary"
-              disabled={isFormDisabled}
+              {eyebrow}
+            </Typography>
+            <Typography
+              variant="h6"
+              id="dialog-edit-rp-title"
+              sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
             >
-              {isSubmitting ? 'Updating...' : isOptionsLoading ? 'Loading...' : 'Update'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              {title}
+            </Typography>
+          </Box>
+
+          <IconButton
+            aria-label="Tutup dialog"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            sx={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              borderRadius: '5px',
+              color: '#fff',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
+            }}
+          >
+            <XClose size={20} />
+          </IconButton>
+        </Stack>
+
+        <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
+          <TabsVendorCreate
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            vendorOptions={vendorOptions}
+            onSearchVendors={searchVendorOptions}
+            onCreateVendor={createVendorOption}
+            paymentCategoryOptions={paymentCategoryOptions}
+            destinationDepartmentOptions={destinationDepartmentOptions}
+            picOptions={picOptions}
+            updateValue={updateValue}
+          />
+
+          <TabsItemsCreate
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            budgetOptions={budgetOptions}
+            updateItemValue={updateItemValue}
+            removeItem={removeItem}
+            addItem={addItem}
+            duplicateLastItem={duplicateLastItem}
+          />
+
+          {optionsError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {optionsError}
+            </Alert>
+          ) : null}
+          {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+        </Box>
+
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            py: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Total RP (IDR)
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {formatRupiah(totalAmount)}
+            </Typography>
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isFormDisabled}
+            sx={{
+              height: 44,
+              minWidth: 140,
+              px: 2.25,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              bgcolor: 'var(--accent-teal, #2a9d8f)',
+              boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+              '&:hover': {
+                bgcolor: 'var(--accent-teal-dark, #21867a)',
+                boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                transform: 'translateY(-1px)',
+              },
+              '&:active': {
+                transform: 'translateY(0)',
+              },
+              '&:focus-visible': {
+                boxShadow:
+                  '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
+              },
+              '&.Mui-disabled': {
+                boxShadow: 'none',
+              },
+            }}
+          >
+            {isSubmitting ? 'Updating...' : isOptionsLoading ? 'Loading...' : 'Update'}
+          </Button>
+        </Stack>
+      </Box>
+    </Drawer>
   )
-
-  return createPortal(dialogNode, document.body)
 }
 
 export default DialogEditRp

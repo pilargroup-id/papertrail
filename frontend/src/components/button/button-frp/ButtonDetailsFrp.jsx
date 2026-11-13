@@ -2,6 +2,7 @@ import { Eye } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonDetailsFrp({
   label = 'Detail',
+  showLabel = false,
   icon: Icon = Eye,
   size = 16,
   className = '',
@@ -10,6 +11,7 @@ function ButtonDetailsFrp({
 }) {
   const buttonClassName = [
     'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--details',
+    showLabel && 'frp-icon-button--with-label',
     className,
   ]
     .filter(Boolean)
@@ -24,6 +26,7 @@ function ButtonDetailsFrp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }
