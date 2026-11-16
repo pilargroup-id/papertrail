@@ -382,6 +382,7 @@ function DialogCheckDataRp({
   rp = null,
   onClose,
   onUpdated,
+  onReject,
 }) {
   const [formValues, setFormValues] = useState(editInitialFormValues)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -820,6 +821,21 @@ function DialogCheckDataRp({
                 <strong>{formatRupiah(totalAmount)}</strong>
               </div>
             </div>
+
+            {onReject ? (
+              <button
+                type="button"
+                className="dashboard-popup__button dashboard-popup__button--secondary"
+                disabled={isSubmitting}
+                onClick={() => {
+                  const targetRp = rp
+                  resetDialogState()
+                  onReject(targetRp)
+                }}
+              >
+                Reject
+              </button>
+            ) : null}
 
             <button
               type="submit"

@@ -618,7 +618,20 @@ function RpPage(props) {
     setIsRejecting(true)
 
     try {
-      const response = await api.rp.reject(rpId, {
+      const status = getFrpStatusValue(target)
+
+      if (
+        ![
+          'PENDING_REQUESTER_MANAGER',
+          'PENDING_DESTINATION_CHECKER',
+          'PENDING_DESTINATION_MANAGER',
+        ].includes(status)
+      ) {
+        setRejectError(`RP status ${status || '-'} tidak bisa direject.`)
+        return
+      }
+
+      const response = await api.rp.rejectByStatus(rpId, status, {
         reason,
       })
       const rejectedFrp = getFrpFromResponse(response)
@@ -929,6 +942,10 @@ function RpPage(props) {
         rp={selectedCheckDataRp}
         onClose={closeCheckDataDialog}
         onUpdated={handleRpChecked}
+        onReject={(rp) => {
+          closeCheckDataDialog()
+          openRejectDialog(rp)
+        }}
       />
 
       <DialogDetailsRp

@@ -2,6 +2,7 @@ import { XClose } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonRejectFrp({
   label = 'Reject',
+  showLabel = true,
   icon: Icon = XClose,
   size = 16,
   className = '',
@@ -10,6 +11,7 @@ function ButtonRejectFrp({
 }) {
   const buttonClassName = [
     'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--reject',
+    showLabel && 'frp-icon-button--with-label',
     className,
   ]
     .filter(Boolean)
@@ -24,6 +26,7 @@ function ButtonRejectFrp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }
