@@ -74,6 +74,33 @@ function hasScopedValue(scopeValues, value) {
   return scopeValues.some((scopeValue) => String(scopeValue) === String(value))
 }
 
+// Jika FRP/RP memakai budget department lain, approval ada di manager department budget,
+// bukan di manager department pembuat.
+export function getApprovalDepartmentId(document) {
+  const budgetDepartmentId = getFirstValue(
+    document,
+    ['approval_budget_department_id', 'approvalBudgetDepartmentId'],
+    '',
+  )
+
+  if (budgetDepartmentId !== '') {
+    return budgetDepartmentId
+  }
+
+  return getFirstValue(document, ['department_id', 'departmentId'], '')
+}
+
+export function isCrossDepartmentDocument(document) {
+  const budgetDepartmentId = getFirstValue(
+    document,
+    ['approval_budget_department_id', 'approvalBudgetDepartmentId'],
+    '',
+  )
+  const departmentId = getFirstValue(document, ['department_id', 'departmentId'], '')
+
+  return budgetDepartmentId !== '' && String(budgetDepartmentId) !== String(departmentId)
+}
+
 function getFrpStatusValue(frp) {
   return String(frp?.status ?? '').trim().toUpperCase()
 }
@@ -200,11 +227,10 @@ export function canCurrentUserApproveFrp(frp, currentUser) {
   }
 
   const frpCompanyId = getFirstValue(frp, ['company_id', 'companyId'], '')
-  const frpDepartmentId = getFirstValue(frp, ['department_id', 'departmentId'], '')
 
   return (
     hasScopedValue(getUserCompanyIds(currentUser), frpCompanyId) &&
-    hasScopedValue(getUserDepartmentIds(currentUser), frpDepartmentId)
+    hasScopedValue(getUserDepartmentIds(currentUser), getApprovalDepartmentId(frp))
   )
 }
 

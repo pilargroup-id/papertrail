@@ -299,7 +299,12 @@ async function listRpRequests(conn, query = {}) {
         rr.procurement_voided_at,
         rr.procurement_voided_reason,
         rr.created_at,
-        rr.updated_at
+        rr.updated_at,
+        (
+          SELECT MIN(rri_approval.budget_department_id)
+          FROM rp_request_items rri_approval
+          WHERE rri_approval.rp_request_id = rr.id
+        ) AS approval_budget_department_id
       FROM rp_requests rr
       ${whereSql}
       ORDER BY rr.created_at DESC
@@ -326,9 +331,15 @@ async function getRpHeaderById(conn, id, options = {}) {
 
   const [rows] = await conn.query(
     `
-      SELECT *
-      FROM rp_requests
-      WHERE id = ?
+      SELECT
+        rr.*,
+        (
+          SELECT MIN(rri_approval.budget_department_id)
+          FROM rp_request_items rri_approval
+          WHERE rri_approval.rp_request_id = rr.id
+        ) AS approval_budget_department_id
+      FROM rp_requests rr
+      WHERE rr.id = ?
       ${lockSql}
     `,
     [id]

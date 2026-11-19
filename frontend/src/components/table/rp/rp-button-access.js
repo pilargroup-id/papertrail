@@ -2,6 +2,7 @@ import {
   canAccessFrpButton,
   canCurrentUserEditFrp,
   getFrpButtonAccessRole,
+  isCrossDepartmentDocument,
   isItStaffUser,
   isManagerUser,
 } from '../frp/frp-button-access.js'
@@ -133,6 +134,16 @@ function userHasCompanyScope(user, rp) {
 }
 
 function canRequesterManagerApprove(rp, currentUser) {
+  if (isCrossDepartmentDocument(rp)) {
+    return (
+      userHasCompanyScope(currentUser, rp) &&
+      hasScopedValue(
+        getUserDepartmentIds(currentUser),
+        getFirstValue(rp, ['approval_budget_department_id', 'approvalBudgetDepartmentId'], ''),
+      )
+    )
+  }
+
   return (
     userHasCompanyScope(currentUser, rp) &&
     hasDepartmentClassScope(

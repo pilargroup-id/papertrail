@@ -1,7 +1,6 @@
 import { useId } from 'react'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
-import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
@@ -78,18 +77,28 @@ function ButtonFilterRp({
             gap: 2,
             px: 2,
             py: 1.5,
+            bgcolor: '#344968',
+            color: '#fff',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
           }}
         >
-          <Typography component="h2" sx={{ fontWeight: 700, fontSize: '1rem' }}>
+          <Typography component="h2" sx={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>
             {dialogLabel}
           </Typography>
 
-          <IconButton aria-label="Tutup filter" size="small" onClick={onClose}>
+          <IconButton
+            aria-label="Tutup filter"
+            size="small"
+            onClick={onClose}
+            sx={{
+              color: '#fff',
+              borderRadius: '5px',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+            }}
+          >
             <CloseRoundedIcon fontSize="small" />
           </IconButton>
         </Box>
-
-        <Divider />
 
         <Box sx={{ p: 2, overflowY: 'auto' }}>{children}</Box>
       </Drawer>
