@@ -91,14 +91,14 @@ function DataTableActivityLogs({
       rows={rows}
       columns={columns}
       useDefaultActions={false}
+      fitToRows
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
       pagination={paginationConfig}
       className={className}
       tableWrapperStyle={{
-        flex: '0 0 auto',
-        minHeight: rows.length === 0 ? '180px' : 'auto',
+        minHeight: rows.length === 0 ? '180px' : undefined,
         ...tableWrapperStyle,
       }}
       {...props}

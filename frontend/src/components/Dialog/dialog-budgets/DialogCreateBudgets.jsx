@@ -6,14 +6,13 @@ import TextField from '../../forms/TextField.jsx'
 import Dropdown from '../../forms/dropdown/Dropdown.jsx'
 import DropdownSearch from '../../forms/dropdown/DropdownSearch.jsx'
 
-import { Code, FileText01, TrendingUp } from '../../layoute/TemplateIcons.jsx'
+import { FileText01, TrendingUp } from '../../layoute/TemplateIcons.jsx'
 
 const currentDate = new Date()
 const currentYear = currentDate.getFullYear()
 const currentMonth = currentDate.getMonth() + 1
 
 const initialFormValues = {
-  budget_code: '',
   project_name: '',
   company_id: '',
   department_id: '',
@@ -47,6 +46,15 @@ const yearOptions = Array.from({ length: 7 }, (_, index) => {
     label: String(year),
   }
 })
+
+function generateCodeFromName(name) {
+  return String(name ?? '')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -333,20 +341,18 @@ function DialogCreateBudgets({
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const normalizedBudgetCode = formValues.budget_code.trim().toUpperCase()
     const normalizedProjectName = formValues.project_name.trim()
+    const normalizedBudgetCode = generateCodeFromName(normalizedProjectName)
     const budgetAmount = Number(formValues.budget_amount)
     const selectedCompany = findOption(companyOptions, formValues.company_id)
     const selectedDepartment = findOption(departmentOptions, formValues.department_id)
     const selectedClass = findOption(classOptions, formValues.class_department_id)
     const nextFieldErrors = {}
 
-    if (!normalizedBudgetCode) {
-      nextFieldErrors.budget_code = 'Budget code wajib diisi.'
-    }
-
     if (!normalizedProjectName) {
-      nextFieldErrors.project_name = 'Project name wajib diisi.'
+      nextFieldErrors.project_name = 'Budget name wajib diisi.'
+    } else if (!normalizedBudgetCode) {
+      nextFieldErrors.project_name = 'Budget name harus mengandung huruf atau angka.'
     }
 
     if (!formValues.company_id) {
@@ -416,8 +422,8 @@ function DialogCreateBudgets({
     } catch (error) {
       if (error?.data?.errors) {
         setFieldErrors({
-          budget_code: error.data.errors.budget_code || '',
-          project_name: error.data.errors.project_name || '',
+          // Budget code dibuat dari budget name, jadi error-nya ditampilkan di field nama.
+          project_name: error.data.errors.project_name || error.data.errors.budget_code || '',
           company_id: error.data.errors.company_id || '',
           department_id: error.data.errors.department_id || '',
           class_department_id: error.data.errors.class_department_id || '',
@@ -465,18 +471,6 @@ function DialogCreateBudgets({
               <div className="register-user-popup__main">
                 <div className="register-user-popup__form">
                   <div className="register-user-popup__grid register-user-popup__grid--vendor-banks">
-                    <div className="register-user-popup__field">
-                      <TextField
-                        label="Budget Code"
-                        value={formValues.budget_code}
-                        placeholder="Input budget code"
-                        leftIcon={Code}
-                        required
-                        disabled={isSubmitting}
-                        error={fieldErrors.budget_code}
-                        onChange={(event) => updateValue('budget_code', event.target.value)}
-                      />
-                    </div>
                     <div className="register-user-popup__field">
                       <TextField
                         label="Budget Name"

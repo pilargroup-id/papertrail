@@ -219,8 +219,11 @@ function getTableWrapperStyle(
   rows,
   compactForSparseRows,
   sparseRowThreshold,
+  fitToRows,
 ) {
-  if (pagination === false || pagination === null) {
+  // fitToRows: tinggi tabel mengikuti jumlah baris sehingga pagination
+  // menempel tepat di bawah baris terakhir.
+  if (pagination === false || pagination === null || fitToRows) {
     return tableWrapperStyle
   }
 
@@ -252,6 +255,7 @@ function DataTableAction({
   defaultSort,
   compactForSparseRows = false,
   sparseRowThreshold = 5,
+  fitToRows = false,
   actionColumnLabel = 'Action',
   actionColumnKey = 'action',
   actionColumnPosition = 'end',
@@ -338,6 +342,7 @@ function DataTableAction({
         displayRows,
         compactForSparseRows,
         sparseRowThreshold,
+        fitToRows,
       )}
       mobileCard={
         mobileCard === false

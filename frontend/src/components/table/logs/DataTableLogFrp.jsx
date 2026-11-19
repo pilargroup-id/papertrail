@@ -145,8 +145,7 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    flex: '0 0 auto',
-    minHeight: rowCount === 0 ? '180px' : 'auto',
+    minHeight: rowCount === 0 ? '180px' : undefined,
     marginTop: '0.75rem',
     ...tableWrapperStyle,
   }
@@ -547,6 +546,7 @@ function columnsDataTableLogsFrp({
       columns={sortableColumns}
       actions={resolvedActions}
       useDefaultActions={false}
+      fitToRows
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}

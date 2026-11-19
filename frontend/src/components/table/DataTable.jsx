@@ -1005,13 +1005,10 @@ function DataTable({
     >
       <Box
         className={['users-table-wrapper', className].filter(Boolean).join(' ')}
-        style={{
-          ...tableWrapperStyle,
-          ...(columnWidths ? { overflowX: 'auto', scrollbarWidth: 'thin' } : {}),
-        }}
-        sx={columnWidths ? {
-          '&&::-webkit-scrollbar': { display: 'block', width: 6, height: 6 },
-        } : undefined}
+        style={tableWrapperStyle}
+        role="region"
+        aria-label={tableLabel}
+        tabIndex={0}
       >
         <Table
           className="users-table"

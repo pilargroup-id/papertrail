@@ -32,7 +32,7 @@ const FRP_STATUS_DEFAULT_ORDER = {
 }
 
 function EditActionButton(props) {
-  return <ButtonEditFrp {...props} showLabel />
+  return <ButtonEditFrp {...props} showLabel /> 
 }
 
 function DetailActionButton(props) {

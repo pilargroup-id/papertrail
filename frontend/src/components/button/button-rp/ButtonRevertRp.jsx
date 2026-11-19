@@ -2,6 +2,7 @@ import { Revert } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonRevertRp({
   label = 'Revert',
+  showLabel = true,
   icon: Icon = Revert,
   size = 16,
   className = '',
@@ -10,6 +11,7 @@ function ButtonRevertRp({
 }) {
   const buttonClassName = [
     'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--revert',
+    showLabel && 'frp-icon-button--with-label',
     className,
   ]
     .filter(Boolean)
@@ -24,6 +26,7 @@ function ButtonRevertRp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }

@@ -74,7 +74,7 @@ function BudgetsPage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
-  const pageTitle = activePage?.title ?? 'Budget Type'
+  const pageTitle = activePage?.title ?? 'Budget'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [budgets, setBudgetType] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -210,7 +210,6 @@ function BudgetsPage(props) {
 
         <div className="users-table-card__actions">
           <ButtonCreateBudgets
-            variant="create"
             dialogProps={{
               onCreated: handleVendorCreated,
             }}

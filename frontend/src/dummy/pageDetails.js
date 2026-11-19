@@ -89,6 +89,12 @@ export const pageDetails = {
     value: '0',
     detail: 'Master data vendor bank account.',
   },
+  '/Master/Budgets': {
+    title: 'Budget',
+    eyebrow: 'Budget Management',
+    value: '0',
+    detail: 'Master data budget.',
+  },
   '/Master/Budget-type': {
     title: 'Budget Type',
     eyebrow: 'Budget Management',
