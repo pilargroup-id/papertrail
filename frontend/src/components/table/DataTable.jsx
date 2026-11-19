@@ -222,6 +222,7 @@ function renderColumnValue(column, row, index) {
         subtitle={subtitle}
         initials={initials}
         badge={badgeValue}
+        showAvatar={column.showAvatar !== false}
       />
     )
   }
@@ -689,9 +690,10 @@ export function DataTableChips({ items = [], empty = '-', variant = 'app', class
   )
 }
 
-export function DataTableIdentity({ title, subtitle, badge, className = '' }) {
+export function DataTableIdentity({ title, subtitle, badge, showAvatar = true, className = '' }) {
   return (
     <div className={['users-table__identity', className].filter(Boolean).join(' ')}>
+      {showAvatar ? (
       <span
         className="users-table__avatar"
         style={{
@@ -717,6 +719,7 @@ export function DataTableIdentity({ title, subtitle, badge, className = '' }) {
           <path d="M20 21a8 8 0 0 0-16 0" />
         </svg>
       </span>
+      ) : null}
 
       <div className="users-table__identity-copy">
         <div className="users-table__name-row">

@@ -382,9 +382,9 @@ const columnsDataTableBanks = [{
     key: 'frpNumber',
     header: 'FRP Number',
     accessor: 'frp_number',
-    render: (frp) => (
-      <strong className="users-table__name">{frp?.frp_number ?? '-'}</strong>
-    ),
+    type: 'identity',
+    showAvatar: false,
+    subtitleAccessor: (frp) => `Create at: ${formatDateTime(frp?.created_at)}`,
     sortAccessor: 'frp_number',
     minWidth: 220,
   },
@@ -436,17 +436,6 @@ const columnsDataTableBanks = [{
     sortAccessor: getFrpStatusLabel,
     align: 'center',
     minWidth: 120,
-  },
-  {
-    key: 'createdAt',
-    header: 'Created At',
-    accessor: 'created_at',
-    format: formatDateTime,
-    nowrap: true,
-    sortAccessor: 'created_at',
-    sortType: 'date',
-    align: 'right',
-    minWidth: 160,
   },
   {
     key: 'updatedAt',
