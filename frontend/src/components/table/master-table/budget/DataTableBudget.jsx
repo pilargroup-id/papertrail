@@ -1,6 +1,10 @@
 import DataTableAction, { DataTableStatus } from '../../DataTableAction.jsx'
 import ButtonEditBudgets from '../../../button/button-budgets/ButtonEditBudgets.jsx'
 
+function EditActionButton(props) {
+  return <ButtonEditBudgets {...props} showLabel />
+}
+
 function formatDateTime(value) {
   if (!value) {
     return '-'
@@ -152,6 +156,7 @@ function DataTableBudgetType({
   onStatusChange,
   SwitchComponent,
   mobileCard,
+  className,
   ...props
 }) {
   const shouldRenderStatusSwitch =
@@ -189,8 +194,8 @@ function DataTableBudgetType({
     typeof onEdit === 'function'
       ? {
           key: 'edit',
-          label: 'Edit Vendor Banks',
-          buttonComponent: ButtonEditBudgets,
+          label: 'Edit',
+          buttonComponent: EditActionButton,
           onClick: onEdit,
         }
       : null,
@@ -208,6 +213,9 @@ function DataTableBudgetType({
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
       mobileCard={resolvedMobileCard}
+      actionColumnPosition="start"
+      actionCellClassName="users-table__action-cell frp-table__action-cell"
+      className={['frp-table--actions', className].filter(Boolean).join(' ')}
       {...props}
     />
   )
