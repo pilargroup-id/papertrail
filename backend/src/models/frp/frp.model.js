@@ -92,6 +92,10 @@ function buildAccessFilters(query = {}) {
     params.push(...access.budgetDepartmentIds, ...access.budgetDepartmentIds);
   }
 
+  if (access.canReviewRpFrp) {
+    orWhere.push("(fr.source_module = 'RP' AND fr.status = 'PENDING')");
+  }
+
   if (!orWhere.length) {
     return {
       where: ['1 = 0'],
@@ -112,6 +116,11 @@ function buildListFilters(query = {}, user = {}) {
   const accessFilters = buildAccessFilters(query);
   where.push(...accessFilters.where);
   params.push(...accessFilters.params);
+
+  if (query.source_module) {
+    where.push('fr.source_module = ?');
+    params.push(String(query.source_module).toUpperCase());
+  }
 
   if (query.status) {
     where.push('fr.status = ?');

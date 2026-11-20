@@ -949,6 +949,23 @@ async function updateRpConvertedToFrp(conn, id, data = {}) {
   );
 }
 
+async function resetRpConversionAfterRejectedFrp(conn, rpId, frpId, user = {}) {
+  const [result] = await conn.query(
+    `UPDATE rp_requests
+     SET frp_conversion_status = 'NOT_CREATED',
+         converted_frp_request_id = NULL,
+         converted_frp_number = NULL,
+         converted_by_user_id = NULL,
+         converted_by_name = NULL,
+         converted_at = NULL,
+         updated_by_user_id = ?, updated_by_name = ?, updated_at = NOW()
+     WHERE id = ? AND converted_frp_request_id = ?
+       AND status = 'APPROVED' AND frp_conversion_status = 'CREATED'`,
+    [user.id || null, user.name || null, rpId, frpId]
+  );
+  if (result.affectedRows !== 1) throw new Error('RP conversion could not be reset');
+}
+
 async function updateRpProcurementVoided(conn, id, user = {}, reason) {
   await conn.query(
     `
@@ -1172,6 +1189,7 @@ module.exports = {
   updateRpRevertedToDestinationManager,
   updateRpConvertedToFrp,
   updateRpProcurementVoided,
+  resetRpConversionAfterRejectedFrp,
   insertRpApprovalLog,
   insertRpItemHistory,
   insertRpHeaderHistory,

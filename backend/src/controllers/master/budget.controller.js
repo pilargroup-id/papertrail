@@ -59,7 +59,13 @@ async function updateStatus(req, res, next) {
   }
 }
 
+const BudgetMovement = require('../../services/master/budgetMovement.service');
+async function transfer(req,res,next) {try {return R.created(res,await BudgetMovement.transfer(req.body,req),'Budget transferred');}catch(e){next(e);}}
+async function adjust(req,res,next) {try {return R.created(res,await BudgetMovement.adjust(req.params.id,req.body,req),'Budget adjusted');}catch(e){next(e);}}
+async function transactions(req,res,next) {try {const {rows,meta}=await BudgetMovement.history(req.query);return R.paginated(res,rows,meta,'Budget transactions retrieved');}catch(e){next(e);}}
+async function budgetTransactions(req,res,next) {try {const {rows,meta}=await BudgetMovement.history({...req.query,budget_id:req.params.id});return R.paginated(res,rows,meta,'Budget transactions retrieved');}catch(e){next(e);}}
 module.exports = {
+  transfer, adjust, transactions, budgetTransactions,
   index,
   show,
   store,

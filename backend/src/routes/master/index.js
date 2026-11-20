@@ -19,6 +19,7 @@ router.use('/external-document-types', require('./externalDocumentType.routes'))
 router.use('/payment-methods', require('./paymentMethod.routes'));
 router.use('/rp-payment-categories', require('./rpPaymentCategory.routes'));
 router.use('/currencies', require('./currency.routes'));
+router.use('/data-exchange', require('./dataExchange.routes'));
 
 router.use('/permission-modules', require('./permissionModule.routes'));
 router.use('/user-module-permissions', require('./userModulePermission.routes'));
