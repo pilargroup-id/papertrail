@@ -1,6 +1,6 @@
 import DataTableAction from '../DataTableAction.jsx'
 
-const DEFAULT_PAGINATION_PAGE_SIZE = 25
+const DEFAULT_PAGINATION_PAGE_SIZE = 50
 
 function formatDateTime(value) {
   if (!value) {
@@ -82,7 +82,7 @@ function DataTableActivityLogs({
       ? {
           summary: `${rows.length} activity log`,
           pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
-          pageSizeOptions: [10, 25, 50, 100],
+          pageSizeOptions: [50, 100, 250, 500],
         }
       : pagination
 
@@ -91,14 +91,14 @@ function DataTableActivityLogs({
       rows={rows}
       columns={columns}
       useDefaultActions={false}
+      fitToRows
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
       pagination={paginationConfig}
       className={className}
       tableWrapperStyle={{
-        flex: '0 0 auto',
-        minHeight: rows.length === 0 ? '180px' : 'auto',
+        minHeight: rows.length === 0 ? '180px' : undefined,
         ...tableWrapperStyle,
       }}
       {...props}

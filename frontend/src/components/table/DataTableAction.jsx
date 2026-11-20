@@ -219,8 +219,11 @@ function getTableWrapperStyle(
   rows,
   compactForSparseRows,
   sparseRowThreshold,
+  fitToRows,
 ) {
-  if (pagination === false || pagination === null) {
+  // fitToRows: tinggi tabel mengikuti jumlah baris sehingga pagination
+  // menempel tepat di bawah baris terakhir.
+  if (pagination === false || pagination === null || fitToRows) {
     return tableWrapperStyle
   }
 
@@ -252,8 +255,10 @@ function DataTableAction({
   defaultSort,
   compactForSparseRows = false,
   sparseRowThreshold = 5,
+  fitToRows = false,
   actionColumnLabel = 'Action',
   actionColumnKey = 'action',
+  actionColumnPosition = 'end',
   actionCellClassName = 'users-table__action-cell',
   actionCellStyle = { width: '1%', whiteSpace: 'nowrap' },
   ...props
@@ -313,7 +318,11 @@ function DataTableAction({
           ),
         }
       : null
-  const resolvedColumns = actionColumn ? [...columns, actionColumn] : columns
+  const resolvedColumns = actionColumn
+    ? actionColumnPosition === 'start'
+      ? [actionColumn, ...columns]
+      : [...columns, actionColumn]
+    : columns
   const displayColumns = enableSorting
     ? getSortableColumns(resolvedColumns, sortConfig, setSortConfig)
     : resolvedColumns
@@ -333,6 +342,7 @@ function DataTableAction({
         displayRows,
         compactForSparseRows,
         sparseRowThreshold,
+        fitToRows,
       )}
       mobileCard={
         mobileCard === false

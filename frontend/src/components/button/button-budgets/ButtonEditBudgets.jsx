@@ -2,13 +2,18 @@ import { Edit03 } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonEditBudgets({
   label = 'Edit',
+  showLabel = false,
   icon: Icon = Edit03,
   size = 16,
   className = '',
   type = 'button',
   ...buttonProps
 }) {
-  const buttonClassName = ['users-table__icon-button users-table__icon-button--pagination-card', className]
+  const buttonClassName = [
+    'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--edit',
+    showLabel && 'frp-icon-button--with-label',
+    className,
+  ]
     .filter(Boolean)
     .join(' ')
 
@@ -21,6 +26,7 @@ function ButtonEditBudgets({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }

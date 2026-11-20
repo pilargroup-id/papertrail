@@ -1,9 +1,6 @@
 import DataTableAction, { DataTableStatus } from '../../DataTableAction.jsx'
 import ButtonEditRpPaymentCategories from '../../../button/button-rp-payment-categories/ButtonEditRpPaymentCategories.jsx'
 
-const AUTO_FIT_BASE_COLUMN_COUNT = 5
-const AUTO_FIT_MIN_SCALE = 0.58
-
 function formatDateTime(value) {
   if (!value) {
     return '-'
@@ -31,70 +28,6 @@ function getFrpDocumentTypeStatusVariant(RpPaymentCategories) {
 
 function getIsFrpDocumentTypeActive(RpPaymentCategories) {
   return Number(RpPaymentCategories?.is_active) === 1
-}
-
-function joinClassNames(...classNames) {
-  return classNames.filter(Boolean).join(' ')
-}
-
-function getAutoFitScale(columnCount) {
-  const extraColumnCount = Math.max(0, columnCount - AUTO_FIT_BASE_COLUMN_COUNT)
-  const scale = 1 - extraColumnCount * 0.08
-
-  return Math.max(AUTO_FIT_MIN_SCALE, Number(scale.toFixed(2)))
-}
-
-function getScaledRem(value, scale, minValue = value * AUTO_FIT_MIN_SCALE) {
-  return `${Math.max(value * scale, minValue).toFixed(2)}rem`
-}
-
-function getScaledPx(value, scale, minValue) {
-  return `${Math.max(value * scale, minValue).toFixed(0)}px`
-}
-
-function getScaledWidth(value, scale) {
-  if (typeof value === 'number') {
-    return Math.max(1, Math.round(value * scale))
-  }
-
-  if (typeof value === 'string') {
-    const pixelValue = Number.parseFloat(value)
-
-    if (value.trim().endsWith('px') && Number.isFinite(pixelValue)) {
-      return `${Math.max(1, Math.round(pixelValue * scale))}px`
-    }
-  }
-
-  return value
-}
-
-function scaleTableColumn(column, scale) {
-  return {
-    ...column,
-    width: getScaledWidth(column.width, scale),
-    minWidth: getScaledWidth(column.minWidth, scale),
-    maxWidth: getScaledWidth(column.maxWidth, scale),
-  }
-}
-
-function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
-  return {
-    '--vendor-banks-table-cell-padding-block': getScaledRem(1, scale),
-    '--vendor-banks-table-cell-padding-inline': getScaledRem(1, scale),
-    '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
-    '--vendor-banks-table-body-font-size': getScaledRem(0.92, scale, 0.72),
-    '--vendor-banks-table-name-font-size': getScaledRem(0.98, scale, 0.74),
-    '--vendor-banks-table-meta-font-size': getScaledRem(0.74, scale, 0.58),
-    '--vendor-banks-table-avatar-size': getScaledPx(40, scale, 28),
-    '--vendor-banks-table-identity-min-width': getScaledPx(220, scale, 128),
-    '--vendor-banks-table-status-min-width': getScaledPx(86, scale, 56),
-    '--vendor-banks-table-icon-size': getScaledPx(36, scale, 28),
-    '--vendor-banks-table-switch-width': getScaledPx(42, scale, 32),
-    '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
-    '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
-    '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    ...tableWrapperStyle,
-  }
 }
 
 function renderFrpDocumentTypeStatus(RpPaymentCategories, index, {
@@ -200,8 +133,6 @@ function DataTableRpPaymentCategories({
   onStatusChange,
   SwitchComponent,
   mobileCard,
-  className,
-  tableWrapperStyle,
   ...props
 }) {
   const shouldRenderStatusSwitch =
@@ -246,27 +177,18 @@ function DataTableRpPaymentCategories({
       : null,
   ].filter(Boolean)
   const resolvedActions = Array.isArray(actions) ? actions : defaultActions
-  const autoFitColumnCount = resolvedColumns.length + (resolvedActions.length > 0 ? 1 : 0)
-  const autoFitScale = getAutoFitScale(autoFitColumnCount)
-  const autoFitColumns = resolvedColumns.map((column) => scaleTableColumn(column, autoFitScale))
 
   return (
     <DataTableAction
       rows={rows}
-      columns={autoFitColumns}
+      columns={resolvedColumns}
       actions={resolvedActions}
       useDefaultActions={false}
+      fitToRows
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
       mobileCard={resolvedMobileCard}
-      actionCellStyle={{
-        width: '1%',
-        minWidth: Math.max(32, Math.round(48 * autoFitScale)),
-        whiteSpace: 'nowrap',
-      }}
-      className={joinClassNames('vendor-banks-table--auto-fit', className)}
-      tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle)}
       {...props}
     />
   )

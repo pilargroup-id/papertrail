@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import DataTableFrp from '../../components/table/frp/DataTableFrp.jsx';
-import TabsFrpDekstop from './TabsFrpDekstop.jsx'
 import {
   canCurrentUserApproveFrp,
   canCurrentUserEditFrp,
@@ -20,6 +19,7 @@ import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFr
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsFrp from '../../components/Dialog/dialog-frp/DialogDetailsFrp.jsx'
+import DialogCreateFrp from '../../components/Dialog/dialog-frp/DialogCreateFrp.jsx'
 import {
   getFrpDetailFromResponse,
   getFrpItemsFromResponse,
@@ -196,12 +196,14 @@ function FrpPage(props) {
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set())
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
+  const [duplicateSourceFrp, setDuplicateSourceFrp] = useState(null)
   const [selectedApprovalFrp, setSelectedApprovalFrp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
@@ -214,9 +216,9 @@ function FrpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
-  const [desktopFrpStatusFilter, setDesktopFrpStatusFilter] = useState(FRP_MOBILE_STATUS_ALL)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [frpFilters, setFrpFilters] = useState({
+    status: FRP_MOBILE_STATUS_ALL,
     requestBy: '',
     vendor: '',
     createdAt: '',
@@ -332,6 +334,18 @@ function FrpPage(props) {
   const closeDetailsDialog = () => {
     setIsDetailsDialogOpen(false)
     setSelectedDetailsFrp(null)
+  }
+
+  const openDuplicateDialog = (frp) => {
+    setDuplicateSourceFrp(frp)
+    setIsDetailsDialogOpen(false)
+    setSelectedDetailsFrp(null)
+    setIsDuplicateDialogOpen(true)
+  }
+
+  const closeDuplicateDialog = () => {
+    setIsDuplicateDialogOpen(false)
+    setDuplicateSourceFrp(null)
   }
 
   const openMobileDetailsPage = (frp) => {
@@ -586,14 +600,19 @@ function FrpPage(props) {
     () => getFilterOptions(frp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
     [frp],
   )
-  const hasActiveFrpFilter = Boolean(frpFilters.requestBy || frpFilters.vendor || frpFilters.createdAt)
+  const hasActiveFrpFilter = Boolean(
+    frpFilters.requestBy ||
+      frpFilters.vendor ||
+      frpFilters.createdAt ||
+      frpFilters.status !== FRP_MOBILE_STATUS_ALL,
+  )
   const visibleFrp = frp.filter((frpItem) => {
     const matchesMobileStatus =
       mobileFrpStatusFilter === FRP_MOBILE_STATUS_ALL ||
       getFrpStatusValue(frpItem) === mobileFrpStatusFilter
     const matchesDesktopStatus =
-      desktopFrpStatusFilter === FRP_MOBILE_STATUS_ALL ||
-      getFrpStatusValue(frpItem) === desktopFrpStatusFilter
+      frpFilters.status === FRP_MOBILE_STATUS_ALL ||
+      getFrpStatusValue(frpItem) === frpFilters.status
 
     return matchesMobileStatus && matchesDesktopStatus && matchesFrpFilters(frpItem, frpFilters)
   })
@@ -606,8 +625,8 @@ function FrpPage(props) {
       : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
-    desktopFrpStatusFilter !== FRP_MOBILE_STATUS_ALL
-      ? `Belum ada FRP berstatus ${desktopFrpStatusFilter.toLowerCase()}.`
+    frpFilters.status !== FRP_MOBILE_STATUS_ALL
+      ? `Belum ada FRP berstatus ${frpFilters.status.toLowerCase()}.`
       : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
@@ -633,11 +652,8 @@ function FrpPage(props) {
             dialogId="frp-desktop-filter"
             dialogLabel="Filter FRP"
             isOpen={isDesktopFilterOpen}
+            isActive={hasActiveFrpFilter}
             onClose={() => setIsDesktopFilterOpen(false)}
-            className={[
-              'frp-page__filter-button',
-              hasActiveFrpFilter ? 'frp-page__filter-button--active' : '',
-            ].filter(Boolean).join(' ')}
             onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
           >
             <FrpFilter
@@ -649,7 +665,6 @@ function FrpPage(props) {
           </ButtonFilterFrp>
           {!isManager ? (
             <ButtonCreateFrp
-              variant="create"
               dialogProps={{
                 onCreated: handleFrpCreated,
               }}
@@ -696,13 +711,6 @@ function FrpPage(props) {
             : '',
         ].filter(Boolean).join(' ')}
       >
-        <div className="frp-page__tabs-toolbar">
-          <TabsFrpDekstop
-            activeStatus={desktopFrpStatusFilter}
-            onStatusChange={setDesktopFrpStatusFilter}
-          />
-        </div>
-
         <DataTableFrp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}
@@ -750,6 +758,16 @@ function FrpPage(props) {
         title={`Detail ${getFrpEditLabel(selectedDetailsFrp)}`}
         frp={selectedDetailsFrp}
         onClose={closeDetailsDialog}
+        onDuplicate={openDuplicateDialog}
+      />
+
+      <DialogCreateFrp
+        key={duplicateSourceFrp?.id ?? 'duplicate-frp'}
+        isOpen={isDuplicateDialogOpen}
+        title={`Duplicate ${getFrpEditLabel(duplicateSourceFrp)}`}
+        duplicateFrom={duplicateSourceFrp}
+        onClose={closeDuplicateDialog}
+        onCreated={handleFrpCreated}
       />
 
       <DialogApproveFrp

@@ -5,7 +5,7 @@ import ButtonDetailsFrp from '../../button/button-frp/ButtonDetailsFrp.jsx'
 import { ChevronDown, ChevronUp } from '../../layoute/TemplateIcons.jsx'
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 25
+const DEFAULT_PAGINATION_PAGE_SIZE = 50
 const FRP_STATUS_DEFAULT_ORDER = {
   PENDING: 0,
   APPROVED: 1,
@@ -131,7 +131,6 @@ function scaleTableColumn(column, scale) {
 
 function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
   return {
-    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
@@ -146,8 +145,7 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    flex: '0 0 auto',
-    minHeight: rowCount === 0 ? '180px' : 'auto',
+    minHeight: rowCount === 0 ? '180px' : undefined,
     marginTop: '0.75rem',
     ...tableWrapperStyle,
   }
@@ -538,7 +536,7 @@ function columnsDataTableLogsFrp({
       ? {
           summary: `${rows.length} data FRP`,
           pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
-          pageSizeOptions: [10, 25, 50, 100],
+          pageSizeOptions: [50, 100, 250, 500],
         }
       : pagination
 
@@ -548,6 +546,7 @@ function columnsDataTableLogsFrp({
       columns={sortableColumns}
       actions={resolvedActions}
       useDefaultActions={false}
+      fitToRows
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}

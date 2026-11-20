@@ -371,6 +371,12 @@ function isFrpCreator(user = {}, frp = {}) {
   return String(frp.requested_by_user_id || '') === String(user.id || '');
 }
 
+function isCrossDepartmentFrp(frp = {}) {
+  const budgetDepartmentId = Number(frp.approval_budget_department_id || 0);
+
+  return Boolean(budgetDepartmentId) && budgetDepartmentId !== Number(frp.department_id || 0);
+}
+
 function canApproveFrp(user = {}, frp = {}) {
   if (isFrpCreator(user, frp)) {
     return false;
@@ -380,10 +386,17 @@ function canApproveFrp(user = {}, frp = {}) {
     return false;
   }
 
-  return (
-    userHasCompanyScope(user, frp.company_id) &&
-    userHasDepartmentClassScope(user, frp.department_id, frp.class_department_id)
-  );
+  if (!userHasCompanyScope(user, frp.company_id)) {
+    return false;
+  }
+
+  // FRP yang memakai budget department lain di-approve oleh manager department budget,
+  // bukan manager department pembuat.
+  if (isCrossDepartmentFrp(frp)) {
+    return getUserDepartmentIds(user).includes(Number(frp.approval_budget_department_id));
+  }
+
+  return userHasDepartmentClassScope(user, frp.department_id, frp.class_department_id);
 }
 
 function canRejectFrp(user = {}, frp = {}) {

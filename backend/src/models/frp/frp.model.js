@@ -246,7 +246,14 @@ async function listFrpRequests(conn, query = {}, user = {}) {
         fr.reverted_at,
         fr.reverted_reason,
         fr.created_at,
-        fr.updated_at
+        fr.updated_at,
+        (
+          SELECT MIN(mb_approval.department_id)
+          FROM frp_request_items fri_approval
+          INNER JOIN master_budgets mb_approval
+            ON mb_approval.id = fri_approval.budget_id
+          WHERE fri_approval.frp_request_id = fr.id
+        ) AS approval_budget_department_id
       FROM frp_requests fr
       ${whereSql}
       ORDER BY fr.created_at DESC
@@ -273,9 +280,17 @@ async function getFrpHeaderById(conn, id, options = {}) {
 
   const [rows] = await conn.query(
     `
-      SELECT *
-      FROM frp_requests
-      WHERE id = ?
+      SELECT
+        fr.*,
+        (
+          SELECT MIN(mb_approval.department_id)
+          FROM frp_request_items fri_approval
+          INNER JOIN master_budgets mb_approval
+            ON mb_approval.id = fri_approval.budget_id
+          WHERE fri_approval.frp_request_id = fr.id
+        ) AS approval_budget_department_id
+      FROM frp_requests fr
+      WHERE fr.id = ?
       ${lockSql}
     `,
     [id]

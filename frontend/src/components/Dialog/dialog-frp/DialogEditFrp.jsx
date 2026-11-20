@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 
 import api from '../../../services/api.js'
-import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
-import TabsInformation from './tabs-edit-frp/TabsInformation.jsx'
-import TabsItems from './tabs-edit-frp/TabsItems.jsx'
-import TabsVendor from './tabs-edit-frp/TabsVendor.jsx'
+import { XClose } from '../../layoute/TemplateIcons.jsx'
+import TabsInformation from './tabs-create-frp/TabsInformation.jsx'
+import TabsItems from './tabs-create-frp/TabsItems.jsx'
+import TabsVendor from './tabs-create-frp/TabsVendor.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -22,6 +29,17 @@ const editInitialItem = () => ({
   quantity: '1',
   unit_price: '',
 })
+
+// The API returns decimal strings such as "2.00"; show whole numbers without the decimals.
+function formatQuantityInputValue(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return '1'
+  }
+
+  return String(numberValue)
+}
 
 function isPositiveIntegerInput(value) {
   const normalizedValue = String(value ?? '').trim()
@@ -301,7 +319,7 @@ function mapFrpItemsToFormItems(items) {
   return items.map((item) => ({
     budget_id: getFirstValue(item, ['budget_id', 'budgetId'], ''),
     memo: getFirstValue(item, ['memo', 'description'], ''),
-    quantity: String(getFirstValue(item, ['quantity'], '1')),
+    quantity: formatQuantityInputValue(getFirstValue(item, ['quantity'], '1')),
     unit_price: String(getFirstValue(item, ['unit_price', 'unitPrice'], '')),
   }))
 }
@@ -1329,10 +1347,6 @@ function DialogEditFrp({
     }
   }
 
-  if (!isOpen || typeof document === 'undefined') {
-    return null
-  }
-
   const isFormDisabled = isSubmitting || isOptionsLoading
   const exchangeRate = toNumber(formValues.exchange_rate || 1)
   const totalAmountIdr = formValues.items.reduce((total, item) => {
@@ -1358,119 +1372,191 @@ function DialogEditFrp({
         )
       : frpDocumentTypeDropdownOptions
 
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation">
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-edit-frp-title"
-        onClick={(event) => event.stopPropagation()}
+  return (
+    <Drawer
+      anchor="right"
+      open={isOpen}
+      onClose={handleClose}
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
+            maxWidth: '100%',
+          },
+        },
+      }}
+    >
+      <Box
+        component="form"
+        onSubmit={handleSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
       >
-        <form onSubmit={handleSubmit}>
-          <div className="dashboard-popup__header">
-            <div>
-              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-              <h2 className="dashboard-popup__title" id="dialog-edit-frp-title">
-                {title}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="frp-bare-icon-button frp-dialog__close-button"
-              aria-label="Tutup dialog"
-              onClick={handleClose}
-              disabled={isSubmitting}
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            px: 3,
+            py: 2,
+            bgcolor: '#344968',
+            color: '#fff',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                lineHeight: 1.6,
+                letterSpacing: 0.5,
+                color: 'rgba(255, 255, 255, 0.72)',
+              }}
             >
-              <XClose size={24} />
-            </button>
-          </div>
-
-          <div className="dashboard-popup__body">
-            <div className="register-user-popup__layout">
-              <div className="register-user-popup__main">
-                <div className="register-user-popup__form">
-                  <div className="frp-dialog__panel">
-                    <TabsInformation
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      externalDocumentTypeOptions={externalDocumentTypeOptions}
-                      frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
-                      attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
-                      attachmentDraft={attachmentDraft}
-                      existingAttachments={existingAttachments}
-                      attachmentActionError={attachmentActionError}
-                      updateValue={updateValue}
-                      updateDocumentTypeIds={updateDocumentTypeIds}
-                      updateAttachmentDocumentType={updateAttachmentDocumentType}
-                      updateAttachmentFile={updateAttachmentFile}
-                      removeAttachmentDraft={removeAttachmentDraft}
-                      previewAttachmentDraft={previewAttachmentDraft}
-                      previewExistingAttachment={previewExistingAttachment}
-                      removeExistingAttachment={removeExistingAttachment}
-                    />
-
-                    <TabsVendor
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      vendorOptions={vendorOptions}
-                      filteredVendorBankOptions={filteredVendorBankOptions}
-                      paymentMethodOptions={paymentMethodOptions}
-                      updateValue={updateValue}
-                      handleVendorBankChange={handleVendorBankChange}
-                    />
-
-                    <TabsItems
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      budgetOptions={budgetOptions}
-                      updateValue={updateValue}
-                      updateItemValue={updateItemValue}
-                      removeItem={removeItem}
-                      addItem={addItem}
-                      duplicateLastItem={duplicateLastItem}
-                    />
-                  </div>
-
-                  {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
-                  {submitError ? <p className="form-control__message">{submitError}</p> : null}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
-            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
-              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
-                <TrendingUp size={18} />
-              </span>
-              <div>
-                <span className="frp-dialog__total-amount-label">Total Amount (IDR)</span>
-                <strong>{formatRupiah(totalAmountIdr)}</strong>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="dashboard-popup__button dashboard-popup__button--primary"
-              disabled={isFormDisabled}
+              {eyebrow}
+            </Typography>
+            <Typography
+              variant="h6"
+              id="dialog-edit-frp-title"
+              sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
             >
-              {isSubmitting ? 'Updating...' : isOptionsLoading ? 'Loading...' : 'Update'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              {title}
+            </Typography>
+          </Box>
+
+          <IconButton
+            aria-label="Tutup dialog"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            sx={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              borderRadius: '5px',
+              color: '#fff',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
+            }}
+          >
+            <XClose size={20} />
+          </IconButton>
+        </Stack>
+
+        <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
+          <TabsInformation
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            externalDocumentTypeOptions={externalDocumentTypeOptions}
+            frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+            attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
+            attachmentDraft={attachmentDraft}
+            existingAttachments={existingAttachments}
+            attachmentActionError={attachmentActionError}
+            previewExistingAttachment={previewExistingAttachment}
+            removeExistingAttachment={removeExistingAttachment}
+            showNotes
+            updateValue={updateValue}
+            updateDocumentTypeIds={updateDocumentTypeIds}
+            updateAttachmentDocumentType={updateAttachmentDocumentType}
+            updateAttachmentFile={updateAttachmentFile}
+            removeAttachmentDraft={removeAttachmentDraft}
+            previewAttachmentDraft={previewAttachmentDraft}
+          />
+
+          <TabsVendor
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            vendorOptions={vendorOptions}
+            filteredVendorBankOptions={filteredVendorBankOptions}
+            paymentMethodOptions={paymentMethodOptions}
+            updateValue={updateValue}
+            handleVendorBankChange={handleVendorBankChange}
+          />
+
+          <TabsItems
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            budgetOptions={budgetOptions}
+            updateValue={updateValue}
+            updateItemValue={updateItemValue}
+            removeItem={removeItem}
+            addItem={addItem}
+            duplicateLastItem={duplicateLastItem}
+            preserveLoadedExchangeRate
+          />
+
+          {optionsError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {optionsError}
+            </Alert>
+          ) : null}
+          {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+        </Box>
+
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 3,
+            py: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Total Amount (IDR)
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {formatRupiah(totalAmountIdr)}
+            </Typography>
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isFormDisabled}
+            sx={{
+              height: 44,
+              minWidth: 140,
+              px: 2.25,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              bgcolor: 'var(--accent-teal, #2a9d8f)',
+              boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+              '&:hover': {
+                bgcolor: 'var(--accent-teal-dark, #21867a)',
+                boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                transform: 'translateY(-1px)',
+              },
+              '&:active': {
+                transform: 'translateY(0)',
+              },
+              '&:focus-visible': {
+                boxShadow:
+                  '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
+              },
+              '&.Mui-disabled': {
+                boxShadow: 'none',
+              },
+            }}
+          >
+            {isSubmitting ? 'Updating...' : isOptionsLoading ? 'Loading...' : 'Update'}
+          </Button>
+        </Stack>
+      </Box>
+    </Drawer>
   )
-
-  return createPortal(dialogNode, document.body)
 }
 
 export default DialogEditFrp

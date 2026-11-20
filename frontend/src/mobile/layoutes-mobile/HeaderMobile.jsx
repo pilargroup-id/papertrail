@@ -377,6 +377,9 @@ function HeaderMobile({
     )
   }
 
+  const pageTitle = breadcrumb.find((item) => item.active)?.label ?? breadcrumb.at(-1)?.label
+  const hasActions = hasNotification || Boolean(onRefresh) || showMenuButton
+
   return (
     <header className="header-main header-main--mobile">
       <div className="header-breadcrumb">
@@ -391,40 +394,28 @@ function HeaderMobile({
             {renderBreadcrumb()}
           </nav>
 
-          {hasSearch && !hasHeaderTabs ? (
-            <label
-              className="header-search header-search--compact"
-              aria-label={searchProps.ariaLabel ?? 'Search'}
-            >
-              <SearchMd size={16} className="header-search__icon header-search__icon--compact" />
-              <input
-                type="search"
-                className="header-search__input header-search__input--compact"
-                value={searchProps.value ?? ''}
-                placeholder={searchProps.placeholder ?? 'Search...'}
-                onChange={searchProps.onChange}
-                aria-label={searchProps.ariaLabel ?? 'Search'}
-                autoComplete="off"
-              />
-            </label>
-          ) : null}
+          {hasActions ? (
+            <div className="mobile-header__actions">
+              {renderHeaderActions(true)}
 
-          {!hasHeaderTabs ? renderHeaderActions() : null}
-
-          {showMenuButton ? (
-            <button
-              type="button"
-              className="header-menu-button header-menu-button--toolbar header-menu-button--plain"
-              aria-label="Open sidebar"
-              onClick={onMenuToggle}
-            >
-              <Menu01 size={20} />
-            </button>
+              {showMenuButton ? (
+                <button
+                  type="button"
+                  className="header-icon-button header-icon-button--compact header-icon-button--plain mobile-header-tabs__action"
+                  aria-label="Open sidebar"
+                  onClick={onMenuToggle}
+                >
+                  <Menu01 size={18} />
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
         {hasHeaderTabs ? (
           <div className="mobile-header-tabs-row">
+            {pageTitle ? <h1 className="mobile-header__title">{pageTitle}</h1> : null}
+
             {isHeaderTabsDropdown ? (
               <button
                 ref={headerTabsDropdownTriggerRef}
@@ -465,12 +456,24 @@ function HeaderMobile({
                 })}
               </nav>
             )}
-
-            {hasNotification || onRefresh ? (
-              <div className="mobile-header-tabs__actions">
-                {renderHeaderActions(true)}
-              </div>
-            ) : null}
+          </div>
+        ) : hasSearch ? (
+          <div className="mobile-header-search-row">
+            <label
+              className="header-search header-search--compact mobile-header-search"
+              aria-label={searchProps.ariaLabel ?? 'Search'}
+            >
+              <SearchMd size={16} className="header-search__icon header-search__icon--compact" />
+              <input
+                type="search"
+                className="header-search__input header-search__input--compact"
+                value={searchProps.value ?? ''}
+                placeholder={searchProps.placeholder ?? 'Search...'}
+                onChange={searchProps.onChange}
+                aria-label={searchProps.ariaLabel ?? 'Search'}
+                autoComplete="off"
+              />
+            </label>
           </div>
         ) : null}
       </div>

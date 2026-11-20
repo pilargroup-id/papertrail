@@ -23,11 +23,24 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 25
+const AUTO_FIT_SHRINK_STEP = 0.04
+const DEFAULT_PAGINATION_PAGE_SIZE = 50
 const FRP_STATUS_DEFAULT_ORDER = {
   PENDING: 0,
   APPROVED: 1,
   REJECTED: 2,
+}
+
+function EditActionButton(props) {
+  return <ButtonEditFrp {...props} showLabel /> 
+}
+
+function DetailActionButton(props) {
+  return <ButtonDetailsFrp {...props} showLabel />
+}
+
+function PrintActionButton(props) {
+  return <ButtonPrintFrp {...props} showLabel />
 }
 
 function formatDateTime(value) {
@@ -101,7 +114,7 @@ function joinClassNames(...classNames) {
 
 function getAutoFitScale(columnCount) {
   const extraColumnCount = Math.max(0, columnCount - AUTO_FIT_BASE_COLUMN_COUNT)
-  const scale = 1 - extraColumnCount * 0.08
+  const scale = 1 - extraColumnCount * AUTO_FIT_SHRINK_STEP
 
   return Math.max(AUTO_FIT_MIN_SCALE, Number(scale.toFixed(2)))
 }
@@ -147,9 +160,9 @@ function scaleTableColumn(column, scale) {
   }
 }
 
-function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
+function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   return {
-    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
+    '--data-table-action-min-height': 'min(52dvh, 520px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
@@ -164,8 +177,6 @@ function getAutoFitWrapperStyle(scale, tableWrapperStyle, rowCount) {
     '--vendor-banks-table-switch-height': getScaledPx(24, scale, 18),
     '--vendor-banks-table-switch-thumb': getScaledPx(18, scale, 14),
     '--vendor-banks-table-switch-thumb-translate': getScaledPx(18, scale, 14),
-    flex: '0 0 auto',
-    minHeight: rowCount === 0 ? '180px' : 'auto',
     marginTop: '0.75rem',
     ...tableWrapperStyle,
   }
@@ -372,7 +383,8 @@ const columnsDataTableBanks = [{
     header: 'FRP Number',
     accessor: 'frp_number',
     type: 'identity',
-    subtitleAccessor: (frp) => `Date: ${formatDateTime(frp?.created_at)}`,
+    showAvatar: false,
+    subtitleAccessor: (frp) => `Create at: ${formatDateTime(frp?.created_at)}`,
     sortAccessor: 'frp_number',
     minWidth: 220,
   },
@@ -558,7 +570,7 @@ function DataTableFrp({
       ? {
           key: 'print',
           label: 'Print',
-          buttonComponent: ButtonPrintFrp,
+          buttonComponent: PrintActionButton,
           mobileHidden: true,
           hidden: (frp) => isPrintActionHidden(frp),
           onClick: onPrint,
@@ -567,8 +579,8 @@ function DataTableFrp({
     typeof onEdit === 'function'
       ? {
           key: 'edit',
-          label: 'Edit FRP',
-          buttonComponent: ButtonEditFrp,
+          label: 'Edit',
+          buttonComponent: EditActionButton,
           mobileButtonComponent: MobileButtonEditFrp,
           mobilePlacement: 'header-start',
           hidden: (frp) => !canCurrentUserEditFrp(frp, currentUser) || getFrpStatusValue(frp) === 'APPROVED',
@@ -578,8 +590,8 @@ function DataTableFrp({
     typeof onDetails === 'function'
       ? {
           key: 'details',
-          label: 'Details FRP',
-          buttonComponent: ButtonDetailsFrp,
+          label: 'Detail',
+          buttonComponent: DetailActionButton,
           mobileHidden: true,
           hidden: () => !canAccessFrpButton(currentUser, 'details'),
           onClick: onDetails,
@@ -625,7 +637,7 @@ function DataTableFrp({
       ? {
           summary: `${rows.length} data FRP`,
           pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
-          pageSizeOptions: [10, 25, 50, 100],
+          pageSizeOptions: [50, 100, 250, 500],
         }
       : pagination
 
@@ -640,6 +652,7 @@ function DataTableFrp({
       emptyMessage={emptyMessage}
       pagination={paginationConfig}
       mobileCard={resolvedMobileCard}
+      actionColumnPosition="start"
       actionCellClassName="users-table__action-cell frp-table__action-cell"
       actionCellStyle={{
         width: '1%',
@@ -647,7 +660,7 @@ function DataTableFrp({
         whiteSpace: 'nowrap',
       }}
       className={joinClassNames('vendor-banks-table--auto-fit frp-table--actions', className)}
-      tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle, rows.length)}
+      tableWrapperStyle={getAutoFitWrapperStyle(autoFitScale, tableWrapperStyle)}
       {...props}
     />
   )

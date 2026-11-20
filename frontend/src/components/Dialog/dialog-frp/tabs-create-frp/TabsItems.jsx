@@ -1,14 +1,56 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
+import Autocomplete from '@mui/material/Autocomplete'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableContainer from '@mui/material/TableContainer'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 
 import api from '../../../../services/api.js'
-import TextField from '../../../forms/TextField.jsx'
-import Dropdown from '../../../forms/dropdown/Dropdown.jsx'
-import DropdownSearch from '../../../forms/dropdown/DropdownSearch.jsx'
-import { Copy, Lock, Plus, Table01, Trash03, TrendingUp } from '../../../layoute/TemplateIcons.jsx'
+import { Copy, Plus, Trash03 } from '../../../layoute/TemplateIcons.jsx'
+import SectionHeader from './SectionHeader.jsx'
+import { autocompleteSlotProps, autocompleteSlots } from './autocompleteStyles.js'
 
 const fallbackCurrencyOptions = [{ value: 'IDR', label: 'IDR - Indonesian Rupiah' }]
 const currenciesPageSize = 100
 const maxCurrencyPages = 100
+
+const itemTableSx = {
+  minWidth: 880,
+  tableLayout: 'fixed',
+  '& .MuiTableCell-root': {
+    px: 1,
+    py: 1,
+    verticalAlign: 'top',
+    borderColor: 'divider',
+    fontSize: '0.8125rem',
+  },
+  '& .MuiTableCell-root:first-of-type': { pl: 1.5 },
+  '& .MuiTableCell-root:last-of-type': { pr: 1.5 },
+  '& .MuiTableHead-root .MuiTableCell-root': {
+    py: 1.25,
+    bgcolor: 'rgba(52, 73, 104, 0.04)',
+    color: 'text.secondary',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    verticalAlign: 'middle',
+  },
+  '& .MuiTableBody-root .MuiTableRow-root:last-of-type .MuiTableCell-root': {
+    borderBottom: 0,
+  },
+  '& .MuiInputBase-input': { fontSize: '0.8125rem' },
+  '& input[type="number"]': { textAlign: 'right' },
+  '& .MuiFormHelperText-root': { mx: 0, mt: 0.5, lineHeight: 1.35 },
+}
 
 function toNumber(value) {
   const normalizedValue = Number(value)
@@ -182,6 +224,14 @@ function formatRupiah(value) {
   }).format(numberValue)
 }
 
+function getOptionByValue(options, value) {
+  if (value === undefined || value === null || value === '') {
+    return null
+  }
+
+  return options.find((option) => String(option.value) === String(value)) ?? null
+}
+
 function getSelectedBudgetOption(budgetOptions, budgetId) {
   return budgetOptions.find((option) => String(option.value) === String(budgetId))
 }
@@ -203,6 +253,7 @@ function TabsItems({
   removeItem,
   addItem,
   duplicateLastItem,
+  preserveLoadedExchangeRate = false,
 }) {
   const [currencyOptions, setCurrencyOptions] = useState(fallbackCurrencyOptions)
   const [isCurrenciesLoading, setIsCurrenciesLoading] = useState(false)
@@ -210,6 +261,7 @@ function TabsItems({
   const [exchangeRateMessage, setExchangeRateMessage] = useState('')
   const currencyCode = String(formValues.currency_code || 'IDR').trim().toUpperCase()
   const exchangeRate = toNumber(formValues.exchange_rate || 1)
+  const wasOptionsLoadingRef = useRef(isOptionsLoading)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -245,6 +297,9 @@ function TabsItems({
   }, [])
 
   useEffect(() => {
+    const wasOptionsLoading = wasOptionsLoadingRef.current
+    wasOptionsLoadingRef.current = isOptionsLoading
+
     if (!currencyCode) {
       updateValue('exchange_rate', '')
       setExchangeRateMessage('')
@@ -254,6 +309,12 @@ function TabsItems({
     if (currencyCode === 'IDR') {
       updateValue('exchange_rate', '1')
       setExchangeRateMessage('')
+      return undefined
+    }
+
+    if (preserveLoadedExchangeRate && wasOptionsLoading && !isOptionsLoading) {
+      // An existing FRP just finished loading: keep its saved exchange rate
+      // instead of overwriting it with the latest rate.
       return undefined
     }
 
@@ -306,230 +367,290 @@ function TabsItems({
     return () => {
       controller.abort()
     }
-  }, [currencyCode, formValues.frp_date])
+  }, [currencyCode, formValues.frp_date, isOptionsLoading, preserveLoadedExchangeRate])
 
   return (
-    <>
-      <section className="frp-dialog__section">
-        <div className="frp-dialog__section-header">
-          <span className="frp-dialog__section-icon" aria-hidden="true">
-            <TrendingUp size={18} />
-          </span>
-          <div className="frp-dialog__section-copy">
-            <p className="frp-dialog__section-title">Currency &amp; Summary</p>
-            <p className="frp-dialog__section-desc">
-              Tentukan mata uang dan kurs yang berlaku untuk seluruh item di bawah.
-            </p>
-          </div>
-        </div>
+    <Box component="section" sx={{ mb: 4 }}>
+      <SectionHeader
+        title="Currency & Summary"
+      />
 
-        <div className="register-user-popup__grid register-user-popup__grid--frp-currency-row">
-          <div className="register-user-popup__field">
-            <Dropdown
-              label="Currency"
-              value={formValues.currency_code}
-              options={currencyOptions}
-              placeholder={isCurrenciesLoading ? 'Memuat currency...' : 'Pilih currency'}
-              required
-              disabled={isFormDisabled || isCurrenciesLoading}
-              error={fieldErrors.currency_code}
-              onChange={(value) => updateValue('currency_code', value)}
-            />
-          </div>
-          <div className="register-user-popup__field">
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+          gap: 2,
+        }}
+      >
+        <Autocomplete
+          slots={autocompleteSlots}
+          slotProps={autocompleteSlotProps}
+          fullWidth
+          size="small"
+          disableClearable
+          options={currencyOptions}
+          value={getOptionByValue(currencyOptions, formValues.currency_code) ?? fallbackCurrencyOptions[0]}
+          getOptionLabel={(option) => option?.label ?? ''}
+          isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
+          disabled={isFormDisabled || isCurrenciesLoading}
+          loading={isCurrenciesLoading}
+          onChange={(_, option) => updateValue('currency_code', option?.value ?? '')}
+          renderInput={(params) => (
             <TextField
-              label="Exchange Rate"
-              value={formValues.exchange_rate}
-              placeholder={isExchangeRateLoading ? 'Memuat exchange rate...' : 'Exchange rate'}
-              leftIcon={TrendingUp}
-              type="number"
-              min="0"
-              step="0.0001"
+              {...params}
               required
-              disabled={isFormDisabled || isExchangeRateLoading}
-              error={fieldErrors.exchange_rate}
-              helperText={exchangeRateMessage}
-              onChange={(event) => updateValue('exchange_rate', event.target.value)}
+              label="Currency"
+              placeholder={isCurrenciesLoading ? 'Memuat currency...' : 'Pilih currency'}
+              error={Boolean(fieldErrors.currency_code)}
+              helperText={fieldErrors.currency_code}
             />
-          </div>
-        </div>
+          )}
+        />
 
-        <div className="frp-dialog__section-divider" role="separator" aria-hidden="true" />
+        <TextField
+          fullWidth
+          size="small"
+          required
+          type="number"
+          label="Exchange Rate"
+          placeholder={isExchangeRateLoading ? 'Memuat exchange rate...' : 'Exchange rate'}
+          value={formValues.exchange_rate}
+          disabled={isFormDisabled || isExchangeRateLoading}
+          error={Boolean(fieldErrors.exchange_rate)}
+          helperText={fieldErrors.exchange_rate || exchangeRateMessage}
+          onChange={(event) => updateValue('exchange_rate', event.target.value)}
+          slotProps={{ htmlInput: { min: 0, step: '0.0001' } }}
+        />
+      </Box>
 
-        <div className="frp-dialog__section-header">
-          <span className="frp-dialog__section-icon" aria-hidden="true">
-            <Table01 size={18} />
-          </span>
-          <div className="frp-dialog__section-copy">
-            <p className="frp-dialog__section-title">Item List</p>
-            <p className="frp-dialog__section-desc">
-              Rincian budget, quantity, dan harga satuan untuk setiap item pembayaran.
-            </p>
-          </div>
-        </div>
+      <Box sx={{ height: 32 }} />
 
-        <div className="frp-dialog__items">
-          {formValues.items.map((item, index) => {
-            const quantity = toNumber(item.quantity)
-            const unitPrice = toNumber(item.unit_price)
-            const amountIdr = quantity * unitPrice * exchangeRate
-            const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
-            const budgetAmount = formatRupiah(
-              getBudgetMetaValue(selectedBudgetOption, 'budgetAmount'),
-            )
-            const budgetRemaining = formatRupiah(
-              getBudgetMetaValue(selectedBudgetOption, 'budgetRemaining'),
-            )
+      <SectionHeader
+        title="Item List"
+      />
 
-            return (
-              <div className="frp-dialog__item" key={`frp-item-${index}`}>
-                <div className="frp-dialog__item-header">
-                  <strong>Item {index + 1}</strong>
-                  <button
-                    type="button"
-                    className="frp-dialog__icon-button"
-                    aria-label={`Hapus item ${index + 1}`}
-                    disabled={isFormDisabled || formValues.items.length === 1}
-                    onClick={() => removeItem(index)}
-                  >
-                    <Trash03 size={16} />
-                  </button>
-                </div>
+      <Stack spacing={2}>
+        <TableContainer
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '8px',
+          }}
+        >
+          <Table size="small" sx={itemTableSx}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: 44 }} align="center">
+                  #
+                </TableCell>
+                <TableCell sx={{ minWidth: 280 }}>Budget</TableCell>
+                <TableCell sx={{ minWidth: 200 }}>Memo</TableCell>
+                <TableCell sx={{ width: 96 }} align="right">
+                  Qty
+                </TableCell>
+                <TableCell sx={{ width: 170 }} align="right">
+                  Unit Price ({currencyCode || 'IDR'})
+                </TableCell>
+                <TableCell sx={{ width: 150 }} align="right">
+                  Amount (IDR)
+                </TableCell>
+                <TableCell sx={{ width: 52 }} />
+              </TableRow>
+            </TableHead>
 
-                <div className="register-user-popup__grid register-user-popup__grid--frp-three register-user-popup__grid--frp-budget-row">
-                  <div className="register-user-popup__field frp-dialog__budget-field">
-                    <DropdownSearch
-                      label="Budget"
-                      value={item.budget_id}
-                      options={budgetOptions}
-                      placeholder={isOptionsLoading ? 'Memuat budget...' : 'Pilih budget'}
-                      searchPlaceholder="Cari budget..."
-                      emptyMessage="Budget aktif tidak ditemukan."
-                      required
-                      disabled={isFormDisabled}
-                      error={fieldErrors[`items.${index}.budget_id`]}
-                      onChange={(value) => updateItemValue(index, 'budget_id', value)}
-                    />
-                  </div>
-                  <div className="register-user-popup__field">
-                    <TextField
-                      label="Budget Amount"
-                      className="form-control--readonly-field"
-                      value={budgetAmount}
-                      placeholder="-"
-                      leftIcon={Lock}
-                      disabled
-                      readOnly
-                    />
-                  </div>
-                  <div className="register-user-popup__field">
-                    <TextField
-                      label="Budget Remaining"
-                      className="form-control--readonly-field"
-                      value={budgetRemaining}
-                      placeholder="-"
-                      leftIcon={Lock}
-                      disabled
-                      readOnly
-                    />
-                  </div>
-                </div>
+            <TableBody>
+              {formValues.items.map((item, index) => {
+                const quantity = toNumber(item.quantity)
+                const unitPrice = toNumber(item.unit_price)
+                const amountIdr = quantity * unitPrice * exchangeRate
+                const selectedBudgetOption = getSelectedBudgetOption(budgetOptions, item.budget_id)
+                const budgetAmount = formatRupiah(
+                  getBudgetMetaValue(selectedBudgetOption, 'budgetAmount'),
+                )
+                const budgetRemaining = formatRupiah(
+                  getBudgetMetaValue(selectedBudgetOption, 'budgetRemaining'),
+                )
+                const budgetError = fieldErrors[`items.${index}.budget_id`]
+                const memoError = fieldErrors[`items.${index}.memo`]
+                const quantityError = fieldErrors[`items.${index}.quantity`]
+                const unitPriceError = fieldErrors[`items.${index}.unit_price`]
 
-                <div className="register-user-popup__grid register-user-popup__grid--frp-item-row">
-                  <div className="register-user-popup__field">
-                    <TextField
-                      label="Quantity"
-                      value={item.quantity}
-                      placeholder="Qty"
-                      leftIcon={Table01}
-                      type="number"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      min="0"
-                      step="1"
-                      required
-                      disabled={isFormDisabled}
-                      error={fieldErrors[`items.${index}.quantity`]}
-                      onKeyDown={preventNonIntegerInput}
-                      onPaste={(event) => {
-                        if (!isIntegerInputValue(event.clipboardData.getData('text'))) {
-                          event.preventDefault()
+                return (
+                  <TableRow key={`frp-item-${index}`}>
+                    <TableCell align="center" sx={{ color: 'text.secondary', pt: '14px' }}>
+                      {index + 1}
+                    </TableCell>
+
+                    <TableCell>
+                      <Autocomplete
+                        slots={autocompleteSlots}
+                        slotProps={autocompleteSlotProps}
+                        fullWidth
+                        size="small"
+                        options={budgetOptions}
+                        value={getOptionByValue(budgetOptions, item.budget_id)}
+                        getOptionLabel={(option) => option?.label ?? ''}
+                        isOptionEqualToValue={(option, value) =>
+                          String(option.value) === String(value?.value)
                         }
-                      }}
-                      onChange={(event) => {
-                        if (isIntegerInputValue(event.target.value)) {
-                          updateItemValue(index, 'quantity', event.target.value)
+                        disabled={isFormDisabled}
+                        loading={isOptionsLoading}
+                        onChange={(_, option) =>
+                          updateItemValue(index, 'budget_id', option?.value ?? '')
                         }
-                      }}
-                    />
-                  </div>
-                  <div className="register-user-popup__field">
-                    <TextField
-                      label={`Unit Price (${currencyCode || 'IDR'})`}
-                      value={item.unit_price}
-                      placeholder="Input unit price"
-                      leftIcon={TrendingUp}
-                      type="number"
-                      min="0"
-                      step="1"
-                      required
-                      disabled={isFormDisabled}
-                      error={fieldErrors[`items.${index}.unit_price`]}
-                      onChange={(event) =>
-                        updateItemValue(index, 'unit_price', event.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="register-user-popup__field">
-                    <TextField
-                      label="Amount (IDR)"
-                      className="form-control--readonly-field"
-                      value={formatRupiah(Number.isFinite(amountIdr) ? amountIdr : 0)}
-                      leftIcon={Lock}
-                      disabled
-                      readOnly
-                    />
-                  </div>
-                  <div className="register-user-popup__field">
-                    <TextField
-                      label="Memo"
-                      value={item.memo}
-                      placeholder="Input memo"
-                      required
-                      disabled={isFormDisabled}
-                      error={fieldErrors[`items.${index}.memo`]}
-                      onChange={(event) => updateItemValue(index, 'memo', event.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            placeholder={isOptionsLoading ? 'Memuat budget...' : 'Pilih budget'}
+                            error={Boolean(budgetError)}
+                            helperText={budgetError}
+                          />
+                        )}
+                      />
+                      {selectedBudgetOption && (budgetAmount || budgetRemaining) ? (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          component="div"
+                          sx={{ mt: 0.5, lineHeight: 1.4 }}
+                        >
+                          Budget {budgetAmount || '-'}
+                          <Box component="span" sx={{ mx: 0.75, color: 'divider' }}>
+                            |
+                          </Box>
+                          Sisa {budgetRemaining || '-'}
+                        </Typography>
+                      ) : null}
+                    </TableCell>
 
-          <div className="frp-dialog__item-actions">
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--outline-teal frp-dialog__add-item"
-              disabled={isFormDisabled}
-              onClick={addItem}
-            >
-              <Plus size={16} />
-              Add Item
-            </button>
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--outline-purple frp-dialog__add-item"
-              disabled={isFormDisabled}
-              onClick={duplicateLastItem}
-            >
-              <Copy size={16} />
-              Duplicate
-            </button>
-          </div>
-          {fieldErrors.items ? <p className="form-control__message">{fieldErrors.items}</p> : null}
-        </div>
-      </section>
-    </>
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="Memo item"
+                        value={item.memo}
+                        disabled={isFormDisabled}
+                        error={Boolean(memoError)}
+                        helperText={memoError}
+                        onChange={(event) => updateItemValue(index, 'memo', event.target.value)}
+                        slotProps={{ htmlInput: { 'aria-label': `Memo item ${index + 1}` } }}
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        type="number"
+                        placeholder="0"
+                        value={item.quantity}
+                        disabled={isFormDisabled}
+                        error={Boolean(quantityError)}
+                        helperText={quantityError}
+                        onKeyDown={preventNonIntegerInput}
+                        onPaste={(event) => {
+                          if (!isIntegerInputValue(event.clipboardData.getData('text'))) {
+                            event.preventDefault()
+                          }
+                        }}
+                        onChange={(event) => {
+                          if (isIntegerInputValue(event.target.value)) {
+                            updateItemValue(index, 'quantity', event.target.value)
+                          }
+                        }}
+                        slotProps={{
+                          htmlInput: {
+                            min: 1,
+                            step: 1,
+                            inputMode: 'numeric',
+                            pattern: '[0-9]*',
+                            'aria-label': `Quantity item ${index + 1}`,
+                          },
+                        }}
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        type="number"
+                        placeholder="0"
+                        value={item.unit_price}
+                        disabled={isFormDisabled}
+                        error={Boolean(unitPriceError)}
+                        helperText={unitPriceError}
+                        onChange={(event) =>
+                          updateItemValue(index, 'unit_price', event.target.value)
+                        }
+                        slotProps={{
+                          htmlInput: {
+                            min: 0,
+                            step: 1,
+                            'aria-label': `Unit price item ${index + 1}`,
+                          },
+                        }}
+                      />
+                    </TableCell>
+
+                    <TableCell
+                      align="right"
+                      sx={{ pt: '14px', fontWeight: 600, whiteSpace: 'nowrap' }}
+                    >
+                      {formatRupiah(Number.isFinite(amountIdr) ? amountIdr : 0)}
+                    </TableCell>
+
+                    <TableCell align="center" sx={{ pt: '8px' }}>
+                      <IconButton
+                        size="small"
+                        aria-label={`Hapus item ${index + 1}`}
+                        disabled={isFormDisabled || formValues.items.length === 1}
+                        onClick={() => removeItem(index)}
+                        sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                      >
+                        <Trash03 size={16} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <Stack direction="row" spacing={1.5} useFlexGap sx={{ flexWrap: 'wrap' }}>
+          <Button
+            type="button"
+            variant="outlined"
+            size="small"
+            startIcon={<Plus size={16} />}
+            disabled={isFormDisabled}
+            onClick={addItem}
+            sx={{ textTransform: 'none' }}
+          >
+            Add Item
+          </Button>
+          <Button
+            type="button"
+            variant="outlined"
+            size="small"
+            color="secondary"
+            startIcon={<Copy size={16} />}
+            disabled={isFormDisabled}
+            onClick={duplicateLastItem}
+            sx={{ textTransform: 'none' }}
+          >
+            Duplicate
+          </Button>
+        </Stack>
+
+        {fieldErrors.items ? (
+          <Typography variant="caption" color="error">
+            {fieldErrors.items}
+          </Typography>
+        ) : null}
+      </Stack>
+    </Box>
   )
 }
 

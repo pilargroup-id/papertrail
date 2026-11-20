@@ -652,12 +652,51 @@ export function CreateFrp(props) {
   )
 }
 
+export function FilePlus02(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7" />
+      <path d="M14 2v6h6M20 12V8l-6-6" />
+      <path d="M8 12h4M8 16h2" />
+      <path d="M18 15v6M15 18h6" />
+    </IconBase>
+  )
+}
+
 export function Printer(props) {
   return (
     <IconBase {...props}>
       <polyline points="6 9 6 2 18 2 18 9" />
       <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
       <rect x="6" y="14" width="12" height="8" />
+    </IconBase>
+  )
+}
+
+export function Voided(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M6.5 6.5l11 11" />
+    </IconBase>
+  )
+}
+
+export function Tool(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </IconBase>
+  )
+}
+
+export function SwitchHorizontal01(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M7 7h11" />
+      <path d="m15 3 4 4-4 4" />
+      <path d="M17 17H6" />
+      <path d="m9 21-4-4 4-4" />
     </IconBase>
   )
 }

@@ -4,7 +4,6 @@ import api from '../../services/api.js';
 import DataTableConvertFrpFromRp from '../../components/table/frp/DataTableConvertFrpFromRp.jsx';
 import { canCurrentUserCreateFrpFromRp } from '../../components/table/rp/rp-button-access.js';
 import RpFilter from '../rp/RpFilter.jsx'
-import TabsProcessRp from '../rp/TabsProcessRp.jsx'
 import ButtonFilterRp from '../../components/button/button-rp/ButtonFilterRp.jsx'
 import {
   getRpDetailFromResponse,
@@ -14,6 +13,7 @@ import { printRpDocument, showPrintError, showPrintLoading } from '../rp/print-r
 
 // Dialog
 import DialogCreateFrpFromRp from '../../components/Dialog/dialog-rp/DialogCreateFrpFromRp.jsx'
+import DialogVoidedRp from '../../components/Dialog/dialog-rp/DialogVoidedRp.jsx'
 
 // Mobile
 import MobileScreenDetailRp from '../../mobile/screen/screen-rp/MobileScreenDetailRp.jsx'
@@ -79,10 +79,23 @@ function removeRpRecord(rp, rpId) {
   return rp.filter((rpItem) => String(rpItem?.id) !== String(rpId))
 }
 
-const conversionStatusTabs = [
+const conversionStatusOptions = [
   { id: 'NOT_CREATED', label: 'Approved' },
   { id: 'CREATED', label: 'Create FRP' },
+  { id: 'VOIDED', label: 'Voided' },
 ]
+
+function getListRpForConversionStatus(conversionStatus) {
+  if (conversionStatus === 'CREATED') {
+    return api.rp.listConvertedToFrp
+  }
+
+  if (conversionStatus === 'VOIDED') {
+    return api.rp.listVoided
+  }
+
+  return api.rp.listReadyForFrp
+}
 
 function ConvertFrpFromRp(props) {
   const outletContext = useOutletContext() ?? {}
@@ -102,13 +115,17 @@ function ConvertFrpFromRp(props) {
   const [reloadToken, setReloadToken] = useState(0)
   const [isCreateFrpDialogOpen, setIsCreateFrpDialogOpen] = useState(false)
   const [selectedCreateFrpRp, setSelectedCreateFrpRp] = useState(null)
+  const [isVoidDialogOpen, setIsVoidDialogOpen] = useState(false)
+  const [selectedVoidRp, setSelectedVoidRp] = useState(null)
+  const [isVoiding, setIsVoiding] = useState(false)
+  const [voidError, setVoidError] = useState('')
   const [selectedMobileDetailsRp, setSelectedMobileDetailsRp] = useState(null)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [rpFilters, setRpFilters] = useState({
+    status: conversionStatusOptions[0].id,
     requestBy: '',
     vendor: '',
   })
-  const [activeConversionStatus, setActiveConversionStatus] = useState(conversionStatusTabs[0].id)
 
   useEffect(() => {
     setMobileHeaderHidden?.(Boolean(selectedMobileDetailsRp))
@@ -130,8 +147,7 @@ function ConvertFrpFromRp(props) {
       setErrorMessage('')
 
       try {
-        const listRp =
-          activeConversionStatus === 'CREATED' ? api.rp.listConvertedToFrp : api.rp.listReadyForFrp
+        const listRp = getListRpForConversionStatus(rpFilters.status)
         const response = await listRp(
           {
             page: 1,
@@ -161,18 +177,14 @@ function ConvertFrpFromRp(props) {
     loadRp()
 
     return () => controller.abort()
-  }, [shouldLoadRp, searchQuery, reloadToken, activeConversionStatus])
+  }, [shouldLoadRp, searchQuery, reloadToken, rpFilters.status])
 
   const updateRpFilter = (filterName, value) => {
-    setRpFilters((currentFilters) => ({
-      ...currentFilters,
-      [filterName]: value,
-    }))
-  }
-
-  const handleConversionStatusTabChange = (nextStatus) => {
-    setActiveConversionStatus(nextStatus)
-    setRpFilters({ requestBy: '', vendor: '' })
+    setRpFilters((currentFilters) => (
+      filterName === 'status'
+        ? { status: value, requestBy: '', vendor: '' }
+        : { ...currentFilters, [filterName]: value }
+    ))
   }
 
   const openCreateFrpDialog = (rpRow) => {
@@ -183,6 +195,22 @@ function ConvertFrpFromRp(props) {
   const closeCreateFrpDialog = () => {
     setIsCreateFrpDialogOpen(false)
     setSelectedCreateFrpRp(null)
+  }
+
+  const openVoidDialog = (rpRow) => {
+    setSelectedVoidRp(rpRow)
+    setVoidError('')
+    setIsVoidDialogOpen(true)
+  }
+
+  const closeVoidDialog = () => {
+    if (isVoiding) {
+      return
+    }
+
+    setIsVoidDialogOpen(false)
+    setSelectedVoidRp(null)
+    setVoidError('')
   }
 
   const openMobileDetailsPage = (rpRow) => {
@@ -233,15 +261,40 @@ function ConvertFrpFromRp(props) {
     closeCreateFrpDialog()
   }
 
+  const handleVoidRp = async ({ rp: targetRp, reason }) => {
+    const target = targetRp ?? selectedVoidRp
+    const rpId = target?.id
+
+    if (rpId === undefined || rpId === null) {
+      setVoidError('ID RP tidak tersedia.')
+      return
+    }
+
+    setVoidError('')
+    setIsVoiding(true)
+
+    try {
+      await api.rp.procurementVoid(rpId, { reason })
+      setRp((currentRp) => removeRpRecord(currentRp, rpId))
+      closeVoidDialog()
+    } catch (error) {
+      setVoidError(error.message || 'Gagal void RP.')
+    } finally {
+      setIsVoiding(false)
+    }
+  }
+
   const authGateMessage = isAuthLoading
     ? 'Memuat profil auth...'
     : !currentUser
       ? 'Profil auth tidak tersedia.'
       : ''
   const defaultEmptyMessage =
-    activeConversionStatus === 'CREATED'
+    rpFilters.status === 'CREATED'
       ? 'Belum ada RP yang sudah dibuatkan FRP.'
-      : 'Belum ada RP yang siap dibuatkan FRP.'
+      : rpFilters.status === 'VOIDED'
+        ? 'Belum ada RP yang divoid.'
+        : 'Belum ada RP yang siap dibuatkan FRP.'
   const emptyMessage = authGateMessage || (isLoading
     ? 'Memuat data RP...'
     : errorMessage || (searchQuery ? 'Data tidak ditemukan. Coba pakai kata kunci lain.' : defaultEmptyMessage))
@@ -253,7 +306,9 @@ function ConvertFrpFromRp(props) {
     () => getFilterOptions(rp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
     [rp],
   )
-  const hasActiveRpFilter = Boolean(rpFilters.requestBy || rpFilters.vendor)
+  const hasActiveRpFilter = Boolean(
+    rpFilters.status !== conversionStatusOptions[0].id || rpFilters.requestBy || rpFilters.vendor,
+  )
   const visibleRp = rp.filter((rpItem) => matchesRpFilters(rpItem, rpFilters))
   const filteredEmptyMessage =
     !authGateMessage && !isLoading && !errorMessage && hasActiveRpFilter
@@ -278,15 +333,13 @@ function ConvertFrpFromRp(props) {
             dialogId="convert-frp-from-rp-desktop-filter"
             dialogLabel="Filter RP"
             isOpen={isDesktopFilterOpen}
+            isActive={hasActiveRpFilter}
             onClose={() => setIsDesktopFilterOpen(false)}
-            className={[
-              'rp-page__filter-button',
-              hasActiveRpFilter ? 'rp-page__filter-button--active' : '',
-            ].filter(Boolean).join(' ')}
             onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
           >
             <RpFilter
               filters={rpFilters}
+              statusOptions={conversionStatusOptions}
               requestByOptions={requestByFilterOptions}
               vendorOptions={vendorFilterOptions}
               onFilterChange={updateRpFilter}
@@ -305,16 +358,6 @@ function ConvertFrpFromRp(props) {
           selectedMobileDetailsRp ? 'rp-page__mobile-list--hidden' : '',
         ].filter(Boolean).join(' ')}
       >
-        <div className="rp-page__tabs-toolbar">
-          <TabsProcessRp
-            activeStatus={activeConversionStatus}
-            onStatusChange={handleConversionStatusTabChange}
-            tabs={conversionStatusTabs}
-            variant="desktop"
-            ariaLabel="Filter status Convert FRP from RP"
-          />
-        </div>
-
         <DataTableConvertFrpFromRp
           rows={shouldLoadRp ? visibleRp : []}
           tableLabel={`${pageTitle} table`}
@@ -322,6 +365,7 @@ function ConvertFrpFromRp(props) {
           tableWrapperStyle={{ marginTop: '0.75rem' }}
           onCreateFrp={openCreateFrpDialog}
           onPrint={handlePrintRp}
+          onVoid={openVoidDialog}
           currentUser={currentUser}
           canCreateFrp={(row) => canCurrentUserCreateFrpFromRp(row, currentUser)}
           mobileCard={{
@@ -337,6 +381,17 @@ function ConvertFrpFromRp(props) {
         rp={selectedCreateFrpRp}
         onClose={closeCreateFrpDialog}
         onCreated={handleRpConvertedToFrp}
+      />
+
+      <DialogVoidedRp
+        key={selectedVoidRp?.id ?? 'void-rp'}
+        isOpen={isVoidDialogOpen}
+        title={`Voided ${selectedVoidRp?.rp_number ?? selectedVoidRp?.id ?? 'RP'}`}
+        rp={selectedVoidRp}
+        isSubmitting={isVoiding}
+        submitError={voidError}
+        onClose={closeVoidDialog}
+        onVoid={handleVoidRp}
       />
     </section>
   )

@@ -1,6 +1,7 @@
+import DetailFields from '../../details/DetailFields.jsx'
+import DetailSection from '../../details/DetailSection.jsx'
+
 import {
-  DetailCard,
-  DetailField,
   formatDateTime,
   formatDateValue,
   formatRupiah,
@@ -58,23 +59,14 @@ function TabsInformation({ rpDetail }) {
     {
       label: 'Description',
       value: getFirstValue(rpDetail, ['description']),
-      className: 'frp-accordion-detail__field--wide',
+      fullWidth: true,
     },
   ]
 
   return (
-    <DetailCard title="RP Summary" className="frp-accordion-detail__card--wide">
-      <div className="frp-accordion-detail__field-grid frp-accordion-detail__field-grid--summary">
-        {summaryFields.map((field) => (
-          <DetailField
-            key={field.label}
-            label={field.label}
-            value={field.value}
-            className={field.className}
-          />
-        ))}
-      </div>
-    </DetailCard>
+    <DetailSection title="RP Information">
+      <DetailFields fields={summaryFields} />
+    </DetailSection>
   )
 }
 

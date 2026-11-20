@@ -48,7 +48,7 @@ export const pageDetails = {
     detail: 'Kumpulan komponen form yang siap dipakai untuk input data aplikasi.',
   },
   '/frp': {
-    title: 'FRP',
+    title: 'Form Request Payment',
     eyebrow: 'Document Transaction',
     value: '0',
     detail: 'Daftar transaksi FRP.',
@@ -60,7 +60,7 @@ export const pageDetails = {
     detail: 'Daftar transaksi RP.',
   },
   '/Rp': {
-    title: 'RP',
+    title: 'Request Payment',
     eyebrow: 'Document Transaction',
     value: '0',
     detail: 'Daftar transaksi RP.',
@@ -88,6 +88,12 @@ export const pageDetails = {
     eyebrow: 'Vendor Management',
     value: '0',
     detail: 'Master data vendor bank account.',
+  },
+  '/Master/Budgets': {
+    title: 'Budget',
+    eyebrow: 'Budget Management',
+    value: '0',
+    detail: 'Master data budget.',
   },
   '/Master/Budget-type': {
     title: 'Budget Type',

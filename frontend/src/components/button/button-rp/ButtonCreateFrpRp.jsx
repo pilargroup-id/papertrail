@@ -2,6 +2,7 @@ import { CreateFrp } from '../../layoute/TemplateIcons.jsx'
 
 function ButtonCreateFrpRp({
   label = 'Create FRP',
+  showLabel = false,
   icon: Icon = CreateFrp,
   size = 16,
   className = '',
@@ -10,6 +11,7 @@ function ButtonCreateFrpRp({
 }) {
   const buttonClassName = [
     'users-table__icon-button users-table__icon-button--pagination-card frp-icon-button frp-icon-button--create-frp',
+    showLabel && 'frp-icon-button--with-label',
     className,
   ]
     .filter(Boolean)
@@ -24,6 +26,7 @@ function ButtonCreateFrpRp({
       {...buttonProps}
     >
       <Icon size={size} aria-hidden="true" />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   )
 }

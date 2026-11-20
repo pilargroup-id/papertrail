@@ -26,7 +26,23 @@ import {
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
-const DEFAULT_PAGINATION_PAGE_SIZE = 25
+const DEFAULT_PAGINATION_PAGE_SIZE = 50
+
+function EditActionButton(props) {
+  return <ButtonEditRp {...props} showLabel />
+}
+
+function DetailActionButton(props) {
+  return <ButtonDetailsRp {...props} showLabel />
+}
+
+function PrintActionButton(props) {
+  return <ButtonPrintRp {...props} showLabel />
+}
+
+function CheckDataActionButton(props) {
+  return <ButtonCheckDataRp {...props} showLabel />
+}
 
 function formatDateTime(value) {
   if (!value) {
@@ -164,7 +180,6 @@ function scaleTableColumn(column, scale) {
 function getAutoFitWrapperStyle(scale, tableWrapperStyle) {
   return {
     '--data-table-action-min-height': 'min(52dvh, 520px)',
-    '--users-table-wrapper-max-height': 'min(64dvh, 640px)',
     '--vendor-banks-table-cell-padding-block': getScaledRem(0.86, scale),
     '--vendor-banks-table-cell-padding-inline': getScaledRem(0.92, scale),
     '--vendor-banks-table-header-font-size': getScaledRem(0.76, scale, 0.62),
@@ -264,7 +279,8 @@ const columnsDataTableRp = [{
     header: 'RP Number',
     accessor: 'rp_number',
     type: 'identity',
-    subtitleAccessor: (rp) => `Date: ${formatDateTime(rp?.created_at)}`,
+    showAvatar: false,
+    subtitleAccessor: (rp) => `Create at: ${formatDateTime(rp?.created_at)}`,
     sortAccessor: 'rp_number',
     minWidth: 220,
   },
@@ -460,7 +476,7 @@ function DataTableRp({
       ? {
           key: 'print',
           label: 'Print',
-          buttonComponent: ButtonPrintRp,
+          buttonComponent: PrintActionButton,
           mobileHidden: true,
           hidden: (rp) => isPrintActionHidden(rp),
           onClick: onPrint,
@@ -469,8 +485,8 @@ function DataTableRp({
     typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
       ? {
           key: 'edit',
-          label: useCheckDataAction ? 'Check Data' : 'Edit RP',
-          buttonComponent: useCheckDataAction ? ButtonCheckDataRp : ButtonEditRp,
+          label: useCheckDataAction ? 'Check Data' : 'Edit',
+          buttonComponent: useCheckDataAction ? CheckDataActionButton : EditActionButton,
           mobileButtonComponent: MobileButtonEditRp,
           mobilePlacement: 'header-start',
           hidden: (rp, index) =>
@@ -483,8 +499,8 @@ function DataTableRp({
     typeof onDetails === 'function'
       ? {
           key: 'details',
-          label: 'Details RP',
-          buttonComponent: ButtonDetailsRp,
+          label: 'Detail',
+          buttonComponent: DetailActionButton,
           mobileHidden: true,
           hidden: () => !canAccessFrpButton(currentUser, 'details'),
           onClick: onDetails,
@@ -505,7 +521,7 @@ function DataTableRp({
       ? {
           summary: `${rows.length} data RP`,
           pageSize: DEFAULT_PAGINATION_PAGE_SIZE,
-          pageSizeOptions: [10, 25, 50, 100],
+          pageSizeOptions: [50, 100, 250, 500],
         }
       : pagination
 
@@ -522,6 +538,7 @@ function DataTableRp({
       enableSorting
       compactForSparseRows
       mobileCard={resolvedMobileCard}
+      actionColumnPosition="start"
       actionCellClassName="users-table__action-cell rp-table__action-cell"
       actionCellStyle={{
         width: '1%',

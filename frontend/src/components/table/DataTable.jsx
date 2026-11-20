@@ -1,19 +1,17 @@
-import { Fragment, isValidElement, useState } from 'react'
+import { Fragment, isValidElement, useRef, useState } from 'react'
+import {
+  Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TablePagination,
+  TableRow,
+} from '@mui/material'
 
 import CreateButton from '../button/ButtonCreate.jsx'
-import PaginationTable from '../forms/PaginationTable.jsx'
 import { ChevronDown, ChevronUp } from '../layoute/TemplateIcons.jsx'
 import DetailCard from '../../mobile/data-card/DetailCard.jsx'
-import MobilePagination from '../../mobile/layoutes-mobile/MobilePagination.jsx'
-
-function getInitials(value = '') {
-  return String(value)
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-}
 
 function getDefaultRowId(row, index) {
   return row?.id ?? row?.userId ?? row?.key ?? index
@@ -45,6 +43,23 @@ function getPathValue(source, path) {
   }
 
   return path.split('.').reduce((currentValue, key) => currentValue?.[key], source)
+}
+
+function getRowsPerPageOptions(options, pageSize) {
+  const normalizedOptions = (Array.isArray(options) ? options : [50, 100, 250, 500])
+    .map((option) => Number(option))
+    .filter((option) => Number.isInteger(option) && option > 0)
+  const normalizedPageSize = Number(pageSize)
+
+  if (
+    Number.isInteger(normalizedPageSize) &&
+    normalizedPageSize > 0 &&
+    !normalizedOptions.includes(normalizedPageSize)
+  ) {
+    return [...normalizedOptions, normalizedPageSize].sort((a, b) => a - b)
+  }
+
+  return normalizedOptions
 }
 
 function getDefaultPaginationConfig(pagination) {
@@ -107,7 +122,7 @@ function getColumnClassName(column, target) {
   )
 }
 
-function getColumnStyle(column, target) {
+function getColumnStyle(column, target, resizedWidth) {
   const configuredStyle = target === 'header' ? column.headerStyle : column.cellStyle
 
   return {
@@ -115,7 +130,24 @@ function getColumnStyle(column, target) {
     minWidth: column.minWidth,
     maxWidth: column.maxWidth,
     ...configuredStyle,
+    ...(resizedWidth !== undefined ? {
+      width: resizedWidth,
+      minWidth: 0,
+      maxWidth: 'none',
+    } : {}),
   }
+}
+
+function getColumnResizeMinimum(column) {
+  const configuredMinimum = getColumnStyle(column, 'header').minWidth
+  const pixelMinimum =
+    typeof configuredMinimum === 'number'
+      ? configuredMinimum
+      : typeof configuredMinimum === 'string' && configuredMinimum.trim().endsWith('px')
+        ? Number.parseFloat(configuredMinimum)
+        : 0
+
+  return Math.max(column.type === 'identity' ? 160 : 80, pixelMinimum || 0)
 }
 
 function getColumnKey(column, index) {
@@ -190,6 +222,7 @@ function renderColumnValue(column, row, index) {
         subtitle={subtitle}
         initials={initials}
         badge={badgeValue}
+        showAvatar={column.showAvatar !== false}
       />
     )
   }
@@ -657,10 +690,36 @@ export function DataTableChips({ items = [], empty = '-', variant = 'app', class
   )
 }
 
-export function DataTableIdentity({ title, subtitle, initials, badge, className = '' }) {
+export function DataTableIdentity({ title, subtitle, badge, showAvatar = true, className = '' }) {
   return (
     <div className={['users-table__identity', className].filter(Boolean).join(' ')}>
-      <span className="users-table__avatar">{initials || getInitials(title)}</span>
+      {showAvatar ? (
+      <span
+        className="users-table__avatar"
+        style={{
+          background: '#f3f4f6',
+          color: '#6b7280',
+          border: '1px solid #e5e7eb',
+          boxSizing: 'border-box',
+        }}
+        aria-hidden="true"
+      >
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          focusable="false"
+        >
+          <circle cx="12" cy="8" r="4" />
+          <path d="M20 21a8 8 0 0 0-16 0" />
+        </svg>
+      </span>
+      ) : null}
 
       <div className="users-table__identity-copy">
         <div className="users-table__name-row">
@@ -668,7 +727,23 @@ export function DataTableIdentity({ title, subtitle, initials, badge, className 
           {badge}
         </div>
 
-        {subtitle ? <p className="users-table__meta">{subtitle}</p> : null}
+        {subtitle ? (
+          <p
+            className="users-table__meta"
+            style={{
+              margin: 0,
+              color: '#4b5563',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              fontFamily: 'inherit',
+              lineHeight: 1.5,
+              letterSpacing: 'normal',
+              overflowWrap: 'anywhere',
+            }}
+          >
+            {subtitle}
+          </p>
+        ) : null}
       </div>
     </div>
   )
@@ -695,8 +770,11 @@ function DataTable({
   const [expandedRowKey, setExpandedRowKey] = useState(null)
   const [localPage, setLocalPage] = useState(1)
   const [localPageSize, setLocalPageSize] = useState(
-    getDefaultPaginationConfig(pagination).pageSize ?? 25,
+    getDefaultPaginationConfig(pagination).pageSize ?? 50,
   )
+  const [columnLayout, setColumnLayout] = useState(null)
+  const [resizingColumn, setResizingColumn] = useState(null)
+  const columnResizeRef = useRef(null)
   const hasDetail = Boolean(detail)
   const detailToggleInFirstCell =
     hasDetail && detailTogglePlacement === 'first-cell' && columns.length > 0
@@ -720,6 +798,7 @@ function DataTable({
     Math.max(1, Number(paginationConfig.currentPage ?? localPage) || 1),
     totalPages,
   )
+  const rowsPerPageOptions = getRowsPerPageOptions(paginationConfig.pageSizeOptions, effectivePageSize)
   const displayRows =
     hasPagination && !isControlledPagination
       ? rows.slice((currentPage - 1) * effectivePageSize, currentPage * effectivePageSize)
@@ -732,6 +811,101 @@ function DataTable({
   const resolvedEmptyMessage = emptyMessage ?? tableMessage ?? 'Belum ada data.'
   const colSpan = columns.length + (showDetailColumn ? 1 : 0)
   const rowRenderKeys = getUniqueRowRenderKeys(displayRows, getRowId)
+  const columnLayoutKey = JSON.stringify([columns.map(getColumnKey), showDetailColumn])
+  const columnWidths = columnLayout?.key === columnLayoutKey ? columnLayout.widths : null
+  const resizedTableWidth = columnWidths?.reduce((total, width) => total + width, 0)
+
+  const measureColumnLayout = (target) => ({
+    key: columnLayoutKey,
+    widths: Array.from(target.closest('table').tHead.rows[0].cells, (cell) =>
+      cell.getBoundingClientRect().width,
+    ),
+  })
+
+  const handleColumnResizeStart = (event, column, columnIndex) => {
+    if (event.button !== 0 || !event.isPrimary) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    const layout = measureColumnLayout(event.currentTarget)
+    columnResizeRef.current = {
+      layout,
+      previousLayout: columnLayout,
+      pointerId: event.pointerId,
+      columnIndex,
+      startX: event.clientX,
+      minWidth: getColumnResizeMinimum(column),
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    setColumnLayout(layout)
+    setResizingColumn(columnIndex)
+  }
+
+  const handleColumnResizeMove = (event) => {
+    const resize = columnResizeRef.current
+
+    if (
+      !resize ||
+      resize.pointerId !== event.pointerId ||
+      resize.layout.key !== columnLayoutKey
+    ) {
+      return
+    }
+
+    const width = Math.max(
+      resize.minWidth,
+      resize.layout.widths[resize.columnIndex] + event.clientX - resize.startX,
+    )
+    setColumnLayout({
+      ...resize.layout,
+      widths: resize.layout.widths.map((currentWidth, index) =>
+        index === resize.columnIndex ? width : currentWidth,
+      ),
+    })
+  }
+
+  const handleColumnResizeEnd = (event) => {
+    const resize = columnResizeRef.current
+
+    if (!resize || resize.pointerId !== event.pointerId) {
+      return
+    }
+
+    if (event.type === 'pointercancel') {
+      setColumnLayout(resize.previousLayout)
+    }
+
+    columnResizeRef.current = null
+    setResizingColumn(null)
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  const handleColumnResizeKeyDown = (event, column, columnIndex) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (event.key === 'Home') {
+      setColumnLayout(null)
+      return
+    }
+
+    const layout = measureColumnLayout(event.currentTarget)
+    const step = (event.shiftKey ? 50 : 10) * (event.key === 'ArrowRight' ? 1 : -1)
+    layout.widths[columnIndex] = Math.max(
+      getColumnResizeMinimum(column),
+      layout.widths[columnIndex] + step,
+    )
+    setColumnLayout(layout)
+  }
 
   const handleToggleRow = (rowKey) => {
     if (!hasDetail) {
@@ -789,13 +963,18 @@ function DataTable({
     setLocalPage((page) => Math.min(totalPages, page + 1))
   }
 
-  const handleSelectPage = (page) => {
-    if (typeof paginationConfig.onSelect === 'function') {
-      paginationConfig.onSelect(page)
-      return
-    }
+  const handleTablePageChange = (event, newPage) => {
+    const nextPage = newPage + 1
 
-    setLocalPage(page)
+    if (nextPage < currentPage) {
+      handlePreviousPage()
+    } else if (nextPage > currentPage) {
+      handleNextPage()
+    }
+  }
+
+  const handleTableRowsPerPageChange = (event) => {
+    handlePageSizeChange(event.target.value)
   }
 
   const renderDetailToggleButton = (rowKey, isExpanded, accordionId, className = '') => (
@@ -827,33 +1006,123 @@ function DataTable({
         hasMobileCard ? 'users-table-layout--with-mobile' : '',
       )}
     >
-      <div
+      <Box
         className={['users-table-wrapper', className].filter(Boolean).join(' ')}
         style={tableWrapperStyle}
+        role="region"
+        aria-label={tableLabel}
+        tabIndex={0}
       >
-        <table className="users-table" aria-label={tableLabel}>
-          <thead>
-            <tr>
+        <Table
+          className="users-table"
+          aria-label={tableLabel}
+          style={columnWidths ? {
+            tableLayout: 'fixed',
+            width: resizedTableWidth,
+            minWidth: resizedTableWidth,
+            userSelect: resizingColumn !== null ? 'none' : undefined,
+          } : undefined}
+          sx={columnWidths ? {
+            '& > tbody > .users-table__row > td': {
+              overflow: 'hidden',
+              overflowWrap: 'anywhere',
+              textOverflow: 'ellipsis',
+            },
+            '&& > tbody > .users-table__row .users-table__identity': { minWidth: 0 },
+          } : undefined}
+        >
+          {columnWidths ? (
+            <colgroup>
+              {columnWidths.map((width, index) => (
+                <col key={index} style={{ width }} />
+              ))}
+            </colgroup>
+          ) : null}
+          <TableHead>
+            <TableRow>
               {columns.map((column, columnIndex) => (
-                <th
+                <TableCell
+                  component="th"
                   key={getColumnKey(column, columnIndex)}
                   scope="col"
                   className={getColumnClassName(column, 'header')}
-                  style={getColumnStyle(column, 'header')}
+                  style={{
+                    ...getColumnStyle(column, 'header', columnWidths?.[columnIndex]),
+                    position: 'relative',
+                    ...(columnWidths ? {
+                      overflowWrap: 'anywhere',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    } : {}),
+                  }}
                 >
                   {column.header}
-                </th>
+                  {column.resizable !== false ? (
+                    <Box
+                      component="span"
+                      role="separator"
+                      tabIndex={0}
+                      aria-orientation="vertical"
+                      aria-valuemin={getColumnResizeMinimum(column)}
+                      aria-label={`Atur lebar kolom ${
+                        typeof column.header === 'string'
+                          ? column.header
+                          : column.key ?? columnIndex + 1
+                      }`}
+                      aria-valuenow={columnWidths ? Math.round(columnWidths[columnIndex]) : undefined}
+                      aria-valuetext={columnWidths ? `${Math.round(columnWidths[columnIndex])} piksel` : 'Lebar otomatis'}
+                      title="Tarik untuk mengatur lebar. Klik dua kali atau tekan Home untuk mengembalikan lebar tabel."
+                      onPointerDown={(event) => handleColumnResizeStart(event, column, columnIndex)}
+                      onPointerMove={handleColumnResizeMove}
+                      onPointerUp={handleColumnResizeEnd}
+                      onPointerCancel={handleColumnResizeEnd}
+                      onLostPointerCapture={handleColumnResizeEnd}
+                      onKeyDown={(event) => handleColumnResizeKeyDown(event, column, columnIndex)}
+                      onClick={(event) => event.stopPropagation()}
+                      onDoubleClick={(event) => {
+                        event.stopPropagation()
+                        setColumnLayout(null)
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        width: 10,
+                        cursor: 'col-resize',
+                        touchAction: 'none',
+                        userSelect: 'none',
+                        zIndex: 1,
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          top: '25%',
+                          bottom: '25%',
+                          left: '50%',
+                          width: '1px',
+                          backgroundColor: '#9ca3af',
+                          opacity: resizingColumn === columnIndex ? 1 : 0,
+                        },
+                        '&:hover::after, &:focus-visible::after': { opacity: 1 },
+                        '&:focus-visible': {
+                          outline: '2px solid #9ca3af',
+                          outlineOffset: '-2px',
+                        },
+                      }}
+                    />
+                  ) : null}
+                </TableCell>
               ))}
 
               {showDetailColumn ? (
-                <th scope="col" className="users-table__detail-header">
+                <TableCell component="th" scope="col" className="users-table__detail-header">
                   {detail.columnLabel ?? 'Detail'}
-                </th>
+                </TableCell>
               ) : null}
-            </tr>
-          </thead>
+            </TableRow>
+          </TableHead>
 
-          <tbody>
+          <TableBody>
             {displayRows.length > 0 ? (
               displayRows.map((row, index) => {
                 const rowId = getRowId(row, index)
@@ -869,6 +1138,7 @@ function DataTable({
                 const detailEyebrow = resolveTemplateValue(detail?.eyebrow, row, index)
                 const rowClassName = [
                   'users-table__row',
+                  index % 2 === 1 ? 'users-table__row--zebra' : '',
                   isRowInteractive ? 'users-table__row--interactive' : '',
                   isExpanded ? 'users-table__row--expanded' : '',
                   getRowClassName?.(row, index),
@@ -878,7 +1148,8 @@ function DataTable({
 
                 return (
                   <Fragment key={rowRenderKey}>
-                    <tr
+                    <TableRow
+                      hover={isRowInteractive}
                       className={rowClassName}
                       onClick={
                         isRowInteractive ? () => handleRowClick(row, index, rowKey) : undefined
@@ -893,10 +1164,10 @@ function DataTable({
                         const showInlineToggle = detailToggleInFirstCell && columnIndex === 0
 
                         return (
-                          <td
+                          <TableCell
                             key={getColumnKey(column, columnIndex)}
                             className={getColumnClassName(column, 'cell')}
-                            style={getColumnStyle(column, 'cell')}
+                            style={getColumnStyle(column, 'cell', columnWidths?.[columnIndex])}
                           >
                             {showInlineToggle ? (
                               <div className="users-table__cell-content users-table__cell-content--with-toggle">
@@ -911,20 +1182,20 @@ function DataTable({
                             ) : (
                               columnValue
                             )}
-                          </td>
+                          </TableCell>
                         )
                       })}
 
                       {showDetailColumn ? (
-                        <td className="users-table__detail-cell">
+                        <TableCell className="users-table__detail-cell">
                           {renderDetailToggleButton(rowKey, isExpanded, accordionId)}
-                        </td>
+                        </TableCell>
                       ) : null}
-                    </tr>
+                    </TableRow>
 
                     {hasDetail && isExpanded ? (
-                      <tr className="users-table__accordion-row">
-                        <td colSpan={colSpan}>
+                      <TableRow className="users-table__accordion-row">
+                        <TableCell colSpan={colSpan}>
                           <div className="users-table__accordion" id={accordionId}>
                             <div className="users-table__accordion-header">
                               <div className="users-table__accordion-copy">
@@ -1019,22 +1290,22 @@ function DataTable({
                               </div>
                             ) : null}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : null}
                   </Fragment>
                 )
               })
             ) : (
-              <tr>
-                <td colSpan={colSpan}>
+              <TableRow>
+                <TableCell colSpan={colSpan}>
                   <div className="users-table__empty">{resolvedEmptyMessage}</div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Box>
 
       {hasMobileCard ? (
         <div className="users-table-mobile">
@@ -1070,43 +1341,42 @@ function DataTable({
       ) : null}
 
       {hasPagination ? (
-        <div className="users-table-pagination-shell">
-          <PaginationTable
+        <footer
+          className="users-table-pagination-shell"
+          aria-label={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
+        >
+          <TablePagination
             id={idPrefix}
-            summary={paginationConfig.summary}
-            totalRows={totalRows}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={effectivePageSize}
-            pageSizeOptions={paginationConfig.pageSizeOptions}
-            pageSizeLabel={paginationConfig.pageSizeLabel ?? 'Rows per page'}
-            pageSizeAriaLabel={
-              paginationConfig.pageSizeAriaLabel ?? 'Jumlah baris per halaman'
+            component="div"
+            className="users-table-pagination"
+            count={totalRows}
+            page={currentPage - 1}
+            onPageChange={handleTablePageChange}
+            rowsPerPage={effectivePageSize}
+            onRowsPerPageChange={handleTableRowsPerPageChange}
+            rowsPerPageOptions={rowsPerPageOptions}
+            labelRowsPerPage={paginationConfig.pageSizeLabel ?? 'Rows per page'}
+            slotProps={{
+              select: {
+                MenuProps: {
+                  anchorOrigin: { vertical: 'top', horizontal: 'left' },
+                  transformOrigin: { vertical: 'bottom', horizontal: 'left' },
+                },
+              },
+            }}
+            labelDisplayedRows={
+              paginationConfig.summary
+                ? () => paginationConfig.summary
+                : ({ from, to, count }) => `${from}–${to} of ${count}`
             }
-            pageSizeSuffix={paginationConfig.pageSizeSuffix}
-            ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
-            items={paginationConfig.items}
-            previousLabel={paginationConfig.previousLabel ?? 'Previous'}
-            nextLabel={paginationConfig.nextLabel ?? 'Next'}
-            onPageSizeChange={handlePageSizeChange}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-            onSelectPage={handleSelectPage}
+            getItemAriaLabel={(type) =>
+              type === 'previous'
+                ? (paginationConfig.previousLabel ?? 'Previous')
+                : (paginationConfig.nextLabel ?? 'Next')
+            }
+            aria-label={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
           />
-
-          <MobilePagination
-            summary={paginationConfig.summary}
-            totalRows={totalRows}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={effectivePageSize}
-            previousLabel={paginationConfig.mobilePreviousLabel ?? 'Prev'}
-            nextLabel={paginationConfig.mobileNextLabel ?? 'Next'}
-            ariaLabel={paginationConfig.ariaLabel ?? `${tableLabel} pagination`}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-          />
-        </div>
+        </footer>
       ) : null}
     </div>
   )

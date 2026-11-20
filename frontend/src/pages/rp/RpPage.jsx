@@ -8,7 +8,6 @@ import {
 } from '../../components/table/rp/rp-button-access.js';
 
 // DataTable
-import TabsProcessRp from './TabsProcessRp.jsx'
 import RpFilter from './RpFilter.jsx'
 import DataTableRp from '../../components/table/rp/DataTableRp.jsx';
 
@@ -25,6 +24,7 @@ import DialogApproveRp from '../../components/Dialog/dialog-rp/DialogApproveRp.j
 import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 import DialogRevertFrp from '../../components/Dialog/dialog-frp/DialogRevertFrp.jsx'
 import DialogDetailsRp from '../../components/Dialog/dialog-rp/DialogDetailsRp.jsx'
+import DialogCreateRp from '../../components/Dialog/dialog-rp/DialogCreateRp.jsx'
 import {
   getRpDetailFromResponse,
   getRpItemsFromResponse,
@@ -289,6 +289,7 @@ function RpPage(props) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isCheckDataDialogOpen, setIsCheckDataDialogOpen] = useState(false)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false)
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false)
@@ -296,6 +297,7 @@ function RpPage(props) {
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
   const [selectedCheckDataRp, setSelectedCheckDataRp] = useState(null)
   const [selectedDetailsFrp, setSelectedDetailsFrp] = useState(null)
+  const [duplicateSourceRp, setDuplicateSourceRp] = useState(null)
   const [selectedApprovalRp, setSelectedApprovalRp] = useState(null)
   const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
   const [selectedRevertFrp, setSelectedRevertFrp] = useState(null)
@@ -308,14 +310,15 @@ function RpPage(props) {
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
   const [isReverting, setIsReverting] = useState(false)
-  const [internalActiveRpStatus, setInternalActiveRpStatus] = useState(RP_DEFAULT_STATUS)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
   const [rpFilters, setRpFilters] = useState({
+    status: RP_DEFAULT_STATUS,
     requestBy: '',
     vendor: '',
   })
-  const activeRpStatus = mobileRpStatusFilter ?? internalActiveRpStatus
-  const setActiveRpStatus = setMobileRpStatusFilter ?? setInternalActiveRpStatus
+  const [prevCanUseDestinationChecker, setPrevCanUseDestinationChecker] = useState(
+    Boolean(currentUser) && !isManagerUser(currentUser),
+  )
 
   useEffect(() => {
     setMobileHeaderHidden?.(
@@ -438,6 +441,18 @@ function RpPage(props) {
   const closeDetailsDialog = () => {
     setIsDetailsDialogOpen(false)
     setSelectedDetailsFrp(null)
+  }
+
+  const openDuplicateDialog = (rp) => {
+    setDuplicateSourceRp(rp)
+    setIsDetailsDialogOpen(false)
+    setSelectedDetailsFrp(null)
+    setIsDuplicateDialogOpen(true)
+  }
+
+  const closeDuplicateDialog = () => {
+    setIsDuplicateDialogOpen(false)
+    setDuplicateSourceRp(null)
   }
 
   const openMobileDetailsPage = (rp) => {
@@ -603,7 +618,20 @@ function RpPage(props) {
     setIsRejecting(true)
 
     try {
-      const response = await api.rp.reject(rpId, {
+      const status = getFrpStatusValue(target)
+
+      if (
+        ![
+          'PENDING_REQUESTER_MANAGER',
+          'PENDING_DESTINATION_CHECKER',
+          'PENDING_DESTINATION_MANAGER',
+        ].includes(status)
+      ) {
+        setRejectError(`RP status ${status || '-'} tidak bisa direject.`)
+        return
+      }
+
+      const response = await api.rp.rejectByStatus(rpId, status, {
         reason,
       })
       const rejectedFrp = getFrpFromResponse(response)
@@ -717,43 +745,47 @@ function RpPage(props) {
     () => getFilterOptions(rp, ['vendor_name_snapshot', 'vendor_name', 'vendor_code_snapshot', 'vendor_code', 'vendor_id']),
     [rp],
   )
-  const hasActiveRpFilter = Boolean(rpFilters.requestBy || rpFilters.vendor)
+  const hasActiveRpFilter = Boolean(
+    rpFilters.requestBy || rpFilters.vendor || rpFilters.status !== RP_STATUS_ALL,
+  )
   const canUseDestinationChecker = Boolean(currentUser) && !isManagerUser(currentUser)
   const availableRpProcessStatusTabs = rpProcessStatusTabs.filter(
-    (tab) => tab.id !== 'PENDING_DESTINATION_CHECKER' || canUseDestinationChecker,
+    (tab) =>
+      tab.id !== 'VOIDED' &&
+      (tab.id !== 'PENDING_DESTINATION_CHECKER' || canUseDestinationChecker),
   )
 
-  useEffect(() => {
-    if (activeRpStatus === 'PENDING_DESTINATION_CHECKER' && !canUseDestinationChecker) {
-      setActiveRpStatus(RP_DEFAULT_STATUS)
+  if (prevCanUseDestinationChecker !== canUseDestinationChecker) {
+    setPrevCanUseDestinationChecker(canUseDestinationChecker)
+
+    if (!canUseDestinationChecker) {
+      if (rpFilters.status === 'PENDING_DESTINATION_CHECKER') {
+        setRpFilters((currentFilters) => ({ ...currentFilters, status: RP_DEFAULT_STATUS }))
+      }
+
+      if (mobileRpStatusFilter === 'PENDING_DESTINATION_CHECKER') {
+        setMobileRpStatusFilter?.(RP_DEFAULT_STATUS)
+      }
     }
-  }, [activeRpStatus, canUseDestinationChecker, setActiveRpStatus])
+  }
 
-  const rpTabsWithCounts = availableRpProcessStatusTabs.map((tab) => ({
-    ...tab,
-    count: rp.filter((rpItem) => {
-      const status = getFrpStatusValue(rpItem)
-
-      return (
-        matchesStatusFilter(status, tab.id) &&
-        canCurrentUserSeeRpStatus(rpItem, currentUser) &&
-        matchesRpFilters(rpItem, rpFilters)
-      )
-    }).length,
-  }))
   const visibleFrp = rp.filter((rpItem) => {
     const status = getFrpStatusValue(rpItem)
-    const matchesRpStatusFilter = matchesStatusFilter(status, activeRpStatus)
+    const matchesMobileStatus = matchesStatusFilter(status, mobileRpStatusFilter)
+    const matchesDesktopStatus = matchesStatusFilter(status, rpFilters.status)
 
     return (
-      matchesRpStatusFilter &&
+      matchesMobileStatus &&
+      matchesDesktopStatus &&
       canCurrentUserSeeRpStatus(rpItem, currentUser) &&
       matchesRpFilters(rpItem, rpFilters)
     )
   })
-  const hasRpStatusFilter = activeRpStatus !== RP_STATUS_ALL
-  const isDestinationCheckerTab = activeRpStatus === 'PENDING_DESTINATION_CHECKER'
-  const filteredStatusLabel = getRpStatusFilterLabel(activeRpStatus)
+  const isDestinationCheckerTab =
+    rpFilters.status === 'PENDING_DESTINATION_CHECKER' ||
+    mobileRpStatusFilter === 'PENDING_DESTINATION_CHECKER'
+  const filteredStatusLabel = getRpStatusFilterLabel(rpFilters.status)
+  const filteredMobileStatusLabel = getRpStatusFilterLabel(mobileRpStatusFilter)
   const filteredEmptyMessage =
     !authGateMessage &&
     !isLoading &&
@@ -763,8 +795,13 @@ function RpPage(props) {
       : !authGateMessage &&
     !isLoading &&
     !errorMessage &&
-    hasRpStatusFilter
+    rpFilters.status !== RP_STATUS_ALL
       ? `Belum ada RP pada status ${filteredStatusLabel}.`
+      : !authGateMessage &&
+    !isLoading &&
+    !errorMessage &&
+    mobileRpStatusFilter !== RP_STATUS_ALL
+      ? `Belum ada RP pada status ${filteredMobileStatusLabel}.`
       : emptyMessage
 
   return (
@@ -785,15 +822,13 @@ function RpPage(props) {
             dialogId="rp-desktop-filter"
             dialogLabel="Filter RP"
             isOpen={isDesktopFilterOpen}
+            isActive={hasActiveRpFilter}
             onClose={() => setIsDesktopFilterOpen(false)}
-            className={[
-              'rp-page__filter-button',
-              hasActiveRpFilter ? 'rp-page__filter-button--active' : '',
-            ].filter(Boolean).join(' ')}
             onClick={() => setIsDesktopFilterOpen((isOpen) => !isOpen)}
           >
             <RpFilter
               filters={rpFilters}
+              statusOptions={availableRpProcessStatusTabs}
               requestByOptions={requestByFilterOptions}
               vendorOptions={vendorFilterOptions}
               onFilterChange={updateRpFilter}
@@ -801,7 +836,6 @@ function RpPage(props) {
           </ButtonFilterRp>
           {!isManager ? (
             <ButtonCreateRp
-              variant="create"
               dialogProps={{
                 onCreated: handleFrpCreated,
               }}
@@ -848,15 +882,6 @@ function RpPage(props) {
             : '',
         ].filter(Boolean).join(' ')}
       >
-        <div className="rp-page__tabs-toolbar">
-          <TabsProcessRp
-            activeStatus={activeRpStatus}
-            onStatusChange={setActiveRpStatus}
-            tabs={rpTabsWithCounts}
-            variant="desktop"
-          />
-        </div>
-
         <DataTableRp
           rows={shouldLoadFrp ? visibleFrp : []}
           tableLabel={`${pageTitle} table`}
@@ -917,6 +942,10 @@ function RpPage(props) {
         rp={selectedCheckDataRp}
         onClose={closeCheckDataDialog}
         onUpdated={handleRpChecked}
+        onReject={(rp) => {
+          closeCheckDataDialog()
+          openRejectDialog(rp)
+        }}
       />
 
       <DialogDetailsRp
@@ -924,6 +953,17 @@ function RpPage(props) {
         title={`Detail ${getFrpEditLabel(selectedDetailsFrp)}`}
         rp={selectedDetailsFrp}
         onClose={closeDetailsDialog}
+        onDuplicate={openDuplicateDialog}
+        onPrint={handlePrintRp}
+      />
+
+      <DialogCreateRp
+        key={duplicateSourceRp?.id ?? 'duplicate-rp'}
+        isOpen={isDuplicateDialogOpen}
+        title={`Duplicate ${getFrpEditLabel(duplicateSourceRp)}`}
+        duplicateFrom={duplicateSourceRp}
+        onClose={closeDuplicateDialog}
+        onCreated={handleFrpCreated}
       />
 
       <DialogApproveRp

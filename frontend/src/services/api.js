@@ -395,8 +395,42 @@ const createRpResource = (path) => ({
   },
   approve: (id, data = {}, options) =>
     api.post(`${path}/${id}/requester-manager-approve`, data, options),
-  createFrp: (id, data = {}, options) =>
+  requesterManagerReject: (id, data = {}, options) =>
+    api.post(`${path}/${id}/requester-manager-reject`, data, options),
+  destinationCheckReject: (id, data = {}, options) =>
+    api.post(`${path}/${id}/destination-check-reject`, data, options),
+  destinationManagerReject: (id, data = {}, options) =>
+    api.post(`${path}/${id}/destination-manager-reject`, data, options),
+  rejectByStatus: (id, status, data = {}, options) => {
+    const normalizedStatus = String(status ?? '')
+      .trim()
+      .replace(/[\s-]+/g, '_')
+      .replace(/_+/g, '_')
+      .toUpperCase();
+
+    if (normalizedStatus === 'PENDING_REQUESTER_MANAGER') {
+      return api.post(`${path}/${id}/requester-manager-reject`, data, options);
+    }
+
+    if (normalizedStatus === 'PENDING_DESTINATION_CHECKER') {
+      return api.post(`${path}/${id}/destination-check-reject`, data, options);
+    }
+
+    if (normalizedStatus === 'PENDING_DESTINATION_MANAGER') {
+      return api.post(`${path}/${id}/destination-manager-reject`, data, options);
+    }
+
+    return Promise.reject(
+      new ApiError(`RP status ${normalizedStatus || '-'} tidak bisa direject.`),
+    );
+  },
+  // RP tidak punya endpoint POST /rp/:id/reject; gunakan rejectByStatus.
+  reject: () =>
+    Promise.reject(new ApiError('Gunakan api.rp.rejectByStatus untuk reject RP.')),
+  createFrp:(id, data = {}, options) =>
     api.post(`${path}/${id}/create-frp`, data, options),
+  procurementVoid: (id, data = {}, options) =>
+    api.post(`${path}/${id}/procurement-void`, data, options),
   listReadyForFrp: (params, options) =>
     api.get(path, {
       ...options,
@@ -413,6 +447,14 @@ const createRpResource = (path) => ({
         ...params,
         status: 'APPROVED',
         frp_conversion_status: 'CREATED',
+      },
+    }),
+  listVoided: (params, options) =>
+    api.get(path, {
+      ...options,
+      params: {
+        ...params,
+        status: 'VOIDED',
       },
     }),
 });

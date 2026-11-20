@@ -58,6 +58,19 @@ export function formatNumber(value) {
   }).format(numberValue)
 }
 
+export function formatQuantity(value) {
+  const numberValue = Number(value)
+
+  if (!Number.isFinite(numberValue)) {
+    return '-'
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(numberValue)
+}
+
 export function formatRupiah(value) {
   const numberValue = Number(value)
 
@@ -243,7 +256,7 @@ export const rpItemColumns = [
     key: 'quantity',
     header: 'Qty',
     accessor: 'quantity',
-    format: formatNumber,
+    format: formatQuantity,
     minWidth: 64,
     nowrap: true,
   },

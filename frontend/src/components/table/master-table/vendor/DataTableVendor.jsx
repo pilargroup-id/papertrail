@@ -171,6 +171,7 @@ function DataTableVendor({
       columns={resolvedColumns}
       actions={resolvedActions}
       useDefaultActions={false}
+      fitToRows
       getRowId={getRowId}
       tableLabel={tableLabel}
       emptyMessage={emptyMessage}
