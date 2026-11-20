@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -35,7 +35,7 @@ const editInitialFormValues = () => ({
   class_department_id: '',
   date_required: getTodayDateValue(),
   description: '',
-  vendor_id: '',
+  vendor_name: '',
   payment_category_id: '',
   destination_department_id: '',
   pic_name: '',
@@ -79,19 +79,6 @@ function getFirstValue(source, keys, fallback = '') {
   }
 
   return source[matchedKey]
-}
-
-function mapVendorOptions(vendors) {
-  return vendors.map((vendor) => {
-    const id = getFirstValue(vendor, ['id', 'vendor_id'])
-    const code = getFirstValue(vendor, ['code', 'vendor_code'])
-    const name = getFirstValue(vendor, ['name', 'vendor_name'], `Vendor #${id ?? '-'}`)
-
-    return {
-      value: id,
-      label: [code, name].filter(Boolean).join(' - '),
-    }
-  })
 }
 
 function mapPaymentCategoryOptions(categories) {
@@ -144,48 +131,6 @@ function mapBudgetOptions(budgets) {
       },
     }
   })
-}
-
-function getUserDisplayName(user) {
-  const name = getFirstValue(user, ['full_name', 'fullName', 'name', 'display_name', 'employee_name'])
-
-  return typeof name === 'string' ? name.trim() : ''
-}
-
-function userBelongsToDepartment(user, departmentId) {
-  const targetId = Number(departmentId)
-
-  if (!targetId) {
-    return false
-  }
-
-  const departments = Array.isArray(user?.departments) ? user.departments : []
-
-  return departments.some((department) => {
-    const departmentIds = [department?.id, department?.department_id, department?.class_department_id]
-
-    return departmentIds.some((id) => Number(id) === targetId)
-  })
-}
-
-function mapPicOptions(users, departmentId) {
-  const seenNames = new Set()
-
-  return users
-    .filter((user) => userBelongsToDepartment(user, departmentId))
-    .reduce((options, user) => {
-      const name = getUserDisplayName(user)
-
-      if (!name || seenNames.has(name)) {
-        return options
-      }
-
-      seenNames.add(name)
-      options.push({ value: name, label: name })
-
-      return options
-    }, [])
-    .sort((a, b) => a.label.localeCompare(b.label))
 }
 
 function formatRupiah(value) {
@@ -308,7 +253,7 @@ function mapRpToFormValues(rp) {
       getFirstValue(rp, ['date_required', 'dateRequired', 'created_at'], getTodayDateValue()),
     ),
     description: getFirstValue(rp, ['description'], ''),
-    vendor_id: getFirstValue(rp, ['vendor_id', 'vendorId'], ''),
+    vendor_name: getFirstValue(rp, ['vendor_name_snapshot', 'vendor_name'], ''),
     payment_category_id: getFirstValue(
       rp,
       ['payment_category_id', 'paymentCategoryId', 'rp_payment_category_id'],
@@ -434,73 +379,21 @@ function DialogEditRp({
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [vendorOptions, setVendorOptions] = useState([])
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
-  const [userDirectory, setUserDirectory] = useState([])
-  const [initialPicName, setInitialPicName] = useState({ departmentId: '', name: '' })
   const [, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
-
-  const picOptions = useMemo(() => {
-    const options = mapPicOptions(userDirectory, formValues.destination_department_id)
-    const savedPicName = initialPicName.name
-
-    // Keep the PIC saved on this RP selectable even if the user directory no
-    // longer lists them under the destination division.
-    if (
-      savedPicName &&
-      String(initialPicName.departmentId) === String(formValues.destination_department_id) &&
-      !options.some((option) => option.value === savedPicName)
-    ) {
-      return [{ value: savedPicName, label: savedPicName }, ...options]
-    }
-
-    return options
-  }, [userDirectory, formValues.destination_department_id, initialPicName])
-
-  const searchVendorOptions = useCallback(async (query, { signal } = {}) => {
-    const response = await api.vendors.list(
-      {
-        q: query,
-        is_active: 1,
-        limit: 20,
-      },
-      { signal },
-    )
-
-    return mapVendorOptions(getRowsFromResponse(response))
-  }, [])
-
-  const createVendorOption = useCallback(async (name) => {
-    const response = await api.vendors.create({ name })
-    const vendor = response?.data ?? response
-    const [option] = mapVendorOptions([vendor])
-
-    setVendorOptions((currentOptions) => {
-      if (currentOptions.some((existing) => existing.value === option.value)) {
-        return currentOptions
-      }
-
-      return [...currentOptions, option].sort((a, b) => a.label.localeCompare(b.label))
-    })
-
-    return option
-  }, [])
 
   const resetDialogState = useCallback(() => {
     setFormValues(editInitialFormValues())
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
-    setVendorOptions([])
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
     setBudgetOptions([])
-    setUserDirectory([])
-    setInitialPicName({ departmentId: '', name: '' })
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
@@ -512,39 +405,20 @@ function DialogEditRp({
   }, [onClose, resetDialogState])
 
   const updateValue = (fieldName, value) => {
-    setFormValues((currentValues) => {
-      if (
-        fieldName === 'destination_department_id' &&
-        String(currentValues.destination_department_id) !== String(value)
-      ) {
-        return {
-          ...currentValues,
-          destination_department_id: value,
-          pic_name: '',
-        }
-      }
-
-      return {
-        ...currentValues,
-        [fieldName]: value,
-      }
-    })
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      [fieldName]: value,
+    }))
 
     setFieldErrors((currentErrors) => {
-      const fieldsToClear =
-        fieldName === 'destination_department_id' ? [fieldName, 'pic_name'] : [fieldName]
-
-      if (!fieldsToClear.some((field) => currentErrors[field])) {
+      if (!currentErrors[fieldName]) {
         return currentErrors
       }
 
-      const nextErrors = { ...currentErrors }
-
-      fieldsToClear.forEach((field) => {
-        nextErrors[field] = ''
-      })
-
-      return nextErrors
+      return {
+        ...currentErrors,
+        [fieldName]: '',
+      }
     })
   }
 
@@ -629,11 +503,9 @@ function DialogEditRp({
         const [
           rpDetailResponse,
           authResponse,
-          vendorsResponse,
           paymentCategoriesResponse,
           destinationDepartmentsResponse,
           budgetsResponse,
-          usersResponse,
         ] = await Promise.all([
           rpId === undefined || rpId === null || rpId === ''
             ? Promise.resolve(rp)
@@ -643,16 +515,6 @@ function DialogEditRp({
           api.auth.me({
             signal: controller.signal,
           }),
-          api.vendors.list(
-            {
-              page: 1,
-              limit: 100,
-              is_active: 1,
-            },
-            {
-              signal: controller.signal,
-            },
-          ),
           api.rpPaymentCategories.list(
             {
               page: 1,
@@ -683,24 +545,11 @@ function DialogEditRp({
               signal: controller.signal,
             },
           ),
-          api.directory.users.list(undefined, {
-            signal: controller.signal,
-          }),
         ])
         const rpDetail = getRpFromResponse(rpDetailResponse) ?? rp ?? {}
         const authUser = getAuthUser(authResponse)
         const nextFormValues = mapRpToFormValues(rpDetail)
         const nextRequesterInfo = getRpRequesterInfo(rpDetail, authUser)
-        const nextVendorOptions = ensureOption(
-          mapVendorOptions(getRowsFromResponse(vendorsResponse)),
-          nextFormValues.vendor_id,
-          [
-            getFirstValue(rpDetail, ['vendor_code_snapshot', 'vendor_code'], ''),
-            getFirstValue(rpDetail, ['vendor_name_snapshot', 'vendor_name'], ''),
-          ]
-            .filter(Boolean)
-            .join(' - '),
-        )
         const nextPaymentCategoryOptions = ensureOption(
           mapPaymentCategoryOptions(getRowsFromResponse(paymentCategoriesResponse)),
           nextFormValues.payment_category_id,
@@ -736,25 +585,17 @@ function DialogEditRp({
             nextFormValues.class_department_id || nextRequesterInfo.class_department_id || '',
           pic_name: nextPicName,
         })
-        setInitialPicName({
-          departmentId: nextFormValues.destination_department_id,
-          name: nextPicName,
-        })
-        setVendorOptions(nextVendorOptions)
         setPaymentCategoryOptions(nextPaymentCategoryOptions)
         setDestinationDepartmentOptions(nextDestinationDepartmentOptions)
         setBudgetOptions(nextBudgetOptions)
-        setUserDirectory(getRowsFromResponse(usersResponse))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-        setVendorOptions([])
-        setPaymentCategoryOptions([])
+            setPaymentCategoryOptions([])
         setDestinationDepartmentOptions([])
         setBudgetOptions([])
-        setUserDirectory([])
         setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat pilihan RP.')
       } finally {
@@ -797,8 +638,8 @@ function DialogEditRp({
       nextFieldErrors.description = 'Description wajib diisi.'
     }
 
-    if (!formValues.vendor_id) {
-      nextFieldErrors.vendor_id = 'Vendor wajib dipilih.'
+    if (!formValues.vendor_name.trim()) {
+      nextFieldErrors.vendor_name = 'Vendor wajib diisi.'
     }
 
     if (!formValues.payment_category_id) {
@@ -852,8 +693,8 @@ function DialogEditRp({
         class_department_id: formValues.class_department_id || undefined,
         destination_department_id: formValues.destination_department_id,
         date_required: formValues.date_required,
-        vendor_source: 'MASTER',
-        vendor_id: formValues.vendor_id,
+        vendor_source: 'MANUAL',
+        vendor_name: formValues.vendor_name.trim(),
         payment_category_id: formValues.payment_category_id,
         pic_name: formValues.pic_name.trim(),
         description: formValues.description.trim(),
@@ -962,12 +803,8 @@ function DialogEditRp({
             fieldErrors={fieldErrors}
             isOptionsLoading={isOptionsLoading}
             isFormDisabled={isFormDisabled}
-            vendorOptions={vendorOptions}
-            onSearchVendors={searchVendorOptions}
-            onCreateVendor={createVendorOption}
             paymentCategoryOptions={paymentCategoryOptions}
             destinationDepartmentOptions={destinationDepartmentOptions}
-            picOptions={picOptions}
             updateValue={updateValue}
           />
 

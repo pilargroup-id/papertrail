@@ -177,7 +177,64 @@ async function fetchProfileFromPilargroup(token) {
   }
 }
 
-async function resolveToken(bearerToken) {
+function applyOrganizationContext(user, rawContext) {
+  if (!rawContext) return user;
+
+  let context;
+  try {
+    context = JSON.parse(rawContext);
+  } catch {
+    return user;
+  }
+
+  if (context?.userId !== String(user.id)) return user;
+
+  const { departmentId, companyId } = context;
+  const department = departmentId && user.departments.find((item) =>
+    String(item?.class_department_id ?? item?.id ?? item?.department_id ?? '') === departmentId
+  );
+  const company = companyId && user.companies.find((item) => String(item?.id ?? '') === companyId);
+
+  if ((departmentId && !department) || (companyId && !company)) {
+    throw createHttpError('Pilihan departemen atau perusahaan sudah tidak tersedia.', 403, 'INVALID_ORGANIZATION_CONTEXT');
+  }
+
+  if (department) {
+    const id = department.id ?? department.class_department_id ?? department.department_id;
+    const name = department.name ?? department.class_name ?? department.department_name;
+    const departmentClass = department.class ?? department.class_class ?? department.department_class;
+    const code = department.code ?? department.class_code ?? department.department_code;
+
+    Object.assign(user, {
+      department_id: id,
+      department: name,
+      department_class: departmentClass,
+      department_code: code,
+      parent_department_id: department.parent_id ?? null,
+      parent_department_name: department.parent_name ?? null,
+      context_department_id: department.department_id ?? id,
+      context_department_name: department.department_name ?? name,
+      context_department_class: department.department_class ?? departmentClass,
+      context_department_code: department.department_code ?? code,
+      class_department_id: department.class_department_id ?? id,
+      class_name: department.class_name ?? name,
+      class_class: department.class_class ?? departmentClass,
+      class_code: department.class_code ?? code,
+    });
+  }
+
+  if (company) {
+    Object.assign(user, {
+      company_id: company.id,
+      company: company.name ?? null,
+      company_code: company.code ?? null,
+    });
+  }
+
+  return user;
+}
+
+async function resolveToken(bearerToken, organizationContext) {
   const token = await resolveRawToken(bearerToken);
   const decoded = verifyToken(token);
   const user = await fetchProfileFromPilargroup(token);
@@ -195,7 +252,7 @@ async function resolveToken(bearerToken) {
   return {
     token,
     decoded,
-    user,
+    user: applyOrganizationContext(user, organizationContext),
   };
 }
 

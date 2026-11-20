@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -9,7 +9,15 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import api from '../../../services/api.js'
+import {
+  FORM_DRAFT_KEYS,
+  clearFormDraft,
+  loadFormDraft,
+  saveFormDraft,
+} from '../../../services/formDraftStorage.js'
 import { XClose } from '../../layoute/TemplateIcons.jsx'
+import DialogConfirmDraft from '../DialogConfirmDraft.jsx'
+import DraftRestoredBanner from '../DraftRestoredBanner.jsx'
 import TabsItemsCreate from './tabs-create-rp/TabsItemsCreate.jsx'
 import TabsVendorCreate from './tabs-create-rp/TabsVendorCreate.jsx'
 
@@ -35,13 +43,38 @@ const createInitialFormValues = () => ({
   class_department_id: '',
   date_required: getTodayDateValue(),
   description: '',
-  vendor_id: '',
+  vendor_name: '',
   payment_category_id: '',
   destination_department_id: '',
   pic_name: '',
   items: [createInitialItem()],
   notes: 'Submit RP',
 })
+
+function serializeFormValues(values) {
+  return JSON.stringify(values)
+}
+
+function normalizeDraftFormValues(values) {
+  const initialValues = createInitialFormValues()
+  const draftItems = Array.isArray(values?.items) && values.items.length > 0 ? values.items : null
+
+  return {
+    ...initialValues,
+    ...values,
+    items: draftItems
+      ? draftItems.map((item) => ({ ...createInitialItem(), ...item }))
+      : initialValues.items,
+  }
+}
+
+function withRequesterDepartment(values, requesterInfo) {
+  return {
+    ...values,
+    department_id: values.department_id || requesterInfo.department_id || '',
+    class_department_id: values.class_department_id || requesterInfo.class_department_id || '',
+  }
+}
 
 const initialRequesterInfo = {
   company: '',
@@ -82,19 +115,6 @@ function getFirstValue(source, keys, fallback = '') {
   }
 
   return source[matchedKey]
-}
-
-function mapVendorOptions(vendors) {
-  return vendors.map((vendor) => {
-    const id = getFirstValue(vendor, ['id', 'vendor_id'])
-    const code = getFirstValue(vendor, ['code', 'vendor_code'])
-    const name = getFirstValue(vendor, ['name', 'vendor_name'], `Vendor #${id ?? '-'}`)
-
-    return {
-      value: id,
-      label: [code, name].filter(Boolean).join(' - '),
-    }
-  })
 }
 
 function mapPaymentCategoryOptions(categories) {
@@ -237,48 +257,6 @@ function getBudgetListParams(requesterInfo, canUseCrossBudget) {
   }
 
   return params
-}
-
-function getUserDisplayName(user) {
-  const name = getFirstValue(user, ['full_name', 'fullName', 'name', 'display_name', 'employee_name'])
-
-  return typeof name === 'string' ? name.trim() : ''
-}
-
-function userBelongsToDepartment(user, departmentId) {
-  const targetId = Number(departmentId)
-
-  if (!targetId) {
-    return false
-  }
-
-  const departments = Array.isArray(user?.departments) ? user.departments : []
-
-  return departments.some((department) => {
-    const departmentIds = [department?.id, department?.department_id, department?.class_department_id]
-
-    return departmentIds.some((id) => Number(id) === targetId)
-  })
-}
-
-function mapPicOptions(users, departmentId) {
-  const seenNames = new Set()
-
-  return users
-    .filter((user) => userBelongsToDepartment(user, departmentId))
-    .reduce((options, user) => {
-      const name = getUserDisplayName(user)
-
-      if (!name || seenNames.has(name)) {
-        return options
-      }
-
-      seenNames.add(name)
-      options.push({ value: name, label: name })
-
-      return options
-    }, [])
-    .sort((a, b) => a.label.localeCompare(b.label))
 }
 
 function getAuthUser(response) {
@@ -427,7 +405,7 @@ function mapRpToDuplicateFormValues(rp) {
     class_department_id: '',
     date_required: getTodayDateValue(),
     description: getFirstValue(rp, ['description'], ''),
-    vendor_id: getFirstValue(rp, ['vendor_id', 'vendorId'], ''),
+    vendor_name: getFirstValue(rp, ['vendor_name_snapshot', 'vendor_name'], ''),
     payment_category_id: getFirstValue(rp, ['payment_category_id', 'paymentCategoryId'], ''),
     destination_department_id: getFirstValue(
       rp,
@@ -452,62 +430,31 @@ function DialogCreateRp({
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [vendorOptions, setVendorOptions] = useState([])
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
-  const [userDirectory, setUserDirectory] = useState([])
-  const [, setRequesterInfo] = useState(initialRequesterInfo)
+  const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
-
-  const picOptions = useMemo(
-    () => mapPicOptions(userDirectory, formValues.destination_department_id),
-    [userDirectory, formValues.destination_department_id],
-  )
-
-  const searchVendorOptions = useCallback(async (query, { signal } = {}) => {
-    const response = await api.vendors.list(
-      {
-        q: query,
-        is_active: 1,
-        limit: 20,
-      },
-      { signal },
-    )
-
-    return mapVendorOptions(getRowsFromResponse(response))
-  }, [])
-
-  const createVendorOption = useCallback(async (name) => {
-    const response = await api.vendors.create({ name })
-    const vendor = response?.data ?? response
-    const [option] = mapVendorOptions([vendor])
-
-    setVendorOptions((currentOptions) => {
-      if (currentOptions.some((existing) => existing.value === option.value)) {
-        return currentOptions
-      }
-
-      return [...currentOptions, option].sort((a, b) => a.label.localeCompare(b.label))
-    })
-
-    return option
-  }, [])
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false)
+  const [restoredDraft, setRestoredDraft] = useState(null)
+  const baselineFormValuesRef = useRef(null)
+  const draftUserIdRef = useRef('')
 
   const resetDialogState = useCallback(() => {
     setFormValues(createInitialFormValues())
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
-    setVendorOptions([])
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
     setBudgetOptions([])
-    setUserDirectory([])
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
+    setIsCloseConfirmOpen(false)
+    setRestoredDraft(null)
+    baselineFormValuesRef.current = null
   }, [])
 
   const handleClose = useCallback(() => {
@@ -515,40 +462,71 @@ function DialogCreateRp({
     onClose?.()
   }, [onClose, resetDialogState])
 
-  const updateValue = (fieldName, value) => {
-    setFormValues((currentValues) => {
-      if (
-        fieldName === 'destination_department_id' &&
-        currentValues.destination_department_id !== value
-      ) {
-        return {
-          ...currentValues,
-          destination_department_id: value,
-          pic_name: '',
-        }
-      }
+  const hasUnsavedChanges = () => {
+    const baseline =
+      baselineFormValuesRef.current ?? serializeFormValues(createInitialFormValues())
 
-      return {
-        ...currentValues,
-        [fieldName]: value,
-      }
-    })
+    return serializeFormValues(formValues) !== baseline
+  }
+
+  const requestClose = () => {
+    if (isSubmitting) {
+      return
+    }
+
+    if (!hasUnsavedChanges()) {
+      handleClose()
+      return
+    }
+
+    setIsCloseConfirmOpen(true)
+  }
+
+  const handleSaveDraftAndClose = () => {
+    const isSaved = saveFormDraft(FORM_DRAFT_KEYS.RP_CREATE, draftUserIdRef.current, formValues)
+
+    if (!isSaved) {
+      setIsCloseConfirmOpen(false)
+      setSubmitError('Draft gagal disimpan di browser ini. Silakan coba lagi atau submit RP.')
+      return
+    }
+
+    handleClose()
+  }
+
+  const handleDiscardAndClose = () => {
+    if (restoredDraft) {
+      clearFormDraft(FORM_DRAFT_KEYS.RP_CREATE, draftUserIdRef.current)
+    }
+
+    handleClose()
+  }
+
+  const handleDiscardRestoredDraft = () => {
+    const initialValues = withRequesterDepartment(createInitialFormValues(), requesterInfo)
+
+    clearFormDraft(FORM_DRAFT_KEYS.RP_CREATE, draftUserIdRef.current)
+    baselineFormValuesRef.current = serializeFormValues(initialValues)
+    setFormValues(initialValues)
+    setFieldErrors({})
+    setRestoredDraft(null)
+  }
+
+  const updateValue = (fieldName, value) => {
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      [fieldName]: value,
+    }))
 
     setFieldErrors((currentErrors) => {
-      const fieldsToClear =
-        fieldName === 'destination_department_id' ? [fieldName, 'pic_name'] : [fieldName]
-
-      if (!fieldsToClear.some((field) => currentErrors[field])) {
+      if (!currentErrors[fieldName]) {
         return currentErrors
       }
 
-      const nextErrors = { ...currentErrors }
-
-      fieldsToClear.forEach((field) => {
-        nextErrors[field] = ''
-      })
-
-      return nextErrors
+      return {
+        ...currentErrors,
+        [fieldName]: '',
+      }
     })
   }
 
@@ -630,10 +608,8 @@ function DialogCreateRp({
         const [
           authResponse,
           budgetAccessRulesResponse,
-          vendorsResponse,
           paymentCategoriesResponse,
           destinationDepartmentsResponse,
-          usersResponse,
         ] = await Promise.all([
           api.auth.me({
             signal: controller.signal,
@@ -644,16 +620,6 @@ function DialogCreateRp({
               limit: 200,
               module: RP_BUDGET_ACCESS_MODULE,
               access_type: CROSS_BUDGET_ACCESS_TYPE,
-              is_active: 1,
-            },
-            {
-              signal: controller.signal,
-            },
-          ),
-          api.vendors.list(
-            {
-              page: 1,
-              limit: 100,
               is_active: 1,
             },
             {
@@ -680,9 +646,6 @@ function DialogCreateRp({
               signal: controller.signal,
             },
           ),
-          api.directory.users.list(undefined, {
-            signal: controller.signal,
-          }),
         ])
         const authUser = getAuthUser(authResponse)
         const nextRequesterInfo = getUserRequesterInfo(authUser)
@@ -701,8 +664,16 @@ function DialogCreateRp({
           ? budgetRows
           : filterBudgetsByRequesterScope(budgetRows, nextRequesterInfo)
         const duplicateFormValues = duplicateFrom ? mapRpToDuplicateFormValues(duplicateFrom) : null
+        const draftUserId = getFirstValue(authUser, ['id', 'user_id', 'userId'], '')
+        const storedDraft = duplicateFormValues
+          ? null
+          : loadFormDraft(FORM_DRAFT_KEYS.RP_CREATE, draftUserId)
+        const draftFormValues = storedDraft ? normalizeDraftFormValues(storedDraft.values) : null
+        const nextFormValues = withRequesterDepartment(
+          duplicateFormValues ?? draftFormValues ?? createInitialFormValues(),
+          nextRequesterInfo,
+        )
 
-        let nextVendorOptions = mapVendorOptions(getRowsFromResponse(vendorsResponse))
         let nextPaymentCategoryOptions = mapPaymentCategoryOptions(
           getRowsFromResponse(paymentCategoriesResponse),
         )
@@ -712,16 +683,6 @@ function DialogCreateRp({
         let nextBudgetOptions = mapBudgetOptions(visibleBudgetRows)
 
         if (duplicateFormValues) {
-          nextVendorOptions = ensureOption(
-            nextVendorOptions,
-            duplicateFormValues.vendor_id,
-            [
-              getFirstValue(duplicateFrom, ['vendor_code_snapshot', 'vendor_code'], ''),
-              getFirstValue(duplicateFrom, ['vendor_name_snapshot', 'vendor_name'], ''),
-            ]
-              .filter(Boolean)
-              .join(' - '),
-          )
           nextPaymentCategoryOptions = ensureOption(
             nextPaymentCategoryOptions,
             duplicateFormValues.payment_category_id,
@@ -745,29 +706,22 @@ function DialogCreateRp({
           nextBudgetOptions = ensureBudgetOptionsForItems(nextBudgetOptions, duplicateFrom?.items)
         }
 
+        draftUserIdRef.current = draftUserId
+        baselineFormValuesRef.current = serializeFormValues(nextFormValues)
+        setRestoredDraft(storedDraft ? { savedAt: storedDraft.savedAt } : null)
         setRequesterInfo(nextRequesterInfo)
-        setFormValues((currentValues) => ({
-          ...currentValues,
-          ...(duplicateFormValues ?? {}),
-          department_id: currentValues.department_id || nextRequesterInfo.department_id || '',
-          class_department_id:
-            currentValues.class_department_id || nextRequesterInfo.class_department_id || '',
-        }))
-        setVendorOptions(nextVendorOptions)
+        setFormValues(nextFormValues)
         setPaymentCategoryOptions(nextPaymentCategoryOptions)
         setDestinationDepartmentOptions(nextDestinationDepartmentOptions)
         setBudgetOptions(nextBudgetOptions)
-        setUserDirectory(getRowsFromResponse(usersResponse))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-        setVendorOptions([])
-        setPaymentCategoryOptions([])
+            setPaymentCategoryOptions([])
         setDestinationDepartmentOptions([])
         setBudgetOptions([])
-        setUserDirectory([])
         setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat pilihan RP.')
       } finally {
@@ -810,8 +764,8 @@ function DialogCreateRp({
       nextFieldErrors.description = 'Description wajib diisi.'
     }
 
-    if (!formValues.vendor_id) {
-      nextFieldErrors.vendor_id = 'Vendor wajib dipilih.'
+    if (!formValues.vendor_name.trim()) {
+      nextFieldErrors.vendor_name = 'Vendor wajib diisi.'
     }
 
     if (!formValues.payment_category_id) {
@@ -859,14 +813,19 @@ function DialogCreateRp({
         class_department_id: formValues.class_department_id || undefined,
         destination_department_id: formValues.destination_department_id,
         date_required: formValues.date_required,
-        vendor_source: 'MASTER',
-        vendor_id: formValues.vendor_id,
+        vendor_source: 'MANUAL',
+        vendor_name: formValues.vendor_name.trim(),
         payment_category_id: formValues.payment_category_id,
         pic_name: formValues.pic_name.trim(),
         description: formValues.description.trim(),
         items: normalizedItems,
         notes: formValues.notes.trim() || 'Submit RP',
       })
+
+      if (restoredDraft) {
+        clearFormDraft(FORM_DRAFT_KEYS.RP_CREATE, draftUserIdRef.current)
+        setRestoredDraft(null)
+      }
 
       await onCreated?.(response)
       handleClose()
@@ -890,167 +849,181 @@ function DialogCreateRp({
   }, 0)
 
   return (
-    <Drawer
-      anchor="right"
-      open={isOpen}
-      onClose={isSubmitting ? undefined : handleClose}
-      slotProps={{
-        paper: {
-          sx: {
-            width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
-            maxWidth: '100%',
+    <>
+      <Drawer
+        anchor="right"
+        open={isOpen}
+        onClose={requestClose}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
+              maxWidth: '100%',
+            },
           },
-        },
-      }}
-    >
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        }}
       >
-        <Stack
-          direction="row"
-          sx={{
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            px: 3,
-            py: 2,
-            bgcolor: '#344968',
-            color: '#fff',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
-          }}
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
         >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              variant="overline"
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              px: 3,
+              py: 2,
+              bgcolor: '#344968',
+              color: '#fff',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  display: 'block',
+                  lineHeight: 1.6,
+                  letterSpacing: 0.5,
+                  color: 'rgba(255, 255, 255, 0.72)',
+                }}
+              >
+                {eyebrow}
+              </Typography>
+              <Typography
+                variant="h6"
+                id="dialog-create-rp-title"
+                sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
+              >
+                {title}
+              </Typography>
+            </Box>
+
+            <IconButton
+              aria-label="Tutup dialog"
+              onClick={requestClose}
+              disabled={isSubmitting}
               sx={{
-                display: 'block',
-                lineHeight: 1.6,
-                letterSpacing: 0.5,
-                color: 'rgba(255, 255, 255, 0.72)',
+                flexShrink: 0,
+                width: 36,
+                height: 36,
+                borderRadius: '5px',
+                color: '#fff',
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+                '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
               }}
             >
-              {eyebrow}
-            </Typography>
-            <Typography
-              variant="h6"
-              id="dialog-create-rp-title"
-              sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
+              <XClose size={20} />
+            </IconButton>
+          </Stack>
+
+          <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
+            {restoredDraft ? (
+              <DraftRestoredBanner
+                savedAt={restoredDraft.savedAt}
+                disabled={isFormDisabled}
+                onDiscard={handleDiscardRestoredDraft}
+              />
+            ) : null}
+
+            <TabsVendorCreate
+              formValues={formValues}
+              fieldErrors={fieldErrors}
+              isOptionsLoading={isOptionsLoading}
+              isFormDisabled={isFormDisabled}
+              paymentCategoryOptions={paymentCategoryOptions}
+              destinationDepartmentOptions={destinationDepartmentOptions}
+              updateValue={updateValue}
+            />
+
+            <TabsItemsCreate
+              formValues={formValues}
+              fieldErrors={fieldErrors}
+              isOptionsLoading={isOptionsLoading}
+              isFormDisabled={isFormDisabled}
+              budgetOptions={budgetOptions}
+              updateItemValue={updateItemValue}
+              removeItem={removeItem}
+              addItem={addItem}
+              duplicateLastItem={duplicateLastItem}
+            />
+
+            {optionsError ? (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {optionsError}
+              </Alert>
+            ) : null}
+            {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+          </Box>
+
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 3,
+              py: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Total RP (IDR)
+              </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {formatRupiah(totalAmount)}
+              </Typography>
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isFormDisabled}
+              sx={{
+                height: 44,
+                minWidth: 140,
+                px: 2.25,
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                bgcolor: 'var(--accent-teal, #2a9d8f)',
+                boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: 'var(--accent-teal-dark, #21867a)',
+                  boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                  transform: 'translateY(-1px)',
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
+                },
+                '&:focus-visible': {
+                  boxShadow:
+                    '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
+                },
+                '&.Mui-disabled': {
+                  boxShadow: 'none',
+                },
+              }}
             >
-              {title}
-            </Typography>
-          </Box>
-
-          <IconButton
-            aria-label="Tutup dialog"
-            onClick={handleClose}
-            disabled={isSubmitting}
-            sx={{
-              flexShrink: 0,
-              width: 36,
-              height: 36,
-              borderRadius: '5px',
-              color: '#fff',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
-              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
-            }}
-          >
-            <XClose size={20} />
-          </IconButton>
-        </Stack>
-
-        <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
-          <TabsVendorCreate
-            formValues={formValues}
-            fieldErrors={fieldErrors}
-            isOptionsLoading={isOptionsLoading}
-            isFormDisabled={isFormDisabled}
-            vendorOptions={vendorOptions}
-            onSearchVendors={searchVendorOptions}
-            onCreateVendor={createVendorOption}
-            paymentCategoryOptions={paymentCategoryOptions}
-            destinationDepartmentOptions={destinationDepartmentOptions}
-            picOptions={picOptions}
-            updateValue={updateValue}
-          />
-
-          <TabsItemsCreate
-            formValues={formValues}
-            fieldErrors={fieldErrors}
-            isOptionsLoading={isOptionsLoading}
-            isFormDisabled={isFormDisabled}
-            budgetOptions={budgetOptions}
-            updateItemValue={updateItemValue}
-            removeItem={removeItem}
-            addItem={addItem}
-            duplicateLastItem={duplicateLastItem}
-          />
-
-          {optionsError ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {optionsError}
-            </Alert>
-          ) : null}
-          {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+              {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
+            </Button>
+          </Stack>
         </Box>
+      </Drawer>
 
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 3,
-            py: 2,
-          }}
-        >
-          <Box>
-            <Typography variant="caption" color="text.secondary" display="block">
-              Total RP (IDR)
-            </Typography>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              {formatRupiah(totalAmount)}
-            </Typography>
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isFormDisabled}
-            sx={{
-              height: 44,
-              minWidth: 140,
-              px: 2.25,
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              bgcolor: 'var(--accent-teal, #2a9d8f)',
-              boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-              '&:hover': {
-                bgcolor: 'var(--accent-teal-dark, #21867a)',
-                boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
-                transform: 'translateY(-1px)',
-              },
-              '&:active': {
-                transform: 'translateY(0)',
-              },
-              '&:focus-visible': {
-                boxShadow:
-                  '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
-              },
-              '&.Mui-disabled': {
-                boxShadow: 'none',
-              },
-            }}
-          >
-            {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
-          </Button>
-        </Stack>
-      </Box>
-    </Drawer>
+      <DialogConfirmDraft
+        open={isCloseConfirmOpen}
+        message="RP ini belum disubmit. Draft akan dimuat lagi saat Anda membuka Create RP berikutnya."
+        onSaveDraft={handleSaveDraftAndClose}
+        onDiscard={handleDiscardAndClose}
+        onCancel={() => setIsCloseConfirmOpen(false)}
+      />
+    </>
   )
 }
 

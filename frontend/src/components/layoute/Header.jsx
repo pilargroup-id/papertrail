@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   MDBContainer,
   MDBNavbar,
@@ -10,6 +11,7 @@ import {
   MDBDropdownMenu,
   MDBDropdownItem,
 } from 'mdb-react-ui-kit'
+import DialogSwitchDepartment from '../Dialog/DialogSwitchDepartment.jsx'
 import { Bell04, ChevronDown, SearchMd } from './TemplateIcons.jsx'
 import {
   defaultNavigationPath,
@@ -30,11 +32,38 @@ const dropdownOptions = {
   ],
 }
 
+function getSwitchOptions(items = [], getId, getLabel) {
+  const options = new Map()
+  for (const item of items) {
+    if (!item) continue
+    const id = String(getId(item) ?? '')
+    if (id && !options.has(id)) {
+      options.set(id, { id, label: getLabel(item) || id })
+    }
+  }
+  return [...options.values()]
+}
+
 function Header({
   activePath = '/dashboard',
   userName = '',
+  userDepartment = '',
   userRole = '',
+  currentUser,
+  onSwitchDepartment,
 }) {
+  const [isDepartmentSwitchOpen, setIsDepartmentSwitchOpen] = useState(false)
+  const departmentOptions = getSwitchOptions(
+    currentUser?.departments,
+    (department) => department.class_department_id ?? department.id ?? department.department_id,
+    (department) => {
+      const name = department.department_name || department.name
+      const className = department.class_name || department.name
+      return name && className && name !== className ? `${name} / ${className}` : name || className
+    },
+  )
+  const companyOptions = getSwitchOptions(currentUser?.companies, (company) => company.id, (company) => company.name)
+  const canSwitchDepartment = departmentOptions.length > 1 || companyOptions.length > 1
   const profileMenuItem = secondaryNavigationItems[0]
   const visibleItems = primaryNavigationItems.filter((item) =>
     !item.allowedRoles?.length || item.allowedRoles.some((role) =>
@@ -170,22 +199,37 @@ function Header({
               className="app-navbar__profile"
               aria-label={`Menu akun ${profileName}`}
               aria-controls="app-navbar-profile-menu"
-              title={[profileName, userRole].filter(Boolean).join(' / ')}
+              title={[profileName, userDepartment].filter(Boolean).join(' / ')}
             >
               <span className="app-navbar__avatar">{profileInitials}</span>
               <span className="app-navbar__profile-details">
                 <strong>{profileName}</strong>
-                {userRole ? <small>{userRole}</small> : null}
+                {userDepartment ? <small>{userDepartment}</small> : null}
               </span>
               <ChevronDown className="app-navbar__chevron" size={13} />
             </MDBDropdownToggle>
             <MDBDropdownMenu id="app-navbar-profile-menu" className="app-navbar__profile-menu" aria-label="Akun">
-              <MDBDropdownItem link childTag="button" onClick={() => window.location.assign(profileMenuItem.href)}>
-                <span>{profileMenuItem.label}</span>
-              </MDBDropdownItem>
+              {[
+                canSwitchDepartment && <MDBDropdownItem key="switch-department" link childTag="button" onClick={() => setIsDepartmentSwitchOpen(true)}>
+                  <span>Switch Department</span>
+                </MDBDropdownItem>,
+                <MDBDropdownItem key={profileMenuItem.id} link childTag="button" onClick={() => window.location.assign(profileMenuItem.href)}>
+                  <span>{profileMenuItem.label}</span>
+                </MDBDropdownItem>,
+              ].filter(Boolean)}
             </MDBDropdownMenu>
           </MDBDropdown>
         </div>
+        {canSwitchDepartment && isDepartmentSwitchOpen ? (
+          <DialogSwitchDepartment
+            departmentOptions={departmentOptions}
+            companyOptions={companyOptions}
+            activeDepartmentId={currentUser.class_department_id ?? currentUser.department_id}
+            activeCompanyId={currentUser.company_id}
+            onClose={() => setIsDepartmentSwitchOpen(false)}
+            onSwitch={onSwitchDepartment}
+          />
+        ) : null}
       </MDBContainer>
     </MDBNavbar>
   )

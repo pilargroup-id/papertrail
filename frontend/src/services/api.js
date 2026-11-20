@@ -7,6 +7,8 @@ const AUTH_TOKEN_STORAGE_KEYS = [
   'access_token',
 ];
 const AUTH_TOKEN_URL_PARAM = 'token';
+const ORGANIZATION_CONTEXT_STORAGE_KEY = 'papertrail.organizationContext';
+const ORGANIZATION_CONTEXT_HEADER = 'X-Papertrail-Context';
 
 const normalizeBaseUrl = (url) => url.replace(/\/+$/, '');
 const shouldUseStoredAuthToken = () =>
@@ -153,6 +155,13 @@ export class ApiError extends Error {
 
 let authToken = null;
 let authTokenGetter = null;
+let activeOrganizationContext = null;
+
+try {
+  activeOrganizationContext = JSON.parse(window.sessionStorage.getItem(ORGANIZATION_CONTEXT_STORAGE_KEY));
+} catch {
+  // Storage may be unavailable or contain an older value.
+}
 
 const resolveToken = (tokenFromRequest) => {
   const requestToken = normalizeAuthToken(tokenFromRequest);
@@ -470,6 +479,7 @@ const request = async (
     signal,
     responseType = 'json',
     baseUrl,
+    organizationContext = activeOrganizationContext,
   } = {},
 ) => {
   const resolvedBaseUrl = normalizeBaseUrl(baseUrl || getApiBaseUrl());
@@ -481,6 +491,9 @@ const request = async (
     Accept: 'application/json',
     ...headers,
   };
+  if (organizationContext && resolvedBaseUrl === getApiBaseUrl()) {
+    requestHeaders[ORGANIZATION_CONTEXT_HEADER] = JSON.stringify(organizationContext);
+  }
   const shouldSendRawBody = data instanceof FormData || isBinaryBody(data);
 
   if (data !== undefined && !shouldSendRawBody) {
@@ -577,6 +590,18 @@ const api = {
   // =====================
   auth: {
     me: (options) => api.get('/auth/me', options),
+    setOrganizationContext(context) {
+      activeOrganizationContext = context;
+      try {
+        if (context) {
+          window.sessionStorage.setItem(ORGANIZATION_CONTEXT_STORAGE_KEY, JSON.stringify(context));
+        } else {
+          window.sessionStorage.removeItem(ORGANIZATION_CONTEXT_STORAGE_KEY);
+        }
+      } catch {
+        // The selection still applies to requests for the lifetime of the page.
+      }
+    },
   },
 
   // =====================

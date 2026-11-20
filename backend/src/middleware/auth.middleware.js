@@ -1,5 +1,7 @@
 const { resolveToken } = require('../services/auth.service');
 
+const ORGANIZATION_CONTEXT_HEADER = 'X-Papertrail-Context';
+
 function extractBearerToken(req) {
   const header = req.headers['authorization'] || '';
 
@@ -12,8 +14,9 @@ function extractBearerToken(req) {
 
 async function authenticate(req, res, next) {
   try {
+    res.vary(ORGANIZATION_CONTEXT_HEADER);
     const bearerToken = extractBearerToken(req);
-    const { token, decoded, user } = await resolveToken(bearerToken);
+    const { token, decoded, user } = await resolveToken(bearerToken, req.get(ORGANIZATION_CONTEXT_HEADER));
 
     req.user = user;
     req.token = token;
@@ -43,6 +46,10 @@ async function authenticate(req, res, next) {
         message: err.message,
         code: err.code || 'UNAUTHORIZED',
       });
+    }
+
+    if (err.code === 'INVALID_ORGANIZATION_CONTEXT') {
+      return res.status(err.statusCode).json({ success: false, message: err.message, code: err.code });
     }
 
     console.error('[auth.middleware] unexpected error:', err.message);

@@ -26,9 +26,7 @@ function extractAuthUser(authResponse) {
   return authResponse?.data?.data ?? authResponse?.data ?? authResponse?.result ?? authResponse ?? {}
 }
 
-function extractAuthProfile(authResponse) {
-  const authData = extractAuthUser(authResponse)
-
+function extractAuthProfile(authData) {
   return {
     userName:
       authData.fullName ??
@@ -37,6 +35,7 @@ function extractAuthProfile(authResponse) {
       authData.userName ??
       authData.username ??
       '',
+    userDepartment: authData.context_department_name?.trim() || authData.department?.trim() || '',
     userRole:
       authData.job_position ??
       authData.jobPosition ??
@@ -62,14 +61,11 @@ function AppLayout({
   const [mobileRpStatusFilter, setMobileRpStatusFilter] = useState(RP_MOBILE_DEFAULT_STATUS)
   const [isMobileHeaderHidden, setIsMobileHeaderHidden] = useState(false)
   const [lastUpdated, setLastUpdated] = useState(() => new Date())
-  const [authProfile, setAuthProfile] = useState({
-    userName: '',
-    userRole: '',
-  })
   const [currentUser, setCurrentUser] = useState(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [isRedirectingToLogin, setIsRedirectingToLogin] = useState(false)
 
+  const authProfile = extractAuthProfile(currentUser ?? {})
   const resolvedActivePath = activePath ?? location.pathname
   const resolvedActivePage = pageDetails[resolvedActivePath] ?? activePage ?? defaultActivePage
   const resolvedPageTitle = resolvedActivePage.title ?? defaultActivePage.title
@@ -107,18 +103,37 @@ function AppLayout({
     onChange: (event) => handleSearchChange(event.target.value),
   }
 
+  const handleSwitchDepartment = async ({ departmentId, companyId }) => {
+    const organizationContext = { userId: String(currentUser.id), departmentId, companyId }
+    const authUser = extractAuthUser(await api.auth.me({ organizationContext }))
+
+    if (
+      String(authUser.id) !== organizationContext.userId ||
+      (departmentId && String(authUser.class_department_id ?? authUser.department_id) !== departmentId) ||
+      (companyId && String(authUser.company_id) !== companyId)
+    ) {
+      throw new Error('Pilihan departemen atau perusahaan tidak dapat diterapkan.')
+    }
+
+    api.auth.setOrganizationContext(organizationContext)
+    setCurrentUser(authUser)
+  }
+
   useEffect(() => {
     const controller = new AbortController()
 
     const loadAuthProfile = async () => {
       try {
-        const authResponse = await api.auth.me({
-          signal: controller.signal,
-        })
-        const authUser = extractAuthUser(authResponse)
+        const options = { signal: controller.signal }
+        const authResponse = await api.auth.me(options).catch((error) => {
+          if (error.data?.code !== 'INVALID_ORGANIZATION_CONTEXT' || controller.signal.aborted) {
+            throw error
+          }
 
-        setAuthProfile(extractAuthProfile(authUser))
-        setCurrentUser(authUser)
+          api.auth.setOrganizationContext(null)
+          return api.auth.me(options)
+        })
+        setCurrentUser(extractAuthUser(authResponse))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -133,10 +148,6 @@ function AppLayout({
           return
         }
 
-        setAuthProfile({
-          userName: '',
-          userRole: '',
-        })
         setCurrentUser(null)
       } finally {
         if (!controller.signal.aborted) {
@@ -170,7 +181,10 @@ function AppLayout({
             title="Papertrail"
             activePath={resolvedActivePath}
             userName={authProfile.userName}
+            userDepartment={authProfile.userDepartment}
             userRole={authProfile.userRole}
+            currentUser={currentUser}
+            onSwitchDepartment={handleSwitchDepartment}
           />
         </div>
 

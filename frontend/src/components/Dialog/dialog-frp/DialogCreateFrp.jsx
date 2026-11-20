@@ -10,7 +10,15 @@ import Typography from '@mui/material/Typography'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 
 import api from '../../../services/api.js'
+import {
+  FORM_DRAFT_KEYS,
+  clearFormDraft,
+  loadFormDraft,
+  saveFormDraft,
+} from '../../../services/formDraftStorage.js'
 import { XClose } from '../../layoute/TemplateIcons.jsx'
+import DialogConfirmDraft from '../DialogConfirmDraft.jsx'
+import DraftRestoredBanner from '../DraftRestoredBanner.jsx'
 import TabsInformation from './tabs-create-frp/TabsInformation.jsx'
 import TabsItems from './tabs-create-frp/TabsItems.jsx'
 import TabsVendor from './tabs-create-frp/TabsVendor.jsx'
@@ -77,6 +85,26 @@ const createInitialFormValues = () => ({
   items: [createInitialItem()],
   notes: '',
 })
+
+function serializeFormValues(values) {
+  return JSON.stringify(values)
+}
+
+function normalizeDraftFormValues(values) {
+  const initialValues = createInitialFormValues()
+  const draftItems = Array.isArray(values?.items) && values.items.length > 0 ? values.items : null
+
+  return {
+    ...initialValues,
+    ...values,
+    document_type_ids: Array.isArray(values?.document_type_ids)
+      ? values.document_type_ids.map(String)
+      : [],
+    items: draftItems
+      ? draftItems.map((item) => ({ ...createInitialItem(), ...item }))
+      : initialValues.items,
+  }
+}
 
 const createInitialAttachmentDraft = () => ({
   files: [],
@@ -654,7 +682,11 @@ function DialogCreateFrp({
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
   const [attachmentDraft, setAttachmentDraft] = useState(createInitialAttachmentDraft)
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false)
+  const [restoredDraft, setRestoredDraft] = useState(null)
   const attachmentFilesRef = useRef([])
+  const baselineFormValuesRef = useRef(null)
+  const draftUserIdRef = useRef('')
 
   const revokeAttachmentPreviewUrls = (files = attachmentFilesRef.current) => {
     files.forEach((item) => {
@@ -680,11 +712,68 @@ function DialogCreateFrp({
     setIsOptionsLoading(false)
     setOptionsError('')
     setAttachmentDraft(createInitialAttachmentDraft())
+    setIsCloseConfirmOpen(false)
+    setRestoredDraft(null)
+    baselineFormValuesRef.current = null
   }
 
   const handleClose = () => {
     resetDialogState()
     onClose?.()
+  }
+
+  const hasUnsavedChanges = () => {
+    const baseline =
+      baselineFormValuesRef.current ?? serializeFormValues(createInitialFormValues())
+
+    return serializeFormValues(formValues) !== baseline || attachmentDraft.files.length > 0
+  }
+
+  const requestClose = () => {
+    if (isSubmitting) {
+      return
+    }
+
+    if (!hasUnsavedChanges()) {
+      handleClose()
+      return
+    }
+
+    setIsCloseConfirmOpen(true)
+  }
+
+  const handleSaveDraftAndClose = () => {
+    const isSaved = saveFormDraft(FORM_DRAFT_KEYS.FRP_CREATE, draftUserIdRef.current, formValues)
+
+    if (!isSaved) {
+      setIsCloseConfirmOpen(false)
+      setSubmitError('Draft gagal disimpan di browser ini. Silakan coba lagi atau submit FRP.')
+      return
+    }
+
+    handleClose()
+  }
+
+  const handleDiscardAndClose = () => {
+    if (restoredDraft) {
+      clearFormDraft(FORM_DRAFT_KEYS.FRP_CREATE, draftUserIdRef.current)
+    }
+
+    handleClose()
+  }
+
+  const handleDiscardRestoredDraft = () => {
+    const initialValues = createInitialFormValues()
+
+    clearFormDraft(FORM_DRAFT_KEYS.FRP_CREATE, draftUserIdRef.current)
+    baselineFormValuesRef.current = serializeFormValues(initialValues)
+    setFormValues(initialValues)
+    setFieldErrors({})
+    setRestoredDraft(null)
+    setAttachmentDraft((currentDraft) => ({
+      ...currentDraft,
+      documentTypeId: '',
+    }))
   }
 
   const updateValue = (fieldName, value) => {
@@ -979,6 +1068,12 @@ function DialogCreateFrp({
           ? budgetRows
           : filterBudgetsByRequesterScope(budgetRows, nextRequesterInfo)
         const duplicateFormValues = duplicateFrom ? mapFrpToDuplicateFormValues(duplicateFrom) : null
+        const draftUserId = getFirstValue(authUser, ['id', 'user_id', 'userId'], '')
+        const storedDraft = duplicateFormValues
+          ? null
+          : loadFormDraft(FORM_DRAFT_KEYS.FRP_CREATE, draftUserId)
+        const draftFormValues = storedDraft ? normalizeDraftFormValues(storedDraft.values) : null
+        const prefilledFormValues = duplicateFormValues ?? draftFormValues
 
         let nextVendorOptions = mapVendorOptions(getRowsFromResponse(vendorsResponse))
         let nextVendorBankOptions = mapVendorBankOptions(getRowsFromResponse(vendorBanksResponse))
@@ -1057,11 +1152,17 @@ function DialogCreateFrp({
         setFrpDocumentTypeOptions(nextFrpDocumentTypeOptions)
         setBudgetOptions(nextBudgetOptions)
 
-        if (duplicateFormValues) {
-          setFormValues(duplicateFormValues)
+        draftUserIdRef.current = draftUserId
+        baselineFormValuesRef.current = serializeFormValues(
+          prefilledFormValues ?? createInitialFormValues(),
+        )
+        setRestoredDraft(storedDraft ? { savedAt: storedDraft.savedAt } : null)
+
+        if (prefilledFormValues) {
+          setFormValues(prefilledFormValues)
           setAttachmentDraft({
             files: [],
-            documentTypeId: duplicateFormValues.document_type_ids[0] || '',
+            documentTypeId: prefilledFormValues.document_type_ids[0] || '',
           })
         }
       } catch (error) {
@@ -1207,6 +1308,11 @@ function DialogCreateFrp({
         notes: formValues.notes.trim(),
       })
 
+      if (restoredDraft) {
+        clearFormDraft(FORM_DRAFT_KEYS.FRP_CREATE, draftUserIdRef.current)
+        setRestoredDraft(null)
+      }
+
       if (attachmentDraft.files.length > 0) {
         const createdFrpId = getCreatedFrpId(response)
 
@@ -1267,185 +1373,208 @@ function DialogCreateFrp({
         )
       : frpDocumentTypeDropdownOptions
   return (
-    <Drawer
-      anchor="right"
-      open={isOpen}
-      onClose={handleClose}
-      slotProps={{
-        paper: {
-          sx: {
-            width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
-            maxWidth: '100%',
+    <>
+      <Drawer
+        anchor="right"
+        open={isOpen}
+        onClose={requestClose}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
+              maxWidth: '100%',
+            },
           },
-        },
-      }}
-    >
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        }}
       >
-        <Stack
-          direction="row"
-          sx={{
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            px: 3,
-            py: 2,
-            bgcolor: '#344968',
-            color: '#fff',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
-          }}
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
         >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              variant="overline"
+          <Stack
+            direction="row"
+            sx={{
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              px: 3,
+              py: 2,
+              bgcolor: '#344968',
+              color: '#fff',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  display: 'block',
+                  lineHeight: 1.6,
+                  letterSpacing: 0.5,
+                  color: 'rgba(255, 255, 255, 0.72)',
+                }}
+              >
+                {eyebrow}
+              </Typography>
+              <Typography
+                variant="h6"
+                id="dialog-create-frp-title"
+                sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
+              >
+                {title}
+              </Typography>
+            </Box>
+
+            <IconButton
+              aria-label="Tutup dialog"
+              onClick={requestClose}
+              disabled={isSubmitting}
               sx={{
-                display: 'block',
-                lineHeight: 1.6,
-                letterSpacing: 0.5,
-                color: 'rgba(255, 255, 255, 0.72)',
+                flexShrink: 0,
+                width: 36,
+                height: 36,
+                borderRadius: '5px',
+                color: '#fff',
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+                '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
               }}
             >
-              {eyebrow}
-            </Typography>
-            <Typography
-              variant="h6"
-              id="dialog-create-frp-title"
-              sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff' }}
+              <XClose size={20} />
+            </IconButton>
+          </Stack>
+
+          <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
+            {restoredDraft ? (
+              <DraftRestoredBanner
+                savedAt={restoredDraft.savedAt}
+                disabled={isFormDisabled}
+                onDiscard={handleDiscardRestoredDraft}
+              />
+            ) : null}
+
+            <TabsInformation
+              isOptionsLoading={isOptionsLoading}
+              isFormDisabled={isFormDisabled}
+              formValues={formValues}
+              fieldErrors={fieldErrors}
+              externalDocumentTypeOptions={externalDocumentTypeOptions}
+              frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
+              attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
+              attachmentDraft={attachmentDraft}
+              updateValue={updateValue}
+              updateDocumentTypeIds={updateDocumentTypeIds}
+              updateAttachmentDocumentType={updateAttachmentDocumentType}
+              updateAttachmentFile={updateAttachmentFile}
+              removeAttachmentDraft={removeAttachmentDraft}
+              previewAttachmentDraft={previewAttachmentDraft}
+            />
+
+            <TabsVendor
+              formValues={formValues}
+              fieldErrors={fieldErrors}
+              isOptionsLoading={isOptionsLoading}
+              isFormDisabled={isFormDisabled}
+              vendorOptions={vendorOptions}
+              filteredVendorBankOptions={filteredVendorBankOptions}
+              paymentMethodOptions={paymentMethodOptions}
+              updateValue={updateValue}
+              handleVendorBankChange={handleVendorBankChange}
+            />
+
+            <TabsItems
+              formValues={formValues}
+              fieldErrors={fieldErrors}
+              isOptionsLoading={isOptionsLoading}
+              isFormDisabled={isFormDisabled}
+              budgetOptions={budgetOptions}
+              updateValue={updateValue}
+              updateItemValue={updateItemValue}
+              removeItem={removeItem}
+              addItem={addItem}
+              duplicateLastItem={duplicateLastItem}
+            />
+
+            {optionsError ? (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {optionsError}
+              </Alert>
+            ) : null}
+            {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+          </Box>
+
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 3,
+              py: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="caption" color="text.secondary" display="block">
+                Total Amount (IDR)
+              </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {formatRupiah(totalAmountIdr)}
+              </Typography>
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              disabled={isFormDisabled}
+              sx={{
+                height: 44,
+                minWidth: 118,
+                px: 2.25,
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                bgcolor: 'var(--accent-teal, #2a9d8f)',
+                boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+                '&:hover': {
+                  bgcolor: 'var(--accent-teal-dark, #21867a)',
+                  boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                  transform: 'translateY(-1px)',
+                },
+                '&:active': {
+                  transform: 'translateY(0)',
+                },
+                '&:focus-visible': {
+                  boxShadow:
+                    '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
+                },
+                '&.Mui-disabled': {
+                  boxShadow: 'none',
+                },
+              }}
             >
-              {title}
-            </Typography>
-          </Box>
-
-          <IconButton
-            aria-label="Tutup dialog"
-            onClick={handleClose}
-            disabled={isSubmitting}
-            sx={{
-              flexShrink: 0,
-              width: 36,
-              height: 36,
-              borderRadius: '5px',
-              color: '#fff',
-              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
-              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
-            }}
-          >
-            <XClose size={20} />
-          </IconButton>
-        </Stack>
-
-        <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
-          <TabsInformation
-            isOptionsLoading={isOptionsLoading}
-            isFormDisabled={isFormDisabled}
-            formValues={formValues}
-            fieldErrors={fieldErrors}
-            externalDocumentTypeOptions={externalDocumentTypeOptions}
-            frpDocumentTypeDropdownOptions={frpDocumentTypeDropdownOptions}
-            attachmentDocumentTypeOptions={attachmentDocumentTypeOptions}
-            attachmentDraft={attachmentDraft}
-            updateValue={updateValue}
-            updateDocumentTypeIds={updateDocumentTypeIds}
-            updateAttachmentDocumentType={updateAttachmentDocumentType}
-            updateAttachmentFile={updateAttachmentFile}
-            removeAttachmentDraft={removeAttachmentDraft}
-            previewAttachmentDraft={previewAttachmentDraft}
-          />
-
-          <TabsVendor
-            formValues={formValues}
-            fieldErrors={fieldErrors}
-            isOptionsLoading={isOptionsLoading}
-            isFormDisabled={isFormDisabled}
-            vendorOptions={vendorOptions}
-            filteredVendorBankOptions={filteredVendorBankOptions}
-            paymentMethodOptions={paymentMethodOptions}
-            updateValue={updateValue}
-            handleVendorBankChange={handleVendorBankChange}
-          />
-
-          <TabsItems
-            formValues={formValues}
-            fieldErrors={fieldErrors}
-            isOptionsLoading={isOptionsLoading}
-            isFormDisabled={isFormDisabled}
-            budgetOptions={budgetOptions}
-            updateValue={updateValue}
-            updateItemValue={updateItemValue}
-            removeItem={removeItem}
-            addItem={addItem}
-            duplicateLastItem={duplicateLastItem}
-          />
-
-          {optionsError ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {optionsError}
-            </Alert>
-          ) : null}
-          {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+              {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
+            </Button>
+          </Stack>
         </Box>
+      </Drawer>
 
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            px: 3,
-            py: 2,
-          }}
-        >
-          <Box>
-            <Typography variant="caption" color="text.secondary" display="block">
-              Total Amount (IDR)
-            </Typography>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              {formatRupiah(totalAmountIdr)}
-            </Typography>
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<AddRoundedIcon />}
-            disabled={isFormDisabled}
-            sx={{
-              height: 44,
-              minWidth: 118,
-              px: 2.25,
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-              bgcolor: 'var(--accent-teal, #2a9d8f)',
-              boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-              '&:hover': {
-                bgcolor: 'var(--accent-teal-dark, #21867a)',
-                boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
-                transform: 'translateY(-1px)',
-              },
-              '&:active': {
-                transform: 'translateY(0)',
-              },
-              '&:focus-visible': {
-                boxShadow:
-                  '0 0 0 4px rgba(42, 157, 143, 0.18), 0 14px 28px rgba(42, 157, 143, 0.32)',
-              },
-              '&.Mui-disabled': {
-                boxShadow: 'none',
-              },
-            }}
-          >
-            {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
-          </Button>
-        </Stack>
-      </Box>
-    </Drawer>
+      <DialogConfirmDraft
+        open={isCloseConfirmOpen}
+        message="FRP ini belum disubmit. Draft akan dimuat lagi saat Anda membuka Create FRP berikutnya."
+        note={
+          attachmentDraft.files.length > 0
+            ? `${attachmentDraft.files.length} file attachment tidak ikut tersimpan di draft dan perlu diunggah ulang.`
+            : ''
+        }
+        onSaveDraft={handleSaveDraftAndClose}
+        onDiscard={handleDiscardAndClose}
+        onCancel={() => setIsCloseConfirmOpen(false)}
+      />
+    </>
   )
 }
 
