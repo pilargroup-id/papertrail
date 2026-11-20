@@ -251,6 +251,12 @@ async function getBudgetById(id) {
 
 async function createBudget(payload, req) {
   const data = validatePayload(payload);
+  // New budgets start with no commitments; balances are derived from allocation.
+  if (data.budget_reserved !== 0 || data.budget_used !== 0 ||
+      (payload.budget_remaining !== undefined && data.budget_remaining !== data.budget_amount)) {
+    throw createHttpError('On create, remaining must match amount and reserved/used must be zero', 400);
+  }
+  data.budget_remaining = data.budget_amount;
   const connection = await db.getConnection();
 
   try {
@@ -296,16 +302,29 @@ async function updateBudget(id, payload, req) {
   try {
     await connection.beginTransaction();
 
+    // Lock before reading the current balance: prevent concurrent transfer/adjustment being overwritten.
+    await connection.query('SELECT id FROM master_budgets WHERE id = ? FOR UPDATE', [id]);
     const oldBudget = await BudgetModel.findById(id, connection);
 
     if (!oldBudget) {
       throw createHttpError('Budget not found', 404);
     }
 
+    // Ordinary edit cannot change allocation or balances; use transfer/adjustment endpoints.
+    for (const key of ['budget_amount','budget_reserved','budget_used','budget_remaining']) {
+      if (Math.round(Number(data[key])*100) !== Math.round(Number(oldBudget[key])*100)) {
+        throw createHttpError(`${key} cannot be changed through edit; use budget adjustment or transfer`,400);
+      }
+    }
+    if (String(data.company_id)!==String(oldBudget.company_id) || Number(data.department_id)!==Number(oldBudget.department_id) || Number(data.class_department_id)!==Number(oldBudget.class_department_id)) {
+      throw createHttpError('Cannot move a budget to another company/department/class through edit',400);
+    }
+    // Preserve latest balances under transaction lock to prevent stale FE payload overwrite.
+    const safeData={...data,budget_amount:oldBudget.budget_amount,budget_reserved:oldBudget.budget_reserved,budget_used:oldBudget.budget_used,budget_remaining:oldBudget.budget_remaining};
     await ensureUniqueBudgetCode(data.budget_code, id, connection);
     await ensureBudgetTypeActive(data.budget_type_id, connection);
 
-    const updatedBudget = await BudgetModel.update(id, data, connection);
+    const updatedBudget = await BudgetModel.update(id, safeData, connection);
 
     await ActivityLogService.createActivityLog(connection, {
       req,

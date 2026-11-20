@@ -1,0 +1,11 @@
+const express=require('express');
+const multer=require('multer');
+const Controller=require('../../controllers/master/dataExchange.controller');
+const router=express.Router();
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:8*1024*1024,files:1}});
+router.get('/groups',Controller.groups);
+router.get('/template',Controller.template);
+router.get('/export',Controller.exportData);
+router.post('/validate',upload.single('file'),Controller.validate);
+router.post('/import',upload.single('file'),Controller.importData);
+module.exports=router;

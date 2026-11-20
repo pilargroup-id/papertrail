@@ -211,18 +211,27 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
   return matchedContext;
 }
 
-function getPrimaryCompanyDepartmentSnapshot(user = {}, body = {}) {
-  const primaryCompany = getPrimaryCompany(user);
-  const selectedContext = resolveRequesterDepartmentContext(user, body);
+function resolveSelectedCompany(user = {}, body = {}) {
+  const companies = Array.isArray(user.companies) ? user.companies : [];
+  const requestedId = String(body.company_id || user.company_id || getPrimaryCompany(user)?.id || '');
+  if (!requestedId) throw new Error('Company is required');
+  const selected = companies.find((c) => String(c.id) === requestedId);
+  if (!selected && String(user.company_id || '') !== requestedId) {
+    throw new Error('Selected company is not assigned to current user');
+  }
+  return {
+    company_id: requestedId,
+    company_code_snapshot: selected?.code || (String(user.company_id || '') === requestedId ? user.company_code || null : null),
+    company_name_snapshot: selected?.name || (String(user.company_id || '') === requestedId ? user.company || null : null),
+  };
+}
 
-  const companyId = user.company_id ?? primaryCompany?.id ?? null;
-  const companyCode = user.company_code ?? primaryCompany?.code ?? null;
-  const companyName = user.company ?? primaryCompany?.name ?? null;
+function getPrimaryCompanyDepartmentSnapshot(user = {}, body = {}) {
+  const selectedContext = resolveRequesterDepartmentContext(user, body);
+  const company = resolveSelectedCompany(user, body);
 
   return {
-    company_id: companyId,
-    company_code_snapshot: companyCode,
-    company_name_snapshot: companyName,
+    ...company,
 
     department_id: selectedContext.department_id,
     department_name_snapshot: selectedContext.department_name,
@@ -234,6 +243,12 @@ function getPrimaryCompanyDepartmentSnapshot(user = {}, body = {}) {
     class_class_snapshot: selectedContext.class_class,
     class_code_snapshot: selectedContext.class_code,
   };
+}
+
+function isUserInHcgaDepartment(user = {}) {
+  return getUserDepartmentIds(user).includes(1) ||
+    (Array.isArray(user.departments) && user.departments.some((d) =>
+      String(d.name || d.department_name || '').trim().toUpperCase() === 'HCGA'));
 }
 
 function isUserInItDepartment(user = {}) {
@@ -620,7 +635,7 @@ async function resolveDestinationDepartmentSnapshot(conn, destinationDepartmentI
   };
 }
 
-async function buildRpItems(conn, bodyItems = []) {
+async function buildRpItems(conn, bodyItems = [], context = {}) {
   const items = [];
 
   for (const item of bodyItems) {
@@ -632,6 +647,18 @@ async function buildRpItems(conn, bodyItems = []) {
 
     if (!budget) {
       throw new Error('Budget not found');
+    }
+
+    if (String(budget.company_id) !== String(context.company_id)) {
+      throw new Error('RP budget company must match selected company');
+    }
+    if (context.destinationBudget) {
+      if (Number(budget.department_id) !== Number(context.destination_department_id)) {
+        throw new Error('RP budget must belong to the destination department');
+      }
+    } else if (Number(budget.department_id) !== Number(context.department_id) ||
+               Number(budget.class_department_id) !== Number(context.class_department_id)) {
+      throw new Error('RP budget must belong to selected department/class');
     }
 
     const remainingBefore = Number(budget.budget_remaining || 0);
@@ -883,7 +910,9 @@ async function reserveItemsBudget(conn, rpId, rpNumber, items = [], headerSnapsh
       sourceModule: 'RP',
       sourceHeaderId: rpId,
       sourceItemId: item.id,
-      header: headerSnapshot,
+      header: { ...headerSnapshot,
+        department_id: item.budget_department_id,
+        class_department_id: item.budget_class_department_id },
       user,
       userDepartmentContexts,
       notes: `${notesPrefix} for ${rpNumber}`,
@@ -1150,7 +1179,11 @@ async function createRp(body = {}, user = {}, req = null) {
     );
 
     const vendorSnapshot = await resolveRpVendorSnapshot(conn, body);
-    const items = await buildRpItems(conn, body.items);
+    const items = await buildRpItems(conn, body.items, {
+      ...headerSnapshot,
+      destinationBudget: [1, 8].includes(Number(headerSnapshot.department_id)),
+      destination_department_id: destinationSnapshot.destination_department_id,
+    });
     const documentNumberDepartment = getDocumentNumberDepartmentFromItems(items);
 
     const rpNumber = await generateDocumentNumber(conn, {
@@ -1300,7 +1333,11 @@ async function updateRp(id, body = {}, user = {}, req = null) {
     );
 
     const vendorSnapshot = await resolveRpVendorSnapshot(conn, body);
-    const newItems = await buildRpItems(conn, body.items);
+    const newItems = await buildRpItems(conn, body.items, {
+      ...buildHeaderSnapshotFromExistingRp(rp),
+      destinationBudget: [1, 8].includes(Number(rp.department_id)),
+      destination_department_id: destinationSnapshot.destination_department_id,
+    });
     const newBudgetDepartment = getDocumentNumberDepartmentFromItems(newItems);
 
     assertBudgetDepartmentNotChanged(oldBudgetDepartment, newBudgetDepartment);
@@ -1603,7 +1640,11 @@ async function destinationCheckRp(id, body = {}, user = {}, req = null) {
     const checkerBodyItems = mapCheckerItems(oldItems, body.items || []);
     validateItems(checkerBodyItems);
 
-    const newItems = await buildRpItems(conn, checkerBodyItems);
+    const newItems = await buildRpItems(conn, checkerBodyItems, {
+      ...buildHeaderSnapshotFromExistingRp(rp),
+      destinationBudget: Number(oldItems[0]?.budget_department_id) === Number(rp.destination_department_id),
+      destination_department_id: rp.destination_department_id,
+    });
     const totalAmount = sumTotalAmount(newItems);
     const headerSnapshot = buildHeaderSnapshotFromExistingRp(rp);
 
@@ -1941,7 +1982,7 @@ async function createFrpFromRp(id, body = {}, user = {}, req = null) {
     const headerData = {
       id: frpId,
       frp_number: frpNumber,
-      status: 'APPROVED',
+      status: 'PENDING',
       source_module: 'RP',
       source_rp_request_id: rp.id,
       source_rp_number: rp.rp_number,
@@ -1988,9 +2029,6 @@ async function createFrpFromRp(id, body = {}, user = {}, req = null) {
       });
     }
 
-    await releaseRpReservedBudgetsForConversion(conn, rp, rpItems, user);
-    await reserveAndFinalizeFrpBudgetsFromRp(conn, { id: frpId, frp_number: frpNumber }, frpItems, headerSnapshot, user);
-
     await rpModel.updateRpConvertedToFrp(conn, id, {
       frp_request_id: frpId,
       frp_number: frpNumber,
@@ -2001,7 +2039,7 @@ async function createFrpFromRp(id, body = {}, user = {}, req = null) {
       frp_request_id: frpId,
       action: 'SUBMIT',
       from_status: null,
-      to_status: 'APPROVED',
+      to_status: 'PENDING',
       ...buildActorLogPayload(user),
       notes: body.notes || `Create FRP from RP ${rp.rp_number}`,
     });
@@ -2040,7 +2078,7 @@ async function createFrpFromRp(id, body = {}, user = {}, req = null) {
       newValues: {
         id: frpId,
         frp_number: frpNumber,
-        status: 'APPROVED',
+        status: 'PENDING',
         source_module: 'RP',
         source_rp_request_id: rp.id,
         source_rp_number: rp.rp_number,
@@ -2058,7 +2096,7 @@ async function createFrpFromRp(id, body = {}, user = {}, req = null) {
     return {
       id: frpId,
       frp_number: frpNumber,
-      status: 'APPROVED',
+      status: 'PENDING',
       source_module: 'RP',
       source_rp_request_id: rp.id,
       source_rp_number: rp.rp_number,

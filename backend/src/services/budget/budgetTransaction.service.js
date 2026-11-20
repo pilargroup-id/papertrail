@@ -5,6 +5,7 @@ async function getBudgetForUpdate(conn, budgetId) {
         b.id,
         b.budget_code,
         b.project_name,
+        b.company_id,
         b.budget_amount,
         b.budget_reserved,
         b.budget_used,

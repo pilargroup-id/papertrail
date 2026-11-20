@@ -1,6 +1,7 @@
 const { randomUUID } = require('crypto');
 
 const frpModel = require('../../models/frp/frp.model');
+const rpModel = require('../../models/rp/rp.model');
 const { deleteObjectIfExists } = require('../storage/gcsStorage.service');
 const frpAttachmentModel = require('../../models/frp/frpAttachment.model');
 
@@ -217,18 +218,27 @@ function userHasDepartmentClassScope(user = {}, departmentId, classDepartmentId 
   });
 }
 
-function buildRequesterCompanyDepartmentSnapshot(user = {}, body = {}) {
-  const primaryCompany = getPrimaryCompany(user);
-  const selectedContext = resolveRequesterDepartmentContext(user, body);
+function resolveSelectedCompany(user = {}, body = {}) {
+  const companies = Array.isArray(user.companies) ? user.companies : [];
+  const requestedId = String(body.company_id || user.company_id || getPrimaryCompany(user)?.id || '');
+  if (!requestedId) throw new Error('Company is required');
+  const selected = companies.find((c) => String(c.id) === requestedId);
+  if (!selected && String(user.company_id || '') !== requestedId) {
+    throw new Error('Selected company is not assigned to current user');
+  }
+  return {
+    company_id: requestedId,
+    company_code_snapshot: selected?.code || (String(user.company_id || '') === requestedId ? user.company_code || null : null),
+    company_name_snapshot: selected?.name || (String(user.company_id || '') === requestedId ? user.company || null : null),
+  };
+}
 
-  const companyId = user.company_id ?? primaryCompany?.id ?? null;
-  const companyCode = user.company_code ?? primaryCompany?.code ?? null;
-  const companyName = user.company ?? primaryCompany?.name ?? null;
+function buildRequesterCompanyDepartmentSnapshot(user = {}, body = {}) {
+  const selectedContext = resolveRequesterDepartmentContext(user, body);
+  const company = resolveSelectedCompany(user, body);
 
   return {
-    company_id: companyId,
-    company_code_snapshot: companyCode,
-    company_name_snapshot: companyName,
+    ...company,
 
     department_id: selectedContext.department_id,
     department_name_snapshot: selectedContext.department_name,
@@ -300,6 +310,7 @@ function canViewAllFrp(user = {}) {
 }
 
 function canViewFrpByHeader(user = {}, frp = {}) {
+  if (frp.source_module === 'RP' && isProductAssistantManager(user)) return true;
   if (canViewAllFrp(user)) {
     return true;
   }
@@ -377,7 +388,19 @@ function isCrossDepartmentFrp(frp = {}) {
   return Boolean(budgetDepartmentId) && budgetDepartmentId !== Number(frp.department_id || 0);
 }
 
+function isProductAssistantManager(user = {}) {
+  const position = normalizeString(user.job_position).toUpperCase();
+  const isAssistantManager = /^(ASSISTANT|ASST\.?)\s+MANAGER\b/.test(position);
+  const productMember = getUserDepartmentIds(user).includes(13) ||
+    (Array.isArray(user.departments) && user.departments.some((d) =>
+      String(d.name || d.department_name || d.class_name || '').trim().toUpperCase() === 'PRODUCT'));
+  return isAssistantManager && productMember;
+}
+
 function canApproveFrp(user = {}, frp = {}) {
+  if (frp.source_module === 'RP') {
+    return !isFrpCreator(user, frp) && isProductAssistantManager(user);
+  }
   if (isFrpCreator(user, frp)) {
     return false;
   }
@@ -451,6 +474,7 @@ function buildListAccessQuery(user = {}) {
     managerDepartmentContexts: isManagerLevel(user) ? departmentContexts : [],
     budgetDepartmentIds: departmentIds,
     budgetDepartmentContexts: departmentContexts,
+    canReviewRpFrp: isProductAssistantManager(user),
   };
 }
 
@@ -484,7 +508,7 @@ function validateCreatePayload(body = {}) {
   });
 }
 
-async function buildFrpItems(conn, bodyItems = [], currencySnapshot = {}) {
+async function buildFrpItems(conn, bodyItems = [], currencySnapshot = {}, headerSnapshot = {}) {
   const items = [];
   const currencyCode = currencySnapshot.currency_code || 'IDR';
   const exchangeRate = normalizeNumber(currencySnapshot.exchange_rate, 1);
@@ -499,6 +523,13 @@ async function buildFrpItems(conn, bodyItems = [], currencySnapshot = {}) {
 
     if (!budget) {
       throw new Error('Budget not found');
+    }
+
+    // Direct FRP can only spend the selected company/department/class budget.
+    if (String(budget.company_id) !== String(headerSnapshot.company_id) ||
+        Number(budget.department_id) !== Number(headerSnapshot.department_id) ||
+        Number(budget.class_department_id) !== Number(headerSnapshot.class_department_id)) {
+      throw new Error('FRP budget must match selected company, department and class');
     }
 
     const remainingBefore = Number(budget.budget_remaining || 0);
@@ -749,7 +780,7 @@ async function createFrp(body = {}, user = {}, req = null) {
 
     const frpId = randomUUID();
 
-    const items = await buildFrpItems(conn, body.items, currencySnapshot);
+    const items = await buildFrpItems(conn, body.items, currencySnapshot, headerSnapshot);
     const documentNumberDepartment = getDocumentNumberDepartmentFromItems(items);
 
     const frpNumber = await generateDocumentNumber(conn, {
@@ -885,6 +916,9 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
     if (frp.status !== 'PENDING') {
       throw new Error('Only PENDING FRP can be updated');
     }
+    if (frp.source_module === 'RP') {
+      throw new Error('FRP from RP must be reviewed using approve/reject, not direct update');
+    }
 
     if (!canEditFrp(user, frp)) {
       throw new Error('Only FRP creator or IT SuperUser can update this FRP');
@@ -924,12 +958,11 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
       body.frp_date || frp.frp_date || null
     );
 
-    const newItems = await buildFrpItems(conn, body.items, currencySnapshot);
+    const headerSnapshot = buildHeaderSnapshotFromExistingFrp(frp);
+    const newItems = await buildFrpItems(conn, body.items, currencySnapshot, headerSnapshot);
     const newBudgetDepartment = getDocumentNumberDepartmentFromItems(newItems);
 
     assertBudgetDepartmentNotChanged(oldBudgetDepartment, newBudgetDepartment);
-
-    const headerSnapshot = buildHeaderSnapshotFromExistingFrp(frp);
     const totalAmount = sumTotalAmount(newItems);
     const totalAmountIdr = sumTotalAmountIdr(newItems);
 
@@ -1084,8 +1117,45 @@ async function approveFrp(id, user = {}, body = {}, req = null) {
 
     const items = await frpModel.getFrpItems(conn, id);
 
-    for (const item of items) {
-      await finalizeBudget(conn, {
+    if (frp.source_module === 'RP') {
+      if (!frp.source_rp_request_id) throw new Error('Source RP reference is missing');
+      const rp = await rpModel.getRpHeaderById(conn, frp.source_rp_request_id, { lock: true });
+      if (!rp || rp.status !== 'APPROVED' || rp.frp_conversion_status !== 'CREATED' ||
+          String(rp.converted_frp_request_id) !== String(frp.id)) {
+        throw new Error('Source RP is not in a valid conversion state');
+      }
+      const rpItems = await rpModel.getRpItems(conn, rp.id);
+      if (!rpItems.length) throw new Error('Source RP has no items');
+      for (const rpItem of rpItems) {
+        await releaseBudget(conn, {
+          budgetId: rpItem.budget_id,
+          amount: Number(rpItem.amount),
+          sourceModule: 'RP', sourceHeaderId: rp.id, sourceItemId: rpItem.id, user,
+          notes: `Release RP reserved budget on FRP approval ${frp.frp_number}`,
+        });
+      }
+      const header = buildHeaderSnapshotFromExistingFrp(frp);
+      for (const item of items) {
+        const sourceItem = rpItems.find((candidate) => String(candidate.id) === String(item.source_rp_request_item_id));
+        if (!sourceItem || Number(sourceItem.budget_id) !== Number(item.budget_id)) {
+          throw new Error('FRP item budget does not match source RP item');
+        }
+        await reserveBudget(conn, {
+          budgetId: item.budget_id, amount: getItemBudgetAmount(item),
+          sourceModule: 'FRP', sourceHeaderId: frp.id, sourceItemId: item.id,
+          header: { ...header, department_id: Number(sourceItem.budget_department_id),
+            class_department_id: Number(sourceItem.budget_class_department_id) },
+          user, notes: `Reserve final FRP budget on approval ${frp.frp_number}`,
+        });
+        await finalizeBudget(conn, {
+          budgetId: item.budget_id, amount: getItemBudgetAmount(item),
+          sourceModule: 'FRP', sourceHeaderId: frp.id, sourceItemId: item.id,
+          user, notes: `Finalize FRP budget from RP ${frp.frp_number}`,
+        });
+      }
+    } else {
+      for (const item of items) {
+        await finalizeBudget(conn, {
         budgetId: item.budget_id,
         amount: getItemBudgetAmount(item),
         sourceModule: 'FRP',
@@ -1093,7 +1163,8 @@ async function approveFrp(id, user = {}, body = {}, req = null) {
         sourceItemId: item.id,
         user,
         notes: `Finalize budget for ${frp.frp_number}`,
-      });
+        });
+      }
     }
 
     await frpModel.updateFrpStatusApproved(conn, id, user);
@@ -1175,7 +1246,7 @@ async function rejectFrp(id, user = {}, body = {}, req = null) {
 
     const items = await frpModel.getFrpItems(conn, id);
 
-    for (const item of items) {
+    if (frp.source_module !== 'RP') for (const item of items) {
       await releaseBudget(conn, {
         budgetId: item.budget_id,
         amount: getItemBudgetAmount(item),
@@ -1185,6 +1256,14 @@ async function rejectFrp(id, user = {}, body = {}, req = null) {
         user,
         notes: `Release budget for rejected ${frp.frp_number}`,
       });
+    }
+
+    if (frp.source_module === 'RP') {
+      const rp = await rpModel.getRpHeaderById(conn, frp.source_rp_request_id, { lock: true });
+      if (!rp || String(rp.converted_frp_request_id) !== String(frp.id)) {
+        throw new Error('Source RP conversion reference is inconsistent');
+      }
+      await rpModel.resetRpConversionAfterRejectedFrp(conn, rp.id, frp.id, user);
     }
 
     await frpModel.updateFrpStatusRejected(conn, id, user, reason);
@@ -1256,6 +1335,9 @@ async function revertFrp(id, user = {}, body = {}, req = null) {
 
     if (frp.status !== 'APPROVED') {
       throw new Error('Only APPROVED FRP can be reverted');
+    }
+    if (frp.source_module === 'RP') {
+      throw new Error('Revert FRP from RP requires a separate RP budget restoration workflow');
     }
 
     if (!canRevertFrp(user, frp)) {
