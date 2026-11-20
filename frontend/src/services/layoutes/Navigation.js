@@ -91,7 +91,7 @@ export const primaryNavigationItems = [
     children: [
       {
         id: 'vendor-management',
-        label: 'Vendor',
+        label: 'Vendor & Banks',
         icon: Users01,
         children: [
           {
@@ -137,13 +137,19 @@ export const primaryNavigationItems = [
             href: '/Master/Budget-access',
             // icon: BudgetAccess,
           },
+        ],
+      },
+      {
+        id: 'currency-management',
+        label: 'Currencies',
+        children: [
           {
             id: 'currencies',
             label: 'Currencies',
-            href: '/Master/Currencies'
-          }
-        ]
-      }
+            href: '/Master/Currencies',
+          },
+        ],
+      },
     ],
   },
     {

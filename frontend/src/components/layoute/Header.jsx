@@ -53,6 +53,7 @@ function Header({
   onSwitchDepartment,
 }) {
   const [isDepartmentSwitchOpen, setIsDepartmentSwitchOpen] = useState(false)
+  const [openSections, setOpenSections] = useState({})
   const departmentOptions = getSwitchOptions(
     currentUser?.departments,
     (department) => department.class_department_id ?? department.id ?? department.department_id,
@@ -96,13 +97,30 @@ function Header({
     isCurrentPath(item) && visibleItems.find(isCurrentPath) === item
   )
 
+  const isSectionOpen = (section) => openSections[section.id ?? section.label] ?? hasActiveChild(section)
+  const toggleSection = (section) => setOpenSections((current) => ({
+    ...current,
+    [section.id ?? section.label]: !isSectionOpen(section),
+  }))
+
   const renderDropdownChildren = (children) => children.flatMap((child) => {
     if (child.children?.length) {
+      const sectionKey = child.id ?? child.label
+      const open = isSectionOpen(child)
       return [
-        <MDBDropdownItem header disabled key={`header-${child.id ?? child.label}`}>
-          {child.label}
+        <MDBDropdownItem
+          link
+          childTag="button"
+          preventCloseOnClick
+          className={`app-navbar__accordion-toggle${hasActiveChild(child) ? ' app-navbar__accordion-toggle--active' : ''}`}
+          aria-expanded={open}
+          key={`section-${sectionKey}`}
+          onClick={() => toggleSection(child)}
+        >
+          <span>{child.label}</span>
+          <ChevronDown className="app-navbar__chevron" size={13} />
         </MDBDropdownItem>,
-        ...child.children.map((grandchild) => (
+        ...(!open ? [] : child.children.map((grandchild) => (
           <MDBDropdownItem
             link
             childTag="button"
@@ -113,7 +131,7 @@ function Header({
           >
             {grandchild.label}
           </MDBDropdownItem>
-        )),
+        ))),
       ]
     }
 

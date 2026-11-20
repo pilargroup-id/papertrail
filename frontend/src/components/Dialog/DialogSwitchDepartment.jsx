@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Box,
   Button,
@@ -7,13 +10,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
-  FormLabel,
+  FormControlLabel,
   IconButton,
-  MenuItem,
-  Select,
+  Radio,
+  RadioGroup,
+  Typography,
 } from '@mui/material'
-import { XClose } from '../layoute/TemplateIcons.jsx'
+import { ChevronDown, XClose } from '../layoute/TemplateIcons.jsx'
 
 const papertrailHeaderColor = '#344968'
 const sectionPadding = { xs: 2, sm: 3 }
@@ -25,70 +28,82 @@ const actionButtonSx = {
   fontWeight: 600,
   textTransform: 'none',
 }
-const organizationMenuProps = {
-  slotProps: {
-    paper: {
-      sx: {
-        mt: 0.5,
-        border: '1px solid #e2e8f0',
-        borderRadius: '8px',
-        maxHeight: 'min(280px, calc(100dvh - 32px))',
-        '& .MuiMenuItem-root': {
-          py: 1,
-          fontSize: '0.875rem',
-          lineHeight: 1.5,
-          whiteSpace: 'normal',
-          overflowWrap: 'anywhere',
-        },
-      },
-    },
-  },
-}
-
-function OrganizationSelect({ id, label, placeholder, options, value, disabled, onChange }) {
-  const labelId = `${id}-label`
+function OrganizationAccordion({ id, label, placeholder, options, value, disabled, expanded, onToggle, onChange }) {
+  const selectedLabel = options.find((option) => option.id === value)?.label
 
   return (
-    <FormControl fullWidth disabled={disabled} sx={{ gap: 0.75 }}>
-      <FormLabel
-        component="span"
-        id={labelId}
-        sx={{ color: 'text.primary', fontSize: '0.875rem', fontWeight: 600, '&.Mui-focused': { color: papertrailHeaderColor } }}
-      >
-        {label}
-      </FormLabel>
-      <Select
-        id={id}
-        labelId={labelId}
-        size="small"
-        value={value}
-        displayEmpty
-        onChange={(event) => onChange(event.target.value)}
-        renderValue={(selectedId) => options.find((option) => option.id === selectedId)?.label ?? (
-          <Box component="span" sx={{ color: 'text.secondary' }}>{placeholder}</Box>
-        )}
-        MenuProps={organizationMenuProps}
+    <Accordion
+      disableGutters
+      elevation={0}
+      expanded={expanded}
+      onChange={(_, isExpanded) => onToggle(isExpanded)}
+      disabled={disabled}
+      slotProps={{ transition: { unmountOnExit: true } }}
+      sx={{
+        border: `1px solid ${expanded ? papertrailHeaderColor : fieldBorderColor}`,
+        borderRadius: '8px !important',
+        overflow: 'hidden',
+        '&::before': { display: 'none' },
+        '&.Mui-disabled': { bgcolor: 'background.paper' },
+      }}
+    >
+      <AccordionSummary
+        id={`${id}-header`}
+        aria-controls={`${id}-content`}
+        expandIcon={<ChevronDown size={16} />}
         sx={{
-          minHeight: 44,
-          borderRadius: '8px',
-          fontSize: '0.875rem',
-          '& .MuiSelect-select[role="combobox"]': {
-            py: 1.25,
-            lineHeight: 1.5,
-            whiteSpace: 'normal',
-            overflowWrap: 'anywhere',
-          },
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: fieldBorderColor },
-          '&:hover .MuiOutlinedInput-notchedOutline, &.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: papertrailHeaderColor,
-          },
+          minHeight: 52,
+          px: 1.75,
+          bgcolor: expanded ? '#f7f9fc' : 'background.paper',
+          '& .MuiAccordionSummary-content': { my: 1, minWidth: 0, flexDirection: 'column', gap: 0.25 },
+          '& .MuiAccordionSummary-expandIconWrapper': { color: papertrailHeaderColor },
         }}
       >
-        {options.map(({ id: optionId, label: optionLabel }) => (
-          <MenuItem key={optionId} value={optionId}>{optionLabel}</MenuItem>
-        ))}
-      </Select>
-    </FormControl>
+        <Typography component="span" sx={{ fontSize: '0.75rem', fontWeight: 600, color: 'text.secondary', lineHeight: 1.4 }}>
+          {label}
+        </Typography>
+        <Typography
+          component="span"
+          sx={{
+            fontSize: '0.875rem',
+            fontWeight: selectedLabel ? 600 : 400,
+            color: selectedLabel ? 'text.primary' : 'text.secondary',
+            lineHeight: 1.5,
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {selectedLabel ?? placeholder}
+        </Typography>
+      </AccordionSummary>
+      <AccordionDetails id={`${id}-content`} sx={{ p: 0, borderTop: '1px solid #e2e8f0' }}>
+        <RadioGroup
+          aria-labelledby={`${id}-header`}
+          name={id}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          sx={{ maxHeight: 'min(240px, 40dvh)', overflowY: 'auto', flexWrap: 'nowrap', py: 0.5 }}
+        >
+          {options.map(({ id: optionId, label: optionLabel }) => (
+            <FormControlLabel
+              key={optionId}
+              value={optionId}
+              disabled={disabled}
+              control={<Radio size="small" sx={{ color: fieldBorderColor, '&.Mui-checked': { color: papertrailHeaderColor } }} />}
+              label={optionLabel}
+              sx={{
+                m: 0,
+                px: 1,
+                py: 0.25,
+                alignItems: 'center',
+                bgcolor: optionId === value ? 'rgba(52, 73, 104, 0.06)' : 'transparent',
+                '&:hover': { bgcolor: 'rgba(52, 73, 104, 0.04)' },
+                '& .MuiFormControlLabel-label': { fontSize: '0.875rem', lineHeight: 1.5, overflowWrap: 'anywhere' },
+              }}
+            />
+          ))}
+        </RadioGroup>
+      </AccordionDetails>
+    </Accordion>
   )
 }
 
@@ -104,6 +119,8 @@ function DialogSwitchDepartment({ departmentOptions, companyOptions, activeDepar
   const [companyId, setCompanyId] = useState(initialCompanyId)
   const [isSwitching, setIsSwitching] = useState(false)
   const [error, setError] = useState('')
+  const [expandedSection, setExpandedSection] = useState(companyOptions.length > 1 ? 'company' : 'department')
+  const toggleSection = (section) => (isExpanded) => setExpandedSection(isExpanded ? section : '')
   const hasChanges = departmentId !== initialDepartmentId || companyId !== initialCompanyId
 
   const handleSubmit = async (event) => {
@@ -173,26 +190,30 @@ function DialogSwitchDepartment({ departmentOptions, companyOptions, activeDepar
             <XClose size={20} />
           </IconButton>
         </Box>
-        <DialogContent sx={{ display: 'grid', alignContent: 'start', gridTemplateColumns: 'minmax(0, 1fr)', gap: 2, px: sectionPadding, py: 3 }}>
+        <DialogContent sx={{ display: 'grid', alignContent: 'start', gridTemplateColumns: 'minmax(0, 1fr)', gap: 1.5, px: sectionPadding, py: 3 }}>
           {companyOptions.length > 1 ? (
-            <OrganizationSelect
+            <OrganizationAccordion
               id="switch-department-company"
               label="Perusahaan"
               placeholder="Pilih perusahaan"
               options={companyOptions}
               value={companyId}
               disabled={isSwitching}
+              expanded={expandedSection === 'company'}
+              onToggle={toggleSection('company')}
               onChange={setCompanyId}
             />
           ) : null}
           {departmentOptions.length > 1 ? (
-            <OrganizationSelect
+            <OrganizationAccordion
               id="switch-department-department"
               label="Departemen"
               placeholder="Pilih departemen"
               options={departmentOptions}
               value={departmentId}
               disabled={isSwitching}
+              expanded={expandedSection === 'department'}
+              onToggle={toggleSection('department')}
               onChange={setDepartmentId}
             />
           ) : null}
