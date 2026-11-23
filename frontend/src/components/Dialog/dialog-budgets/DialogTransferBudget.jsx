@@ -125,9 +125,27 @@ async function loadDestinations(source, signal) {
   return destinations
 }
 
-function DialogTransferBudget({ source, onClose, onTransferred }) {
+function DialogTransferBudget({ source: initialSource, onClose, onTransferred }) {
   const titleId = useId()
   const submitting = useRef(false)
+  // Baris tabel bisa basi (FRP/RP, adjustment, atau user lain mengubah saldo); ambil saldo terbaru.
+  const [source, setSource] = useState(initialSource)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    api.budgets.detail(initialSource.id, undefined, { signal: controller.signal })
+      .then((response) => {
+        if (!controller.signal.aborted && response?.data?.id !== undefined) {
+          setSource(response.data)
+        }
+      })
+      .catch(() => {
+        // Tetap pakai data baris tabel; backend tetap memvalidasi saldo saat submit.
+      })
+
+    return () => controller.abort()
+  }, [initialSource.id])
   const [destinationResult, setDestinationResult] = useState(null)
   const [destination, setDestination] = useState(null)
   const [amountInput, setAmountInput] = useState('')
@@ -139,7 +157,7 @@ function DialogTransferBudget({ source, onClose, onTransferred }) {
   useEffect(() => {
     const controller = new AbortController()
 
-    loadDestinations(source, controller.signal).then((options) => {
+    loadDestinations(initialSource, controller.signal).then((options) => {
       if (!controller.signal.aborted) {
         setDestinationResult({ options })
       }
@@ -150,7 +168,7 @@ function DialogTransferBudget({ source, onClose, onTransferred }) {
     })
 
     return () => controller.abort()
-  }, [source])
+  }, [initialSource])
 
   const isLoading = destinationResult === null
   const options = destinationResult?.options ?? []
@@ -365,10 +383,15 @@ function DialogTransferBudget({ source, onClose, onTransferred }) {
             destinationBalanceCents={destinationBalanceCents}
             transferCents={canPreview ? amount.cents : null}
           />
+        </Stack>
+      </DialogContent>
+      {/* Di luar DialogContent agar error selalu terlihat, tidak tersembunyi di bawah area scroll. */}
+      {(destinationResult?.error || submitError) && (
+        <Stack spacing={1} sx={{ px: { xs: 2, sm: 2.5 }, pb: 1.5 }}>
           {destinationResult?.error && <Alert severity="error">{destinationResult.error}</Alert>}
           {submitError && <Alert severity={submitError.severity}>{submitError.message}</Alert>}
         </Stack>
-      </DialogContent>
+      )}
       <DialogActions
         disableSpacing
         sx={{

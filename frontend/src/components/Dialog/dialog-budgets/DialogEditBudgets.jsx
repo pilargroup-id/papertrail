@@ -148,7 +148,7 @@ function EditBudgetForm({ eyebrow, title, budget, onClose, onUpdated }) {
         budget_type_id: formValues.budget_type_id,
         period_year: Number(formValues.period_year),
         period_month: Number(formValues.period_month),
-        // Scope & saldo dikirim apa adanya; perubahan nominal dilakukan lewat dialog terpisah.
+        // Scope dikirim apa adanya; perubahan nominal dilakukan lewat dialog terpisah.
         company_id: budget.company_id,
         company_code_snapshot: budget.company_code_snapshot ?? '',
         company_name_snapshot: budget.company_name_snapshot ?? '',
@@ -160,10 +160,8 @@ function EditBudgetForm({ eyebrow, title, budget, onClose, onUpdated }) {
         class_name_snapshot: budget.class_name_snapshot ?? '',
         class_class_snapshot: budget.class_class_snapshot ?? '',
         class_code_snapshot: budget.class_code_snapshot ?? '',
-        budget_amount: budget.budget_amount,
-        budget_reserved: budget.budget_reserved,
-        budget_used: budget.budget_used,
-        budget_remaining: budget.budget_remaining,
+        // Saldo tidak dikirim: backend selalu memakai saldo terbaru dari DB. Mengirim saldo dari
+        // baris tabel yang sudah basi membuat edit gagal secara acak.
       })
 
       await onUpdated?.(response)

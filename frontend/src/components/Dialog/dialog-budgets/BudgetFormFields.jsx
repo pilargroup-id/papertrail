@@ -155,17 +155,18 @@ export function BudgetFormDialog({
       <DialogContent sx={{ px: { xs: 2, sm: 2.5 }, pt: { xs: 2, sm: 2.5 }, pb: { xs: 2, sm: 2.5 } }}>
         {/* Spacer so the first floating label is not clipped by DialogContent's overflow. */}
         <Box sx={{ pt: 0.75 }}>{children}</Box>
-
-        {visibleErrors.length > 0 ? (
-          <Box sx={{ display: 'grid', gap: 1, mt: 2 }}>
-            {visibleErrors.map((message) => (
-              <Alert key={message} severity="error">
-                {message}
-              </Alert>
-            ))}
-          </Box>
-        ) : null}
       </DialogContent>
+
+      {/* Di luar DialogContent agar error selalu terlihat, tidak tersembunyi di bawah area scroll. */}
+      {visibleErrors.length > 0 ? (
+        <Box sx={{ display: 'grid', gap: 1, px: { xs: 2, sm: 2.5 }, pb: 1.5 }}>
+          {visibleErrors.map((message) => (
+            <Alert key={message} severity="error">
+              {message}
+            </Alert>
+          ))}
+        </Box>
+      ) : null}
 
       <DialogActions
         disableSpacing

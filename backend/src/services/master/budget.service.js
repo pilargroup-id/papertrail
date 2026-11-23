@@ -311,11 +311,9 @@ async function updateBudget(id, payload, req) {
     }
 
     // Ordinary edit cannot change allocation or balances; use transfer/adjustment endpoints.
-    for (const key of ['budget_amount','budget_reserved','budget_used','budget_remaining']) {
-      if (Math.round(Number(data[key])*100) !== Math.round(Number(oldBudget[key])*100)) {
-        throw createHttpError(`${key} tidak dapat diubah melalui edit; gunakan penyesuaian atau transfer anggaran.`,400);
-      }
-    }
+    // Balance fields in the payload are ignored (not compared): the FE row can be stale because
+    // FRP/RP reserve/finalize, transfer and adjustment change balances at any time, and rejecting
+    // on mismatch made edits fail intermittently. safeData below always keeps the locked DB values.
     if (String(data.company_id)!==String(oldBudget.company_id) || Number(data.department_id)!==Number(oldBudget.department_id) || Number(data.class_department_id)!==Number(oldBudget.class_department_id)) {
       throw createHttpError('Anggaran tidak dapat dipindahkan ke perusahaan/departemen/kelas lain melalui edit.',400);
     }

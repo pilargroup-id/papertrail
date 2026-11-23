@@ -303,7 +303,11 @@ function BudgetsPage(props) {
       {transferSource && (
         <DialogTransferBudget
           source={transferSource}
-          onClose={() => setTransferSource(null)}
+          onClose={() => {
+            setTransferSource(null)
+            // Muat ulang agar saldo di tabel tidak basi setelah transfer gagal/dibatalkan.
+            setReloadToken((currentValue) => currentValue + 1)
+          }}
           onTransferred={handleTransferCompleted}
         />
       )}
@@ -312,7 +316,11 @@ function BudgetsPage(props) {
         <DialogAdjustBudget
           key={adjustTarget.id}
           budget={adjustTarget}
-          onClose={() => setAdjustTarget(null)}
+          onClose={() => {
+            setAdjustTarget(null)
+            // Muat ulang agar saldo di tabel tidak basi setelah adjustment gagal/dibatalkan.
+            setReloadToken((currentValue) => currentValue + 1)
+          }}
           onAdjusted={handleAdjustCompleted}
         />
       )}

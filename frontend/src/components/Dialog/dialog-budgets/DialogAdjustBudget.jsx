@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import RemoveRoundedIcon from '@mui/icons-material/RemoveRounded'
 import {
@@ -117,9 +117,27 @@ function AdjustmentPreview({ amountCents, remainingCents, deltaCents }) {
   )
 }
 
-function DialogAdjustBudget({ budget, onClose, onAdjusted }) {
+function DialogAdjustBudget({ budget: initialBudget, onClose, onAdjusted }) {
   const titleId = useId()
   const submitting = useRef(false)
+  // Baris tabel bisa basi (FRP/RP, transfer, atau user lain mengubah saldo); ambil saldo terbaru.
+  const [budget, setBudget] = useState(initialBudget)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    api.budgets.detail(initialBudget.id, undefined, { signal: controller.signal })
+      .then((response) => {
+        if (!controller.signal.aborted && response?.data?.id !== undefined) {
+          setBudget(response.data)
+        }
+      })
+      .catch(() => {
+        // Tetap pakai data baris tabel; backend tetap memvalidasi saldo saat submit.
+      })
+
+    return () => controller.abort()
+  }, [initialBudget.id])
   const [operation, setOperation] = useState(OPERATION_INCREASE)
   const [amountInput, setAmountInput] = useState('')
   const [reasonInput, setReasonInput] = useState('')
@@ -309,9 +327,14 @@ function DialogAdjustBudget({ budget, onClose, onAdjusted }) {
             slotProps={{ htmlInput: { maxLength: 1000 } }}
           />
           <AdjustmentPreview amountCents={amountCents} remainingCents={remainingCents} deltaCents={deltaCents} />
-          {submitError && <Alert severity={submitError.severity}>{submitError.message}</Alert>}
         </Stack>
       </DialogContent>
+      {/* Di luar DialogContent agar error selalu terlihat, tidak tersembunyi di bawah area scroll. */}
+      {submitError && (
+        <Box sx={{ px: { xs: 2, sm: 2.5 }, pb: 1.5 }}>
+          <Alert severity={submitError.severity}>{submitError.message}</Alert>
+        </Box>
+      )}
       <DialogActions
         disableSpacing
         sx={{
