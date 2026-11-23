@@ -9,7 +9,7 @@ const config = require('../config');
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   const statusCode = err.statusCode || err.status || 500;
-  const message    = err.message    || 'Internal Server Error';
+  const message    = err.message    || 'Terjadi kesalahan pada server.';
 
   const body = {
     success : false,
@@ -31,7 +31,7 @@ function errorHandler(err, req, res, next) {
 function notFoundHandler(req, res) {
   return res.status(404).json({
     success : false,
-    message : `Route ${req.method} ${req.originalUrl} not found`,
+    message : `Rute ${req.method} ${req.originalUrl} tidak ditemukan.`,
   });
 }
 

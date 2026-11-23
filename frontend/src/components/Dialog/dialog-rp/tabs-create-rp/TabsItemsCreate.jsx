@@ -98,6 +98,7 @@ function TabsItemsCreate({
   isOptionsLoading,
   isFormDisabled,
   budgetOptions,
+  budgetNoOptionsText = 'Budget aktif tidak ditemukan.',
   updateItemValue,
   removeItem,
   addItem,
@@ -175,7 +176,7 @@ function TabsItemsCreate({
                         }
                         disabled={isFormDisabled}
                         loading={isOptionsLoading}
-                        noOptionsText="Budget aktif tidak ditemukan."
+                        noOptionsText={budgetNoOptionsText}
                         onChange={(_, option) =>
                           updateItemValue(index, 'budget_id', option?.value ?? '')
                         }

@@ -8,6 +8,7 @@ const frpAttachmentModel = require('../../models/frp/frpAttachment.model');
 const { generateDocumentNumber } = require('../documentNumber/documentNumber.service');
 const {
   getBudgetForUpdate,
+  hasCrossBudgetAccess,
   reserveBudget,
   finalizeBudget,
   releaseBudget,
@@ -25,6 +26,7 @@ const {
 
 const activityLogService = require('../activity/activityLog.service');
 const { resolveCurrencyRateSnapshot } = require('../master/currency.service');
+const { isProductAssistantManager } = require('../../utils/productApprover.util');
 
 function normalizeNumber(value, fallback = 0) {
   const number = Number(value);
@@ -157,7 +159,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
   const contexts = getUserDepartmentContexts(user);
 
   if (!contexts.length) {
-    throw new Error('User department is required');
+    throw new Error('Departemen pengguna wajib ada.');
   }
 
   const selectedDepartmentId = body.department_id
@@ -173,7 +175,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
   }
 
   if (!selectedDepartmentId) {
-    throw new Error('Department is required for multi-department user');
+    throw new Error('Departemen wajib dipilih untuk pengguna dengan lebih dari satu departemen.');
   }
 
   if (!selectedClassDepartmentId) {
@@ -185,7 +187,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
       return sameDepartmentContexts[0];
     }
 
-    throw new Error('Class department is required for selected department');
+    throw new Error('Kelas departemen wajib diisi untuk departemen yang dipilih.');
   }
 
   const matchedContext = contexts.find((context) => {
@@ -196,7 +198,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
   });
 
   if (!matchedContext) {
-    throw new Error('Selected department/class is not assigned to current user');
+    throw new Error('Departemen/kelas yang dipilih tidak terdaftar untuk pengguna ini.');
   }
 
   return matchedContext;
@@ -221,10 +223,10 @@ function userHasDepartmentClassScope(user = {}, departmentId, classDepartmentId 
 function resolveSelectedCompany(user = {}, body = {}) {
   const companies = Array.isArray(user.companies) ? user.companies : [];
   const requestedId = String(body.company_id || user.company_id || getPrimaryCompany(user)?.id || '');
-  if (!requestedId) throw new Error('Company is required');
+  if (!requestedId) throw new Error('Perusahaan wajib diisi.');
   const selected = companies.find((c) => String(c.id) === requestedId);
   if (!selected && String(user.company_id || '') !== requestedId) {
-    throw new Error('Selected company is not assigned to current user');
+    throw new Error('Perusahaan yang dipilih tidak terdaftar untuk pengguna ini.');
   }
   return {
     company_id: requestedId,
@@ -374,7 +376,7 @@ function validateUpdatePayload(body = {}) {
   validateCreatePayload(body);
 
   if (!Array.isArray(body.document_type_ids)) {
-    throw new Error('Document type IDs must be an array');
+    throw new Error('Daftar ID tipe dokumen harus berupa array.');
   }
 }
 
@@ -386,15 +388,6 @@ function isCrossDepartmentFrp(frp = {}) {
   const budgetDepartmentId = Number(frp.approval_budget_department_id || 0);
 
   return Boolean(budgetDepartmentId) && budgetDepartmentId !== Number(frp.department_id || 0);
-}
-
-function isProductAssistantManager(user = {}) {
-  const position = normalizeString(user.job_position).toUpperCase();
-  const isAssistantManager = /^(ASSISTANT|ASST\.?)\s+MANAGER\b/.test(position);
-  const productMember = getUserDepartmentIds(user).includes(13) ||
-    (Array.isArray(user.departments) && user.departments.some((d) =>
-      String(d.name || d.department_name || d.class_name || '').trim().toUpperCase() === 'PRODUCT'));
-  return isAssistantManager && productMember;
 }
 
 function canApproveFrp(user = {}, frp = {}) {
@@ -484,7 +477,7 @@ function validateCreatePayload(body = {}) {
   assertRequired(body.payment_method_id, 'Payment method is required');
 
   if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new Error('FRP items are required');
+    throw new Error('Item FRP wajib diisi.');
   }
 
   body.items.forEach((item, index) => {
@@ -495,15 +488,15 @@ function validateCreatePayload(body = {}) {
     const amount = normalizeNumber(item.amount, quantity * unitPrice);
 
     if (quantity <= 0) {
-      throw new Error(`Quantity must be greater than 0 on item ${index + 1}`);
+      throw new Error(`Jumlah pada item ${index + 1} harus lebih dari 0.`);
     }
 
     if (unitPrice <= 0) {
-      throw new Error(`Unit price must be greater than 0 on item ${index + 1}`);
+      throw new Error(`Harga satuan pada item ${index + 1} harus lebih dari 0.`);
     }
 
     if (amount <= 0) {
-      throw new Error(`Amount must be greater than 0 on item ${index + 1}`);
+      throw new Error(`Nominal pada item ${index + 1} harus lebih dari 0.`);
     }
   });
 }
@@ -512,6 +505,9 @@ async function buildFrpItems(conn, bodyItems = [], currencySnapshot = {}, header
   const items = [];
   const currencyCode = currencySnapshot.currency_code || 'IDR';
   const exchangeRate = normalizeNumber(currencySnapshot.exchange_rate, 1);
+  // Departemen dengan aturan CROSS_BUDGET (master Budget Access, modul FRP) boleh memakai
+  // anggaran departemen lain selama masih dalam perusahaan yang dipilih.
+  const canUseCrossBudget = await hasCrossBudgetAccess(conn, 'FRP', headerSnapshot.department_id);
 
   for (const item of bodyItems) {
     const quantity = normalizeNumber(item.quantity, 0);
@@ -522,14 +518,18 @@ async function buildFrpItems(conn, bodyItems = [], currencySnapshot = {}, header
     const budget = await getBudgetForUpdate(conn, item.budget_id);
 
     if (!budget) {
-      throw new Error('Budget not found');
+      throw new Error('Anggaran tidak ditemukan.');
     }
 
-    // Direct FRP can only spend the selected company/department/class budget.
-    if (String(budget.company_id) !== String(headerSnapshot.company_id) ||
-        Number(budget.department_id) !== Number(headerSnapshot.department_id) ||
-        Number(budget.class_department_id) !== Number(headerSnapshot.class_department_id)) {
-      throw new Error('FRP budget must match selected company, department and class');
+    // Direct FRP can only spend the selected company/department/class budget,
+    // unless the department has an active CROSS_BUDGET rule for FRP.
+    if (String(budget.company_id) !== String(headerSnapshot.company_id)) {
+      throw new Error('Perusahaan pada anggaran FRP harus sama dengan perusahaan yang dipilih.');
+    }
+    if (!canUseCrossBudget &&
+        (Number(budget.department_id) !== Number(headerSnapshot.department_id) ||
+         Number(budget.class_department_id) !== Number(headerSnapshot.class_department_id))) {
+      throw new Error('Anggaran FRP harus sesuai dengan perusahaan, departemen, dan kelas yang dipilih.');
     }
 
     const remainingBefore = Number(budget.budget_remaining || 0);
@@ -572,17 +572,17 @@ async function buildFrpItems(conn, bodyItems = [], currencySnapshot = {}, header
 
 function getDocumentNumberDepartmentFromItems(items = []) {
   if (!items.length) {
-    throw new Error('FRP items are required');
+    throw new Error('Item FRP wajib diisi.');
   }
 
   const firstItem = items[0];
 
   if (!firstItem.budget_department_id) {
-    throw new Error('Budget department is required for document number');
+    throw new Error('Departemen anggaran wajib ada untuk nomor dokumen.');
   }
 
   if (!firstItem.budget_department_code_snapshot) {
-    throw new Error('Budget department code is required for document number');
+    throw new Error('Kode departemen anggaran wajib ada untuk nomor dokumen.');
   }
 
   const budgetDepartmentId = Number(firstItem.budget_department_id);
@@ -592,7 +592,7 @@ function getDocumentNumberDepartmentFromItems(items = []) {
   });
 
   if (hasDifferentBudgetDepartment) {
-    throw new Error('All FRP items must use budgets from the same department');
+    throw new Error('Semua item FRP harus menggunakan anggaran dari departemen yang sama.');
   }
 
   return {
@@ -603,14 +603,14 @@ function getDocumentNumberDepartmentFromItems(items = []) {
 
 async function getBudgetDepartmentFromExistingItems(conn, items = []) {
   if (!items.length) {
-    throw new Error('Existing FRP items are not found');
+    throw new Error('Item FRP yang ada tidak ditemukan.');
   }
 
   const firstItem = items[0];
   const firstBudget = await getBudgetForUpdate(conn, firstItem.budget_id);
 
   if (!firstBudget) {
-    throw new Error('Existing budget not found');
+    throw new Error('Anggaran sebelumnya tidak ditemukan.');
   }
 
   return {
@@ -622,7 +622,7 @@ async function getBudgetDepartmentFromExistingItems(conn, items = []) {
 function assertBudgetDepartmentNotChanged(oldDepartment, newDepartment) {
   if (Number(oldDepartment.departmentId) !== Number(newDepartment.departmentId)) {
     throw new Error(
-      `Budget department cannot be changed on existing FRP. Current department is ${oldDepartment.departmentCode}`
+      `Departemen anggaran pada FRP yang sudah ada tidak dapat diubah. Departemen saat ini adalah ${oldDepartment.departmentCode}.`
     );
   }
 }
@@ -712,7 +712,7 @@ async function getFrpDetail(id, user = {}) {
     const allowed = await canViewFrp(conn, user, detail);
 
     if (!allowed) {
-      throw new Error('You do not have access to this FRP request');
+      throw new Error('Anda tidak memiliki akses ke FRP ini.');
     }
 
     return detail;
@@ -734,19 +734,19 @@ async function createFrp(body = {}, user = {}, req = null) {
     const userDepartmentContexts = getUserDepartmentContexts(user);
 
     if (!headerSnapshot.company_id) {
-      throw new Error('Company is required');
+      throw new Error('Perusahaan wajib diisi.');
     }
 
     if (!headerSnapshot.department_id) {
-      throw new Error('Department is required');
+      throw new Error('Departemen wajib diisi.');
     }
 
     if (!headerSnapshot.class_department_id) {
-      throw new Error('Class department is required');
+      throw new Error('Kelas departemen wajib diisi.');
     }
 
     if (!headerSnapshot.department_code_snapshot) {
-      throw new Error('Department code snapshot is required');
+      throw new Error('Data kode departemen wajib ada.');
     }
 
     const vendorSnapshot = await resolveVendorSnapshot(conn, body.vendor_id);
@@ -910,18 +910,18 @@ async function updateFrp(id, body = {}, user = {}, req = null) {
     const frp = await frpModel.getFrpHeaderById(conn, id, { lock: true });
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (frp.status !== 'PENDING') {
-      throw new Error('Only PENDING FRP can be updated');
+      throw new Error('Hanya FRP berstatus PENDING yang dapat diubah.');
     }
     if (frp.source_module === 'RP') {
-      throw new Error('FRP from RP must be reviewed using approve/reject, not direct update');
+      throw new Error('FRP dari RP harus ditinjau melalui setujui/tolak, bukan diubah langsung.');
     }
 
     if (!canEditFrp(user, frp)) {
-      throw new Error('Only FRP creator or IT SuperUser can update this FRP');
+      throw new Error('Hanya pembuat FRP atau IT SuperUser yang dapat mengubah FRP ini.');
     }
 
     const oldItems = await frpModel.getFrpItems(conn, id);
@@ -1100,32 +1100,32 @@ async function approveFrp(id, user = {}, body = {}, req = null) {
     const frp = await frpModel.getFrpHeaderById(conn, id, { lock: true });
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (frp.status !== 'PENDING') {
-      throw new Error('Only PENDING FRP can be approved');
+      throw new Error('Hanya FRP berstatus PENDING yang dapat disetujui.');
     }
 
     if (isFrpCreator(user, frp)) {
-      throw new Error('You cannot approve your own FRP');
+      throw new Error('Anda tidak dapat menyetujui FRP milik Anda sendiri.');
     }
 
     if (!canApproveFrp(user, frp)) {
-      throw new Error('Only manager from requester department can approve this FRP');
+      throw new Error('Hanya manajer dari departemen pemohon yang dapat menyetujui FRP ini.');
     }
 
     const items = await frpModel.getFrpItems(conn, id);
 
     if (frp.source_module === 'RP') {
-      if (!frp.source_rp_request_id) throw new Error('Source RP reference is missing');
+      if (!frp.source_rp_request_id) throw new Error('Referensi RP sumber tidak ada.');
       const rp = await rpModel.getRpHeaderById(conn, frp.source_rp_request_id, { lock: true });
       if (!rp || rp.status !== 'APPROVED' || rp.frp_conversion_status !== 'CREATED' ||
           String(rp.converted_frp_request_id) !== String(frp.id)) {
-        throw new Error('Source RP is not in a valid conversion state');
+        throw new Error('RP sumber tidak dalam status konversi yang valid.');
       }
       const rpItems = await rpModel.getRpItems(conn, rp.id);
-      if (!rpItems.length) throw new Error('Source RP has no items');
+      if (!rpItems.length) throw new Error('RP sumber tidak memiliki item.');
       for (const rpItem of rpItems) {
         await releaseBudget(conn, {
           budgetId: rpItem.budget_id,
@@ -1138,7 +1138,7 @@ async function approveFrp(id, user = {}, body = {}, req = null) {
       for (const item of items) {
         const sourceItem = rpItems.find((candidate) => String(candidate.id) === String(item.source_rp_request_item_id));
         if (!sourceItem || Number(sourceItem.budget_id) !== Number(item.budget_id)) {
-          throw new Error('FRP item budget does not match source RP item');
+          throw new Error('Anggaran item FRP tidak sesuai dengan item RP sumber.');
         }
         await reserveBudget(conn, {
           budgetId: item.budget_id, amount: getItemBudgetAmount(item),
@@ -1218,7 +1218,7 @@ async function rejectFrp(id, user = {}, body = {}, req = null) {
   const reason = normalizeString(body.reason || body.notes);
 
   if (!reason) {
-    throw new Error('Reject reason is required');
+    throw new Error('Alasan penolakan wajib diisi.');
   }
 
   const conn = await frpModel.db.getConnection();
@@ -1229,19 +1229,19 @@ async function rejectFrp(id, user = {}, body = {}, req = null) {
     const frp = await frpModel.getFrpHeaderById(conn, id, { lock: true });
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (frp.status !== 'PENDING') {
-      throw new Error('Only PENDING FRP can be rejected');
+      throw new Error('Hanya FRP berstatus PENDING yang dapat ditolak.');
     }
 
     if (isFrpCreator(user, frp)) {
-    throw new Error('You cannot reject your own FRP');
+    throw new Error('Anda tidak dapat menolak FRP milik Anda sendiri.');
     }
 
     if (!canRejectFrp(user, frp)) {
-    throw new Error('Only manager from requester department can reject this FRP');
+    throw new Error('Hanya manajer dari departemen pemohon yang dapat menolak FRP ini.');
     }
 
     const items = await frpModel.getFrpItems(conn, id);
@@ -1261,7 +1261,7 @@ async function rejectFrp(id, user = {}, body = {}, req = null) {
     if (frp.source_module === 'RP') {
       const rp = await rpModel.getRpHeaderById(conn, frp.source_rp_request_id, { lock: true });
       if (!rp || String(rp.converted_frp_request_id) !== String(frp.id)) {
-        throw new Error('Source RP conversion reference is inconsistent');
+        throw new Error('Referensi konversi RP sumber tidak konsisten.');
       }
       await rpModel.resetRpConversionAfterRejectedFrp(conn, rp.id, frp.id, user);
     }
@@ -1319,7 +1319,7 @@ async function revertFrp(id, user = {}, body = {}, req = null) {
   const reason = normalizeString(body.reason || body.notes);
 
   if (!reason) {
-    throw new Error('Revert reason is required');
+    throw new Error('Alasan revert wajib diisi.');
   }
 
   const conn = await frpModel.db.getConnection();
@@ -1330,18 +1330,18 @@ async function revertFrp(id, user = {}, body = {}, req = null) {
     const frp = await frpModel.getFrpHeaderById(conn, id, { lock: true });
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (frp.status !== 'APPROVED') {
-      throw new Error('Only APPROVED FRP can be reverted');
+      throw new Error('Hanya FRP berstatus APPROVED yang dapat dikembalikan (revert).');
     }
     if (frp.source_module === 'RP') {
-      throw new Error('Revert FRP from RP requires a separate RP budget restoration workflow');
+      throw new Error('Revert FRP dari RP memerlukan alur pemulihan anggaran RP tersendiri.');
     }
 
     if (!canRevertFrp(user, frp)) {
-    throw new Error('Only IT SuperUser or manager from requester department can revert this FRP');
+    throw new Error('Hanya IT SuperUser atau manajer dari departemen pemohon yang dapat mengembalikan (revert) FRP ini.');
     }
 
     const items = await frpModel.getFrpItems(conn, id);

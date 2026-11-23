@@ -96,6 +96,10 @@ function buildAccessFilters(query = {}) {
     params.push(...access.budgetDepartmentIds, ...access.budgetDepartmentIds);
   }
 
+  if (access.canViewFrpConversion) {
+    orWhere.push("(rr.status = 'APPROVED' OR rr.frp_conversion_status = 'VOIDED')");
+  }
+
   if (!orWhere.length) {
     return {
       where: ['1 = 0'],
@@ -244,6 +248,12 @@ async function listRpRequests(conn, query = {}) {
         rr.frp_conversion_status,
         rr.converted_frp_request_id,
         rr.converted_frp_number,
+        (
+          SELECT fr.status
+          FROM frp_requests fr
+          WHERE fr.id = rr.converted_frp_request_id
+          LIMIT 1
+        ) AS converted_frp_status,
         rr.flow_type,
         rr.company_id,
         rr.company_code_snapshot,
@@ -963,7 +973,7 @@ async function resetRpConversionAfterRejectedFrp(conn, rpId, frpId, user = {}) {
        AND status = 'APPROVED' AND frp_conversion_status = 'CREATED'`,
     [user.id || null, user.name || null, rpId, frpId]
   );
-  if (result.affectedRows !== 1) throw new Error('RP conversion could not be reset');
+  if (result.affectedRows !== 1) throw new Error('Status konversi RP tidak dapat direset.');
 }
 
 async function updateRpProcurementVoided(conn, id, user = {}, reason) {

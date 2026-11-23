@@ -40,31 +40,31 @@ function validateExternalDocumentTypePayload(payload = {}) {
   const sortOrder = normalizeSortOrder(payload.sort_order);
 
   if (!code) {
-    errors.code = 'External document type code is required';
+    errors.code = 'Kode tipe dokumen eksternal wajib diisi.';
   }
 
   if (code.length > 50) {
-    errors.code = 'External document type code maximum length is 50 characters';
+    errors.code = 'Kode tipe dokumen eksternal maksimal 50 karakter.';
   }
 
   if (!name) {
-    errors.name = 'External document type name is required';
+    errors.name = 'Nama tipe dokumen eksternal wajib diisi.';
   }
 
   if (name.length > 150) {
-    errors.name = 'External document type name maximum length is 150 characters';
+    errors.name = 'Nama tipe dokumen eksternal maksimal 150 karakter.';
   }
 
   if (description && description.length > 255) {
-    errors.description = 'Description maximum length is 255 characters';
+    errors.description = 'Deskripsi maksimal 255 karakter.';
   }
 
   if (!Number.isInteger(sortOrder)) {
-    errors.sort_order = 'sort_order must be an integer';
+    errors.sort_order = 'sort_order harus berupa bilangan bulat.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -79,17 +79,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -106,8 +106,8 @@ async function ensureCodeUnique(code, ignoredId = null, connection = db) {
     return;
   }
 
-  throw createHttpError('External document type code already exists', 400, {
-    code: 'External document type code already exists',
+  throw createHttpError('Kode tipe dokumen eksternal sudah ada.', 400, {
+    code: 'Kode tipe dokumen eksternal sudah ada.',
   });
 }
 
@@ -119,7 +119,7 @@ async function getExternalDocumentTypeById(id) {
   const documentType = await ExternalDocumentTypeModel.findById(id);
 
   if (!documentType) {
-    throw createHttpError('External document type not found', 404);
+    throw createHttpError('Tipe dokumen eksternal tidak ditemukan.', 404);
   }
 
   return documentType;
@@ -179,7 +179,7 @@ async function updateExternalDocumentType(id, payload, req) {
     const oldDocumentType = await ExternalDocumentTypeModel.findById(id, connection);
 
     if (!oldDocumentType) {
-      throw createHttpError('External document type not found', 404);
+      throw createHttpError('Tipe dokumen eksternal tidak ditemukan.', 404);
     }
 
     await ensureCodeUnique(data.code, id, connection);
@@ -219,7 +219,7 @@ async function updateExternalDocumentTypeStatus(id, payload, req) {
     const oldDocumentType = await ExternalDocumentTypeModel.findById(id, connection);
 
     if (!oldDocumentType) {
-      throw createHttpError('External document type not found', 404);
+      throw createHttpError('Tipe dokumen eksternal tidak ditemukan.', 404);
     }
 
     const updatedDocumentType = await ExternalDocumentTypeModel.updateStatus(id, data.is_active, connection);

@@ -77,15 +77,43 @@ function withRequesterDepartment(values, requesterInfo) {
 }
 
 const initialRequesterInfo = {
+  company_id: '',
   company: '',
   division: '',
   request_by: '',
   department_id: '',
   class_department_id: '',
+  can_use_cross_budget: false,
 }
 
-const RP_BUDGET_ACCESS_MODULE = 'RP'
+// Requester department IDs (HCGA = 1, IT = 8) whose RP items must use the
+// destination department's budget instead of their own.
+const DESTINATION_BUDGET_DEPARTMENT_IDS = [1, 8]
+const RP_BUDGET_PURPOSE = 'RP'
 const CROSS_BUDGET_ACCESS_TYPE = 'CROSS_BUDGET'
+
+// Aturan CROSS_BUDGET aktif untuk modul RP pada departemen terpilih (master Budget Access)
+// membolehkan pemakaian anggaran departemen lain dalam perusahaan yang sama.
+function hasCrossBudgetAccess(departmentId, budgetAccessRules = []) {
+  if (!departmentId) {
+    return false
+  }
+
+  return budgetAccessRules.some((rule) => {
+    const ruleModule = String(getFirstValue(rule, ['module'], RP_BUDGET_PURPOSE)).toUpperCase()
+    const ruleAccessType = String(
+      getFirstValue(rule, ['access_type', 'accessType'], CROSS_BUDGET_ACCESS_TYPE),
+    ).toUpperCase()
+    const isActive = Number(getFirstValue(rule, ['is_active', 'isActive'], 1)) !== 0
+
+    return (
+      isActive &&
+      ruleModule === RP_BUDGET_PURPOSE &&
+      ruleAccessType === CROSS_BUDGET_ACCESS_TYPE &&
+      String(getFirstValue(rule, ['department_id', 'departmentId'])) === String(departmentId)
+    )
+  })
+}
 
 function getRowsFromResponse(response) {
   if (Array.isArray(response)) {
@@ -176,87 +204,115 @@ function mapBudgetOptions(budgets) {
   })
 }
 
-function normalizeText(value) {
-  return String(value ?? '').trim().toUpperCase()
-}
-
-function isActiveRecord(record) {
-  const isActive = getFirstValue(record, ['is_active', 'isActive'], 1)
-
-  return Number(isActive) !== 0
-}
-
-function getUserDepartmentIds(user = {}) {
-  const departments = Array.isArray(user.departments) ? user.departments : []
-  const departmentIds = [
-    user.context_department_id,
-    user.department_id,
-    user.departmentId,
-    ...departments.map((department) =>
-      getFirstValue(department, ['department_id', 'departmentId', 'id']),
-    ),
-  ]
-
-  return departmentIds.filter(
-    (departmentId) => departmentId !== undefined && departmentId !== null && departmentId !== '',
+function usesDestinationBudget(requesterInfo) {
+  return (
+    !requesterInfo?.can_use_cross_budget &&
+    DESTINATION_BUDGET_DEPARTMENT_IDS.includes(Number(requesterInfo?.department_id))
   )
 }
 
-function hasCrossBudgetAccess(user = {}, budgetAccessRules = []) {
-  const userDepartmentIds = getUserDepartmentIds(user)
+function getBudgetListParams(requesterInfo, destinationDepartmentId) {
+  if (!requesterInfo?.department_id) {
+    return null
+  }
 
-  return budgetAccessRules.some((rule) => {
-    const ruleDepartmentId = getFirstValue(rule, ['department_id', 'departmentId'])
-    const moduleName = normalizeText(getFirstValue(rule, ['module'], RP_BUDGET_ACCESS_MODULE))
-    const accessType = normalizeText(
-      getFirstValue(rule, ['access_type', 'accessType'], CROSS_BUDGET_ACCESS_TYPE),
-    )
-
-    return (
-      isActiveRecord(rule) &&
-      moduleName === RP_BUDGET_ACCESS_MODULE &&
-      accessType === CROSS_BUDGET_ACCESS_TYPE &&
-      userDepartmentIds.some((departmentId) => String(departmentId) === String(ruleDepartmentId))
-    )
-  })
-}
-
-function filterBudgetsByRequesterScope(budgets, requesterInfo) {
-  const requesterDepartmentId = requesterInfo.department_id
-  const requesterClassDepartmentId = requesterInfo.class_department_id
-
-  return budgets.filter((budget) => {
-    const budgetDepartmentId = getFirstValue(budget, ['department_id', 'departmentId'])
-    const budgetClassDepartmentId = getFirstValue(
-      budget,
-      ['class_department_id', 'classDepartmentId'],
-    )
-
-    if (!budgetDepartmentId && !budgetClassDepartmentId) {
-      return true
+  if (requesterInfo.can_use_cross_budget) {
+    // CROSS_BUDGET: semua anggaran aktif pada perusahaan terpilih.
+    return {
+      page: 1,
+      limit: 200,
+      is_active: 1,
+      purpose: RP_BUDGET_PURPOSE,
+      company_id: requesterInfo.company_id || undefined,
     }
+  }
 
-    return (
-      (requesterDepartmentId && String(budgetDepartmentId) === String(requesterDepartmentId)) ||
-      (requesterClassDepartmentId &&
-        String(budgetClassDepartmentId) === String(requesterClassDepartmentId))
-    )
-  })
-}
+  const isDestinationScope = usesDestinationBudget(requesterInfo)
 
-function getBudgetListParams(requesterInfo, canUseCrossBudget) {
-  const params = {
+  if (isDestinationScope && !destinationDepartmentId) {
+    return null
+  }
+
+  return {
     page: 1,
     limit: 200,
     is_active: 1,
+    purpose: RP_BUDGET_PURPOSE,
+    company_id: requesterInfo.company_id || undefined,
+    department_id: requesterInfo.department_id,
+    class_department_id: requesterInfo.class_department_id || undefined,
+    destination_department_id: isDestinationScope ? destinationDepartmentId : undefined,
+  }
+}
+
+function getBudgetScopeKey(requesterInfo, destinationDepartmentId) {
+  const params = getBudgetListParams(requesterInfo, destinationDepartmentId)
+
+  return params ? JSON.stringify(params) : ''
+}
+
+function isSameIdOrUnknown(expectedId, actualId) {
+  if (expectedId === undefined || expectedId === null || expectedId === '') {
+    return true
   }
 
-  if (!canUseCrossBudget) {
-    params.department_id = requesterInfo.department_id || undefined
-    params.class_department_id = requesterInfo.class_department_id || undefined
+  if (actualId === undefined || actualId === null || actualId === '') {
+    return true
   }
 
-  return params
+  return String(expectedId) === String(actualId)
+}
+
+// Filter defensif yang mengikuti aturan budget RP di backend:
+// - Pembuat IT/HCGA: budget harus milik divisi pemroses (destination) pada company terpilih.
+// - Pembuat lainnya: budget harus sama dengan company, department, dan class terpilih.
+// - Departemen CROSS_BUDGET: params tanpa department, jadi hanya company yang dicocokkan.
+function filterBudgetsByRpContext(budgets, params) {
+  return budgets.filter((budget) => {
+    const budgetCompanyId = getFirstValue(budget, ['company_id', 'companyId'])
+    const budgetDepartmentId = getFirstValue(budget, ['department_id', 'departmentId'])
+    const budgetClassDepartmentId = getFirstValue(budget, [
+      'class_department_id',
+      'classDepartmentId',
+    ])
+
+    if (!isSameIdOrUnknown(params.company_id, budgetCompanyId)) {
+      return false
+    }
+
+    if (params.destination_department_id) {
+      return isSameIdOrUnknown(params.destination_department_id, budgetDepartmentId)
+    }
+
+    return (
+      isSameIdOrUnknown(params.department_id, budgetDepartmentId) &&
+      isSameIdOrUnknown(params.class_department_id, budgetClassDepartmentId)
+    )
+  })
+}
+
+async function fetchRpBudgetOptions(budgetScopeKey, signal) {
+  if (!budgetScopeKey) {
+    return []
+  }
+
+  const params = JSON.parse(budgetScopeKey)
+  const response = await api.budgets.list(params, { signal })
+
+  return mapBudgetOptions(filterBudgetsByRpContext(getRowsFromResponse(response), params))
+}
+
+function createEmptyBudgetState() {
+  return { key: '', options: [], error: '' }
+}
+
+function keepValidBudgetSelections(values, budgetOptions) {
+  return {
+    ...values,
+    items: values.items.map((item) =>
+      hasOptionValue(budgetOptions, item.budget_id) ? item : { ...item, budget_id: '' },
+    ),
+  }
 }
 
 function getAuthUser(response) {
@@ -296,6 +352,7 @@ function getUserRequesterInfo(user = {}) {
     primaryDepartment?.department_name
 
   return {
+    company_id: user.company_id ?? primaryCompany?.id ?? primaryCompany?.company_id ?? '',
     company: [companyCode, companyName].filter(Boolean).join(' - '),
     division: [departmentCode, departmentName].filter(Boolean).join(' - '),
     request_by: user.name ?? user.full_name ?? user.username ?? '',
@@ -346,37 +403,6 @@ function ensureOption(options, value, label, extra = {}) {
     },
     ...options,
   ]
-}
-
-function ensureOptions(options, values, getLabel) {
-  return values.reduce((currentOptions, value, index) => {
-    const optionValue = typeof value === 'object' ? value?.value : value
-    const optionLabel = typeof getLabel === 'function' ? getLabel(value, index) : ''
-
-    return ensureOption(currentOptions, optionValue, optionLabel)
-  }, options)
-}
-
-function ensureBudgetOptionsForItems(options, items) {
-  if (!Array.isArray(items)) {
-    return options
-  }
-
-  const budgetOptionsFromItems = items.map((item) => {
-    const code = getFirstValue(item, ['budget_code_snapshot', 'budget_code'], '')
-    const name = getFirstValue(
-      item,
-      ['budget_project_name_snapshot', 'budget_name_snapshot', 'project_name', 'name'],
-      '',
-    )
-
-    return {
-      value: getFirstValue(item, ['budget_id', 'budgetId'], ''),
-      label: [code, name].filter(Boolean).join(' - '),
-    }
-  })
-
-  return ensureOptions(options, budgetOptionsFromItems, (item) => item.label)
 }
 
 function normalizeQuantityInputValue(value) {
@@ -432,7 +458,7 @@ function DialogCreateRp({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
-  const [budgetOptions, setBudgetOptions] = useState([])
+  const [budgetState, setBudgetState] = useState(createEmptyBudgetState)
   const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
@@ -448,7 +474,7 @@ function DialogCreateRp({
     setIsSubmitting(false)
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
-    setBudgetOptions([])
+    setBudgetState(createEmptyBudgetState())
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
@@ -487,7 +513,7 @@ function DialogCreateRp({
 
     if (!isSaved) {
       setIsCloseConfirmOpen(false)
-      setSubmitError('Draft gagal disimpan di browser ini. Silakan coba lagi atau submit RP.')
+      setSubmitError('Draf gagal disimpan di peramban ini. Silakan coba lagi atau kirim RP.')
       return
     }
 
@@ -513,10 +539,28 @@ function DialogCreateRp({
   }
 
   const updateValue = (fieldName, value) => {
-    setFormValues((currentValues) => ({
-      ...currentValues,
-      [fieldName]: value,
-    }))
+    const shouldResetItemBudgets =
+      fieldName === 'destination_department_id' && usesDestinationBudget(requesterInfo)
+
+    setFormValues((currentValues) => {
+      const nextValues = {
+        ...currentValues,
+        [fieldName]: value,
+      }
+
+      if (
+        !shouldResetItemBudgets ||
+        String(currentValues.destination_department_id) === String(value)
+      ) {
+        return nextValues
+      }
+
+      // Budget RP IT/HCGA mengikuti divisi pemroses, jadi pilihan budget lama tidak lagi valid.
+      return {
+        ...nextValues,
+        items: currentValues.items.map((item) => ({ ...item, budget_id: '' })),
+      }
+    })
 
     setFieldErrors((currentErrors) => {
       if (!currentErrors[fieldName]) {
@@ -607,25 +651,35 @@ function DialogCreateRp({
       try {
         const [
           authResponse,
-          budgetAccessRulesResponse,
+          budgetAccessRules,
           paymentCategoriesResponse,
           destinationDepartmentsResponse,
         ] = await Promise.all([
           api.auth.me({
             signal: controller.signal,
           }),
-          api.budgetAccessRules.list(
-            {
-              page: 1,
-              limit: 200,
-              module: RP_BUDGET_ACCESS_MODULE,
-              access_type: CROSS_BUDGET_ACCESS_TYPE,
-              is_active: 1,
-            },
-            {
-              signal: controller.signal,
-            },
-          ),
+          api.budgetAccessRules
+            .list(
+              {
+                page: 1,
+                limit: 200,
+                module: RP_BUDGET_PURPOSE,
+                access_type: CROSS_BUDGET_ACCESS_TYPE,
+                is_active: 1,
+              },
+              {
+                signal: controller.signal,
+              },
+            )
+            .then(getRowsFromResponse)
+            .catch((error) => {
+              if (error.name === 'AbortError') {
+                throw error
+              }
+
+              // Tanpa akses baca aturan, pakai aturan budget standar (backend tetap memvalidasi).
+              return []
+            }),
           api.rpPaymentCategories.list(
             {
               page: 1,
@@ -648,31 +702,34 @@ function DialogCreateRp({
           ),
         ])
         const authUser = getAuthUser(authResponse)
-        const nextRequesterInfo = getUserRequesterInfo(authUser)
-        const canUseCrossBudget = hasCrossBudgetAccess(
-          authUser,
-          getRowsFromResponse(budgetAccessRulesResponse),
-        )
-        const budgetsResponse = await api.budgets.list(
-          getBudgetListParams(nextRequesterInfo, canUseCrossBudget),
-          {
-            signal: controller.signal,
-          },
-        )
-        const budgetRows = getRowsFromResponse(budgetsResponse)
-        const visibleBudgetRows = canUseCrossBudget
-          ? budgetRows
-          : filterBudgetsByRequesterScope(budgetRows, nextRequesterInfo)
+        const userRequesterInfo = getUserRequesterInfo(authUser)
+        const nextRequesterInfo = {
+          ...userRequesterInfo,
+          can_use_cross_budget: hasCrossBudgetAccess(
+            userRequesterInfo.department_id,
+            budgetAccessRules,
+          ),
+        }
         const duplicateFormValues = duplicateFrom ? mapRpToDuplicateFormValues(duplicateFrom) : null
         const draftUserId = getFirstValue(authUser, ['id', 'user_id', 'userId'], '')
         const storedDraft = duplicateFormValues
           ? null
           : loadFormDraft(FORM_DRAFT_KEYS.RP_CREATE, draftUserId)
         const draftFormValues = storedDraft ? normalizeDraftFormValues(storedDraft.values) : null
-        const nextFormValues = withRequesterDepartment(
+        const initialFormValues = withRequesterDepartment(
           duplicateFormValues ?? draftFormValues ?? createInitialFormValues(),
           nextRequesterInfo,
         )
+        const nextBudgetScopeKey = getBudgetScopeKey(
+          nextRequesterInfo,
+          initialFormValues.destination_department_id,
+        )
+        const nextBudgetOptions = await fetchRpBudgetOptions(
+          nextBudgetScopeKey,
+          controller.signal,
+        )
+        // Budget dari draf/duplikat yang tidak sesuai konteks RP saat ini dikosongkan.
+        const nextFormValues = keepValidBudgetSelections(initialFormValues, nextBudgetOptions)
 
         let nextPaymentCategoryOptions = mapPaymentCategoryOptions(
           getRowsFromResponse(paymentCategoriesResponse),
@@ -680,7 +737,6 @@ function DialogCreateRp({
         let nextDestinationDepartmentOptions = mapDestinationDepartmentOptions(
           getRowsFromResponse(destinationDepartmentsResponse),
         )
-        let nextBudgetOptions = mapBudgetOptions(visibleBudgetRows)
 
         if (duplicateFormValues) {
           nextPaymentCategoryOptions = ensureOption(
@@ -703,7 +759,6 @@ function DialogCreateRp({
               .filter(Boolean)
               .join(' - '),
           )
-          nextBudgetOptions = ensureBudgetOptionsForItems(nextBudgetOptions, duplicateFrom?.items)
         }
 
         draftUserIdRef.current = draftUserId
@@ -713,15 +768,15 @@ function DialogCreateRp({
         setFormValues(nextFormValues)
         setPaymentCategoryOptions(nextPaymentCategoryOptions)
         setDestinationDepartmentOptions(nextDestinationDepartmentOptions)
-        setBudgetOptions(nextBudgetOptions)
+        setBudgetState({ key: nextBudgetScopeKey, options: nextBudgetOptions, error: '' })
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-            setPaymentCategoryOptions([])
+        setPaymentCategoryOptions([])
         setDestinationDepartmentOptions([])
-        setBudgetOptions([])
+        setBudgetState(createEmptyBudgetState())
         setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat pilihan RP.')
       } finally {
@@ -737,6 +792,44 @@ function DialogCreateRp({
       controller.abort()
     }
   }, [isOpen, duplicateFrom])
+
+  const budgetScopeKey = isOpen
+    ? getBudgetScopeKey(requesterInfo, formValues.destination_department_id)
+    : ''
+  const loadedBudgetScopeKey = budgetState.key
+  const isBudgetScopeLoaded = loadedBudgetScopeKey === budgetScopeKey
+  const budgetOptions = isBudgetScopeLoaded ? budgetState.options : []
+  const budgetOptionsError = isBudgetScopeLoaded ? budgetState.error : ''
+  const isBudgetOptionsLoading = Boolean(budgetScopeKey) && !isBudgetScopeLoaded
+
+  // Muat ulang dropdown budget saat konteks berubah (mis. IT/HCGA mengganti divisi pemroses).
+  useEffect(() => {
+    if (!budgetScopeKey || budgetScopeKey === loadedBudgetScopeKey) {
+      return undefined
+    }
+
+    const controller = new AbortController()
+
+    fetchRpBudgetOptions(budgetScopeKey, controller.signal)
+      .then((nextBudgetOptions) => {
+        setBudgetState({ key: budgetScopeKey, options: nextBudgetOptions, error: '' })
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          return
+        }
+
+        setBudgetState({
+          key: budgetScopeKey,
+          options: [],
+          error: error.message || 'Gagal memuat anggaran RP.',
+        })
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [budgetScopeKey, loadedBudgetScopeKey])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -757,11 +850,11 @@ function DialogCreateRp({
     })
 
     if (!formValues.date_required) {
-      nextFieldErrors.date_required = 'RP Date wajib diisi.'
+      nextFieldErrors.date_required = 'Tanggal RP wajib diisi.'
     }
 
     if (!formValues.description.trim()) {
-      nextFieldErrors.description = 'Description wajib diisi.'
+      nextFieldErrors.description = 'Deskripsi wajib diisi.'
     }
 
     if (!formValues.vendor_name.trim()) {
@@ -769,11 +862,11 @@ function DialogCreateRp({
     }
 
     if (!formValues.payment_category_id) {
-      nextFieldErrors.payment_category_id = 'Category payment wajib dipilih.'
+      nextFieldErrors.payment_category_id = 'Kategori pembayaran wajib dipilih.'
     }
 
     if (!formValues.destination_department_id) {
-      nextFieldErrors.destination_department_id = 'Division to process wajib dipilih.'
+      nextFieldErrors.destination_department_id = 'Divisi pemroses wajib dipilih.'
     }
 
     if (!formValues.pic_name.trim()) {
@@ -782,7 +875,7 @@ function DialogCreateRp({
 
     normalizedItems.forEach((item, index) => {
       if (!item.budget_id) {
-        nextFieldErrors[`items.${index}.budget_id`] = 'Budget wajib dipilih.'
+        nextFieldErrors[`items.${index}.budget_id`] = 'Anggaran wajib dipilih.'
       }
 
       if (!item.memo) {
@@ -790,7 +883,7 @@ function DialogCreateRp({
       }
 
       if (!isPositiveIntegerInput(formValues.items[index]?.quantity)) {
-        nextFieldErrors[`items.${index}.quantity`] = 'Qty harus berupa angka bulat lebih dari 0.'
+        nextFieldErrors[`items.${index}.quantity`] = 'Jumlah harus berupa bilangan bulat lebih dari 0.'
       }
 
       if (!Number.isFinite(item.unit_price) || item.unit_price <= 0) {
@@ -809,6 +902,7 @@ function DialogCreateRp({
 
     try {
       const response = await api.rp.create({
+        company_id: requesterInfo.company_id || undefined,
         department_id: formValues.department_id || undefined,
         class_department_id: formValues.class_department_id || undefined,
         destination_department_id: formValues.destination_department_id,
@@ -841,6 +935,11 @@ function DialogCreateRp({
   }
 
   const isFormDisabled = isSubmitting || isOptionsLoading
+  const isWaitingForDestination =
+    usesDestinationBudget(requesterInfo) && !formValues.destination_department_id
+  const budgetNoOptionsText = isWaitingForDestination
+    ? 'Pilih divisi pemroses terlebih dahulu untuk memuat anggaran.'
+    : 'Anggaran aktif tidak ditemukan untuk konteks RP ini.'
   const totalAmount = formValues.items.reduce((total, item) => {
     const quantity = Number(item.quantity)
     const unitPrice = Number(item.unit_price)
@@ -942,9 +1041,10 @@ function DialogCreateRp({
             <TabsItemsCreate
               formValues={formValues}
               fieldErrors={fieldErrors}
-              isOptionsLoading={isOptionsLoading}
+              isOptionsLoading={isOptionsLoading || isBudgetOptionsLoading}
               isFormDisabled={isFormDisabled}
               budgetOptions={budgetOptions}
+              budgetNoOptionsText={budgetNoOptionsText}
               updateItemValue={updateItemValue}
               removeItem={removeItem}
               addItem={addItem}
@@ -954,6 +1054,11 @@ function DialogCreateRp({
             {optionsError ? (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {optionsError}
+              </Alert>
+            ) : null}
+            {budgetOptionsError ? (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {budgetOptionsError}
               </Alert>
             ) : null}
             {submitError ? <Alert severity="error">{submitError}</Alert> : null}
@@ -1018,7 +1123,7 @@ function DialogCreateRp({
 
       <DialogConfirmDraft
         open={isCloseConfirmOpen}
-        message="RP ini belum disubmit. Draft akan dimuat lagi saat Anda membuka Create RP berikutnya."
+        message="RP ini belum dikirim. Draf akan dimuat kembali saat Anda membuat RP berikutnya."
         onSaveDraft={handleSaveDraftAndClose}
         onDiscard={handleDiscardAndClose}
         onCancel={() => setIsCloseConfirmOpen(false)}

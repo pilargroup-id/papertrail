@@ -32,7 +32,7 @@ async function fetchDirectoryResource(resource, { token, params } = {}) {
     });
   } catch (err) {
     throw createHttpError(
-      getAxiosErrorMessage(err, `Failed to fetch directory ${resource}`),
+      getAxiosErrorMessage(err, `Gagal mengambil data direktori ${resource}.`),
       err.response?.status || 500,
       getAxiosErrorCode(err) || 'DIRECTORY_FETCH_FAILED',
       err.response?.data || null

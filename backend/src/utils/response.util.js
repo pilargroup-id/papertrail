@@ -28,25 +28,25 @@ function paginated(res, data = [], meta = {}, message = 'OK') {
   });
 }
 
-function error(res, message = 'Internal Server Error', statusCode = 500, errors = null) {
+function error(res, message = 'Terjadi kesalahan pada server.', statusCode = 500, errors = null) {
   const body = { success: false, message };
   if (errors) body.errors = errors;
   return res.status(statusCode).json(body);
 }
 
-function badRequest(res, message = 'Bad Request', errors = null) {
+function badRequest(res, message = 'Permintaan tidak valid.', errors = null) {
   return error(res, message, 400, errors);
 }
 
-function unauthorized(res, message = 'Unauthorized') {
+function unauthorized(res, message = 'Tidak terautentikasi.') {
   return error(res, message, 401);
 }
 
-function forbidden(res, message = 'Forbidden') {
+function forbidden(res, message = 'Akses ditolak.') {
   return error(res, message, 403);
 }
 
-function notFound(res, message = 'Not Found') {
+function notFound(res, message = 'Data tidak ditemukan.') {
   return error(res, message, 404);
 }
 

@@ -5,6 +5,7 @@ const frpModel = require('../../models/frp/frp.model');
 const { generateDocumentNumber } = require('../documentNumber/documentNumber.service');
 const {
   getBudgetForUpdate,
+  hasCrossBudgetAccess,
   reserveBudget,
   releaseBudget,
   finalizeBudget,
@@ -18,6 +19,7 @@ const {
   buildUserSnapshot,
 } = require('../master/masterSnapshot.service');
 const activityLogService = require('../activity/activityLog.service');
+const { isProductAssistantManager } = require('../../utils/productApprover.util');
 
 function normalizeNumber(value, fallback = 0) {
   const number = Number(value);
@@ -166,7 +168,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
   const contexts = getUserDepartmentContexts(user);
 
   if (!contexts.length) {
-    throw new Error('User department is required');
+    throw new Error('Departemen pengguna wajib ada.');
   }
 
   const selectedDepartmentId = body.department_id
@@ -182,7 +184,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
   }
 
   if (!selectedDepartmentId) {
-    throw new Error('Department is required for multi-department user');
+    throw new Error('Departemen wajib dipilih untuk pengguna dengan lebih dari satu departemen.');
   }
 
   if (!selectedClassDepartmentId) {
@@ -194,7 +196,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
       return sameDepartmentContexts[0];
     }
 
-    throw new Error('Class department is required for selected department');
+    throw new Error('Kelas departemen wajib diisi untuk departemen yang dipilih.');
   }
 
   const matchedContext = contexts.find((context) => {
@@ -205,7 +207,7 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
   });
 
   if (!matchedContext) {
-    throw new Error('Selected department/class is not assigned to current user');
+    throw new Error('Departemen/kelas yang dipilih tidak terdaftar untuk pengguna ini.');
   }
 
   return matchedContext;
@@ -214,10 +216,10 @@ function resolveRequesterDepartmentContext(user = {}, body = {}) {
 function resolveSelectedCompany(user = {}, body = {}) {
   const companies = Array.isArray(user.companies) ? user.companies : [];
   const requestedId = String(body.company_id || user.company_id || getPrimaryCompany(user)?.id || '');
-  if (!requestedId) throw new Error('Company is required');
+  if (!requestedId) throw new Error('Perusahaan wajib diisi.');
   const selected = companies.find((c) => String(c.id) === requestedId);
   if (!selected && String(user.company_id || '') !== requestedId) {
-    throw new Error('Selected company is not assigned to current user');
+    throw new Error('Perusahaan yang dipilih tidak terdaftar untuk pengguna ini.');
   }
   return {
     company_id: requestedId,
@@ -359,6 +361,14 @@ function canViewRpByHeader(user = {}, rp = {}) {
   }
 
   if (isCrossDepartmentRp(rp) && userHasDepartmentId(user, rp.approval_budget_department_id)) {
+    return true;
+  }
+
+  // Ass. Manager Product melihat RP di alur Convert RP ke FRP (approved / voided procurement).
+  if (
+    isProductAssistantManager(user) &&
+    (rp.status === 'APPROVED' || rp.frp_conversion_status === 'VOIDED')
+  ) {
     return true;
   }
 
@@ -534,12 +544,13 @@ function buildListAccessQuery(user = {}) {
     managerDepartmentContexts: isManagerLevel(user) ? departmentContexts : [],
     destinationDepartmentIds: departmentIds,
     budgetDepartmentIds: departmentIds,
+    canViewFrpConversion: isProductAssistantManager(user),
   };
 }
 
 function validateItems(bodyItems = []) {
   if (!Array.isArray(bodyItems) || bodyItems.length === 0) {
-    throw new Error('RP items are required');
+    throw new Error('Item RP wajib diisi.');
   }
 
   bodyItems.forEach((item, index) => {
@@ -550,15 +561,15 @@ function validateItems(bodyItems = []) {
     const amount = normalizeNumber(item.amount, quantity * unitPrice);
 
     if (quantity <= 0) {
-      throw new Error(`Quantity must be greater than 0 on item ${index + 1}`);
+      throw new Error(`Jumlah pada item ${index + 1} harus lebih dari 0.`);
     }
 
     if (unitPrice <= 0) {
-      throw new Error(`Unit price must be greater than 0 on item ${index + 1}`);
+      throw new Error(`Harga satuan pada item ${index + 1} harus lebih dari 0.`);
     }
 
     if (amount <= 0) {
-      throw new Error(`Amount must be greater than 0 on item ${index + 1}`);
+      throw new Error(`Nominal pada item ${index + 1} harus lebih dari 0.`);
     }
   });
 }
@@ -605,7 +616,7 @@ async function resolvePaymentCategorySnapshot(conn, paymentCategoryId) {
   const category = await rpModel.getActivePaymentCategory(conn, paymentCategoryId);
 
   if (!category) {
-    throw new Error('RP payment category not found or inactive');
+    throw new Error('Kategori pembayaran RP tidak ditemukan atau tidak aktif.');
   }
 
   return {
@@ -622,7 +633,7 @@ async function resolveDestinationDepartmentSnapshot(conn, destinationDepartmentI
   );
 
   if (!destination) {
-    throw new Error('RP destination department is not active or not allowed');
+    throw new Error('Divisi pemroses RP tidak aktif atau tidak diizinkan.');
   }
 
   return {
@@ -637,6 +648,9 @@ async function resolveDestinationDepartmentSnapshot(conn, destinationDepartmentI
 
 async function buildRpItems(conn, bodyItems = [], context = {}) {
   const items = [];
+  // Departemen dengan aturan CROSS_BUDGET (master Budget Access, modul RP) boleh memakai
+  // anggaran departemen lain selama masih dalam perusahaan yang dipilih.
+  const canUseCrossBudget = await hasCrossBudgetAccess(conn, 'RP', context.department_id);
 
   for (const item of bodyItems) {
     const quantity = normalizeNumber(item.quantity, 0);
@@ -646,19 +660,21 @@ async function buildRpItems(conn, bodyItems = [], context = {}) {
     const budget = await getBudgetForUpdate(conn, item.budget_id);
 
     if (!budget) {
-      throw new Error('Budget not found');
+      throw new Error('Anggaran tidak ditemukan.');
     }
 
     if (String(budget.company_id) !== String(context.company_id)) {
-      throw new Error('RP budget company must match selected company');
+      throw new Error('Perusahaan pada anggaran RP harus sama dengan perusahaan yang dipilih.');
     }
-    if (context.destinationBudget) {
+    if (canUseCrossBudget) {
+      // Lintas departemen diizinkan.
+    } else if (context.destinationBudget) {
       if (Number(budget.department_id) !== Number(context.destination_department_id)) {
-        throw new Error('RP budget must belong to the destination department');
+        throw new Error('Anggaran RP harus milik divisi pemroses (departemen tujuan).');
       }
     } else if (Number(budget.department_id) !== Number(context.department_id) ||
                Number(budget.class_department_id) !== Number(context.class_department_id)) {
-      throw new Error('RP budget must belong to selected department/class');
+      throw new Error('Anggaran RP harus milik departemen/kelas yang dipilih.');
     }
 
     const remainingBefore = Number(budget.budget_remaining || 0);
@@ -699,17 +715,17 @@ async function buildRpItems(conn, bodyItems = [], context = {}) {
 
 function getDocumentNumberDepartmentFromItems(items = []) {
   if (!items.length) {
-    throw new Error('RP items are required');
+    throw new Error('Item RP wajib diisi.');
   }
 
   const firstItem = items[0];
 
   if (!firstItem.budget_department_id) {
-    throw new Error('Budget department is required for document number');
+    throw new Error('Departemen anggaran wajib ada untuk nomor dokumen.');
   }
 
   if (!firstItem.budget_department_code_snapshot) {
-    throw new Error('Budget department code is required for document number');
+    throw new Error('Kode departemen anggaran wajib ada untuk nomor dokumen.');
   }
 
   const budgetDepartmentId = Number(firstItem.budget_department_id);
@@ -719,7 +735,7 @@ function getDocumentNumberDepartmentFromItems(items = []) {
   });
 
   if (hasDifferentBudgetDepartment) {
-    throw new Error('All RP items must use budgets from the same department');
+    throw new Error('Semua item RP harus menggunakan anggaran dari departemen yang sama.');
   }
 
   return {
@@ -730,14 +746,14 @@ function getDocumentNumberDepartmentFromItems(items = []) {
 
 async function getBudgetDepartmentFromExistingItems(conn, items = []) {
   if (!items.length) {
-    throw new Error('Existing RP items are not found');
+    throw new Error('Item RP yang ada tidak ditemukan.');
   }
 
   const firstItem = items[0];
   const firstBudget = await getBudgetForUpdate(conn, firstItem.budget_id);
 
   if (!firstBudget) {
-    throw new Error('Existing budget not found');
+    throw new Error('Anggaran sebelumnya tidak ditemukan.');
   }
 
   return {
@@ -749,7 +765,7 @@ async function getBudgetDepartmentFromExistingItems(conn, items = []) {
 function assertBudgetDepartmentNotChanged(oldDepartment, newDepartment) {
   if (Number(oldDepartment.departmentId) !== Number(newDepartment.departmentId)) {
     throw new Error(
-      `Budget department cannot be changed on existing RP. Current department is ${oldDepartment.departmentCode}`
+      `Departemen anggaran pada RP yang sudah ada tidak dapat diubah. Departemen saat ini adalah ${oldDepartment.departmentCode}.`
     );
   }
 }
@@ -816,11 +832,11 @@ function assertCheckerItemsMatchExisting(existingItems = [], incomingItems = [])
     const itemId = String(item.rp_request_item_id || item.id || '');
 
     if (!itemId) {
-      throw new Error(`RP request item ID is required on checker item ${index + 1}`);
+      throw new Error(`ID item RP wajib diisi pada item checker ${index + 1}.`);
     }
 
     if (!existingIds.has(itemId)) {
-      throw new Error(`Checker item ${index + 1} does not belong to this RP`);
+      throw new Error(`Item checker ${index + 1} bukan bagian dari RP ini.`);
     }
   });
 
@@ -828,7 +844,7 @@ function assertCheckerItemsMatchExisting(existingItems = [], incomingItems = [])
   const uniqueIncomingIds = new Set(incomingIds);
 
   if (incomingIds.length !== uniqueIncomingIds.size) {
-    throw new Error('Duplicate RP request item ID on checker items');
+    throw new Error('Terdapat ID item RP yang duplikat pada item checker.');
   }
 }
 
@@ -926,7 +942,7 @@ function validateCreateFrpFromRpPayload(body = {}) {
   assertRequired(body.payment_date, 'Payment date is required');
 
   if (body.items !== undefined && !Array.isArray(body.items)) {
-    throw new Error('Items must be an array');
+    throw new Error('Item harus berupa array.');
   }
 
   const items = Array.isArray(body.items) ? body.items : [];
@@ -935,14 +951,14 @@ function validateCreateFrpFromRpPayload(body = {}) {
     const itemId = normalizeString(item.rp_request_item_id || item.id);
 
     if (!itemId) {
-      throw new Error(`RP request item ID is required on FRP item ${index + 1}`);
+      throw new Error(`ID item RP wajib diisi pada item FRP ${index + 1}.`);
     }
 
     if (item.frp_amount !== undefined && item.frp_amount !== null && item.frp_amount !== '') {
       const frpAmount = normalizeNumber(item.frp_amount, 0);
 
       if (frpAmount <= 0) {
-        throw new Error(`FRP amount must be greater than 0 on item ${index + 1}`);
+        throw new Error(`Nominal FRP pada item ${index + 1} harus lebih dari 0.`);
       }
     }
   });
@@ -952,7 +968,7 @@ function validateProcurementVoidPayload(body = {}) {
   const reason = normalizeString(body.reason || body.notes);
 
   if (!reason) {
-    throw new Error('Procurement void reason is required');
+    throw new Error('Alasan pembatalan (void) oleh procurement wajib diisi.');
   }
 
   return reason;
@@ -960,7 +976,7 @@ function validateProcurementVoidPayload(body = {}) {
 
 function assertGeneralProcurementUser(user = {}) {
   if (!isGeneralProcurement(user)) {
-    throw new Error('Only General Procurement can perform this action');
+    throw new Error('Hanya General Procurement yang dapat melakukan aksi ini.');
   }
 }
 
@@ -997,7 +1013,7 @@ function buildFrpItemsFromRpItems(rpItems = [], incomingItems = []) {
 
   incomingMap.forEach((item, itemId) => {
     if (!existingIds.has(String(itemId))) {
-      throw new Error('One or more FRP items do not belong to this RP');
+      throw new Error('Satu atau lebih item FRP bukan bagian dari RP ini.');
     }
   });
 
@@ -1015,7 +1031,7 @@ function buildFrpItemsFromRpItems(rpItems = [], incomingItems = []) {
       : originalAmount;
 
     if (finalAmount <= 0) {
-      throw new Error('Final FRP amount must be greater than 0');
+      throw new Error('Nominal akhir FRP harus lebih dari 0.');
     }
 
     return {
@@ -1044,13 +1060,13 @@ function buildFrpItemsFromRpItems(rpItems = [], incomingItems = []) {
 
 function getFrpDocumentNumberDepartmentFromRpItems(items = []) {
   if (!items.length) {
-    throw new Error('RP items are required');
+    throw new Error('Item RP wajib diisi.');
   }
 
   const firstItem = items[0];
 
   if (!firstItem.budget_department_id || !firstItem.budget_department_code_snapshot) {
-    throw new Error('Budget department snapshot is required for FRP number');
+    throw new Error('Data departemen anggaran wajib ada untuk nomor FRP.');
   }
 
   const budgetDepartmentId = Number(firstItem.budget_department_id);
@@ -1059,7 +1075,7 @@ function getFrpDocumentNumberDepartmentFromRpItems(items = []) {
   });
 
   if (hasDifferentBudgetDepartment) {
-    throw new Error('All RP items must use budgets from the same department');
+    throw new Error('Semua item RP harus menggunakan anggaran dari departemen yang sama.');
   }
 
   return {
@@ -1139,7 +1155,7 @@ async function getRpDetail(id, user = {}) {
     }
 
     if (!canViewRpByHeader(user, detail)) {
-      throw new Error('You do not have access to this RP request');
+      throw new Error('Anda tidak memiliki akses ke RP ini.');
     }
 
     return detail;
@@ -1161,11 +1177,11 @@ async function createRp(body = {}, user = {}, req = null) {
     const userDepartmentContexts = getUserDepartmentContexts(user);
 
     if (!headerSnapshot.company_id) {
-      throw new Error('Company is required');
+      throw new Error('Perusahaan wajib diisi.');
     }
 
     if (!headerSnapshot.department_id || !headerSnapshot.class_department_id) {
-      throw new Error('Department and class department are required');
+      throw new Error('Departemen dan kelas departemen wajib diisi.');
     }
 
     const destinationSnapshot = await resolveDestinationDepartmentSnapshot(
@@ -1312,11 +1328,11 @@ async function updateRp(id, body = {}, user = {}, req = null) {
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (!canEditRp(user, rp)) {
-      throw new Error('Only RP creator or IT SuperUser can update this RP');
+      throw new Error('Hanya pembuat RP atau IT SuperUser yang dapat mengubah RP ini.');
     }
 
     const oldItems = await rpModel.getRpItems(conn, id);
@@ -1435,15 +1451,15 @@ async function requesterManagerApproveRp(id, user = {}, body = {}, req = null) {
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (rp.status !== 'PENDING_REQUESTER_MANAGER') {
-      throw new Error('Only PENDING_REQUESTER_MANAGER RP can be approved by requester manager');
+      throw new Error('Hanya RP berstatus PENDING_REQUESTER_MANAGER yang dapat disetujui oleh manajer pemohon.');
     }
 
     if (!canRequesterManagerApprove(user, rp)) {
-      throw new Error('Only manager from requester department can approve this RP');
+      throw new Error('Hanya manajer dari departemen pemohon yang dapat menyetujui RP ini.');
     }
 
     await rpModel.updateRpRequesterManagerApproved(conn, id, user);
@@ -1489,7 +1505,7 @@ async function rejectRpAtStage(id, user = {}, body = {}, config = {}, req = null
   const reason = normalizeString(body.reason || body.notes);
 
   if (!reason) {
-    throw new Error('Reject reason is required');
+    throw new Error('Alasan penolakan wajib diisi.');
   }
 
   const conn = await rpModel.db.getConnection();
@@ -1500,11 +1516,11 @@ async function rejectRpAtStage(id, user = {}, body = {}, config = {}, req = null
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (rp.status !== config.expectedStatus) {
-      throw new Error(`Only ${config.expectedStatus} RP can be rejected at this stage`);
+      throw new Error(`Hanya RP berstatus ${config.expectedStatus} yang dapat ditolak pada tahap ini.`);
     }
 
     const allowed = await config.canReject(conn, user, rp);
@@ -1620,17 +1636,17 @@ async function destinationCheckRp(id, body = {}, user = {}, req = null) {
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (rp.status !== 'PENDING_DESTINATION_CHECKER') {
-      throw new Error('Only PENDING_DESTINATION_CHECKER RP can be checked');
+      throw new Error('Hanya RP berstatus PENDING_DESTINATION_CHECKER yang dapat diperiksa.');
     }
 
     const allowed = await canDestinationChecker(conn, user, rp);
 
     if (!allowed) {
-      throw new Error('Only authorized checker can check this RP');
+      throw new Error('Hanya checker yang berwenang yang dapat memeriksa RP ini.');
     }
 
     const oldItems = await rpModel.getRpItems(conn, id);
@@ -1681,11 +1697,11 @@ async function destinationCheckRp(id, body = {}, user = {}, req = null) {
       const newItem = newItems.find((item) => String(item.rp_request_item_id) === String(oldItem.id));
 
       if (!newItem) {
-        throw new Error('Checked RP item not found');
+        throw new Error('Item RP yang diperiksa tidak ditemukan.');
       }
 
       if (Number(newItem.budget_id) !== Number(oldItem.budget_id)) {
-        throw new Error('Checker cannot change item budget');
+        throw new Error('Checker tidak dapat mengubah anggaran item.');
       }
 
       await rpModel.updateRpItem(conn, oldItem.id, {
@@ -1788,15 +1804,15 @@ async function destinationManagerApproveRp(id, user = {}, body = {}, req = null)
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (rp.status !== 'PENDING_DESTINATION_MANAGER') {
-      throw new Error('Only PENDING_DESTINATION_MANAGER RP can be approved by destination manager');
+      throw new Error('Hanya RP berstatus PENDING_DESTINATION_MANAGER yang dapat disetujui oleh manajer divisi pemroses.');
     }
 
     if (!canDestinationManagerApprove(user, rp)) {
-      throw new Error('Only destination manager can approve this RP');
+      throw new Error('Hanya manajer divisi pemroses yang dapat menyetujui RP ini.');
     }
 
     await rpModel.updateRpDestinationManagerApproved(conn, id, user);
@@ -1842,7 +1858,7 @@ async function revertRp(id, user = {}, body = {}, req = null) {
   const reason = normalizeString(body.reason || body.notes);
 
   if (!reason) {
-    throw new Error('Revert reason is required');
+    throw new Error('Alasan revert wajib diisi.');
   }
 
   const conn = await rpModel.db.getConnection();
@@ -1853,17 +1869,17 @@ async function revertRp(id, user = {}, body = {}, req = null) {
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (rp.frp_conversion_status !== 'NOT_CREATED') {
-      throw new Error('RP that has FRP conversion status cannot be reverted');
+      throw new Error('RP yang sudah memiliki status konversi FRP tidak dapat dikembalikan (revert).');
     }
 
     const transition = getRpRevertTransition(user, rp);
 
     if (!transition) {
-      throw new Error('Current user cannot revert this RP at current status');
+      throw new Error('Anda tidak dapat mengembalikan (revert) RP ini pada status saat ini.');
     }
 
     await rpModel[transition.modelMethod](conn, id, user, reason);
@@ -1927,21 +1943,21 @@ async function createFrpFromRp(id, body = {}, user = {}, req = null) {
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (rp.status !== 'APPROVED') {
-      throw new Error('Only APPROVED RP can be converted to FRP');
+      throw new Error('Hanya RP berstatus APPROVED yang dapat dikonversi menjadi FRP.');
     }
 
     if (rp.frp_conversion_status !== 'NOT_CREATED') {
-      throw new Error('RP already has FRP conversion status');
+      throw new Error('RP sudah memiliki status konversi FRP.');
     }
 
     const rpItems = await rpModel.getRpItems(conn, id);
 
     if (!rpItems.length) {
-      throw new Error('RP items are required');
+      throw new Error('Item RP wajib diisi.');
     }
 
     const vendorSnapshot = await resolveVendorSnapshot(conn, body.vendor_id);
@@ -2123,15 +2139,15 @@ async function procurementVoidRp(id, user = {}, body = {}, req = null) {
     const rp = await rpModel.getRpHeaderById(conn, id, { lock: true });
 
     if (!rp) {
-      throw new Error('RP request not found');
+      throw new Error('RP tidak ditemukan.');
     }
 
     if (rp.status !== 'APPROVED') {
-      throw new Error('Only APPROVED RP can be voided by procurement');
+      throw new Error('Hanya RP berstatus APPROVED yang dapat dibatalkan (void) oleh procurement.');
     }
 
     if (rp.frp_conversion_status !== 'NOT_CREATED') {
-      throw new Error('RP already has FRP conversion status');
+      throw new Error('RP sudah memiliki status konversi FRP.');
     }
 
     const rpItems = await rpModel.getRpItems(conn, id);

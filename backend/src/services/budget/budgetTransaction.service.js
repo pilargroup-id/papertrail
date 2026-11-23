@@ -126,13 +126,13 @@ async function assertBudgetCanBeUsedByHeader(
   );
 
   if (!allowed) {
-    throw new Error(`Budget ${budget.budget_code} does not belong to selected department`);
+    throw new Error(`Anggaran ${budget.budget_code} bukan milik departemen yang dipilih.`);
   }
 }
 
 function assertBudgetActive(budget) {
   if (!budget || Number(budget.is_active) !== 1) {
-    throw new Error('Budget is not active');
+    throw new Error('Anggaran tidak aktif.');
   }
 }
 
@@ -140,7 +140,7 @@ function assertEnoughBudget(budget, amount) {
   const remaining = Number(budget.budget_remaining || 0);
 
   if (remaining < amount) {
-    throw new Error(`Budget ${budget.budget_code} remaining is not enough`);
+    throw new Error(`Sisa anggaran ${budget.budget_code} tidak mencukupi.`);
   }
 }
 
@@ -195,7 +195,7 @@ async function reserveBudget(conn, payload = {}) {
   const budget = await getBudgetForUpdate(conn, budgetId);
 
   if (!budget) {
-    throw new Error('Budget not found');
+    throw new Error('Anggaran tidak ditemukan.');
   }
 
   assertBudgetActive(budget);
@@ -255,7 +255,7 @@ async function finalizeBudget(conn, payload = {}) {
   const budget = await getBudgetForUpdate(conn, budgetId);
 
   if (!budget) {
-    throw new Error('Budget not found');
+    throw new Error('Anggaran tidak ditemukan.');
   }
 
   const balanceBefore = Number(budget.budget_remaining || 0);
@@ -303,7 +303,7 @@ async function releaseBudget(conn, payload = {}) {
   const budget = await getBudgetForUpdate(conn, budgetId);
 
   if (!budget) {
-    throw new Error('Budget not found');
+    throw new Error('Anggaran tidak ditemukan.');
   }
 
   const balanceBefore = Number(budget.budget_remaining || 0);
@@ -351,7 +351,7 @@ async function revertFinalizeBudget(conn, payload = {}) {
   const budget = await getBudgetForUpdate(conn, budgetId);
 
   if (!budget) {
-    throw new Error('Budget not found');
+    throw new Error('Anggaran tidak ditemukan.');
   }
 
   const balanceBefore = Number(budget.budget_remaining || 0);
@@ -387,6 +387,7 @@ async function revertFinalizeBudget(conn, payload = {}) {
 
 module.exports = {
   getBudgetForUpdate,
+  hasCrossBudgetAccess,
   reserveBudget,
   finalizeBudget,
   releaseBudget,

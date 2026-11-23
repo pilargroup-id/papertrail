@@ -11,15 +11,15 @@ async function generateDocumentNumber(conn, payload = {}) {
   } = payload;
 
   if (!module || !['FRP', 'RP'].includes(module)) {
-    throw new Error('Invalid document number module');
+    throw new Error('Modul nomor dokumen tidak valid.');
   }
 
   if (!departmentId) {
-    throw new Error('Department ID is required for document number');
+    throw new Error('ID departemen wajib ada untuk nomor dokumen.');
   }
 
   if (!departmentCode) {
-    throw new Error('Department code is required for document number');
+    throw new Error('Kode departemen wajib ada untuk nomor dokumen.');
   }
 
   const periodYear = date.getFullYear();

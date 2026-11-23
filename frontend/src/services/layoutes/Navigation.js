@@ -17,8 +17,30 @@ import {
   Filter,
   LayoutDashboard,
 } from '../../components/layoute/TemplateIcons.jsx'
+import { isProductAssistantManagerUser } from '../../components/table/frp/frp-button-access.js'
 
 export const defaultNavigationPath = '/forms'
+
+function normalizeRole(role) {
+  return (role ?? '').toString().trim().toUpperCase()
+}
+
+// Menu terlihat jika tidak dibatasi, job_position cocok dengan allowedRoles,
+// atau allowWhen(currentUser) bernilai true.
+export function isNavigationItemVisible(item, userRole = '', currentUser = null) {
+  const hasRoleRule = Boolean(item.allowedRoles?.length)
+  const hasCustomRule = typeof item.allowWhen === 'function'
+
+  if (!hasRoleRule && !hasCustomRule) {
+    return true
+  }
+
+  if (hasRoleRule && item.allowedRoles.some((role) => normalizeRole(role) === normalizeRole(userRole))) {
+    return true
+  }
+
+  return hasCustomRule && Boolean(currentUser) && item.allowWhen(currentUser)
+}
 
 export const implementedNavigationPaths = [
   // '/forms',
@@ -82,6 +104,8 @@ export const primaryNavigationItems = [
     href: '/rp-to-frp',
     icon: SwitchHorizontal01,
     allowedRoles: ['General Procurement'],
+    // Ass. Manager Product: approve FRP hasil convert RP.
+    allowWhen: isProductAssistantManagerUser,
   },
   {
     id: 'master',

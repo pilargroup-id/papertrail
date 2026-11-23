@@ -21,7 +21,7 @@ function normalizeBooleanFlag(value, fieldName, errors, defaultValue = 0) {
   const normalized = Number(value);
 
   if (![0, 1].includes(normalized)) {
-    errors[fieldName] = `${fieldName} must be 0 or 1`;
+    errors[fieldName] = `${fieldName} harus 0 atau 1.`;
   }
 
   return normalized;
@@ -37,27 +37,27 @@ function validatePayload(payload = {}) {
   const isPrimary = normalizeBooleanFlag(payload.is_primary, 'is_primary', errors, 0);
 
   if (!Number.isInteger(vendorId) || vendorId <= 0) {
-    errors.vendor_id = 'vendor_id is required and must be a positive integer';
+    errors.vendor_id = 'Vendor wajib dipilih.';
   }
 
   if (!Number.isInteger(bankId) || bankId <= 0) {
-    errors.bank_id = 'bank_id is required and must be a positive integer';
+    errors.bank_id = 'Bank wajib dipilih.';
   }
 
   if (!accountNumber) {
-    errors.account_number = 'account_number is required';
+    errors.account_number = 'Nomor rekening wajib diisi.';
   }
 
   if (accountNumber.length > 100) {
-    errors.account_number = 'account_number maximum length is 100 characters';
+    errors.account_number = 'Nomor rekening maksimal 100 karakter.';
   }
 
   if (accountName && accountName.length > 255) {
-    errors.account_name = 'account_name maximum length is 255 characters';
+    errors.account_name = 'Nama pemilik rekening maksimal 255 karakter.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -73,17 +73,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -93,14 +93,14 @@ async function ensureVendorActive(vendorId, connection) {
   const vendor = await VendorBankAccountModel.findVendorById(vendorId, connection);
 
   if (!vendor) {
-    throw createHttpError('Vendor not found', 404, {
-      vendor_id: 'Vendor not found',
+    throw createHttpError('Vendor tidak ditemukan.', 404, {
+      vendor_id: 'Vendor tidak ditemukan.',
     });
   }
 
   if (Number(vendor.is_active) !== 1) {
-    throw createHttpError('Vendor is inactive', 400, {
-      vendor_id: 'Vendor is inactive',
+    throw createHttpError('Vendor tidak aktif.', 400, {
+      vendor_id: 'Vendor tidak aktif.',
     });
   }
 
@@ -111,14 +111,14 @@ async function ensureBankActive(bankId, connection) {
   const bank = await VendorBankAccountModel.findBankById(bankId, connection);
 
   if (!bank) {
-    throw createHttpError('Bank not found', 404, {
-      bank_id: 'Bank not found',
+    throw createHttpError('Bank tidak ditemukan.', 404, {
+      bank_id: 'Bank tidak ditemukan.',
     });
   }
 
   if (Number(bank.is_active) !== 1) {
-    throw createHttpError('Bank is inactive', 400, {
-      bank_id: 'Bank is inactive',
+    throw createHttpError('Bank tidak aktif.', 400, {
+      bank_id: 'Bank tidak aktif.',
     });
   }
 
@@ -141,7 +141,7 @@ async function ensureUniqueAccount(data, ignoredId = null, connection) {
     return;
   }
 
-  throw createHttpError('Vendor bank account already exists', 400, {
+  throw createHttpError('Rekening bank vendor sudah ada.', 400, {
     account_number: 'Vendor already has this bank account',
   });
 }
@@ -154,7 +154,7 @@ async function getVendorBankAccountById(id) {
   const account = await VendorBankAccountModel.findById(id);
 
   if (!account) {
-    throw createHttpError('Vendor bank account not found', 404);
+    throw createHttpError('Rekening bank vendor tidak ditemukan.', 404);
   }
 
   return account;
@@ -215,7 +215,7 @@ async function updateVendorBankAccount(id, payload, req) {
     const oldAccount = await VendorBankAccountModel.findById(id, connection);
 
     if (!oldAccount) {
-      throw createHttpError('Vendor bank account not found', 404);
+      throw createHttpError('Rekening bank vendor tidak ditemukan.', 404);
     }
 
     await ensureVendorActive(data.vendor_id, connection);
@@ -260,7 +260,7 @@ async function updateVendorBankAccountStatus(id, payload, req) {
     const oldAccount = await VendorBankAccountModel.findById(id, connection);
 
     if (!oldAccount) {
-      throw createHttpError('Vendor bank account not found', 404);
+      throw createHttpError('Rekening bank vendor tidak ditemukan.', 404);
     }
 
     const updatedAccount = await VendorBankAccountModel.updateStatus(id, data.is_active, connection);

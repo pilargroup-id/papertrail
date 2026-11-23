@@ -41,7 +41,7 @@ async function fetchTokenFromPilargroup(username, password) {
 
     if (!token) {
       throw createHttpError(
-        'Token not found in pilargroup response',
+        'Token tidak ditemukan pada respons pilargroup.',
         500,
         'CENTRAL_LOGIN_INVALID_RESPONSE'
       );
@@ -54,7 +54,7 @@ async function fetchTokenFromPilargroup(username, password) {
     }
 
     const statusCode = err.response?.status || 500;
-    const message = getAxiosErrorMessage(err, 'Failed to login to pilargroup');
+    const message = getAxiosErrorMessage(err, 'Gagal login ke pilargroup.');
     const code = getAxiosErrorCode(err) || 'CENTRAL_LOGIN_FAILED';
 
     throw createHttpError(message, statusCode, code);
@@ -110,7 +110,7 @@ function normalizeAuthMeResponse(payload) {
 
   if (!user || typeof user !== 'object') {
     throw createHttpError(
-      'Invalid auth/me response from pilargroup',
+      'Respons auth/me dari pilargroup tidak valid.',
       500,
       'CENTRAL_AUTH_ME_INVALID_RESPONSE'
     );
@@ -170,7 +170,7 @@ async function fetchProfileFromPilargroup(token) {
     return normalizeAuthMeResponse(res.data);
   } catch (err) {
     const statusCode = err.response?.status || 500;
-    const message = getAxiosErrorMessage(err, 'Failed to fetch profile from pilargroup');
+    const message = getAxiosErrorMessage(err, 'Gagal mengambil profil dari pilargroup.');
     const code = getAxiosErrorCode(err) || 'CENTRAL_AUTH_ME_FAILED';
 
     throw createHttpError(message, statusCode, code);

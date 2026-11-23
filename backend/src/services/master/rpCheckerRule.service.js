@@ -20,19 +20,19 @@ function validatePayload(payload = {}) {
   const jobPosition = normalizeString(payload.job_position);
 
   if (!Number.isInteger(destinationDepartmentRuleId) || destinationDepartmentRuleId <= 0) {
-    errors.destination_department_rule_id = 'destination_department_rule_id is required and must be a positive integer';
+    errors.destination_department_rule_id = 'Divisi pemroses wajib dipilih.';
   }
 
   if (!jobPosition) {
-    errors.job_position = 'job_position is required';
+    errors.job_position = 'Jabatan wajib diisi.';
   }
 
   if (jobPosition.length > 100) {
-    errors.job_position = 'job_position maximum length is 100 characters';
+    errors.job_position = 'Jabatan maksimal 100 karakter.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -45,17 +45,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -65,14 +65,14 @@ async function ensureDestinationDepartmentRuleActive(id, connection) {
   const rule = await RpCheckerRuleModel.findDestinationDepartmentRuleById(id, connection);
 
   if (!rule) {
-    throw createHttpError('RP destination department not found', 404, {
-      destination_department_rule_id: 'RP destination department not found',
+    throw createHttpError('Divisi pemroses RP tidak ditemukan.', 404, {
+      destination_department_rule_id: 'Divisi pemroses RP tidak ditemukan.',
     });
   }
 
   if (Number(rule.is_active) !== 1) {
-    throw createHttpError('RP destination department is inactive', 400, {
-      destination_department_rule_id: 'RP destination department is inactive',
+    throw createHttpError('Divisi pemroses RP tidak aktif.', 400, {
+      destination_department_rule_id: 'Divisi pemroses RP tidak aktif.',
     });
   }
 
@@ -94,7 +94,7 @@ async function ensureUniqueRule(data, ignoredId = null, connection) {
     return;
   }
 
-  throw createHttpError('RP checker rule already exists', 400, {
+  throw createHttpError('Aturan checker RP sudah ada.', 400, {
     job_position: 'This job position already exists for selected destination department',
   });
 }
@@ -107,7 +107,7 @@ async function getRpCheckerRuleById(id) {
   const rule = await RpCheckerRuleModel.findById(id);
 
   if (!rule) {
-    throw createHttpError('RP checker rule not found', 404);
+    throw createHttpError('Aturan checker RP tidak ditemukan.', 404);
   }
 
   return rule;
@@ -167,7 +167,7 @@ async function updateRpCheckerRule(id, payload, req) {
     const oldRule = await RpCheckerRuleModel.findById(id, connection);
 
     if (!oldRule) {
-      throw createHttpError('RP checker rule not found', 404);
+      throw createHttpError('Aturan checker RP tidak ditemukan.', 404);
     }
 
     const destinationRule = await ensureDestinationDepartmentRuleActive(
@@ -211,7 +211,7 @@ async function updateRpCheckerRuleStatus(id, payload, req) {
     const oldRule = await RpCheckerRuleModel.findById(id, connection);
 
     if (!oldRule) {
-      throw createHttpError('RP checker rule not found', 404);
+      throw createHttpError('Aturan checker RP tidak ditemukan.', 404);
     }
 
     const updatedRule = await RpCheckerRuleModel.updateStatus(

@@ -27,7 +27,7 @@ async function authenticate(req, res, next) {
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized: token expired',
+        message: 'Tidak terautentikasi: sesi telah berakhir, silakan login kembali.',
         code: 'TOKEN_EXPIRED',
       });
     }
@@ -35,7 +35,7 @@ async function authenticate(req, res, next) {
     if (err.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized: invalid token',
+        message: 'Tidak terautentikasi: token tidak valid.',
         code: 'TOKEN_INVALID',
       });
     }
@@ -56,7 +56,7 @@ async function authenticate(req, res, next) {
 
     return res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: 'Terjadi kesalahan pada server.',
       code: 'INTERNAL_SERVER_ERROR',
     });
   }
@@ -69,7 +69,7 @@ function requireApp(appName) {
     if (!apps.includes(appName)) {
       return res.status(403).json({
         success: false,
-        message: `Forbidden: access to ${appName} is not allowed`,
+        message: `Akses ditolak: Anda tidak diizinkan mengakses ${appName}.`,
         code: 'APP_FORBIDDEN',
       });
     }
@@ -85,7 +85,7 @@ function requireJobLevel(minLevel) {
     if (Number(userLevel) < Number(minLevel)) {
       return res.status(403).json({
         success: false,
-        message: 'Forbidden: insufficient job level',
+        message: 'Akses ditolak: level jabatan tidak mencukupi.',
         code: 'JOB_LEVEL_FORBIDDEN',
       });
     }

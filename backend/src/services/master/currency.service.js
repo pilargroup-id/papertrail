@@ -17,7 +17,7 @@ function formatDate(date = new Date()) {
   const d = date instanceof Date ? date : new Date(date);
 
   if (Number.isNaN(d.getTime())) {
-    throw new Error('Invalid date');
+    throw new Error('Tanggal tidak valid.');
   }
 
   const year = d.getFullYear();
@@ -231,14 +231,14 @@ async function fetchBiTransactionRate(currencyCode, startDate, endDate) {
   });
 
   if (!result.ok) {
-    throw new Error(`Bank Indonesia returned HTTP ${result.status}`);
+    throw new Error(`Bank Indonesia mengembalikan HTTP ${result.status}.`);
   }
 
   const xml = await result.text();
   const rows = parseBiKursXml(xml, code, endDate);
 
   if (!rows.length) {
-    throw new Error(`Bank Indonesia rate not found for ${code} between ${startDate} and ${endDate}`);
+    throw new Error(`Kurs Bank Indonesia untuk ${code} antara ${startDate} dan ${endDate} tidak ditemukan.`);
   }
 
   return rows[rows.length - 1];
@@ -279,13 +279,13 @@ async function getLatestExchangeRate(currencyCode, options = {}) {
     const currency = await currencyModel.getCurrencyByCode(conn, code);
 
     if (!currency || Number(currency.is_active) !== 1) {
-      throw new Error('Currency is not active or not found');
+      throw new Error('Mata uang tidak aktif atau tidak ditemukan.');
     }
 
     const rate = await currencyModel.getLatestExchangeRate(conn, code, options);
 
     if (!rate) {
-      throw new Error(`Exchange rate for ${code} is not found`);
+      throw new Error(`Kurs untuk ${code} tidak ditemukan.`);
     }
 
     return rate;
@@ -299,7 +299,7 @@ async function resolveCurrencyRateSnapshot(conn, currencyCode = 'IDR', maxDate =
   const currency = await currencyModel.getCurrencyByCode(conn, code);
 
   if (!currency || Number(currency.is_active) !== 1) {
-    throw new Error('Currency is not active or not found');
+    throw new Error('Mata uang tidak aktif atau tidak ditemukan.');
   }
 
   if (code === 'IDR') {
@@ -318,7 +318,7 @@ async function resolveCurrencyRateSnapshot(conn, currencyCode = 'IDR', maxDate =
   });
 
   if (!rate) {
-    throw new Error(`Exchange rate for ${code} is not found`);
+    throw new Error(`Kurs untuk ${code} tidak ditemukan.`);
   }
 
   return {
@@ -343,7 +343,7 @@ async function createManualExchangeRate(body = {}, user = {}) {
     const currency = await currencyModel.getCurrencyByCode(conn, code);
 
     if (!currency || Number(currency.is_active) !== 1) {
-      throw new Error('Currency is not active or not found');
+      throw new Error('Mata uang tidak aktif atau tidak ditemukan.');
     }
 
     const rate = await currencyModel.upsertExchangeRate(conn, {

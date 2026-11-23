@@ -33,27 +33,27 @@ function validateBankPayload(payload = {}) {
   const sortOrder = normalizeSortOrder(payload.sort_order);
 
   if (!code) {
-    errors.code = 'Bank code is required';
+    errors.code = 'Kode bank wajib diisi.';
   }
 
   if (code.length > 50) {
-    errors.code = 'Bank code maximum length is 50 characters';
+    errors.code = 'Kode bank maksimal 50 karakter.';
   }
 
   if (!name) {
-    errors.name = 'Bank name is required';
+    errors.name = 'Nama bank wajib diisi.';
   }
 
   if (name.length > 150) {
-    errors.name = 'Bank name maximum length is 150 characters';
+    errors.name = 'Nama bank maksimal 150 karakter.';
   }
 
   if (!Number.isInteger(sortOrder)) {
-    errors.sort_order = 'sort_order must be an integer';
+    errors.sort_order = 'sort_order harus berupa bilangan bulat.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -67,17 +67,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -94,8 +94,8 @@ async function ensureCodeUnique(code, ignoredId = null, connection = db) {
     return;
   }
 
-  throw createHttpError('Bank code already exists', 400, {
-    code: 'Bank code already exists',
+  throw createHttpError('Kode bank sudah ada.', 400, {
+    code: 'Kode bank sudah ada.',
   });
 }
 
@@ -107,7 +107,7 @@ async function getBankById(id) {
   const bank = await BankModel.findById(id);
 
   if (!bank) {
-    throw createHttpError('Bank not found', 404);
+    throw createHttpError('Bank tidak ditemukan.', 404);
   }
 
   return bank;
@@ -166,7 +166,7 @@ async function updateBank(id, payload, req) {
     const oldBank = await BankModel.findById(id, connection);
 
     if (!oldBank) {
-      throw createHttpError('Bank not found', 404);
+      throw createHttpError('Bank tidak ditemukan.', 404);
     }
 
     await ensureCodeUnique(data.code, id, connection);
@@ -206,7 +206,7 @@ async function updateBankStatus(id, payload, req) {
     const oldBank = await BankModel.findById(id, connection);
 
     if (!oldBank) {
-      throw createHttpError('Bank not found', 404);
+      throw createHttpError('Bank tidak ditemukan.', 404);
     }
 
     const updatedBank = await BankModel.updateStatus(id, data.is_active, connection);

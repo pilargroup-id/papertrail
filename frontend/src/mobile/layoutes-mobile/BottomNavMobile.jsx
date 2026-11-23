@@ -22,6 +22,7 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz'
 
 import {
   implementedNavigationPaths,
+  isNavigationItemVisible,
   primaryNavigationItems,
   secondaryNavigationItems,
 } from '../../services/layoutes/Navigation.js'
@@ -40,13 +41,6 @@ const bottomNavLabels = {
 }
 
 const normalizePath = (path) => (path ?? '').toString().replace(/\/+$/, '').toLowerCase()
-const normalizeRole = (role) => (role ?? '').toString().trim().toUpperCase()
-
-function isItemVisible(item, userRole) {
-  if (!item.allowedRoles?.length) return true
-  return item.allowedRoles.some((role) => normalizeRole(role) === normalizeRole(userRole))
-}
-
 function hasActiveDescendant(item, currentPath) {
   return item.children?.some((child) =>
     child.children?.length
@@ -55,15 +49,15 @@ function hasActiveDescendant(item, currentPath) {
   ) ?? false
 }
 
-function BottomNavMobile({ activePath = '', userRole = '' }) {
+function BottomNavMobile({ activePath = '', userRole = '', currentUser = null }) {
   const navigate = useNavigate()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState({})
   const currentPath = normalizePath(activePath)
 
   const visibleItems = useMemo(
-    () => primaryNavigationItems.filter((item) => isItemVisible(item, userRole)),
-    [userRole],
+    () => primaryNavigationItems.filter((item) => isNavigationItemVisible(item, userRole, currentUser)),
+    [userRole, currentUser],
   )
   const directItems = visibleItems.filter((item) => !item.children?.length)
   const groupItems = visibleItems.filter((item) => item.children?.length)

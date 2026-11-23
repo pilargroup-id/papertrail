@@ -16,6 +16,7 @@ import { Bell04, ChevronDown, SearchMd } from './TemplateIcons.jsx'
 import {
   defaultNavigationPath,
   implementedNavigationPaths,
+  isNavigationItemVisible,
   primaryNavigationItems,
   secondaryNavigationItems,
 } from '../../services/layoutes/Navigation.js'
@@ -67,9 +68,7 @@ function Header({
   const canSwitchDepartment = departmentOptions.length > 1 || companyOptions.length > 1
   const profileMenuItem = secondaryNavigationItems[0]
   const visibleItems = primaryNavigationItems.filter((item) =>
-    !item.allowedRoles?.length || item.allowedRoles.some((role) =>
-      role.toUpperCase() === userRole.trim().toUpperCase(),
-    ),
+    isNavigationItemVisible(item, userRole, currentUser),
   )
   const profileName = userName.trim() || 'Pengguna'
   const profileInitials = profileName
