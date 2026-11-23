@@ -199,7 +199,47 @@ export function canCurrentUserApproveRp(rp, currentUser) {
   return false
 }
 
+function isTruthyFlag(value) {
+  return ['1', 'true', 'yes'].includes(String(value).trim().toLowerCase())
+}
+
+// Destination checker: staff (non-manager) di destination department yang job position-nya
+// terdaftar di master RP checker rules. Backend mengirim flag `can_destination_check`
+// per baris; fallback ke cek department bila flag tidak tersedia.
+export function canCurrentUserDestinationCheckRp(rp, currentUser) {
+  if (!currentUser || getRpStatusValue(rp) !== 'PENDING_DESTINATION_CHECKER') {
+    return false
+  }
+
+  const serverFlag = getFirstValue(rp, ['can_destination_check', 'canDestinationCheck'], null)
+
+  if (serverFlag !== null) {
+    return serverFlag === true || isTruthyFlag(serverFlag)
+  }
+
+  if (isManagerUser(currentUser) || isRpCreator(currentUser, rp)) {
+    return false
+  }
+
+  const destinationDepartmentId = getFirstValue(
+    rp,
+    ['destination_department_id', 'destinationDepartmentId'],
+    '',
+  )
+
+  return (
+    destinationDepartmentId !== '' &&
+    getUserDepartmentIds(currentUser).some(
+      (departmentId) => String(departmentId) === String(destinationDepartmentId),
+    )
+  )
+}
+
 export function canCurrentUserRejectRp(rp, currentUser) {
+  if (getRpStatusValue(rp) === 'PENDING_DESTINATION_CHECKER') {
+    return canCurrentUserDestinationCheckRp(rp, currentUser)
+  }
+
   return canCurrentUserApproveRp(rp, currentUser)
 }
 

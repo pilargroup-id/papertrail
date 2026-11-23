@@ -18,6 +18,7 @@ import MobileButtonRevert from '../../../mobile/mobile-button/frp/MobileButtonRe
 import {
   canAccessFrpButton,
   canCurrentUserApproveRp,
+  canCurrentUserDestinationCheckRp,
   canCurrentUserEditFrp,
   canCurrentUserRejectFrp,
   canCurrentUserRevertFrp,
@@ -270,6 +271,15 @@ function isRevertActionHidden(rp, index, currentUser, canRevertAction) {
   )
 }
 
+function isCheckDataActionHidden(rp, index, currentUser, canCheckDataAction) {
+  return !(
+    getFrpStatusValue(rp) === 'PENDING_DESTINATION_CHECKER' &&
+    (typeof canCheckDataAction === 'function'
+      ? canCheckDataAction(rp, index)
+      : canCurrentUserDestinationCheckRp(rp, currentUser))
+  )
+}
+
 function isPrintActionHidden(rp) {
   return getFrpStatusValue(rp) !== 'APPROVED'
 }
@@ -373,7 +383,8 @@ function DataTableRp({
   canReject,
   canRevert,
   canCheckData,
-  useCheckDataAction = false,
+  // eslint-disable-next-line no-unused-vars
+  useCheckDataAction, // deprecated: Check Data kini otomatis muncul per baris
   currentUser,
   onStatusChange,
   SwitchComponent,
@@ -482,18 +493,30 @@ function DataTableRp({
           onClick: onPrint,
         }
       : null,
-    typeof onEdit === 'function' || (useCheckDataAction && typeof onCheckData === 'function')
+    typeof onCheckData === 'function'
+      ? {
+          key: 'checkData',
+          label: 'Check Data',
+          buttonComponent: CheckDataActionButton,
+          mobileButtonComponent: MobileButtonEditRp,
+          mobilePlacement: 'header-start',
+          hidden: (rp, index) => isCheckDataActionHidden(rp, index, currentUser, canCheckData),
+          onClick: onCheckData,
+        }
+      : null,
+    typeof onEdit === 'function'
       ? {
           key: 'edit',
-          label: useCheckDataAction ? 'Check Data' : 'Edit',
-          buttonComponent: useCheckDataAction ? CheckDataActionButton : EditActionButton,
+          label: 'Edit',
+          buttonComponent: EditActionButton,
           mobileButtonComponent: MobileButtonEditRp,
           mobilePlacement: 'header-start',
           hidden: (rp, index) =>
-            useCheckDataAction
-              ? typeof canCheckData === 'function' && !canCheckData(rp, index)
-              : !canCurrentUserEditFrp(rp, currentUser) || getFrpStatusValue(rp) === 'APPROVED',
-          onClick: useCheckDataAction ? onCheckData : onEdit,
+            !canCurrentUserEditFrp(rp, currentUser) ||
+            getFrpStatusValue(rp) === 'APPROVED' ||
+            (typeof onCheckData === 'function' &&
+              !isCheckDataActionHidden(rp, index, currentUser, canCheckData)),
+          onClick: onEdit,
         }
       : null,
     typeof onDetails === 'function'

@@ -3,7 +3,9 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import {
   canCurrentUserApproveFrp,
+  canCurrentUserDestinationCheckRp,
   canCurrentUserEditFrp,
+  canCurrentUserRejectRp,
   isManagerUser,
 } from '../../components/table/rp/rp-button-access.js';
 
@@ -116,49 +118,6 @@ function getAuthDepartmentId(user) {
     getFirstValue(user, ['department_id', 'departmentId']) ||
     getFirstValue(primaryDepartment, ['department_id', 'departmentId', 'id'])
   )
-}
-
-function getAuthDepartmentIds(user) {
-  const departments = Array.isArray(user?.departments) ? user.departments : []
-  const departmentIds = departments
-    .flatMap((department) => [
-      getFirstValue(department, ['id', 'department_id', 'departmentId']),
-      getFirstValue(department, ['class_department_id', 'classDepartmentId']),
-    ])
-    .filter((departmentId) => departmentId !== '')
-
-  return [
-    getFirstValue(user, ['context_department_id', 'department_id', 'departmentId']),
-    getFirstValue(user, ['class_department_id', 'classDepartmentId']),
-    ...departmentIds,
-  ].filter((departmentId) => departmentId !== '')
-}
-
-function isCurrentUserDestinationDepartment(rp, user) {
-  const destinationDepartmentId = getFirstValue(
-    rp,
-    ['destination_department_id', 'destinationDepartmentId'],
-  )
-
-  if (destinationDepartmentId === '') {
-    return false
-  }
-
-  return getAuthDepartmentIds(user).some(
-    (departmentId) => String(departmentId) === String(destinationDepartmentId),
-  )
-}
-
-function canCurrentUserDestinationCheckRp(rp, user) {
-  return !isManagerUser(user) && isCurrentUserDestinationDepartment(rp, user)
-}
-
-function canCurrentUserSeeRpStatus(rp, user) {
-  if (getFrpStatusValue(rp) !== 'PENDING_DESTINATION_CHECKER') {
-    return true
-  }
-
-  return canCurrentUserDestinationCheckRp(rp, user)
 }
 
 function getFrpEditLabel(rp) {
@@ -769,6 +728,9 @@ function RpPage(props) {
     }
   }
 
+  const isDestinationCheckerTab =
+    rpFilters.status === 'PENDING_DESTINATION_CHECKER' ||
+    mobileRpStatusFilter === 'PENDING_DESTINATION_CHECKER'
   const visibleFrp = rp.filter((rpItem) => {
     const status = getFrpStatusValue(rpItem)
     const matchesMobileStatus = matchesStatusFilter(status, mobileRpStatusFilter)
@@ -777,13 +739,10 @@ function RpPage(props) {
     return (
       matchesMobileStatus &&
       matchesDesktopStatus &&
-      canCurrentUserSeeRpStatus(rpItem, currentUser) &&
+      (!isDestinationCheckerTab || canCurrentUserDestinationCheckRp(rpItem, currentUser)) &&
       matchesRpFilters(rpItem, rpFilters)
     )
   })
-  const isDestinationCheckerTab =
-    rpFilters.status === 'PENDING_DESTINATION_CHECKER' ||
-    mobileRpStatusFilter === 'PENDING_DESTINATION_CHECKER'
   const filteredStatusLabel = getRpStatusFilterLabel(rpFilters.status)
   const filteredMobileStatusLabel = getRpStatusFilterLabel(mobileRpStatusFilter)
   const filteredEmptyMessage =
@@ -897,12 +856,8 @@ function RpPage(props) {
           onPrint={handlePrintRp}
           currentUser={currentUser}
           canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
-          canReject={(row) => canCurrentUserApproveFrp(row, currentUser)}
-          canCheckData={(row) =>
-            getFrpStatusValue(row) === 'PENDING_DESTINATION_CHECKER' &&
-            canCurrentUserDestinationCheckRp(row, currentUser)
-          }
-          useCheckDataAction={isDestinationCheckerTab}
+          canReject={(row) => canCurrentUserRejectRp(row, currentUser)}
+          canCheckData={(row) => canCurrentUserDestinationCheckRp(row, currentUser)}
           isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
           onStatusChange={handleVendorStatusChange}
           mobileCard={{
@@ -912,15 +867,10 @@ function RpPage(props) {
                 action.key === 'edit'
                   ? {
                       ...action,
-                      hidden: false,
-                      disabled: (rp) =>
-                        isDestinationCheckerTab
-                          ? !(
-                              getFrpStatusValue(rp) === 'PENDING_DESTINATION_CHECKER' &&
-                              canCurrentUserDestinationCheckRp(rp, currentUser)
-                            )
-                          : !canCurrentUserEditFrp(rp, currentUser),
-                      onClick: isDestinationCheckerTab ? openCheckDataDialog : openMobileEditPage,
+                      // Baris yang bisa di-check memakai tombol Check Data di posisi yang sama.
+                      hidden: (rp) => canCurrentUserDestinationCheckRp(rp, currentUser),
+                      disabled: (rp) => !canCurrentUserEditFrp(rp, currentUser),
+                      onClick: openMobileEditPage,
                     }
                   : action,
               ),

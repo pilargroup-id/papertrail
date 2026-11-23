@@ -435,7 +435,8 @@ function canDestinationManagerApprove(user = {}, rp = {}) {
 }
 
 async function canDestinationChecker(conn, user = {}, rp = {}) {
-  if (isRpCreator(user, rp)) {
+  // Checker adalah staff; manager destination department meng-approve di tahap berikutnya.
+  if (isRpCreator(user, rp) || isManagerLevel(user)) {
     return false;
   }
 
@@ -459,6 +460,59 @@ async function canDestinationChecker(conn, user = {}, rp = {}) {
   );
 
   return !!checkerRule;
+}
+
+async function attachDestinationCheckerAccess(conn, rows = [], user = {}) {
+  const ruleCache = new Map();
+
+  const resolveChecker = async (rp) => {
+    if (rp?.status !== 'PENDING_DESTINATION_CHECKER') {
+      return false;
+    }
+
+    if (
+      isRpCreator(user, rp) ||
+      isManagerLevel(user) ||
+      !userHasDepartmentId(user, rp.destination_department_id)
+    ) {
+      return false;
+    }
+
+    const cacheKey = String(rp.destination_department_id);
+
+    if (!ruleCache.has(cacheKey)) {
+      ruleCache.set(
+        cacheKey,
+        (async () => {
+          const destinationRule = await rpModel.getActiveDestinationDepartmentRule(
+            conn,
+            rp.destination_department_id
+          );
+
+          if (!destinationRule) {
+            return false;
+          }
+
+          const checkerRule = await rpModel.getActiveCheckerRule(
+            conn,
+            destinationRule.id,
+            user.job_position
+          );
+
+          return !!checkerRule;
+        })()
+      );
+    }
+
+    return ruleCache.get(cacheKey);
+  };
+
+  return Promise.all(
+    rows.map(async (rp) => ({
+      ...rp,
+      can_destination_check: await resolveChecker(rp),
+    }))
+  );
 }
 
 function getRpRevertTransition(user = {}, rp = {}) {
@@ -1134,9 +1188,10 @@ async function listRp(query = {}, user = {}) {
     };
 
     const result = await rpModel.listRpRequests(conn, finalQuery);
+    const rows = await attachDestinationCheckerAccess(conn, result.rows || [], user);
 
     return {
-      data: result.rows,
+      data: rows,
       meta: result.meta,
     };
   } finally {
@@ -1158,7 +1213,12 @@ async function getRpDetail(id, user = {}) {
       throw new Error('Anda tidak memiliki akses ke RP ini.');
     }
 
-    return detail;
+    return {
+      ...detail,
+      can_destination_check:
+        detail.status === 'PENDING_DESTINATION_CHECKER' &&
+        (await canDestinationChecker(conn, user, detail)),
+    };
   } finally {
     conn.release();
   }
