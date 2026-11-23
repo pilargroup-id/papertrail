@@ -236,7 +236,11 @@ function AppLayout({
         </main>
 
         {isMobileViewport && !isMobileHeaderHidden ? (
-          <BottomNavMobile activePath={resolvedActivePath} userRole={authProfile.userRole} />
+          <BottomNavMobile
+            activePath={resolvedActivePath}
+            userRole={authProfile.userRole}
+            currentUser={currentUser}
+          />
         ) : null}
       </div>
     </div>

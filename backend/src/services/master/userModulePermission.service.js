@@ -22,7 +22,7 @@ function normalizeBooleanFlag(value, fieldName, errors) {
   const normalized = Number(value);
 
   if (![0, 1].includes(normalized)) {
-    errors[fieldName] = `${fieldName} must be 0 or 1`;
+    errors[fieldName] = `${fieldName} harus 0 atau 1.`;
   }
 
   return normalized;
@@ -37,23 +37,23 @@ function validatePermissionPayload(payload = {}) {
   const moduleId = Number(payload.module_id);
 
   if (!userId) {
-    errors.user_id = 'user_id is required';
+    errors.user_id = 'Pengguna wajib dipilih.';
   }
 
   if (userId && userId.length > 36) {
-    errors.user_id = 'user_id maximum length is 36 characters';
+    errors.user_id = 'user_id maksimal 36 karakter.';
   }
 
   if (usernameSnapshot && usernameSnapshot.length > 100) {
-    errors.username_snapshot = 'username_snapshot maximum length is 100 characters';
+    errors.username_snapshot = 'Username maksimal 100 karakter.';
   }
 
   if (nameSnapshot && nameSnapshot.length > 255) {
-    errors.name_snapshot = 'name_snapshot maximum length is 255 characters';
+    errors.name_snapshot = 'Nama maksimal 255 karakter.';
   }
 
   if (!Number.isInteger(moduleId) || moduleId <= 0) {
-    errors.module_id = 'module_id is required and must be a positive integer';
+    errors.module_id = 'Modul wajib dipilih.';
   }
 
   const canView = normalizeBooleanFlag(payload.can_view, 'can_view', errors);
@@ -62,7 +62,7 @@ function validatePermissionPayload(payload = {}) {
   const canDeactivate = normalizeBooleanFlag(payload.can_deactivate, 'can_deactivate', errors);
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -81,17 +81,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -173,14 +173,14 @@ async function ensureModuleExists(moduleId, connection) {
   const module = await PermissionModuleModel.findById(moduleId, connection);
 
   if (!module) {
-    throw createHttpError('Permission module not found', 404, {
-      module_id: 'Permission module not found',
+    throw createHttpError('Modul izin tidak ditemukan.', 404, {
+      module_id: 'Modul izin tidak ditemukan.',
     });
   }
 
   if (Number(module.is_active) !== 1) {
-    throw createHttpError('Permission module is inactive', 400, {
-      module_id: 'Permission module is inactive',
+    throw createHttpError('Modul izin tidak aktif.', 400, {
+      module_id: 'Modul izin tidak aktif.',
     });
   }
 
@@ -202,7 +202,7 @@ async function ensureUniqueUserModule(userId, moduleId, ignoredId = null, connec
     return;
   }
 
-  throw createHttpError('User module permission already exists', 400, {
+  throw createHttpError('Izin modul pengguna sudah ada.', 400, {
     user_id: 'User already has permission for this module',
     module_id: 'User already has permission for this module',
   });
@@ -228,7 +228,7 @@ async function getUserModulePermissionById(id) {
   const permission = await UserModulePermissionModel.findById(id);
 
   if (!permission) {
-    throw createHttpError('User module permission not found', 404);
+    throw createHttpError('Izin modul pengguna tidak ditemukan.', 404);
   }
 
   return permission;
@@ -291,7 +291,7 @@ async function updateUserModulePermission(id, payload, req) {
     const oldPermission = await UserModulePermissionModel.findById(id, connection);
 
     if (!oldPermission) {
-      throw createHttpError('User module permission not found', 404);
+      throw createHttpError('Izin modul pengguna tidak ditemukan.', 404);
     }
 
     const module = await ensureModuleExists(data.module_id, connection);
@@ -344,7 +344,7 @@ async function updateUserModulePermissionStatus(id, payload, req) {
     const oldPermission = await UserModulePermissionModel.findById(id, connection);
 
     if (!oldPermission) {
-      throw createHttpError('User module permission not found', 404);
+      throw createHttpError('Izin modul pengguna tidak ditemukan.', 404);
     }
 
     const updatedPermission = await UserModulePermissionModel.updateStatus(

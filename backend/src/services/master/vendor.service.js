@@ -19,15 +19,15 @@ function validateVendorPayload(payload = {}) {
   const name = normalizeName(payload.name);
 
   if (!name) {
-    errors.name = 'Vendor name is required';
+    errors.name = 'Nama vendor wajib diisi.';
   }
 
   if (name.length > 255) {
-    errors.name = 'Vendor name maximum length is 255 characters';
+    errors.name = 'Nama vendor maksimal 255 karakter.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { name };
@@ -37,17 +37,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -61,7 +61,7 @@ async function getVendorById(id) {
   const vendor = await VendorModel.findById(id);
 
   if (!vendor) {
-    throw createHttpError('Vendor not found', 404);
+    throw createHttpError('Vendor tidak ditemukan.', 404);
   }
 
   return vendor;
@@ -116,7 +116,7 @@ async function updateVendor(id, payload, req) {
     const oldVendor = await VendorModel.findById(id, connection);
 
     if (!oldVendor) {
-      throw createHttpError('Vendor not found', 404);
+      throw createHttpError('Vendor tidak ditemukan.', 404);
     }
 
     const updatedVendor = await VendorModel.update(id, data, connection);
@@ -154,7 +154,7 @@ async function updateVendorStatus(id, payload, req) {
     const oldVendor = await VendorModel.findById(id, connection);
 
     if (!oldVendor) {
-      throw createHttpError('Vendor not found', 404);
+      throw createHttpError('Vendor tidak ditemukan.', 404);
     }
 
     const updatedVendor = await VendorModel.updateStatus(id, data.is_active, connection);

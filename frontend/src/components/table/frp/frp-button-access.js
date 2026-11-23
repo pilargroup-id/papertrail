@@ -109,6 +109,53 @@ function isFrpPendingStatus(frp) {
   return getFrpStatusValue(frp).startsWith('PENDING')
 }
 
+const PRODUCT_DEPARTMENT_ID = 13
+
+// FRP hasil konversi RP oleh General Procurement.
+export function isRpSourcedFrp(frp) {
+  return String(getFirstValue(frp, ['source_module', 'sourceModule'], '')).trim().toUpperCase() === 'RP'
+}
+
+const ASSISTANT_MANAGER_PATTERN = /^(ASSISTANT|ASST|ASS)\.?\s*MANAGER\b/
+
+// Harus sama dengan backend/src/utils/productApprover.util.js.
+// Contoh user: job_level "Ass. Manager" (job_level_value 3) di departemen Product.
+export function isProductAssistantManagerUser(user) {
+  if (!user) {
+    return false
+  }
+
+  const isAssistantManager = [
+    getFirstValue(user, ['job_level', 'jobLevel'], ''),
+    getFirstValue(user, ['job_position', 'jobPosition'], ''),
+  ].some((value) => ASSISTANT_MANAGER_PATTERN.test(String(value).trim().toUpperCase()))
+
+  if (!isAssistantManager) {
+    return false
+  }
+
+  const departments = Array.isArray(user.departments) ? user.departments : []
+  const departmentIds = [
+    user.department_id,
+    user.context_department_id,
+    ...departments.flatMap((department) => [department?.id, department?.department_id]),
+  ]
+  const departmentNames = [
+    user.department,
+    user.context_department_name,
+    ...departments.flatMap((department) => [
+      department?.name,
+      department?.department_name,
+      department?.class_name,
+    ]),
+  ]
+
+  return (
+    departmentIds.some((id) => Number(id) === PRODUCT_DEPARTMENT_ID) ||
+    departmentNames.some((name) => String(name ?? '').trim().toUpperCase() === 'PRODUCT')
+  )
+}
+
 export function isManagerUser(user) {
   const explicitManagerFlag = getFirstValue(user, ['is_manager', 'isManager'], null)
 
@@ -215,7 +262,7 @@ export function canAccessFrpButton(user, action) {
 }
 
 export function canCurrentUserApproveFrp(frp, currentUser) {
-  if (!canAccessFrpButton(currentUser, 'approve') || !isFrpPendingStatus(frp)) {
+  if (!currentUser || !isFrpPendingStatus(frp)) {
     return false
   }
 
@@ -223,6 +270,15 @@ export function canCurrentUserApproveFrp(frp, currentUser) {
   const requesterId = getFrpRequesterId(frp)
 
   if (currentUserId !== '' && requesterId !== '' && String(currentUserId) === String(requesterId)) {
+    return false
+  }
+
+  // FRP dari konversi RP (General Procurement) di-approve oleh Assistant Manager Product.
+  if (isRpSourcedFrp(frp)) {
+    return isProductAssistantManagerUser(currentUser)
+  }
+
+  if (!canAccessFrpButton(currentUser, 'approve')) {
     return false
   }
 
@@ -239,7 +295,8 @@ export function canCurrentUserRejectFrp(frp, currentUser) {
 }
 
 export function canCurrentUserEditFrp(frp, currentUser) {
-  if (!canAccessFrpButton(currentUser, 'edit')) {
+  // FRP dari RP hanya ditinjau lewat approve/reject, tidak bisa diedit langsung.
+  if (isRpSourcedFrp(frp) || !canAccessFrpButton(currentUser, 'edit')) {
     return false
   }
 
@@ -251,7 +308,11 @@ export function canCurrentUserEditFrp(frp, currentUser) {
 }
 
 export function canCurrentUserRevertFrp(frp, currentUser) {
-  if (!canAccessFrpButton(currentUser, 'revert') || getFrpStatusValue(frp) !== 'APPROVED') {
+  if (
+    isRpSourcedFrp(frp) ||
+    !canAccessFrpButton(currentUser, 'revert') ||
+    getFrpStatusValue(frp) !== 'APPROVED'
+  ) {
     return false
   }
 

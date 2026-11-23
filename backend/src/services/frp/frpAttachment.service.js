@@ -126,36 +126,36 @@ function buildObjectPath(frp, sequenceNumber, originalFileName, mimeType) {
 
 function validateFiles(files = []) {
   if (!Array.isArray(files) || files.length === 0) {
-    throw new Error('Files are required');
+    throw new Error('File wajib diisi.');
   }
 
   if (files.length > maxAttachmentFiles) {
-    throw new Error(`Maximum ${maxAttachmentFiles} files are allowed`);
+    throw new Error(`Maksimal ${maxAttachmentFiles} file yang diizinkan.`);
   }
 
   const maxSize = maxAttachmentFileSizeMb * 1024 * 1024;
 
   files.forEach((file, index) => {
     if (!file.document_type_id) {
-      throw new Error(`Document type is required on file ${index + 1}`);
+      throw new Error(`Tipe dokumen wajib diisi pada file ${index + 1}.`);
     }
 
     if (!normalizeString(file.original_file_name)) {
-      throw new Error(`Original file name is required on file ${index + 1}`);
+      throw new Error(`Nama file asli wajib diisi pada file ${index + 1}.`);
     }
 
     if (!normalizeString(file.mime_type)) {
-      throw new Error(`MIME type is required on file ${index + 1}`);
+      throw new Error(`Tipe MIME wajib diisi pada file ${index + 1}.`);
     }
 
     const fileSize = Number(file.file_size || 0);
 
     if (fileSize <= 0) {
-      throw new Error(`File size is required on file ${index + 1}`);
+      throw new Error(`Ukuran file wajib diisi pada file ${index + 1}.`);
     }
 
     if (fileSize > maxSize) {
-      throw new Error(`File ${index + 1} exceeds maximum size ${maxAttachmentFileSizeMb} MB`);
+      throw new Error(`File ${index + 1} melebihi ukuran maksimal ${maxAttachmentFileSizeMb} MB.`);
     }
   });
 }
@@ -171,15 +171,15 @@ async function signUploadUrls(frpRequestId, body = {}, user = {}) {
     const frp = await frpModel.getFrpHeaderById(conn, frpRequestId, { lock: true });
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (!canMutateAttachmentByStatus(frp)) {
-      throw new Error('Attachments can only be added to PENDING FRP or approved FRP from RP');
+      throw new Error('Lampiran hanya dapat ditambahkan pada FRP berstatus PENDING atau FRP dari RP yang sudah disetujui.');
     }
 
     if (!canManageAttachment(user, frp)) {
-      throw new Error('You do not have permission to add attachments to this FRP');
+      throw new Error('Anda tidak memiliki izin untuk menambahkan lampiran ke FRP ini.');
     }
 
     const existingAttachmentCount = await frpAttachmentModel.countAttachmentsByFrpRequestId(
@@ -203,7 +203,7 @@ async function signUploadUrls(frpRequestId, body = {}, user = {}) {
       const documentSnapshot = documentMap.get(Number(file.document_type_id));
 
       if (!documentSnapshot) {
-        throw new Error('Document type not found');
+        throw new Error('Tipe dokumen tidak ditemukan.');
       }
 
       const attachmentId = randomUUID();
@@ -281,7 +281,7 @@ async function confirmUploads(frpRequestId, body = {}, user = {}) {
   const attachments = Array.isArray(body.attachments) ? body.attachments : [];
 
   if (!attachments.length) {
-    throw new Error('Attachments are required');
+    throw new Error('Lampiran wajib diisi.');
   }
 
   const conn = await frpModel.db.getConnection();
@@ -292,22 +292,22 @@ async function confirmUploads(frpRequestId, body = {}, user = {}) {
     const frp = await frpModel.getFrpHeaderById(conn, frpRequestId, { lock: true });
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (!canMutateAttachmentByStatus(frp)) {
-      throw new Error('Attachments can only be confirmed on PENDING FRP or approved FRP from RP');
+      throw new Error('Lampiran hanya dapat dikonfirmasi pada FRP berstatus PENDING atau FRP dari RP yang sudah disetujui.');
     }
 
     if (!canManageAttachment(user, frp)) {
-      throw new Error('You do not have permission to confirm attachments to this FRP');
+      throw new Error('Anda tidak memiliki izin untuk mengonfirmasi lampiran pada FRP ini.');
     }
 
     const results = [];
 
     for (const item of attachments) {
       if (!item.attachment_id) {
-        throw new Error('Attachment ID is required');
+        throw new Error('ID lampiran wajib diisi.');
       }
 
       const attachment = await frpAttachmentModel.getAttachmentById(
@@ -317,17 +317,17 @@ async function confirmUploads(frpRequestId, body = {}, user = {}) {
       );
 
       if (!attachment) {
-        throw new Error('Attachment not found');
+        throw new Error('Lampiran tidak ditemukan.');
       }
 
       if (attachment.upload_status !== 'PENDING') {
-        throw new Error(`Attachment ${attachment.id} is not pending`);
+        throw new Error(`Lampiran ${attachment.id} tidak berstatus menunggu unggah.`);
       }
 
       const exists = await objectExists(attachment.object_path);
 
       if (!exists) {
-        throw new Error(`Uploaded object not found for attachment ${attachment.id}`);
+        throw new Error(`File yang diunggah untuk lampiran ${attachment.id} tidak ditemukan.`);
       }
 
       await frpAttachmentModel.markAttachmentUploaded(conn, attachment.id, {
@@ -355,13 +355,13 @@ async function confirmUploads(frpRequestId, body = {}, user = {}) {
 
 async function uploadPendingAttachment(frpRequestId, attachmentId, fileBuffer, user = {}) {
   if (!Buffer.isBuffer(fileBuffer) || fileBuffer.length === 0) {
-    throw new Error('Attachment file is required');
+    throw new Error('File lampiran wajib diisi.');
   }
 
   const maxSize = maxAttachmentFileSizeMb * 1024 * 1024;
 
   if (fileBuffer.length > maxSize) {
-    throw new Error(`File exceeds maximum size ${maxAttachmentFileSizeMb} MB`);
+    throw new Error(`File melebihi ukuran maksimal ${maxAttachmentFileSizeMb} MB.`);
   }
 
   const conn = await frpModel.db.getConnection();
@@ -370,15 +370,15 @@ async function uploadPendingAttachment(frpRequestId, attachmentId, fileBuffer, u
     const frp = await frpModel.getFrpHeaderById(conn, frpRequestId);
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (!canMutateAttachmentByStatus(frp)) {
-      throw new Error('Attachments can only be uploaded to PENDING FRP or approved FRP from RP');
+      throw new Error('Lampiran hanya dapat diunggah ke FRP berstatus PENDING atau FRP dari RP yang sudah disetujui.');
     }
 
     if (!canManageAttachment(user, frp)) {
-      throw new Error('You do not have permission to upload attachments to this FRP');
+      throw new Error('Anda tidak memiliki izin untuk mengunggah lampiran ke FRP ini.');
     }
 
     const attachment = await frpAttachmentModel.getAttachmentById(
@@ -388,15 +388,15 @@ async function uploadPendingAttachment(frpRequestId, attachmentId, fileBuffer, u
     );
 
     if (!attachment) {
-      throw new Error('Attachment not found');
+      throw new Error('Lampiran tidak ditemukan.');
     }
 
     if (attachment.upload_status !== 'PENDING') {
-      throw new Error(`Attachment ${attachment.id} is not pending`);
+      throw new Error(`Lampiran ${attachment.id} tidak berstatus menunggu unggah.`);
     }
 
     if (Number(attachment.file_size || 0) !== fileBuffer.length) {
-      throw new Error('Attachment file size does not match signed upload metadata');
+      throw new Error('Ukuran file lampiran tidak sesuai dengan data unggah yang ditandatangani.');
     }
 
     await uploadObject(attachment.object_path, fileBuffer, attachment.mime_type);
@@ -420,15 +420,15 @@ async function cancelUpload(frpRequestId, attachmentId, user = {}) {
     const frp = await frpModel.getFrpHeaderById(conn, frpRequestId, { lock: true });
 
     if (!frp) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     if (!canMutateAttachmentByStatus(frp)) {
-      throw new Error('Attachments can only be canceled on PENDING FRP or approved FRP from RP');
+      throw new Error('Lampiran hanya dapat dibatalkan pada FRP berstatus PENDING atau FRP dari RP yang sudah disetujui.');
     }
 
     if (!canManageAttachment(user, frp)) {
-      throw new Error('You do not have permission to cancel attachments on this FRP');
+      throw new Error('Anda tidak memiliki izin untuk membatalkan lampiran pada FRP ini.');
     }
 
     const attachment = await frpAttachmentModel.getAttachmentById(
@@ -438,11 +438,11 @@ async function cancelUpload(frpRequestId, attachmentId, user = {}) {
     );
 
     if (!attachment) {
-      throw new Error('Attachment not found');
+      throw new Error('Lampiran tidak ditemukan.');
     }
 
     if (attachment.upload_status === 'CANCELED') {
-      throw new Error('Attachment is already canceled');
+      throw new Error('Lampiran sudah dibatalkan.');
     }
 
     const deletedFromStorage = await deleteObjectIfExists(attachment.object_path);
@@ -471,7 +471,7 @@ async function getDownloadUrl(frpRequestId, attachmentId, user = {}) {
     const detail = await frpModel.getFrpDetail(conn, frpRequestId);
 
     if (!detail) {
-      throw new Error('FRP request not found');
+      throw new Error('FRP tidak ditemukan.');
     }
 
     const attachment = await frpAttachmentModel.getAttachmentById(
@@ -481,17 +481,17 @@ async function getDownloadUrl(frpRequestId, attachmentId, user = {}) {
     );
 
     if (!attachment) {
-      throw new Error('Attachment not found');
+      throw new Error('Lampiran tidak ditemukan.');
     }
 
     if (attachment.upload_status !== 'UPLOADED') {
-      throw new Error('Attachment is not uploaded');
+      throw new Error('Lampiran belum diunggah.');
     }
 
     const exists = await objectExists(attachment.object_path);
 
     if (!exists) {
-      throw new Error('Attachment object not found in storage');
+      throw new Error('File lampiran tidak ditemukan di penyimpanan.');
     }
 
     const signedDownload = await generateSignedDownloadUrl(attachment.object_path);

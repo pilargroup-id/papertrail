@@ -1,7 +1,7 @@
 const R=require('../../utils/response.util');
 const Service=require('../../services/master/dataExchange.service');
 const permitted=['vendor_banking','budget','currency'];
-function group(req){const value=String(req.query.group||req.body?.group||'');if(!permitted.includes(value)){const e=new Error('Invalid group');e.statusCode=400;throw e;}return value;}
+function group(req){const value=String(req.query.group||req.body?.group||'');if(!permitted.includes(value)){const e=new Error('Grup tidak valid.');e.statusCode=400;throw e;}return value;}
 async function groups(req,res,next){try{return R.ok(res,Service.groups(),'Data exchange groups retrieved');}catch(e){next(e);}}
 async function template(req,res,next){try{await send(req,res,true);}catch(e){next(e);}}
 async function exportData(req,res,next){try{await send(req,res,false);}catch(e){next(e);}}

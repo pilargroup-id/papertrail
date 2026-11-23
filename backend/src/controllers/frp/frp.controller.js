@@ -21,7 +21,7 @@ async function detail(req, res, next) {
     const result = await frpService.getFrpDetail(req.params.id, req.user);
 
     if (!result) {
-      return R.notFound(res, 'FRP request not found');
+      return R.notFound(res, 'FRP tidak ditemukan.');
     }
 
     return R.ok(res, result, 'FRP request retrieved');

@@ -22,7 +22,7 @@ function isUserInItDepartment(user = {}) {
 
 function assertCanViewLogs(user = {}) {
   if (!isUserInItDepartment(user)) {
-    throw new Error('Only IT users can view logs');
+    throw new Error('Hanya pengguna IT yang dapat melihat log.');
   }
 }
 

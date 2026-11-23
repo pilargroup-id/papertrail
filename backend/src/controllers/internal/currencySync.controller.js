@@ -10,13 +10,13 @@ function assertInternalToken(req) {
   const receivedToken = req.headers['x-internal-token'] || req.headers['x-cron-token'] || '';
 
   if (!expectedToken) {
-    const error = new Error('Currency sync cron token is not configured');
+    const error = new Error('Token cron sinkronisasi mata uang belum dikonfigurasi.');
     error.statusCode = 503;
     throw error;
   }
 
   if (String(receivedToken) !== String(expectedToken)) {
-    const error = new Error('Invalid internal token');
+    const error = new Error('Token internal tidak valid.');
     error.statusCode = 401;
     throw error;
   }

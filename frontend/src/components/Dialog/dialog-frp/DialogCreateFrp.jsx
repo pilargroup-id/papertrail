@@ -489,7 +489,7 @@ async function uploadCreatedFrpAttachment(frpId, attachment, documentTypeId) {
   let uploadItem = null
 
   if (!file) {
-    throw new Error('File attachment tidak tersedia.')
+    throw new Error('File lampiran tidak tersedia.')
   }
 
   try {
@@ -502,7 +502,7 @@ async function uploadCreatedFrpAttachment(frpId, attachment, documentTypeId) {
     uploadItem = getResponseItems(signResponse)[0]
 
     if (!uploadItem?.upload_url) {
-      throw new Error('URL upload attachment tidak tersedia.')
+      throw new Error('URL unggah lampiran tidak tersedia.')
     }
 
     try {
@@ -524,7 +524,7 @@ async function uploadCreatedFrpAttachment(frpId, attachment, documentTypeId) {
     ).toUpperCase()
 
     if (uploadStatus && uploadStatus !== 'UPLOADED') {
-      throw new Error('Attachment belum berhasil dikonfirmasi.')
+      throw new Error('Lampiran belum berhasil dikonfirmasi.')
     }
 
     return confirmedAttachment
@@ -747,7 +747,7 @@ function DialogCreateFrp({
 
     if (!isSaved) {
       setIsCloseConfirmOpen(false)
-      setSubmitError('Draft gagal disimpan di browser ini. Silakan coba lagi atau submit FRP.')
+      setSubmitError('Draf gagal disimpan di peramban ini. Silakan coba lagi atau kirim FRP.')
       return
     }
 
@@ -841,7 +841,7 @@ function DialogCreateFrp({
     if (oversizedFiles.length > 0) {
       setFieldErrors((currentErrors) => ({
         ...currentErrors,
-        attachment_file: 'Ukuran setiap attachment maksimal 10 MB.',
+        attachment_file: 'Ukuran setiap lampiran maksimal 10 MB.',
       }))
       return
     }
@@ -1225,15 +1225,15 @@ function DialogCreateFrp({
     }
 
     if (!formValues.description.trim()) {
-      nextFieldErrors.description = 'Description wajib diisi.'
+      nextFieldErrors.description = 'Deskripsi wajib diisi.'
     }
 
     if (!formValues.currency_code) {
-      nextFieldErrors.currency_code = 'Currency wajib dipilih.'
+      nextFieldErrors.currency_code = 'Mata uang wajib dipilih.'
     }
 
     if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
-      nextFieldErrors.exchange_rate = 'Exchange rate harus lebih dari 0.'
+      nextFieldErrors.exchange_rate = 'Kurs harus lebih dari 0.'
     }
 
     if (!formValues.vendor_id) {
@@ -1241,28 +1241,28 @@ function DialogCreateFrp({
     }
 
     if (!formValues.payment_method_id) {
-      nextFieldErrors.payment_method_id = 'Payment method wajib dipilih.'
+      nextFieldErrors.payment_method_id = 'Metode pembayaran wajib dipilih.'
     }
 
     if (!formValues.payment_date) {
-      nextFieldErrors.payment_date = 'Payment date wajib diisi.'
+      nextFieldErrors.payment_date = 'Tanggal pembayaran wajib diisi.'
     }
 
     if (!formValues.destination_bank_name.trim()) {
-      nextFieldErrors.destination_bank_name = 'Destination bank wajib diisi.'
+      nextFieldErrors.destination_bank_name = 'Bank tujuan wajib diisi.'
     }
 
     if (!formValues.destination_bank_account.trim()) {
-      nextFieldErrors.destination_bank_account = 'Destination account wajib diisi.'
+      nextFieldErrors.destination_bank_account = 'Nomor rekening tujuan wajib diisi.'
     }
 
     if (!formValues.destination_bank_account_name.trim()) {
-      nextFieldErrors.destination_bank_account_name = 'Destination account name wajib diisi.'
+      nextFieldErrors.destination_bank_account_name = 'Nama pemilik rekening tujuan wajib diisi.'
     }
 
     normalizedItems.forEach((item, index) => {
       if (!item.budget_id) {
-        nextFieldErrors[`items.${index}.budget_id`] = 'Budget wajib dipilih.'
+        nextFieldErrors[`items.${index}.budget_id`] = 'Anggaran wajib dipilih.'
       }
 
       if (!item.memo) {
@@ -1270,11 +1270,11 @@ function DialogCreateFrp({
       }
 
       if (!isPositiveIntegerInput(formValues.items[index]?.quantity)) {
-        nextFieldErrors[`items.${index}.quantity`] = 'Quantity harus berupa angka bulat lebih dari 0.'
+        nextFieldErrors[`items.${index}.quantity`] = 'Jumlah harus berupa bilangan bulat lebih dari 0.'
       }
 
       if (!Number.isFinite(item.unit_price) || item.unit_price < 0) {
-        nextFieldErrors[`items.${index}.unit_price`] = 'Unit price harus berupa angka valid.'
+        nextFieldErrors[`items.${index}.unit_price`] = 'Harga satuan harus berupa angka yang valid.'
       }
     })
 
@@ -1329,7 +1329,7 @@ function DialogCreateFrp({
             ),
           )
         } catch (error) {
-          throw new Error(error.message || 'FRP berhasil dibuat, tetapi attachment gagal diupload.', {
+          throw new Error('FRP berhasil dibuat, tetapi lampiran gagal diunggah.', {
             cause: error,
           })
         }
@@ -1564,10 +1564,10 @@ function DialogCreateFrp({
 
       <DialogConfirmDraft
         open={isCloseConfirmOpen}
-        message="FRP ini belum disubmit. Draft akan dimuat lagi saat Anda membuka Create FRP berikutnya."
+        message="FRP ini belum dikirim. Draf akan dimuat kembali saat Anda membuat FRP berikutnya."
         note={
           attachmentDraft.files.length > 0
-            ? `${attachmentDraft.files.length} file attachment tidak ikut tersimpan di draft dan perlu diunggah ulang.`
+            ? `${attachmentDraft.files.length} file lampiran tidak ikut tersimpan di draf dan perlu diunggah ulang.`
             : ''
         }
         onSaveDraft={handleSaveDraftAndClose}

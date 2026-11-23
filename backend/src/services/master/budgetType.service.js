@@ -31,27 +31,27 @@ function validateBudgetTypePayload(payload = {}) {
   const description = normalizeDescription(payload.description);
 
   if (!code) {
-    errors.code = 'Budget type code is required';
+    errors.code = 'Kode tipe anggaran wajib diisi.';
   }
 
   if (code.length > 50) {
-    errors.code = 'Budget type code maximum length is 50 characters';
+    errors.code = 'Kode tipe anggaran maksimal 50 karakter.';
   }
 
   if (!name) {
-    errors.name = 'Budget type name is required';
+    errors.name = 'Nama tipe anggaran wajib diisi.';
   }
 
   if (name.length > 100) {
-    errors.name = 'Budget type name maximum length is 100 characters';
+    errors.name = 'Nama tipe anggaran maksimal 100 karakter.';
   }
 
   if (description && description.length > 255) {
-    errors.description = 'Description maximum length is 255 characters';
+    errors.description = 'Deskripsi maksimal 255 karakter.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -65,17 +65,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -92,8 +92,8 @@ async function ensureCodeUnique(code, ignoredId = null, connection = db) {
     return;
   }
 
-  throw createHttpError('Budget type code already exists', 400, {
-    code: 'Budget type code already exists',
+  throw createHttpError('Kode tipe anggaran sudah ada.', 400, {
+    code: 'Kode tipe anggaran sudah ada.',
   });
 }
 
@@ -105,7 +105,7 @@ async function getBudgetTypeById(id) {
   const budgetType = await BudgetTypeModel.findById(id);
 
   if (!budgetType) {
-    throw createHttpError('Budget type not found', 404);
+    throw createHttpError('Tipe anggaran tidak ditemukan.', 404);
   }
 
   return budgetType;
@@ -164,7 +164,7 @@ async function updateBudgetType(id, payload, req) {
     const oldBudgetType = await BudgetTypeModel.findById(id, connection);
 
     if (!oldBudgetType) {
-      throw createHttpError('Budget type not found', 404);
+      throw createHttpError('Tipe anggaran tidak ditemukan.', 404);
     }
 
     await ensureCodeUnique(data.code, id, connection);
@@ -204,7 +204,7 @@ async function updateBudgetTypeStatus(id, payload, req) {
     const oldBudgetType = await BudgetTypeModel.findById(id, connection);
 
     if (!oldBudgetType) {
-      throw createHttpError('Budget type not found', 404);
+      throw createHttpError('Tipe anggaran tidak ditemukan.', 404);
     }
 
     const updatedBudgetType = await BudgetTypeModel.updateStatus(id, data.is_active, connection);

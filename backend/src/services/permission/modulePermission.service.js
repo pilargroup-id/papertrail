@@ -24,7 +24,7 @@ async function checkUserModulePermission(user, moduleCode, action) {
 
   if (!permissionColumn) {
     throw createHttpError(
-      `Invalid permission action: ${action}`,
+      `Aksi izin tidak valid: ${action}.`,
       500,
       'INVALID_PERMISSION_ACTION'
     );
@@ -32,7 +32,7 @@ async function checkUserModulePermission(user, moduleCode, action) {
 
   if (!user?.id) {
     throw createHttpError(
-      'Authenticated user not found',
+      'Pengguna yang login tidak ditemukan.',
       401,
       'AUTH_USER_NOT_FOUND'
     );
@@ -45,7 +45,7 @@ async function checkUserModulePermission(user, moduleCode, action) {
 
   if (!permission) {
     throw createHttpError(
-      `Forbidden: missing permission for ${moduleCode}`,
+      `Akses ditolak: Anda tidak memiliki izin untuk ${moduleCode}.`,
       403,
       'MODULE_PERMISSION_FORBIDDEN'
     );
@@ -53,7 +53,7 @@ async function checkUserModulePermission(user, moduleCode, action) {
 
   if (Number(permission[permissionColumn]) !== 1) {
     throw createHttpError(
-      `Forbidden: ${normalizedAction} access for ${moduleCode} is not allowed`,
+      `Akses ditolak: aksi ${normalizedAction} pada ${moduleCode} tidak diizinkan.`,
       403,
       'MODULE_ACTION_FORBIDDEN'
     );

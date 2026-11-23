@@ -40,31 +40,31 @@ function validateRpPaymentCategoryPayload(payload = {}) {
   const sortOrder = normalizeSortOrder(payload.sort_order);
 
   if (!code) {
-    errors.code = 'RP payment category code is required';
+    errors.code = 'Kode kategori pembayaran RP wajib diisi.';
   }
 
   if (code.length > 50) {
-    errors.code = 'RP payment category code maximum length is 50 characters';
+    errors.code = 'Kode kategori pembayaran RP maksimal 50 karakter.';
   }
 
   if (!name) {
-    errors.name = 'RP payment category name is required';
+    errors.name = 'Nama kategori pembayaran RP wajib diisi.';
   }
 
   if (name.length > 150) {
-    errors.name = 'RP payment category name maximum length is 150 characters';
+    errors.name = 'Nama kategori pembayaran RP maksimal 150 karakter.';
   }
 
   if (description && description.length > 255) {
-    errors.description = 'Description maximum length is 255 characters';
+    errors.description = 'Deskripsi maksimal 255 karakter.';
   }
 
   if (!Number.isInteger(sortOrder)) {
-    errors.sort_order = 'sort_order must be an integer';
+    errors.sort_order = 'sort_order harus berupa bilangan bulat.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -79,17 +79,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -106,8 +106,8 @@ async function ensureCodeUnique(code, ignoredId = null, connection = db) {
     return;
   }
 
-  throw createHttpError('RP payment category code already exists', 400, {
-    code: 'RP payment category code already exists',
+  throw createHttpError('Kode kategori pembayaran RP sudah ada.', 400, {
+    code: 'Kode kategori pembayaran RP sudah ada.',
   });
 }
 
@@ -119,7 +119,7 @@ async function getRpPaymentCategoryById(id) {
   const category = await RpPaymentCategoryModel.findById(id);
 
   if (!category) {
-    throw createHttpError('RP payment category not found', 404);
+    throw createHttpError('Kategori pembayaran RP tidak ditemukan.', 404);
   }
 
   return category;
@@ -179,7 +179,7 @@ async function updateRpPaymentCategory(id, payload, req) {
     const oldCategory = await RpPaymentCategoryModel.findById(id, connection);
 
     if (!oldCategory) {
-      throw createHttpError('RP payment category not found', 404);
+      throw createHttpError('Kategori pembayaran RP tidak ditemukan.', 404);
     }
 
     await ensureCodeUnique(data.code, id, connection);
@@ -219,7 +219,7 @@ async function updateRpPaymentCategoryStatus(id, payload, req) {
     const oldCategory = await RpPaymentCategoryModel.findById(id, connection);
 
     if (!oldCategory) {
-      throw createHttpError('RP payment category not found', 404);
+      throw createHttpError('Kategori pembayaran RP tidak ditemukan.', 404);
     }
 
     const updatedCategory = await RpPaymentCategoryModel.updateStatus(id, data.is_active, connection);

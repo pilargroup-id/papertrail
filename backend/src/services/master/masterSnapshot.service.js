@@ -11,7 +11,7 @@ async function resolveVendorSnapshot(conn, vendorId) {
   );
 
   if (!rows.length) {
-    throw new Error('Vendor not found or inactive');
+    throw new Error('Vendor tidak ditemukan atau tidak aktif.');
   }
 
   return {
@@ -53,7 +53,7 @@ async function resolveVendorBankAccountSnapshot(conn, vendorId, vendorBankAccoun
   );
 
   if (!rows.length) {
-    throw new Error('Vendor bank account not found, inactive, or does not belong to vendor');
+    throw new Error('Rekening bank vendor tidak ditemukan, tidak aktif, atau bukan milik vendor tersebut.');
   }
 
   const row = rows[0];
@@ -88,7 +88,7 @@ async function resolveExternalDocumentTypeSnapshot(conn, externalDocumentTypeId)
   );
 
   if (!rows.length) {
-    throw new Error('External document type not found or inactive');
+    throw new Error('Tipe dokumen eksternal tidak ditemukan atau tidak aktif.');
   }
 
   return {
@@ -111,7 +111,7 @@ async function resolvePaymentMethodSnapshot(conn, paymentMethodId) {
   );
 
   if (!rows.length) {
-    throw new Error('Payment method not found or inactive');
+    throw new Error('Metode pembayaran tidak ditemukan atau tidak aktif.');
   }
 
   return {
@@ -146,7 +146,7 @@ async function resolveFrpDocumentTypeSnapshots(conn, documentTypeIds = []) {
   );
 
   if (rows.length !== uniqueIds.length) {
-    throw new Error('One or more FRP document types are invalid or inactive');
+    throw new Error('Satu atau lebih tipe dokumen FRP tidak valid atau tidak aktif.');
   }
 
   return rows.map((row) => ({

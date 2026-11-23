@@ -76,14 +76,14 @@ function prepareRows(sheets,infos,mode) {
     for(const e of sheet.entries) {
       const data={...e.data};
       const prefix=`${sheet.name} row ${e.excel_row}`;
-      for(const k of Object.keys(data))if(!info.fields.includes(k))errors.push(`${prefix}: column ${k} not available in DB`);
+      for(const k of Object.keys(data))if(!info.fields.includes(k))errors.push(`${prefix}: kolom ${k} tidak tersedia di database.`);
       // Importing budget creates allocation only. Updating allocation/balances bypasses audit and is forbidden.
       if(sheet.name==='Budgets') {
-        if(mode==='UPSERT' && data.id!==undefined)errors.push(`${prefix}: budget UPSERT is forbidden; use Budget Transfer/Adjustment`);
-        if(data.budget_amount===undefined || !Number.isFinite(Number(data.budget_amount)) || Number(data.budget_amount)<0)errors.push(`${prefix}: valid nonnegative budget_amount required`);
+        if(mode==='UPSERT' && data.id!==undefined)errors.push(`${prefix}: UPSERT anggaran tidak diizinkan; gunakan Transfer/Penyesuaian Anggaran.`);
+        if(data.budget_amount===undefined || !Number.isFinite(Number(data.budget_amount)) || Number(data.budget_amount)<0)errors.push(`${prefix}: budget_amount wajib berupa angka valid dan tidak negatif.`);
         data.budget_reserved='0.00';data.budget_used='0.00';data.budget_remaining=data.budget_amount;
       }
-      for(const required of info.required)if((data[required]===undefined||data[required]===null)&&!(sheet.name==='Budgets'&&['budget_reserved','budget_used','budget_remaining'].includes(required)))errors.push(`${prefix}: ${required} required`);
+      for(const required of info.required)if((data[required]===undefined||data[required]===null)&&!(sheet.name==='Budgets'&&['budget_reserved','budget_used','budget_remaining'].includes(required)))errors.push(`${prefix}: ${required} wajib diisi.`);
       prepared.push({name:sheet.name,table:sheet.schema.table,row:e.excel_row,data});
     }
   }
@@ -112,7 +112,7 @@ async function preflight(file,group,mode,user) {
         const existing=await lookupExisting(conn,sheet.schema,e.data);
         if(existing&&mode==='UPSERT')update++;
         else if(existing&&mode==='SKIP_DUPLICATES')skip++;
-        else if(existing)errors.push(`${sheet.name} row ${e.row}: id already exists`);
+        else if(existing)errors.push(`${sheet.name} baris ${e.row}: id sudah ada.`);
         else insert++;
       }
       report.push({sheet:sheet.name,total:sheet.entries.length,insert,update,skip});

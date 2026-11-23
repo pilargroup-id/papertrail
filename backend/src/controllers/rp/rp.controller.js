@@ -21,7 +21,7 @@ async function detail(req, res, next) {
     const result = await rpService.getRpDetail(req.params.id, req.user);
 
     if (!result) {
-      return R.notFound(res, 'RP request not found');
+      return R.notFound(res, 'RP tidak ditemukan.');
     }
 
     return R.ok(res, result, 'RP request retrieved');

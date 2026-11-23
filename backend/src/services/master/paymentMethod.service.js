@@ -40,31 +40,31 @@ function validatePaymentMethodPayload(payload = {}) {
   const sortOrder = normalizeSortOrder(payload.sort_order);
 
   if (!code) {
-    errors.code = 'Payment method code is required';
+    errors.code = 'Kode metode pembayaran wajib diisi.';
   }
 
   if (code.length > 50) {
-    errors.code = 'Payment method code maximum length is 50 characters';
+    errors.code = 'Kode metode pembayaran maksimal 50 karakter.';
   }
 
   if (!name) {
-    errors.name = 'Payment method name is required';
+    errors.name = 'Nama metode pembayaran wajib diisi.';
   }
 
   if (name.length > 100) {
-    errors.name = 'Payment method name maximum length is 100 characters';
+    errors.name = 'Nama metode pembayaran maksimal 100 karakter.';
   }
 
   if (description && description.length > 255) {
-    errors.description = 'Description maximum length is 255 characters';
+    errors.description = 'Deskripsi maksimal 255 karakter.';
   }
 
   if (!Number.isInteger(sortOrder)) {
-    errors.sort_order = 'sort_order must be an integer';
+    errors.sort_order = 'sort_order harus berupa bilangan bulat.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -79,17 +79,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -106,8 +106,8 @@ async function ensureCodeUnique(code, ignoredId = null, connection = db) {
     return;
   }
 
-  throw createHttpError('Payment method code already exists', 400, {
-    code: 'Payment method code already exists',
+  throw createHttpError('Kode metode pembayaran sudah ada.', 400, {
+    code: 'Kode metode pembayaran sudah ada.',
   });
 }
 
@@ -119,7 +119,7 @@ async function getPaymentMethodById(id) {
   const paymentMethod = await PaymentMethodModel.findById(id);
 
   if (!paymentMethod) {
-    throw createHttpError('Payment method not found', 404);
+    throw createHttpError('Metode pembayaran tidak ditemukan.', 404);
   }
 
   return paymentMethod;
@@ -179,7 +179,7 @@ async function updatePaymentMethod(id, payload, req) {
     const oldPaymentMethod = await PaymentMethodModel.findById(id, connection);
 
     if (!oldPaymentMethod) {
-      throw createHttpError('Payment method not found', 404);
+      throw createHttpError('Metode pembayaran tidak ditemukan.', 404);
     }
 
     await ensureCodeUnique(data.code, id, connection);
@@ -219,7 +219,7 @@ async function updatePaymentMethodStatus(id, payload, req) {
     const oldPaymentMethod = await PaymentMethodModel.findById(id, connection);
 
     if (!oldPaymentMethod) {
-      throw createHttpError('Payment method not found', 404);
+      throw createHttpError('Metode pembayaran tidak ditemukan.', 404);
     }
 
     const updatedPaymentMethod = await PaymentMethodModel.updateStatus(id, data.is_active, connection);

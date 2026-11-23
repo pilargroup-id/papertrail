@@ -21,12 +21,12 @@ function normalizeDecimal(value, fieldName, errors, defaultValue = 0) {
   const number = Number(value);
 
   if (!Number.isFinite(number)) {
-    errors[fieldName] = `${fieldName} must be a valid number`;
+    errors[fieldName] = `${fieldName} harus berupa angka yang valid.`;
     return defaultValue;
   }
 
   if (number < 0) {
-    errors[fieldName] = `${fieldName} cannot be negative`;
+    errors[fieldName] = `${fieldName} tidak boleh negatif.`;
     return defaultValue;
   }
 
@@ -41,7 +41,7 @@ function normalizeNullableInteger(value, fieldName, errors) {
   const number = Number(value);
 
   if (!Number.isInteger(number) || number <= 0) {
-    errors[fieldName] = `${fieldName} must be a positive integer`;
+    errors[fieldName] = `${fieldName} harus berupa bilangan bulat positif.`;
     return null;
   }
 
@@ -78,79 +78,79 @@ function validatePayload(payload = {}) {
   const periodMonth = normalizeNullableInteger(payload.period_month, 'period_month', errors);
 
   if (!budgetCode) {
-    errors.budget_code = 'budget_code is required';
+    errors.budget_code = 'Kode anggaran wajib diisi.';
   }
 
   if (budgetCode.length > 50) {
-    errors.budget_code = 'budget_code maximum length is 50 characters';
+    errors.budget_code = 'Kode anggaran maksimal 50 karakter.';
   }
 
   if (!companyId) {
-    errors.company_id = 'company_id is required';
+    errors.company_id = 'Perusahaan wajib dipilih.';
   }
 
   if (companyId.length > 36) {
-    errors.company_id = 'company_id maximum length is 36 characters';
+    errors.company_id = 'company_id maksimal 36 karakter.';
   }
 
   if (companyCodeSnapshot && companyCodeSnapshot.length > 10) {
-    errors.company_code_snapshot = 'company_code_snapshot maximum length is 10 characters';
+    errors.company_code_snapshot = 'Kode perusahaan maksimal 10 karakter.';
   }
 
   if (companyNameSnapshot && companyNameSnapshot.length > 150) {
-    errors.company_name_snapshot = 'company_name_snapshot maximum length is 150 characters';
+    errors.company_name_snapshot = 'Nama perusahaan maksimal 150 karakter.';
   }
 
   if (!Number.isInteger(departmentId) || departmentId <= 0) {
-    errors.department_id = 'department_id is required and must be a positive integer';
+    errors.department_id = 'Departemen wajib dipilih.';
   }
 
   if (departmentNameSnapshot && departmentNameSnapshot.length > 100) {
-    errors.department_name_snapshot = 'department_name_snapshot maximum length is 100 characters';
+    errors.department_name_snapshot = 'Nama departemen maksimal 100 karakter.';
   }
 
   if (departmentClassSnapshot && departmentClassSnapshot.length > 100) {
-    errors.department_class_snapshot = 'department_class_snapshot maximum length is 100 characters';
+    errors.department_class_snapshot = 'Kelas departemen maksimal 100 karakter.';
   }
 
   if (departmentCodeSnapshot && departmentCodeSnapshot.length > 10) {
-    errors.department_code_snapshot = 'department_code_snapshot maximum length is 10 characters';
+    errors.department_code_snapshot = 'Kode departemen maksimal 10 karakter.';
   }
 
   if (!Number.isInteger(classDepartmentId) || classDepartmentId <= 0) {
-    errors.class_department_id = 'class_department_id is required and must be a positive integer';
+    errors.class_department_id = 'Kelas departemen wajib dipilih.';
   }
 
   if (classNameSnapshot && classNameSnapshot.length > 100) {
-    errors.class_name_snapshot = 'class_name_snapshot maximum length is 100 characters';
+    errors.class_name_snapshot = 'Nama kelas maksimal 100 karakter.';
   }
 
   if (classClassSnapshot && classClassSnapshot.length > 100) {
-    errors.class_class_snapshot = 'class_class_snapshot maximum length is 100 characters';
+    errors.class_class_snapshot = 'Kelas maksimal 100 karakter.';
   }
 
   if (classCodeSnapshot && classCodeSnapshot.length > 10) {
-    errors.class_code_snapshot = 'class_code_snapshot maximum length is 10 characters';
+    errors.class_code_snapshot = 'Kode kelas maksimal 10 karakter.';
   }
 
   if (!projectName) {
-    errors.project_name = 'project_name is required';
+    errors.project_name = 'Nama proyek wajib diisi.';
   }
 
   if (projectName.length > 255) {
-    errors.project_name = 'project_name maximum length is 255 characters';
+    errors.project_name = 'Nama proyek maksimal 255 karakter.';
   }
 
   if (periodYear !== null && (periodYear < 2000 || periodYear > 2100)) {
-    errors.period_year = 'period_year must be between 2000 and 2100';
+    errors.period_year = 'Tahun periode harus antara 2000 dan 2100.';
   }
 
   if (periodMonth !== null && (periodMonth < 1 || periodMonth > 12)) {
-    errors.period_month = 'period_month must be between 1 and 12';
+    errors.period_month = 'Bulan periode harus antara 1 dan 12.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -181,17 +181,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -208,8 +208,8 @@ async function ensureUniqueBudgetCode(budgetCode, ignoredId = null, connection) 
     return;
   }
 
-  throw createHttpError('Budget code already exists', 400, {
-    budget_code: 'Budget code already exists',
+  throw createHttpError('Kode anggaran sudah ada.', 400, {
+    budget_code: 'Kode anggaran sudah ada.',
   });
 }
 
@@ -221,14 +221,14 @@ async function ensureBudgetTypeActive(budgetTypeId, connection) {
   const budgetType = await BudgetModel.findBudgetTypeById(budgetTypeId, connection);
 
   if (!budgetType) {
-    throw createHttpError('Budget type not found', 404, {
-      budget_type_id: 'Budget type not found',
+    throw createHttpError('Tipe anggaran tidak ditemukan.', 404, {
+      budget_type_id: 'Tipe anggaran tidak ditemukan.',
     });
   }
 
   if (Number(budgetType.is_active) !== 1) {
-    throw createHttpError('Budget type is inactive', 400, {
-      budget_type_id: 'Budget type is inactive',
+    throw createHttpError('Tipe anggaran tidak aktif.', 400, {
+      budget_type_id: 'Tipe anggaran tidak aktif.',
     });
   }
 
@@ -243,7 +243,7 @@ async function getBudgetById(id) {
   const budget = await BudgetModel.findById(id);
 
   if (!budget) {
-    throw createHttpError('Budget not found', 404);
+    throw createHttpError('Anggaran tidak ditemukan.', 404);
   }
 
   return budget;
@@ -254,7 +254,7 @@ async function createBudget(payload, req) {
   // New budgets start with no commitments; balances are derived from allocation.
   if (data.budget_reserved !== 0 || data.budget_used !== 0 ||
       (payload.budget_remaining !== undefined && data.budget_remaining !== data.budget_amount)) {
-    throw createHttpError('On create, remaining must match amount and reserved/used must be zero', 400);
+    throw createHttpError('Saat dibuat, sisa anggaran harus sama dengan nominal dan reserved/used harus nol.', 400);
   }
   data.budget_remaining = data.budget_amount;
   const connection = await db.getConnection();
@@ -307,17 +307,17 @@ async function updateBudget(id, payload, req) {
     const oldBudget = await BudgetModel.findById(id, connection);
 
     if (!oldBudget) {
-      throw createHttpError('Budget not found', 404);
+      throw createHttpError('Anggaran tidak ditemukan.', 404);
     }
 
     // Ordinary edit cannot change allocation or balances; use transfer/adjustment endpoints.
     for (const key of ['budget_amount','budget_reserved','budget_used','budget_remaining']) {
       if (Math.round(Number(data[key])*100) !== Math.round(Number(oldBudget[key])*100)) {
-        throw createHttpError(`${key} cannot be changed through edit; use budget adjustment or transfer`,400);
+        throw createHttpError(`${key} tidak dapat diubah melalui edit; gunakan penyesuaian atau transfer anggaran.`,400);
       }
     }
     if (String(data.company_id)!==String(oldBudget.company_id) || Number(data.department_id)!==Number(oldBudget.department_id) || Number(data.class_department_id)!==Number(oldBudget.class_department_id)) {
-      throw createHttpError('Cannot move a budget to another company/department/class through edit',400);
+      throw createHttpError('Anggaran tidak dapat dipindahkan ke perusahaan/departemen/kelas lain melalui edit.',400);
     }
     // Preserve latest balances under transaction lock to prevent stale FE payload overwrite.
     const safeData={...data,budget_amount:oldBudget.budget_amount,budget_reserved:oldBudget.budget_reserved,budget_used:oldBudget.budget_used,budget_remaining:oldBudget.budget_remaining};
@@ -358,7 +358,7 @@ async function updateBudgetStatus(id, payload, req) {
     const oldBudget = await BudgetModel.findById(id, connection);
 
     if (!oldBudget) {
-      throw createHttpError('Budget not found', 404);
+      throw createHttpError('Anggaran tidak ditemukan.', 404);
     }
 
     const updatedBudget = await BudgetModel.updateStatus(id, data.is_active, connection);

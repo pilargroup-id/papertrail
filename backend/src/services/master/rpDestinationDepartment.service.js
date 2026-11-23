@@ -21,7 +21,7 @@ function normalizeBooleanFlag(value, fieldName, errors, defaultValue = 1) {
   const normalized = Number(value);
 
   if (![0, 1].includes(normalized)) {
-    errors[fieldName] = `${fieldName} must be 0 or 1`;
+    errors[fieldName] = `${fieldName} harus 0 atau 1.`;
   }
 
   return normalized;
@@ -42,23 +42,23 @@ function validatePayload(payload = {}) {
   );
 
   if (!Number.isInteger(departmentId) || departmentId <= 0) {
-    errors.department_id = 'department_id is required and must be a positive integer';
+    errors.department_id = 'Departemen wajib dipilih.';
   }
 
   if (departmentNameSnapshot && departmentNameSnapshot.length > 100) {
-    errors.department_name_snapshot = 'department_name_snapshot maximum length is 100 characters';
+    errors.department_name_snapshot = 'Nama departemen maksimal 100 karakter.';
   }
 
   if (departmentClassSnapshot && departmentClassSnapshot.length > 100) {
-    errors.department_class_snapshot = 'department_class_snapshot maximum length is 100 characters';
+    errors.department_class_snapshot = 'Kelas departemen maksimal 100 karakter.';
   }
 
   if (departmentCodeSnapshot && departmentCodeSnapshot.length > 10) {
-    errors.department_code_snapshot = 'department_code_snapshot maximum length is 10 characters';
+    errors.department_code_snapshot = 'Kode departemen maksimal 10 karakter.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return {
@@ -74,17 +74,17 @@ function validateStatusPayload(payload = {}) {
   const errors = {};
 
   if (payload.is_active === undefined || payload.is_active === null || payload.is_active === '') {
-    errors.is_active = 'is_active is required';
+    errors.is_active = 'is_active wajib diisi.';
   }
 
   const isActive = Number(payload.is_active);
 
   if (![0, 1].includes(isActive)) {
-    errors.is_active = 'is_active must be 0 or 1';
+    errors.is_active = 'is_active harus 0 atau 1.';
   }
 
   if (Object.keys(errors).length) {
-    throw createHttpError('Validation error', 400, errors);
+    throw createHttpError('Data yang diisi tidak valid.', 400, errors);
   }
 
   return { is_active: isActive };
@@ -104,7 +104,7 @@ async function ensureUniqueDepartment(departmentId, ignoredId = null, connection
     return;
   }
 
-  throw createHttpError('RP destination department already exists', 400, {
+  throw createHttpError('Divisi pemroses RP sudah ada.', 400, {
     department_id: 'This department is already registered as RP destination department',
   });
 }
@@ -117,7 +117,7 @@ async function getRpDestinationDepartmentById(id) {
   const department = await RpDestinationDepartmentModel.findById(id);
 
   if (!department) {
-    throw createHttpError('RP destination department not found', 404);
+    throw createHttpError('Divisi pemroses RP tidak ditemukan.', 404);
   }
 
   return department;
@@ -172,7 +172,7 @@ async function updateRpDestinationDepartment(id, payload, req) {
     const oldDepartment = await RpDestinationDepartmentModel.findById(id, connection);
 
     if (!oldDepartment) {
-      throw createHttpError('RP destination department not found', 404);
+      throw createHttpError('Divisi pemroses RP tidak ditemukan.', 404);
     }
 
     await ensureUniqueDepartment(data.department_id, id, connection);
@@ -215,7 +215,7 @@ async function updateRpDestinationDepartmentStatus(id, payload, req) {
     const oldDepartment = await RpDestinationDepartmentModel.findById(id, connection);
 
     if (!oldDepartment) {
-      throw createHttpError('RP destination department not found', 404);
+      throw createHttpError('Divisi pemroses RP tidak ditemukan.', 404);
     }
 
     const updatedDepartment = await RpDestinationDepartmentModel.updateStatus(

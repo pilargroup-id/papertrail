@@ -22,22 +22,28 @@ function getCompanyIds(user = {}) {
     .filter(Boolean).map(String))];
 }
 
-function buildBudgetSelectionQuery(query = {}, user = {}) {
+// options.canUseCrossBudget: hasil hasCrossBudgetAccess(conn, purpose, department_id) untuk
+// departemen terpilih. Jika true, semua anggaran aktif di perusahaan terpilih boleh dipakai.
+function buildBudgetSelectionQuery(query = {}, user = {}, options = {}) {
   const purpose = String(query.purpose || 'FRP').trim().toUpperCase();
-  if (!['FRP', 'RP'].includes(purpose)) throw new Error('purpose must be FRP or RP');
+  if (!['FRP', 'RP'].includes(purpose)) throw new Error('purpose harus FRP atau RP.');
   const companies = getCompanyIds(user);
   const companyId = String(query.company_id || user.company_id || user.companies?.find((c) => Number(c.is_primary) === 1)?.id || companies[0] || '');
-  if (!companies.includes(companyId)) throw new Error('Selected company is not assigned to current user');
+  if (!companies.includes(companyId)) throw new Error('Perusahaan yang dipilih tidak terdaftar untuk pengguna ini.');
   const contexts = getContexts(user);
   const selectedDeptId = Number(query.department_id || user.context_department_id || user.department_id || (contexts.length === 1 ? contexts[0].department_id : 0));
   const selectedClassId = Number(query.class_department_id || user.class_department_id || (contexts.length === 1 ? contexts[0].class_department_id : 0));
   if (!contexts.some((c) => c.department_id === selectedDeptId && c.class_department_id === selectedClassId)) {
-    throw new Error('Selected department/class is not assigned to current user');
+    throw new Error('Departemen/kelas yang dipilih tidak terdaftar untuk pengguna ini.');
+  }
+  if (options.canUseCrossBudget) {
+    const { department_id, class_department_id, destination_department_id, ...rest } = query;
+    return { ...rest, company_id: companyId, is_active: 1 };
   }
   const targetDepartmentId = purpose === 'RP' && [1, 8].includes(selectedDeptId)
     ? Number(query.destination_department_id || 0) : null;
   if (purpose === 'RP' && [1, 8].includes(selectedDeptId) && !targetDepartmentId) {
-    throw new Error('destination_department_id is required for IT/HCGA RP budget selection');
+    throw new Error('destination_department_id wajib diisi untuk pemilihan anggaran RP IT/HCGA.');
   }
   return {
     ...query,

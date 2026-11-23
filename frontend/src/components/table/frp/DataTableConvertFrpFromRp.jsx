@@ -2,7 +2,10 @@ import DataTableAction from '../DataTableAction.jsx'
 import ButtonCreateFrpRp from '../../button/button-rp/ButtonCreateFrpRp.jsx'
 import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
 import ButtonVoidedRp from '../../button/button-rp/ButtonVoidedRp.jsx'
+import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
+import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import { FilePlus02 } from '../../layoute/TemplateIcons.jsx'
+import { isProductAssistantManagerUser } from './frp-button-access.js'
 
 // MOBILE
 import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
@@ -74,6 +77,10 @@ function getFrpStatusValue(rp) {
     .toUpperCase()
 }
 
+function getConvertedFrpStatusValue(rp) {
+  return String(rp?.converted_frp_status ?? '').trim().toUpperCase()
+}
+
 function getFrpStatusLabel(rp) {
   const status = getFrpStatusValue(rp)
 
@@ -82,7 +89,18 @@ function getFrpStatusLabel(rp) {
   }
 
   if (status === 'APPROVED') {
-    return getRpFrpConversionStatus(rp) === 'CREATED' ? 'Create FRP' : 'Approved'
+    if (getRpFrpConversionStatus(rp) !== 'CREATED') {
+      return 'Approved'
+    }
+
+    switch (getConvertedFrpStatusValue(rp)) {
+      case 'PENDING':
+        return 'Waiting Ass. Manager Product'
+      case 'APPROVED':
+        return 'FRP Approved'
+      default:
+        return 'Create FRP'
+    }
   }
 
   return status
@@ -97,7 +115,11 @@ function getFrpStatusVariant(rp) {
 
   switch (status) {
     case 'APPROVED':
-      return getRpFrpConversionStatus(rp) === 'CREATED' ? 'active' : 'default'
+      if (getRpFrpConversionStatus(rp) !== 'CREATED') {
+        return 'default'
+      }
+
+      return getConvertedFrpStatusValue(rp) === 'PENDING' ? 'pending' : 'active'
     case 'REJECTED':
       return 'inactive'
     case 'VOIDED':
@@ -182,6 +204,16 @@ function isCreateFrpActionHidden(rp, index, currentUser, canCreateFrpAction) {
 
 function isPrintActionHidden(rp, currentUser) {
   return getFrpStatusValue(rp) !== 'APPROVED' || !isGeneralProcurementUser(currentUser)
+}
+
+// Approve/Reject FRP hasil convert: hanya Ass. Manager Product, saat FRP masih PENDING.
+export function canCurrentUserReviewConvertedFrp(rp, currentUser) {
+  return (
+    getRpFrpConversionStatus(rp) === 'CREATED' &&
+    Boolean(rp?.converted_frp_request_id) &&
+    getConvertedFrpStatusValue(rp) === 'PENDING' &&
+    isProductAssistantManagerUser(currentUser)
+  )
 }
 
 function isVoidActionHidden(rp, index, currentUser, canVoidAction) {
@@ -301,6 +333,8 @@ function DataTableConvertFrpFromRp({
   onPrint,
   onVoid,
   canVoid,
+  onApproveFrp,
+  onRejectFrp,
   currentUser,
   mobileCard,
   pagination,
@@ -363,6 +397,24 @@ function DataTableConvertFrpFromRp({
           mobileHidden: true,
           hidden: (rp) => isPrintActionHidden(rp, currentUser),
           onClick: onPrint,
+        }
+      : null,
+    typeof onApproveFrp === 'function'
+      ? {
+          key: 'approveFrp',
+          label: 'Approve',
+          buttonComponent: ButtonApprovalFrp,
+          hidden: (rp) => !canCurrentUserReviewConvertedFrp(rp, currentUser),
+          onClick: onApproveFrp,
+        }
+      : null,
+    typeof onRejectFrp === 'function'
+      ? {
+          key: 'rejectFrp',
+          label: 'Reject',
+          buttonComponent: ButtonRejectFrp,
+          hidden: (rp) => !canCurrentUserReviewConvertedFrp(rp, currentUser),
+          onClick: onRejectFrp,
         }
       : null,
   ].filter(Boolean)
