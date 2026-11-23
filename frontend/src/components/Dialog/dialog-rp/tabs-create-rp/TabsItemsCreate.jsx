@@ -65,6 +65,10 @@ function preventNonIntegerInput(event) {
 }
 
 function formatRupiah(value) {
+  if (value === '') {
+    return ''
+  }
+
   const numberValue = Number(value)
 
   if (!Number.isFinite(numberValue)) {
@@ -103,6 +107,8 @@ function TabsItemsCreate({
   removeItem,
   addItem,
   duplicateLastItem,
+  isBudgetReadOnly = false,
+  canManageItems = true,
 }) {
   return (
     <Box component="section" sx={{ mb: 4 }}>
@@ -134,7 +140,7 @@ function TabsItemsCreate({
                 <TableCell sx={{ width: 140 }} align="right">
                   Amount (IDR)
                 </TableCell>
-                <TableCell sx={{ width: 52 }} />
+                {canManageItems ? <TableCell sx={{ width: 52 }} /> : null}
               </TableRow>
             </TableHead>
 
@@ -175,6 +181,8 @@ function TabsItemsCreate({
                           String(option.value) === String(value?.value)
                         }
                         disabled={isFormDisabled}
+                        readOnly={isBudgetReadOnly}
+                        forcePopupIcon={isBudgetReadOnly ? false : 'auto'}
                         loading={isOptionsLoading}
                         noOptionsText={budgetNoOptionsText}
                         onChange={(_, option) =>
@@ -183,6 +191,17 @@ function TabsItemsCreate({
                         renderInput={(params) => (
                           <TextField
                             {...params}
+                            title={isBudgetReadOnly ? selectedBudgetOption?.label : undefined}
+                            sx={isBudgetReadOnly
+                              ? { '& .MuiInputBase-root': { bgcolor: 'rgba(52, 73, 104, 0.02)' } }
+                              : undefined}
+                            slotProps={{
+                              ...params.slotProps,
+                              htmlInput: {
+                                ...params.slotProps.htmlInput,
+                                'aria-label': `Budget item ${index + 1}`,
+                              },
+                            }}
                             placeholder={isOptionsLoading ? 'Memuat budget...' : 'Pilih budget'}
                             error={Boolean(budgetError)}
                             helperText={budgetError}
@@ -304,17 +323,19 @@ function TabsItemsCreate({
                       {formatRupiah(Number.isFinite(amount) ? amount : 0)}
                     </TableCell>
 
-                    <TableCell align="center" sx={{ pt: '8px' }}>
-                      <IconButton
-                        size="small"
-                        aria-label={`Hapus item ${index + 1}`}
-                        disabled={isFormDisabled || formValues.items.length === 1}
-                        onClick={() => removeItem(index)}
-                        sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
-                      >
-                        <Trash03 size={16} />
-                      </IconButton>
-                    </TableCell>
+                    {canManageItems ? (
+                      <TableCell align="center" sx={{ pt: '8px' }}>
+                        <IconButton
+                          size="small"
+                          aria-label={`Hapus item ${index + 1}`}
+                          disabled={isFormDisabled || formValues.items.length === 1}
+                          onClick={() => removeItem(index)}
+                          sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                        >
+                          <Trash03 size={16} />
+                        </IconButton>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 )
               })}
@@ -322,31 +343,33 @@ function TabsItemsCreate({
           </Table>
         </TableContainer>
 
-        <Stack direction="row" spacing={1.5} useFlexGap sx={{ flexWrap: 'wrap' }}>
-          <Button
-            type="button"
-            variant="outlined"
-            size="small"
-            startIcon={<Plus size={16} />}
-            disabled={isFormDisabled}
-            onClick={addItem}
-            sx={{ textTransform: 'none' }}
-          >
-            Add Item
-          </Button>
-          <Button
-            type="button"
-            variant="outlined"
-            size="small"
-            color="secondary"
-            startIcon={<Copy size={16} />}
-            disabled={isFormDisabled}
-            onClick={duplicateLastItem}
-            sx={{ textTransform: 'none' }}
-          >
-            Duplicate
-          </Button>
-        </Stack>
+        {canManageItems ? (
+          <Stack direction="row" spacing={1.5} useFlexGap sx={{ flexWrap: 'wrap' }}>
+            <Button
+              type="button"
+              variant="outlined"
+              size="small"
+              startIcon={<Plus size={16} />}
+              disabled={isFormDisabled}
+              onClick={addItem}
+              sx={{ textTransform: 'none' }}
+            >
+              Add Item
+            </Button>
+            <Button
+              type="button"
+              variant="outlined"
+              size="small"
+              color="secondary"
+              startIcon={<Copy size={16} />}
+              disabled={isFormDisabled}
+              onClick={duplicateLastItem}
+              sx={{ textTransform: 'none' }}
+            >
+              Duplicate
+            </Button>
+          </Stack>
+        ) : null}
 
         {fieldErrors.items ? (
           <Typography variant="caption" color="error">

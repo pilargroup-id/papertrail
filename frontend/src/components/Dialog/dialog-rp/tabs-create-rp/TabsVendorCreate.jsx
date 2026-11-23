@@ -21,12 +21,20 @@ function TabsVendorCreate({
   fieldErrors,
   isOptionsLoading,
   isFormDisabled,
+  vendorOptions,
   paymentCategoryOptions,
   destinationDepartmentOptions,
+  isProcessReadOnly = false,
   updateValue,
 }) {
   return (
-    <Box component="section" sx={{ mb: 4 }}>
+    <Box
+      component="section"
+      sx={{
+        mb: 4,
+        '& .MuiInputBase-root:has([readonly])': { bgcolor: 'rgba(52, 73, 104, 0.02)' },
+      }}
+    >
       <SectionHeader title="Vendor & Process Information" />
 
       <Box
@@ -37,19 +45,46 @@ function TabsVendorCreate({
           mb: 2,
         }}
       >
-        <TextField
-          fullWidth
-          size="small"
-          required
-          label="Vendor"
-          placeholder="Masukkan nama vendor"
-          value={formValues.vendor_name}
-          disabled={isFormDisabled}
-          error={Boolean(fieldErrors.vendor_name)}
-          helperText={fieldErrors.vendor_name}
-          onChange={(event) => updateValue('vendor_name', event.target.value)}
-          slotProps={{ htmlInput: { maxLength: 255 } }}
-        />
+        {vendorOptions ? (
+          <Autocomplete
+            slots={autocompleteSlots}
+            slotProps={autocompleteSlotProps}
+            fullWidth
+            size="small"
+            options={vendorOptions}
+            value={getOptionByValue(vendorOptions, formValues.vendor_id)}
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
+            disabled={isFormDisabled}
+            loading={isOptionsLoading}
+            noOptionsText="Vendor aktif tidak ditemukan."
+            onChange={(_, option) => updateValue('vendor_id', option?.value ?? '')}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                required
+                label="Vendor"
+                placeholder={isOptionsLoading ? 'Memuat vendor...' : 'Pilih vendor'}
+                error={Boolean(fieldErrors.vendor_id)}
+                helperText={fieldErrors.vendor_id}
+              />
+            )}
+          />
+        ) : (
+          <TextField
+            fullWidth
+            size="small"
+            required
+            label="Vendor"
+            placeholder="Masukkan nama vendor"
+            value={formValues.vendor_name}
+            disabled={isFormDisabled}
+            error={Boolean(fieldErrors.vendor_name)}
+            helperText={fieldErrors.vendor_name}
+            onChange={(event) => updateValue('vendor_name', event.target.value)}
+            slotProps={{ htmlInput: { maxLength: 255 } }}
+          />
+        )}
 
         <Autocomplete
           slots={autocompleteSlots}
@@ -61,15 +96,19 @@ function TabsVendorCreate({
           getOptionLabel={(option) => option?.label ?? ''}
           isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
           disabled={isFormDisabled}
+          readOnly={isProcessReadOnly}
+          forcePopupIcon={isProcessReadOnly ? false : 'auto'}
           loading={isOptionsLoading}
           noOptionsText="Category payment aktif tidak ditemukan."
           onChange={(_, option) => updateValue('payment_category_id', option?.value ?? '')}
           renderInput={(params) => (
             <TextField
               {...params}
-              required
+              required={!isProcessReadOnly}
               label="Category Payment"
-              placeholder={isOptionsLoading ? 'Memuat category...' : 'Pilih category payment'}
+              placeholder={
+                isProcessReadOnly ? '-' : isOptionsLoading ? 'Memuat category...' : 'Pilih category payment'
+              }
               error={Boolean(fieldErrors.payment_category_id)}
               helperText={fieldErrors.payment_category_id}
             />
@@ -98,15 +137,19 @@ function TabsVendorCreate({
           getOptionLabel={(option) => option?.label ?? ''}
           isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
           disabled={isFormDisabled}
+          readOnly={isProcessReadOnly}
+          forcePopupIcon={isProcessReadOnly ? false : 'auto'}
           loading={isOptionsLoading}
           noOptionsText="Division tujuan aktif tidak ditemukan."
           onChange={(_, option) => updateValue('destination_department_id', option?.value ?? '')}
           renderInput={(params) => (
             <TextField
               {...params}
-              required
+              required={!isProcessReadOnly}
               label="Division To Process"
-              placeholder={isOptionsLoading ? 'Memuat division...' : 'Pilih division'}
+              placeholder={
+                isProcessReadOnly ? '-' : isOptionsLoading ? 'Memuat division...' : 'Pilih division'
+              }
               error={Boolean(fieldErrors.destination_department_id)}
               helperText={fieldErrors.destination_department_id}
             />
@@ -116,21 +159,21 @@ function TabsVendorCreate({
         <TextField
           fullWidth
           size="small"
-          required
+          required={!isProcessReadOnly}
           label="PIC"
-          placeholder="Masukkan nama PIC"
+          placeholder={isProcessReadOnly ? '-' : 'Masukkan nama PIC'}
           value={formValues.pic_name}
           disabled={isFormDisabled}
           error={Boolean(fieldErrors.pic_name)}
           helperText={fieldErrors.pic_name}
           onChange={(event) => updateValue('pic_name', event.target.value)}
-          slotProps={{ htmlInput: { maxLength: 255 } }}
+          slotProps={{ input: { readOnly: isProcessReadOnly }, htmlInput: { maxLength: 255 } }}
         />
 
         <TextField
           fullWidth
           size="small"
-          required
+          required={!isProcessReadOnly}
           label="RP Date"
           type="date"
           value={formValues.date_required}
@@ -138,7 +181,7 @@ function TabsVendorCreate({
           error={Boolean(fieldErrors.date_required)}
           helperText={fieldErrors.date_required}
           onChange={(event) => updateValue('date_required', event.target.value)}
-          slotProps={{ inputLabel: { shrink: true } }}
+          slotProps={{ input: { readOnly: isProcessReadOnly }, inputLabel: { shrink: true } }}
         />
       </Box>
 

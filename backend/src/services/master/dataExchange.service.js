@@ -2,6 +2,7 @@ const ExcelJS = require('exceljs');
 const { db } = require('../../config/database.config');
 const { checkUserModulePermission } = require('../permission/modulePermission.service');
 const ActivityLogService = require('../activity/activityLog.service');
+const BudgetImport = require('./budgetImport.service');
 
 // Fixed allowlist. Never interpolate client-selected table or column identifiers.
 const SHEETS = {
@@ -16,7 +17,12 @@ const SHEETS = {
 };
 const GROUPS = {vendor_banking:['Vendors','Banks','VendorBankAccounts'],budget:['BudgetTypes','Budgets','BudgetAccessRules'],currency:['Currencies','ExchangeRates']};
 function fail(message,statusCode=400) {const e=new Error(message);e.statusCode=statusCode;throw e;}
-function choose(group) {if(!Object.prototype.hasOwnProperty.call(GROUPS,group))fail('Unknown data exchange group');return GROUPS[group];}
+function choose(group,sheet=null) {
+  if(!Object.prototype.hasOwnProperty.call(GROUPS,group))fail('Unknown data exchange group');
+  if(!sheet)return GROUPS[group];
+  if(!GROUPS[group].includes(sheet))fail(`Sheet ${sheet} tidak termasuk grup ${group}.`);
+  return [sheet];
+}
 async function authorize(user,sheets,mode) {
   for(const name of sheets) {
     const permission=SHEETS[name].permission;
@@ -39,10 +45,10 @@ async function workbookFromUpload(file) {
   if(!file || !file.buffer || !/\.xlsx$/i.test(file.originalname||''))fail('An .xlsx upload is required');
   const wb=new ExcelJS.Workbook();await wb.xlsx.load(file.buffer);return wb;
 }
-async function parseUpload(file,group) {
-  const expected=choose(group);const wb=await workbookFromUpload(file);
+async function parseUpload(file,group,sheetName=null) {
+  const expected=choose(group,sheetName);const wb=await workbookFromUpload(file);
   const present=expected.filter(name=>wb.getWorksheet(name));
-  if(!present.length)fail(`Workbook has no recognized sheet for ${group}`);
+  if(!present.length)fail(`File tidak memiliki sheet ${expected.join(', ')}. Gunakan template terbaru.`);
   const result=[];
   for(const name of present) {
     const sheet=wb.getWorksheet(name),schema=validName(name);
@@ -69,8 +75,8 @@ async function schemaInfo(conn,schema) {
   const required=columns.filter(c=>c.Null==='NO' && c.Default===null && !String(c.Extra).includes('auto_increment') && !['created_at','updated_at'].includes(c.Field)).map(c=>c.Field);
   return {fields:filtered,required};
 }
-function prepareRows(sheets,infos,mode) {
-  const errors=[];const prepared=[];
+function prepareRows(sheets,infos,mode,budgetRefs=null) {
+  const errors=[];const prepared=[];const seenBudgetCodes=new Map();
   for(const sheet of sheets) {
     const info=infos.get(sheet.name);
     for(const e of sheet.entries) {
@@ -79,9 +85,10 @@ function prepareRows(sheets,infos,mode) {
       for(const k of Object.keys(data))if(!info.fields.includes(k))errors.push(`${prefix}: kolom ${k} tidak tersedia di database.`);
       // Importing budget creates allocation only. Updating allocation/balances bypasses audit and is forbidden.
       if(sheet.name==='Budgets') {
-        if(mode==='UPSERT' && data.id!==undefined)errors.push(`${prefix}: UPSERT anggaran tidak diizinkan; gunakan Transfer/Penyesuaian Anggaran.`);
+        errors.push(...BudgetImport.prepareRow(data,budgetRefs,seenBudgetCodes,prefix,e.excel_row));
         if(data.budget_amount===undefined || !Number.isFinite(Number(data.budget_amount)) || Number(data.budget_amount)<0)errors.push(`${prefix}: budget_amount wajib berupa angka valid dan tidak negatif.`);
-        data.budget_reserved='0.00';data.budget_used='0.00';data.budget_remaining=data.budget_amount;
+        data.budget_amount=Number(data.budget_amount);data.budget_reserved='0.00';data.budget_used='0.00';data.budget_remaining=data.budget_amount;
+        for(const k of Object.keys(data))if(!info.fields.includes(k)&&!['budget_reserved','budget_used','budget_remaining'].includes(k))delete data[k];
       }
       for(const required of info.required)if((data[required]===undefined||data[required]===null)&&!(sheet.name==='Budgets'&&['budget_reserved','budget_used','budget_remaining'].includes(required)))errors.push(`${prefix}: ${required} wajib diisi.`);
       prepared.push({name:sheet.name,table:sheet.schema.table,row:e.excel_row,data});
@@ -96,14 +103,15 @@ async function lookupExisting(conn,schema,data,lock=false) {
   const [rows]=await conn.query(`SELECT id FROM \`${schema.table}\` WHERE ${matchKeys.map(k=>`\`${k}\`=?`).join(' AND ')} LIMIT 1 ${lock?'FOR UPDATE':''}`,matchKeys.map(k=>data[k]));
   return rows[0]||null;
 }
-async function preflight(file,group,mode,user) {
+async function preflight(file,group,mode,req,sheetName=null) {
   if(!['INSERT_ONLY','UPSERT','SKIP_DUPLICATES'].includes(mode))fail('Invalid import mode');
-  const sheets=await parseUpload(file,group);
-  await authorize(user,sheets.map(s=>s.name),mode==='UPSERT'?'upsert':'import');
+  const sheets=await parseUpload(file,group,sheetName);
+  await authorize(req.user,sheets.map(s=>s.name),mode==='UPSERT'?'upsert':'import');
   const conn=await db.getConnection();
   try {
     const infos=new Map();for(const s of sheets)infos.set(s.name,await schemaInfo(conn,s.schema));
-    const {prepared,errors}=prepareRows(sheets,infos,mode);
+    const budgetRefs=sheets.some(s=>s.name==='Budgets')?await BudgetImport.loadReferences(req,conn):null;
+    const {prepared,errors}=prepareRows(sheets,infos,mode,budgetRefs);
     // Count matching primary IDs for review. Database constraints/FKs are validated again in transaction on import.
     const report=[];
     for(const sheet of sheets) {
@@ -112,7 +120,7 @@ async function preflight(file,group,mode,user) {
         const existing=await lookupExisting(conn,sheet.schema,e.data);
         if(existing&&mode==='UPSERT')update++;
         else if(existing&&mode==='SKIP_DUPLICATES')skip++;
-        else if(existing)errors.push(`${sheet.name} baris ${e.row}: id sudah ada.`);
+        else if(existing)errors.push(`${sheet.name} row ${e.row}: data dengan ${(e.data.id!==undefined&&e.data.id!==null&&e.data.id!=='')?'id':sheet.schema.key.join(' + ')} yang sama sudah ada.`);
         else insert++;
       }
       report.push({sheet:sheet.name,total:sheet.entries.length,insert,update,skip});
@@ -121,25 +129,26 @@ async function preflight(file,group,mode,user) {
   }finally{conn.release();}
 }
 function groups(){return Object.entries(GROUPS).map(([code,sheets])=>({code,sheets:sheets.map(name=>({name,columns:SHEETS[name].fields}))}));}
-async function buildWorkbook(group,user,template=false) {
-  const names=choose(group);await authorize(user,names,'export');
+async function buildWorkbook(group,req,template=false,sheetName=null) {
+  const names=choose(group,sheetName);await authorize(req.user,names,'export');
   const wb=new ExcelJS.Workbook();const conn=await db.getConnection();
   try {
     for(const name of names){
       const schema=validName(name),info=await schemaInfo(conn,schema);
-      const cols=info.fields;const ws=wb.addWorksheet(name);ws.addRow(cols);ws.getRow(1).font={bold:true};ws.views=[{state:'frozen',ySplit:1}];
+      const cols=template&&name==='Budgets'?BudgetImport.TEMPLATE_FIELDS.filter(f=>info.fields.includes(f)):info.fields;const ws=wb.addWorksheet(name);ws.addRow(cols);ws.getRow(1).font={bold:true};ws.views=[{state:'frozen',ySplit:1}];
       cols.forEach((c,i)=>ws.getColumn(i+1).width=Math.min(Math.max(c.length+4,16),36));
       if(!template){
         const [rows]=await conn.query(`SELECT ${cols.map(c=>`\`${c}\``).join(',')} FROM \`${schema.table}\` ORDER BY id LIMIT 50000`);
         for(const r of rows)ws.addRow(cols.map(c=>r[c]));
       }
     }
+    if(template&&names.length===1&&names[0]==='Budgets')BudgetImport.addGuideSheets(wb,await BudgetImport.loadReferences(req,conn));
   }finally{conn.release();}
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
-async function validate(file,group,mode,user){const info=await preflight(file,group,mode,user);return {valid:info.errors.length===0,mode,group,report:info.report,errors:info.errors.slice(0,100)};}
-async function importWorkbook(file,group,mode,req) {
-  const info=await preflight(file,group,mode,req.user);
+async function validate(file,group,mode,req,sheetName=null){const info=await preflight(file,group,mode,req,sheetName);return {valid:info.errors.length===0,mode,group,report:info.report,errors:info.errors.slice(0,100)};}
+async function importWorkbook(file,group,mode,req,sheetName=null) {
+  const info=await preflight(file,group,mode,req,sheetName);
   if(info.errors.length)fail(`Import validation failed: ${info.errors.slice(0,5).join('; ')}`);
   const conn=await db.getConnection();let applied=0,skipped=0;
   try {await conn.beginTransaction();

@@ -216,7 +216,20 @@ const createResource = (path) => ({
   remove: (id, options) => api.delete(`${path}/${id}`, options),
 });
 
-const createReadOnlyResource = (path, baseUrlGetter = getApiBaseUrl) => ({
+// Field teks didahulukan sebelum file agar tersedia di req.body saat multer memproses upload.
+const buildDataExchangeForm = (group, file, mode, sheet) => {
+  const formData = new FormData();
+  formData.append('group', group);
+  formData.append('mode', mode);
+  if (sheet) {
+    formData.append('sheet', sheet);
+  }
+  formData.append('file', file);
+
+  return formData;
+};
+
+const createReadOnlyResource =(path, baseUrlGetter = getApiBaseUrl) => ({
   list: (params, options) =>
     api.get(path, {
       ...options,
@@ -522,7 +535,9 @@ const request = async (
   let responseData = null;
 
   if (response.status !== 204) {
-    if (responseType === 'text') {
+    if (responseType === 'blob' && response.ok) {
+      responseData = await response.blob();
+    } else if (responseType === 'text') {
       responseData = await response.text();
     } else {
       const rawText = await response.text();
@@ -629,8 +644,34 @@ const api = {
   // Master - Budget Management
   // =====================
   budgetTypes: createResource('/master/budget-types'),
-  budgets: createResource('/master/budgets'),
+  budgets: {
+    ...createResource('/master/budgets'),
+    transfer: (data, options) => api.post('/master/budgets/transfer', data, options),
+    adjust: (id, data, options) => api.post(`/master/budgets/${id}/adjust`, data, options),
+    transactions: (params, options) =>
+      api.get('/master/budgets/transactions', { ...options, params }),
+    budgetTransactions: (id, params, options) =>
+      api.get(`/master/budgets/${id}/transactions`, { ...options, params }),
+  },
   budgetAccessRules: createResource('/master/budget-access-rules'),
+
+  // =====================
+  // Master - Data Exchange (Excel import/export)
+  // group: 'budget' | 'vendor_banking' | 'currency'
+  // mode: 'INSERT_ONLY' | 'SKIP_DUPLICATES' | 'UPSERT'
+  // options.sheet (opsional): batasi ke satu sheet, mis. 'Budgets'
+  // =====================
+  dataExchange: {
+    groups: (options) => api.get('/master/data-exchange/groups', options),
+    template: (group, { sheet, ...options } = {}) =>
+      api.get('/master/data-exchange/template', { ...options, params: { group, sheet }, responseType: 'blob' }),
+    export: (group, { sheet, ...options } = {}) =>
+      api.get('/master/data-exchange/export', { ...options, params: { group, sheet }, responseType: 'blob' }),
+    validate: (group, file, mode = 'INSERT_ONLY', { sheet, ...options } = {}) =>
+      api.post('/master/data-exchange/validate', buildDataExchangeForm(group, file, mode, sheet), options),
+    import: (group, file, mode = 'INSERT_ONLY', { sheet, ...options } = {}) =>
+      api.post('/master/data-exchange/import', buildDataExchangeForm(group, file, mode, sheet), options),
+  },
 
   // =====================
   // Master - FRP Configuration

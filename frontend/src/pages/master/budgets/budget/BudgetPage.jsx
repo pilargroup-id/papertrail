@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
+import Alert from '@mui/material/Alert';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../../../services/api.js';
 import DialogEditBudgets from '../../../../components/Dialog/dialog-budgets/DialogEditBudgets.jsx';
+import DialogTransferBudget from '../../../../components/Dialog/dialog-budgets/DialogTransferBudget.jsx';
+import DialogAdjustBudget from '../../../../components/Dialog/dialog-budgets/DialogAdjustBudget.jsx';
+import DrawerBudgetHistory from '../../../../components/Dialog/dialog-budgets/DrawerBudgetHistory.jsx';
 import DataTableBudget from '../../../../components/table/master-table/budget/DataTableBudget.jsx';
 
 // Button Vendor
 import Switch from '../../../../components/forms/Switch.jsx';
 import ButtonCreateBudgets from '../../../../components/button/button-budgets/ButtonCreateBudgets.jsx';
+import ButtonImportBudgets from '../../../../components/button/button-budgets/ButtonImportBudgets.jsx';
 // import ButtonCreateBudgetType from '../../../../components/butt/dialog-budget-type/DialogEditBudgetType.jsx';
 
 function getRowsFromResponse(response) {
@@ -83,6 +88,11 @@ function BudgetsPage(props) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [selectedBudgetType, setSelectedBudgetType] = useState(null)
+  const [transferSource, setTransferSource] = useState(null)
+  const [adjustTarget, setAdjustTarget] = useState(null)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [historyBudget, setHistoryBudget] = useState(null)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -103,9 +113,11 @@ function BudgetsPage(props) {
           },
         )
 
-        setBudgetType(getRowsFromResponse(response))
+        if (!controller.signal.aborted) {
+          setBudgetType(getRowsFromResponse(response))
+        }
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if (controller.signal.aborted) {
           return
         }
 
@@ -125,6 +137,37 @@ function BudgetsPage(props) {
 
   const handleVendorCreated = () => {
     setReloadToken((currentValue) => currentValue + 1)
+  }
+
+  const handleTransferCompleted = () => {
+    setTransferSource(null)
+    setSuccessMessage('Transfer budget berhasil.')
+    setReloadToken((currentValue) => currentValue + 1)
+  }
+
+  const handleAdjustCompleted = ({ operation } = {}) => {
+    const budgetCode = adjustTarget?.budget_code
+    setAdjustTarget(null)
+    setSuccessMessage(
+      `${operation === 'DECREASE' ? 'Pengurangan' : 'Penambahan'} budget${budgetCode ? ` ${budgetCode}` : ''} berhasil.`,
+    )
+    setReloadToken((currentValue) => currentValue + 1)
+  }
+
+  const handleImportCompleted = ({ applied = 0, skipped = 0 } = {}) => {
+    setSuccessMessage(
+      `Import budget berhasil: ${applied} data ditambahkan${skipped ? `, ${skipped} dilewati` : ''}.`,
+    )
+    setReloadToken((currentValue) => currentValue + 1)
+  }
+
+  const openBudgetHistory = (budget) => {
+    if (budget?.id === undefined || budget?.id === null) {
+      return
+    }
+
+    setHistoryBudget(budget)
+    setIsHistoryOpen(true)
   }
 
   const openEditDialog = (budgets) => {
@@ -209,6 +252,10 @@ function BudgetsPage(props) {
         </div>
 
         <div className="users-table-card__actions">
+          <ButtonImportBudgets
+            onClick={() => setSuccessMessage('')}
+            onImported={handleImportCompleted}
+          />
           <ButtonCreateBudgets
             dialogProps={{
               onCreated: handleVendorCreated,
@@ -219,12 +266,27 @@ function BudgetsPage(props) {
         </div>
       </div>
 
+      {successMessage && (
+        <Alert severity="success" role="status" onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      )}
+
       <DataTableBudget
         rows={budgets}
         tableLabel={`${pageTitle} table`}
         emptyMessage={emptyMessage}
         SwitchComponent={Switch}
         onEdit={openEditDialog}
+        onTransfer={(budget) => {
+          setSuccessMessage('')
+          setTransferSource(budget)
+        }}
+        onAdjust={(budget) => {
+          setSuccessMessage('')
+          setAdjustTarget(budget)
+        }}
+        onHistory={openBudgetHistory}
         isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
         onStatusChange={handleVendorStatusChange}
       />
@@ -236,6 +298,31 @@ function BudgetsPage(props) {
         budgetType={selectedBudgetType}
         onClose={closeEditDialog}
         onUpdated={handleVendorUpdated}
+      />
+
+      {transferSource && (
+        <DialogTransferBudget
+          source={transferSource}
+          onClose={() => setTransferSource(null)}
+          onTransferred={handleTransferCompleted}
+        />
+      )}
+
+      {adjustTarget && (
+        <DialogAdjustBudget
+          key={adjustTarget.id}
+          budget={adjustTarget}
+          onClose={() => setAdjustTarget(null)}
+          onAdjusted={handleAdjustCompleted}
+        />
+      )}
+
+      <DrawerBudgetHistory
+        key={historyBudget?.id ?? 'budget-history-drawer'}
+        isOpen={isHistoryOpen}
+        budget={historyBudget}
+        budgetRows={budgets}
+        onClose={() => setIsHistoryOpen(false)}
       />
     </section>
 

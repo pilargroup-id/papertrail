@@ -1,40 +1,29 @@
-import { useCallback, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import { useEffect, useState } from 'react'
 
 import api from '../../../services/api.js'
-import { TrendingUp, XClose } from '../../layoute/TemplateIcons.jsx'
-import TabsInformation from './tabs-create-rp/TabsInformation.jsx'
-import TabsItems from './tabs-create-rp/TabsItems.jsx'
-import TabsVendor from './tabs-create-rp/TabsVendor.jsx'
-
-const getTodayDateValue = () => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const date = String(today.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${date}`
-}
-
-const editInitialItem = () => ({
-  rp_request_item_id: '',
-  budget_id: '',
-  memo: '',
-  purchase_link: '',
-  quantity: '1',
-  unit_price: '',
-})
+import { XClose } from '../../layoute/TemplateIcons.jsx'
+import DetailFields from '../details/DetailFields.jsx'
+import DetailSection from '../details/DetailSection.jsx'
+import TabsItemsCreate from './tabs-create-rp/TabsItemsCreate.jsx'
+import TabsVendorCreate from './tabs-create-rp/TabsVendorCreate.jsx'
 
 const editInitialFormValues = () => ({
   department_id: '',
   class_department_id: '',
-  date_required: getTodayDateValue(),
+  date_required: '',
   description: '',
   vendor_id: '',
   payment_category_id: '',
   destination_department_id: '',
   pic_name: '',
-  items: [editInitialItem()],
+  items: [],
   notes: 'Update RP',
 })
 
@@ -124,12 +113,14 @@ function mapBudgetOptions(budgets) {
     const id = getFirstValue(budget, ['id', 'budget_id'])
     const code = getFirstValue(budget, ['budget_code', 'code'])
     const projectName = getFirstValue(budget, ['project_name', 'name'], `Budget #${id ?? '-'}`)
+    const budgetAmount = getFirstValue(budget, ['budget_amount', 'amount'])
     const remaining = getFirstValue(budget, ['budget_remaining', 'remaining_amount'])
 
     return {
       value: id,
       label: [code, projectName].filter(Boolean).join(' - '),
       meta: {
+        budgetAmount,
         budgetRemaining: remaining,
       },
     }
@@ -221,10 +212,6 @@ function getRpItems(rp) {
 }
 
 function mapRpItemsToFormItems(items) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return [editInitialItem()]
-  }
-
   return items.map((item) => ({
     rp_request_item_id: getFirstValue(
       item,
@@ -243,9 +230,7 @@ function mapRpToFormValues(rp) {
   return {
     department_id: getFirstValue(rp, ['department_id', 'departmentId'], ''),
     class_department_id: getFirstValue(rp, ['class_department_id', 'classDepartmentId'], ''),
-    date_required: formatDateInputValue(
-      getFirstValue(rp, ['date_required', 'dateRequired', 'created_at'], getTodayDateValue()),
-    ),
+    date_required: formatDateInputValue(getFirstValue(rp, ['date_required', 'dateRequired'])),
     description: getFirstValue(rp, ['description'], ''),
     vendor_id: getFirstValue(rp, ['vendor_id', 'vendorId'], ''),
     payment_category_id: getFirstValue(
@@ -378,7 +363,7 @@ function formatRupiah(value) {
 function DialogCheckDataRp({
   isOpen = false,
   eyebrow = 'Form request purchase',
-  title = 'Edit RP',
+  title = 'Check Data RP',
   rp = null,
   onClose,
   onUpdated,
@@ -395,8 +380,9 @@ function DialogCheckDataRp({
   const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
   const [optionsError, setOptionsError] = useState('')
+  const isFormDisabled = isSubmitting || isOptionsLoading || Boolean(optionsError)
 
-  const resetDialogState = useCallback(() => {
+  const resetDialogState = () => {
     setFormValues(editInitialFormValues())
     setFieldErrors({})
     setSubmitError('')
@@ -408,12 +394,7 @@ function DialogCheckDataRp({
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
     setOptionsError('')
-  }, [])
-
-  const handleClose = useCallback(() => {
-    resetDialogState()
-    onClose?.()
-  }, [onClose, resetDialogState])
+  }
 
   const updateValue = (fieldName, value) => {
     setFormValues((currentValues) => ({
@@ -457,26 +438,6 @@ function DialogCheckDataRp({
         ...currentErrors,
         [errorKey]: '',
         items: '',
-      }
-    })
-  }
-
-  const addItem = () => {
-    setFormValues((currentValues) => ({
-      ...currentValues,
-      items: [...currentValues.items, editInitialItem()],
-    }))
-  }
-
-  const removeItem = (index) => {
-    setFormValues((currentValues) => {
-      if (currentValues.items.length === 1) {
-        return currentValues
-      }
-
-      return {
-        ...currentValues,
-        items: currentValues.items.filter((_, itemIndex) => itemIndex !== index),
       }
     })
   }
@@ -598,7 +559,6 @@ function DialogCheckDataRp({
           department_id: nextFormValues.department_id || nextRequesterInfo.department_id || '',
           class_department_id:
             nextFormValues.class_department_id || nextRequesterInfo.class_department_id || '',
-          pic_name: nextFormValues.pic_name || nextRequesterInfo.request_by || '',
         })
         setVendorOptions(nextVendorOptions)
         setPaymentCategoryOptions(nextPaymentCategoryOptions)
@@ -622,23 +582,17 @@ function DialogCheckDataRp({
       }
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        handleClose()
-      }
-    }
-
     loadOptions()
-    window.addEventListener('keydown', handleKeyDown)
 
-    return () => {
-      controller.abort()
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [handleClose, isOpen, rp])
+    return () => controller.abort()
+  }, [isOpen, rp])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+
+    if (isFormDisabled) {
+      return
+    }
 
     const nextFieldErrors = {}
     const normalizedItems = formValues.items.map((item) => {
@@ -656,10 +610,6 @@ function DialogCheckDataRp({
       }
     })
 
-    if (!formValues.date_required) {
-      nextFieldErrors.date_required = 'RP Date wajib diisi.'
-    }
-
     if (!formValues.description.trim()) {
       nextFieldErrors.description = 'Description wajib diisi.'
     }
@@ -668,21 +618,13 @@ function DialogCheckDataRp({
       nextFieldErrors.vendor_id = 'Vendor wajib dipilih.'
     }
 
-    if (!formValues.payment_category_id) {
-      nextFieldErrors.payment_category_id = 'Category payment wajib dipilih.'
-    }
-
-    if (!formValues.destination_department_id) {
-      nextFieldErrors.destination_department_id = 'Division to process wajib dipilih.'
-    }
-
-    if (!formValues.pic_name.trim()) {
-      nextFieldErrors.pic_name = 'PIC wajib diisi.'
+    if (!normalizedItems.length) {
+      nextFieldErrors.items = 'Belum ada item RP untuk diperiksa.'
     }
 
     normalizedItems.forEach((item, index) => {
       if (!item.budget_id) {
-        nextFieldErrors[`items.${index}.budget_id`] = 'Budget wajib dipilih.'
+        nextFieldErrors[`items.${index}.budget_id`] = 'Budget item tidak tersedia.'
       }
 
       if (!item.memo) {
@@ -723,7 +665,7 @@ function DialogCheckDataRp({
       })
 
       await onUpdated?.(response)
-      handleClose()
+      onClose?.()
     } catch (error) {
       if (error?.data?.errors) {
         setFieldErrors(error.data.errors)
@@ -735,122 +677,217 @@ function DialogCheckDataRp({
     }
   }
 
-  if (!isOpen || typeof document === 'undefined') {
-    return null
-  }
-
-  const isFormDisabled = isSubmitting || isOptionsLoading
   const totalAmount = formValues.items.reduce((total, item) => {
     const quantity = Number(item.quantity)
     const unitPrice = Number(item.unit_price)
 
-    return total + (Number.isFinite(quantity) ? quantity : 0) * (Number.isFinite(unitPrice) ? unitPrice : 0)
+    return (
+      total +
+      (Number.isFinite(quantity) ? quantity : 0) * (Number.isFinite(unitPrice) ? unitPrice : 0)
+    )
   }, 0)
 
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation">
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget-type entity-form-popup--frp"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-check-data-rp-title"
-        onClick={(event) => event.stopPropagation()}
+  return (
+    <Drawer
+      anchor="right"
+      open={isOpen}
+      onClose={(_, reason) => {
+        if (!isSubmitting && reason === 'escapeKeyDown') {
+          onClose?.()
+        }
+      }}
+      slotProps={{
+        paper: {
+          'aria-labelledby': 'dialog-check-data-rp-title',
+          sx: {
+            width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
+            maxWidth: '100%',
+          },
+        },
+        transition: { onExited: resetDialogState },
+      }}
+    >
+      <Box
+        component="form"
+        noValidate
+        onSubmit={handleSubmit}
+        sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
       >
-        <form onSubmit={handleSubmit}>
-          <div className="dashboard-popup__header">
-            <div>
-              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-              <h2 className="dashboard-popup__title" id="dialog-check-data-rp-title">
-                {title}
-              </h2>
-            </div>
-
-            <button
-              type="button"
-              className="frp-bare-icon-button frp-dialog__close-button"
-              aria-label="Tutup dialog"
-              onClick={handleClose}
-              disabled={isSubmitting}
+        <Stack
+          direction="row"
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0,
+            gap: 2,
+            px: { xs: 2, sm: 3 },
+            py: 2,
+            bgcolor: '#344968',
+            color: '#fff',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.16)',
+          }}
+        >
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="overline"
+              sx={{
+                display: 'block',
+                lineHeight: 1.6,
+                letterSpacing: 0.5,
+                color: 'rgba(255, 255, 255, 0.72)',
+              }}
             >
-              <XClose size={24} />
-            </button>
-          </div>
+              {eyebrow}
+            </Typography>
+            <Typography
+              component="h2"
+              variant="h6"
+              id="dialog-check-data-rp-title"
+              sx={{ fontWeight: 700, lineHeight: 1.3, color: '#fff', overflowWrap: 'anywhere' }}
+            >
+              {title}
+            </Typography>
+          </Box>
 
-          <div className="dashboard-popup__body">
-            <div className="register-user-popup__layout">
-              <div className="register-user-popup__main">
-                <div className="register-user-popup__form">
-                  <div className="frp-dialog__panel">
-                    <TabsInformation requesterInfo={requesterInfo} isOptionsLoading={isOptionsLoading} />
-                    <TabsVendor
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      vendorOptions={vendorOptions}
-                      paymentCategoryOptions={paymentCategoryOptions}
-                      destinationDepartmentOptions={destinationDepartmentOptions}
-                      updateValue={updateValue}
-                    />
-                    <TabsItems
-                      formValues={formValues}
-                      fieldErrors={fieldErrors}
-                      isOptionsLoading={isOptionsLoading}
-                      isFormDisabled={isFormDisabled}
-                      budgetOptions={budgetOptions}
-                      updateItemValue={updateItemValue}
-                      removeItem={removeItem}
-                      addItem={addItem}
-                    />
-                  </div>
+          <IconButton
+            aria-label="Tutup dialog"
+            onClick={() => onClose?.()}
+            disabled={isSubmitting}
+            sx={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              borderRadius: '5px',
+              color: '#fff',
+              '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+              '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.4)' },
+            }}
+          >
+            <XClose size={20} />
+          </IconButton>
+        </Stack>
 
-                  {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
-                  {submitError ? <p className="form-control__message">{submitError}</p> : null}
-                </div>
-              </div>
-            </div>
-          </div>
+        <Box
+          aria-busy={isOptionsLoading}
+          sx={{ flex: 1, minHeight: 0, overflowY: 'auto', px: { xs: 2, sm: 3 }, py: 3 }}
+        >
+          {optionsError ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {optionsError}
+            </Alert>
+          ) : null}
 
-          <div className="dashboard-popup__actions dashboard-popup__actions--with-total">
-            <div className="frp-dialog__total-amount frp-dialog__total-amount--footer" aria-live="polite">
-              <span className="frp-dialog__total-amount-icon" aria-hidden="true">
-                <TrendingUp size={18} />
-              </span>
-              <div>
-                <span className="frp-dialog__total-amount-label">Total RP</span>
-                <strong>{formatRupiah(totalAmount)}</strong>
-              </div>
-            </div>
+          <Box sx={{ mb: 4 }}>
+            <DetailSection title="Requester Information">
+              <DetailFields
+                fields={[
+                  { label: 'Company', value: requesterInfo.company },
+                  { label: 'Division', value: requesterInfo.division },
+                  { label: 'Request By', value: requesterInfo.request_by },
+                ]}
+              />
+            </DetailSection>
+          </Box>
 
-            {onReject ? (
-              <button
-                type="button"
-                className="dashboard-popup__button dashboard-popup__button--secondary"
-                disabled={isSubmitting}
-                onClick={() => {
-                  const targetRp = rp
-                  resetDialogState()
-                  onReject(targetRp)
+          <TabsVendorCreate
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            vendorOptions={vendorOptions}
+            paymentCategoryOptions={paymentCategoryOptions}
+            destinationDepartmentOptions={destinationDepartmentOptions}
+            isProcessReadOnly
+            updateValue={updateValue}
+          />
+
+          <TabsItemsCreate
+            formValues={formValues}
+            fieldErrors={fieldErrors}
+            isOptionsLoading={isOptionsLoading}
+            isFormDisabled={isFormDisabled}
+            budgetOptions={budgetOptions}
+            updateItemValue={updateItemValue}
+            isBudgetReadOnly
+            canManageItems={false}
+          />
+        </Box>
+
+        <Box sx={{ flexShrink: 0, borderTop: '1px solid', borderColor: 'divider' }}>
+          {submitError ? (
+            <Alert severity="error" sx={{ mx: { xs: 2, sm: 3 }, mt: 2 }}>
+              {submitError}
+            </Alert>
+          ) : null}
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={{ xs: 1, sm: 2 }}
+            sx={{
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'space-between',
+              px: { xs: 2, sm: 3 },
+              py: 2,
+            }}
+          >
+            <Box aria-live="polite">
+              <Typography variant="caption" color="text.secondary" display="block">
+                Total RP (IDR)
+              </Typography>
+              <Typography component="p" variant="subtitle1" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
+                {formatRupiah(totalAmount)}
+              </Typography>
+            </Box>
+
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{
+                '& .MuiButton-root': {
+                  minHeight: 44,
+                  px: 2.25,
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  flex: { xs: 1, sm: 'initial' },
+                },
+              }}
+            >
+              {onReject ? (
+                <Button
+                  type="button"
+                  variant="outlined"
+                  color="error"
+                  disabled={isSubmitting}
+                  onClick={() => onReject(rp)}
+                >
+                  Reject
+                </Button>
+              ) : null}
+
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isFormDisabled}
+                sx={{
+                  minWidth: { xs: 0, sm: 140 },
+                  bgcolor: 'var(--accent-teal, #2a9d8f)',
+                  boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+                  '&:hover': {
+                    bgcolor: 'var(--accent-teal-dark, #21867a)',
+                    boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                  },
+                  '&.Mui-disabled': { boxShadow: 'none' },
                 }}
               >
-                Reject
-              </button>
-            ) : null}
-
-            <button
-              type="submit"
-              className="dashboard-popup__button dashboard-popup__button--primary"
-              disabled={isFormDisabled}
-            >
-              {isSubmitting ? 'Checking...' : isOptionsLoading ? 'Loading...' : 'Check Data'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+                {isSubmitting ? 'Checking...' : isOptionsLoading ? 'Loading...' : 'Check Data'}
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
+      </Box>
+    </Drawer>
   )
-
-  return createPortal(dialogNode, document.body)
 }
 
 export default DialogCheckDataRp

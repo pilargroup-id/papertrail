@@ -1,16 +1,25 @@
-import { useEffect, useEffectEvent, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useState } from 'react'
+import { InputAdornment } from '@mui/material'
 
 import api from '../../../services/api.js'
-import TextField from '../../forms/TextField.jsx'
-import Dropdown from '../../forms/dropdown/Dropdown.jsx'
-import DropdownSearch from '../../forms/dropdown/DropdownSearch.jsx'
-
-import { FileText01, TrendingUp } from '../../layoute/TemplateIcons.jsx'
-
-const currentDate = new Date()
-const currentYear = currentDate.getFullYear()
-const currentMonth = currentDate.getMonth() + 1
+import {
+  BudgetFieldFull,
+  BudgetFieldGrid,
+  BudgetFormDialog,
+  BudgetSelectField,
+  BudgetTextField,
+} from './BudgetFormFields.jsx'
+import {
+  currentMonth,
+  currentYear,
+  findOption,
+  getFirstValue,
+  getRowsFromResponse,
+  joinLabel,
+  loadActiveBudgetTypeOptions,
+  monthOptions,
+  yearOptions,
+} from './budgetFormUtils.js'
 
 const initialFormValues = {
   project_name: '',
@@ -23,30 +32,6 @@ const initialFormValues = {
   period_month: currentMonth,
 }
 
-const monthOptions = [
-  { value: 1, label: 'January' },
-  { value: 2, label: 'February' },
-  { value: 3, label: 'March' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'June' },
-  { value: 7, label: 'July' },
-  { value: 8, label: 'August' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'October' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'December' },
-]
-
-const yearOptions = Array.from({ length: 7 }, (_, index) => {
-  const year = currentYear - 2 + index
-
-  return {
-    value: year,
-    label: String(year),
-  }
-})
-
 function generateCodeFromName(name) {
   return String(name ?? '')
     .normalize('NFKD')
@@ -56,55 +41,17 @@ function generateCodeFromName(name) {
     .replace(/^-+|-+$/g, '')
 }
 
-function getRowsFromResponse(response) {
-  if (Array.isArray(response)) {
-    return response
-  }
-
-  if (Array.isArray(response?.data)) {
-    return response.data
-  }
-
-  if (Array.isArray(response?.data?.data)) {
-    return response.data.data
-  }
-
-  if (Array.isArray(response?.rows)) {
-    return response.rows
-  }
-
-  return []
-}
-
-function getFirstValue(source, keys, fallback = '') {
-  const matchedKey = keys.find((key) => source?.[key] !== undefined && source?.[key] !== null)
-
-  if (!matchedKey) {
-    return fallback
-  }
-
-  return source[matchedKey]
-}
-
-function findOption(options, value) {
-  return options.find((option) => String(option.value) === String(value))
-}
-
 function mapCompanyOptions(companies) {
   return companies.map((company) => {
     const id = getFirstValue(company, ['id', 'company_id', 'business_unit_id', 'uuid'])
     const code = getFirstValue(company, ['code', 'company_code', 'business_unit_code'])
     const name = getFirstValue(company, ['name', 'company_name', 'business_unit_name'], `Company #${id ?? '-'}`)
-    const label = [code, name].filter(Boolean).join(' - ')
 
     return {
       value: id,
-      label,
+      label: joinLabel(code, name),
       isPrimary: Number(company?.is_primary) === 1,
-      meta: {
-        code,
-        name,
-      },
+      meta: { code, name },
     }
   })
 }
@@ -113,27 +60,18 @@ function mapDepartmentOptions(departments) {
   return departments.map((department) => {
     const id = getFirstValue(department, ['id', 'department_id', 'uuid'])
     const code = getFirstValue(department, ['code', 'department_code'])
-    const name = getFirstValue(
-      department,
-      ['name', 'department_name', 'label'],
-      `Department #${id ?? '-'}`,
-    )
+    const name = getFirstValue(department, ['name', 'department_name', 'label'], `Department #${id ?? '-'}`)
     const className = getFirstValue(
       department,
       ['class_name', 'department_class', 'class', 'department_class_snapshot'],
       name,
     )
-    const label = [code, name].filter(Boolean).join(' - ')
 
     return {
       value: id,
-      label,
+      label: joinLabel(code, name),
       isPrimary: Number(department?.is_primary) === 1,
-      meta: {
-        code,
-        name,
-        className,
-      },
+      meta: { code, name, className },
     }
   })
 }
@@ -151,50 +89,24 @@ function mapClassOptions(departments) {
     )
     const optionKey = `${id}-${className}`
 
-    if (uniqueOptions.has(optionKey)) {
-      return
+    if (!uniqueOptions.has(optionKey)) {
+      uniqueOptions.set(optionKey, {
+        value: id,
+        label: joinLabel(code, className),
+        isPrimary: Number(department?.is_primary) === 1,
+        meta: { code, name: className, className },
+      })
     }
-
-    uniqueOptions.set(optionKey, {
-      value: id,
-      label: [code, className].filter(Boolean).join(' - '),
-      isPrimary: Number(department?.is_primary) === 1,
-      meta: {
-        code,
-        name: className,
-        className,
-      },
-    })
   })
 
   return Array.from(uniqueOptions.values())
 }
 
-function mapBudgetTypeOptions(budgetTypes) {
-  return budgetTypes.map((budgetType) => {
-    const id = getFirstValue(budgetType, ['id', 'budget_type_id'])
-    const code = getFirstValue(budgetType, ['code', 'budget_type_code'])
-    const name = getFirstValue(
-      budgetType,
-      ['name', 'budget_type_name'],
-      `Budget type #${id ?? '-'}`,
-    )
-    const label = [code, name].filter(Boolean).join(' - ')
-
-    return {
-      value: id,
-      label,
-    }
-  })
+function pickDefaultValue(options) {
+  return (options.find((option) => option.isPrimary) ?? options[0])?.value ?? ''
 }
 
-function DialogCreateBudgets({
-  isOpen = false,
-  eyebrow = 'Budgets',
-  title = 'Create Budget',
-  onClose,
-  onCreated,
-}) {
+function CreateBudgetForm({ eyebrow, title, onClose, onCreated }) {
   const [formValues, setFormValues] = useState(initialFormValues)
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
@@ -203,118 +115,47 @@ function DialogCreateBudgets({
   const [departmentOptions, setDepartmentOptions] = useState([])
   const [classOptions, setClassOptions] = useState([])
   const [budgetTypeOptions, setBudgetTypeOptions] = useState([])
-  const [isOptionsLoading, setIsOptionsLoading] = useState(false)
+  const [isOptionsLoading, setIsOptionsLoading] = useState(true)
   const [optionsError, setOptionsError] = useState('')
 
-  const resetDialogState = () => {
-    setFormValues(initialFormValues)
-    setFieldErrors({})
-    setSubmitError('')
-    setIsSubmitting(false)
-    setCompanyOptions([])
-    setDepartmentOptions([])
-    setClassOptions([])
-    setBudgetTypeOptions([])
-    setIsOptionsLoading(false)
-    setOptionsError('')
-  }
-
-  const handleClose = () => {
-    resetDialogState()
-    onClose?.()
-  }
-  const handleCloseEvent = useEffectEvent(handleClose)
-
   const updateValue = (fieldName, value) => {
-    setFormValues((currentValues) => {
-      return {
-        ...currentValues,
-        [fieldName]: value,
-      }
-    })
-
-    setFieldErrors((currentErrors) => {
-      if (!currentErrors[fieldName]) {
-        return currentErrors
-      }
-
-      return {
-        ...currentErrors,
-        [fieldName]: '',
-      }
-    })
+    setFormValues((currentValues) => ({ ...currentValues, [fieldName]: value }))
+    setFieldErrors((currentErrors) =>
+      currentErrors[fieldName] ? { ...currentErrors, [fieldName]: '' } : currentErrors,
+    )
   }
 
   useEffect(() => {
-    if (!isOpen) {
-      return undefined
-    }
-
     const controller = new AbortController()
 
     async function loadOptions() {
-      setIsOptionsLoading(true)
-      setOptionsError('')
-
       try {
-        const [companiesResponse, departmentsResponse, budgetTypesResponse] = await Promise.all([
-          api.directory.companies.list(undefined, {
-            signal: controller.signal,
-          }),
-          api.directory.departments.list(undefined, {
-            signal: controller.signal,
-          }),
-          api.budgetTypes.list(
-            {
-              page: 1,
-              limit: 100,
-              is_active: 1,
-            },
-            {
-              signal: controller.signal,
-            },
-          ),
+        const [companiesResponse, departmentsResponse, nextBudgetTypeOptions] = await Promise.all([
+          api.directory.companies.list(undefined, { signal: controller.signal }),
+          api.directory.departments.list(undefined, { signal: controller.signal }),
+          loadActiveBudgetTypeOptions(controller.signal),
         ])
-        const companies = getRowsFromResponse(companiesResponse)
         const departments = getRowsFromResponse(departmentsResponse)
-        const nextCompanyOptions = mapCompanyOptions(companies)
+        const nextCompanyOptions = mapCompanyOptions(getRowsFromResponse(companiesResponse))
         const nextDepartmentOptions = mapDepartmentOptions(departments)
         const nextClassOptions = mapClassOptions(departments)
-        const primaryCompany = nextCompanyOptions.find((option) => option.isPrimary)
-        const primaryDepartment = nextDepartmentOptions.find((option) => option.isPrimary)
-        const primaryClass = nextClassOptions.find((option) => option.isPrimary)
 
         setCompanyOptions(nextCompanyOptions)
         setDepartmentOptions(nextDepartmentOptions)
         setClassOptions(nextClassOptions)
-        setBudgetTypeOptions(mapBudgetTypeOptions(getRowsFromResponse(budgetTypesResponse)))
+        setBudgetTypeOptions(nextBudgetTypeOptions)
         setFormValues((currentValues) => ({
           ...currentValues,
-          company_id:
-            currentValues.company_id ||
-            primaryCompany?.value ||
-            nextCompanyOptions[0]?.value ||
-            '',
-          department_id:
-            currentValues.department_id ||
-            primaryDepartment?.value ||
-            nextDepartmentOptions[0]?.value ||
-            '',
+          company_id: currentValues.company_id || pickDefaultValue(nextCompanyOptions),
+          department_id: currentValues.department_id || pickDefaultValue(nextDepartmentOptions),
           class_department_id:
-            currentValues.class_department_id ||
-            primaryClass?.value ||
-            nextClassOptions[0]?.value ||
-            '',
+            currentValues.class_department_id || pickDefaultValue(nextClassOptions),
         }))
       } catch (error) {
         if (error.name === 'AbortError') {
           return
         }
 
-        setCompanyOptions([])
-        setDepartmentOptions([])
-        setClassOptions([])
-        setBudgetTypeOptions([])
         setOptionsError(error.message || 'Gagal memuat scope user dan budget type.')
       } finally {
         if (!controller.signal.aborted) {
@@ -323,27 +164,22 @@ function DialogCreateBudgets({
       }
     }
 
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        handleCloseEvent()
-      }
-    }
-
     loadOptions()
-    window.addEventListener('keydown', handleKeyDown)
 
-    return () => {
-      controller.abort()
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen])
+    return () => controller.abort()
+  }, [])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
 
+    if (isSubmitting || isOptionsLoading) {
+      return
+    }
+
     const normalizedProjectName = formValues.project_name.trim()
     const normalizedBudgetCode = generateCodeFromName(normalizedProjectName)
-    const budgetAmount = Number(formValues.budget_amount)
+    const amountText = String(formValues.budget_amount).trim()
+    const budgetAmount = Number(amountText)
     const selectedCompany = findOption(companyOptions, formValues.company_id)
     const selectedDepartment = findOption(departmentOptions, formValues.department_id)
     const selectedClass = findOption(classOptions, formValues.class_department_id)
@@ -371,7 +207,7 @@ function DialogCreateBudgets({
       nextFieldErrors.budget_type_id = 'Budget type wajib dipilih.'
     }
 
-    if (!Number.isFinite(budgetAmount) || budgetAmount < 0) {
+    if (!amountText || !Number.isFinite(budgetAmount) || budgetAmount < 0) {
       nextFieldErrors.budget_amount = 'Budget amount harus berupa angka valid.'
     }
 
@@ -383,13 +219,13 @@ function DialogCreateBudgets({
       nextFieldErrors.period_month = 'Period month wajib dipilih.'
     }
 
+    setFieldErrors(nextFieldErrors)
+    setSubmitError('')
+
     if (Object.keys(nextFieldErrors).length > 0) {
-      setFieldErrors(nextFieldErrors)
       return
     }
 
-    setFieldErrors({})
-    setSubmitError('')
     setIsSubmitting(true)
 
     try {
@@ -418,19 +254,21 @@ function DialogCreateBudgets({
       })
 
       await onCreated?.(response)
-      handleClose()
+      onClose?.()
     } catch (error) {
-      if (error?.data?.errors) {
+      const errors = error?.data?.errors
+
+      if (errors) {
         setFieldErrors({
           // Budget code dibuat dari budget name, jadi error-nya ditampilkan di field nama.
-          project_name: error.data.errors.project_name || error.data.errors.budget_code || '',
-          company_id: error.data.errors.company_id || '',
-          department_id: error.data.errors.department_id || '',
-          class_department_id: error.data.errors.class_department_id || '',
-          budget_type_id: error.data.errors.budget_type_id || '',
-          budget_amount: error.data.errors.budget_amount || '',
-          period_year: error.data.errors.period_year || '',
-          period_month: error.data.errors.period_month || '',
+          project_name: errors.project_name || errors.budget_code || '',
+          company_id: errors.company_id || '',
+          department_id: errors.department_id || '',
+          class_department_id: errors.class_department_id || '',
+          budget_type_id: errors.budget_type_id || '',
+          budget_amount: errors.budget_amount || '',
+          period_year: errors.period_year || '',
+          period_month: errors.period_month || '',
         })
       }
 
@@ -440,174 +278,153 @@ function DialogCreateBudgets({
     }
   }
 
-  if (!isOpen || typeof document === 'undefined') {
+  const isScopeDisabled = isSubmitting || isOptionsLoading
+
+  return (
+    <BudgetFormDialog
+      eyebrow={eyebrow}
+      title={title}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      isSubmitting={isSubmitting}
+      submitDisabled={isOptionsLoading}
+      submitLabel={isOptionsLoading ? 'Loading...' : 'Create'}
+      submittingLabel="Creating..."
+      errors={[optionsError, submitError]}
+    >
+      <BudgetFieldGrid>
+        <BudgetFieldFull>
+          <BudgetTextField
+            autoFocus
+            required
+            label="Budget Name"
+            placeholder="Input project name"
+            value={formValues.project_name}
+            disabled={isSubmitting}
+            error={fieldErrors.project_name}
+            helperText={
+              formValues.project_name.trim()
+                ? `Budget code: ${generateCodeFromName(formValues.project_name) || '-'}`
+                : undefined
+            }
+            onChange={(event) => updateValue('project_name', event.target.value)}
+          />
+        </BudgetFieldFull>
+
+        <BudgetSelectField
+          required
+          disableClearable
+          label="Company"
+          placeholder="Pilih company"
+          loadingText="Memuat company..."
+          noOptionsText="Company tidak ditemukan."
+          value={formValues.company_id}
+          options={companyOptions}
+          loading={isOptionsLoading}
+          disabled={isScopeDisabled}
+          error={fieldErrors.company_id}
+          onChange={(value) => updateValue('company_id', value)}
+        />
+        <BudgetSelectField
+          required
+          label="Budget Type"
+          placeholder="Pilih budget type"
+          loadingText="Memuat budget type..."
+          noOptionsText="Budget type aktif tidak ditemukan."
+          value={formValues.budget_type_id}
+          options={budgetTypeOptions}
+          loading={isOptionsLoading}
+          disabled={isScopeDisabled}
+          error={fieldErrors.budget_type_id}
+          onChange={(value) => updateValue('budget_type_id', value)}
+        />
+
+        <BudgetSelectField
+          required
+          disableClearable
+          label="Department"
+          placeholder="Pilih department"
+          loadingText="Memuat department..."
+          noOptionsText="Department aktif tidak ditemukan."
+          value={formValues.department_id}
+          options={departmentOptions}
+          loading={isOptionsLoading}
+          disabled={isScopeDisabled}
+          error={fieldErrors.department_id}
+          onChange={(value) => updateValue('department_id', value)}
+        />
+        <BudgetSelectField
+          required
+          disableClearable
+          label="Class"
+          placeholder="Pilih class"
+          loadingText="Memuat class..."
+          noOptionsText="Class tidak ditemukan."
+          value={formValues.class_department_id}
+          options={classOptions}
+          loading={isOptionsLoading}
+          disabled={isScopeDisabled}
+          error={fieldErrors.class_department_id}
+          onChange={(value) => updateValue('class_department_id', value)}
+        />
+
+        <BudgetFieldFull>
+          <BudgetTextField
+            required
+            type="number"
+            label="Budget Amount"
+            placeholder="0"
+            value={formValues.budget_amount}
+            disabled={isSubmitting}
+            error={fieldErrors.budget_amount}
+            onChange={(event) => updateValue('budget_amount', event.target.value)}
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> },
+              htmlInput: { min: 0, step: 1, inputMode: 'numeric' },
+            }}
+          />
+        </BudgetFieldFull>
+
+        <BudgetSelectField
+          required
+          disableClearable
+          label="Period Year"
+          placeholder="Pilih tahun"
+          value={formValues.period_year}
+          options={yearOptions}
+          disabled={isSubmitting}
+          error={fieldErrors.period_year}
+          onChange={(value) => updateValue('period_year', value)}
+        />
+        <BudgetSelectField
+          required
+          disableClearable
+          label="Period Month"
+          placeholder="Pilih bulan"
+          value={formValues.period_month}
+          options={monthOptions}
+          disabled={isSubmitting}
+          error={fieldErrors.period_month}
+          onChange={(value) => updateValue('period_month', value)}
+        />
+      </BudgetFieldGrid>
+    </BudgetFormDialog>
+  )
+}
+
+function DialogCreateBudgets({
+  isOpen = false,
+  eyebrow = 'Budgets',
+  title = 'Create Budget',
+  onClose,
+  onCreated,
+}) {
+  // Form dirender ulang setiap kali dialog dibuka, sehingga state selalu bersih.
+  if (!isOpen) {
     return null
   }
 
-  const isInitialFormDisabled = isSubmitting || isOptionsLoading
-  const isFormDisabled = isInitialFormDisabled
-
-  const dialogNode = (
-    <div className="dashboard-popup-overlay" role="presentation" onClick={handleClose}>
-      <div
-        className="dashboard-popup register-user-popup entity-form-popup entity-form-popup--budget"
-        role="dialog"
-      aria-modal="true"
-        aria-labelledby="dialog-create-budget-title"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <form onSubmit={handleSubmit}>
-          <div className="dashboard-popup__header">
-            <div>
-              <p className="dashboard-popup__eyebrow">{eyebrow}</p>
-              <h2 className="dashboard-popup__title" id="dialog-create-budget-title">
-                {title}
-              </h2>
-            </div>
-          </div>
-
-          <div className="dashboard-popup__body">
-            <div className="register-user-popup__layout">
-              <div className="register-user-popup__main">
-                <div className="register-user-popup__form">
-                  <div className="register-user-popup__grid register-user-popup__grid--vendor-banks">
-                    <div className="register-user-popup__field">
-                      <TextField
-                        label="Budget Name"
-                        value={formValues.project_name}
-                        placeholder="Input project name"
-                        leftIcon={FileText01}
-                        required
-                        disabled={isSubmitting}
-                        error={fieldErrors.project_name}
-                        onChange={(event) => updateValue('project_name', event.target.value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <Dropdown
-                        label="Company Name"
-                        value={formValues.company_id}
-                        options={companyOptions}
-                        placeholder={isOptionsLoading ? 'Memuat company...' : 'Pilih company'}
-                        required
-                        disabled={isInitialFormDisabled}
-                        error={fieldErrors.company_id}
-                        onChange={(value) => updateValue('company_id', value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <DropdownSearch
-                        label="Department"
-                        value={formValues.department_id}
-                        options={departmentOptions}
-                        placeholder={isOptionsLoading ? 'Memuat department...' : 'Pilih department'}
-                        searchPlaceholder="Cari department..."
-                        emptyMessage="Department aktif tidak ditemukan."
-                        required
-                        disabled={isInitialFormDisabled}
-                        error={fieldErrors.department_id}
-                        onChange={(value) => updateValue('department_id', value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <Dropdown
-                        label="Class"
-                        value={formValues.class_department_id}
-                        options={classOptions}
-                        placeholder={isOptionsLoading ? 'Memuat class...' : 'Pilih class'}
-                        required
-                        disabled={isInitialFormDisabled}
-                        error={fieldErrors.class_department_id}
-                        onChange={(value) => updateValue('class_department_id', value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <DropdownSearch
-                        label="Budget Type"
-                        value={formValues.budget_type_id}
-                        options={budgetTypeOptions}
-                        placeholder={
-                          isOptionsLoading ? 'Memuat budget type...' : 'Pilih budget type'
-                        }
-                        searchPlaceholder="Cari budget type..."
-                        emptyMessage="Budget type aktif tidak ditemukan."
-                        required
-                        disabled={isInitialFormDisabled}
-                        error={fieldErrors.budget_type_id}
-                        onChange={(value) => updateValue('budget_type_id', value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <TextField
-                        label="Budget Amount"
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={formValues.budget_amount}
-                        placeholder="Input budget amount"
-                        leftIcon={TrendingUp}
-                        required
-                        disabled={isSubmitting}
-                        error={fieldErrors.budget_amount}
-                        onChange={(event) => updateValue('budget_amount', event.target.value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <Dropdown
-                        label="Period Year"
-                        value={formValues.period_year}
-                        options={yearOptions}
-                        placeholder="Pilih tahun"
-                        required
-                        disabled={isSubmitting}
-                        error={fieldErrors.period_year}
-                        onChange={(value) => updateValue('period_year', value)}
-                      />
-                    </div>
-                    <div className="register-user-popup__field">
-                      <Dropdown
-                        label="Period Month"
-                        value={formValues.period_month}
-                        options={monthOptions}
-                        placeholder="Pilih bulan"
-                        required
-                        disabled={isSubmitting}
-                        error={fieldErrors.period_month}
-                        onChange={(value) => updateValue('period_month', value)}
-                      />
-                    </div>
-                  </div>
-
-                  {optionsError ? <p className="form-control__message">{optionsError}</p> : null}
-                  {submitError ? <p className="form-control__message">{submitError}</p> : null}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="dashboard-popup__actions">
-            <button
-              type="button"
-              className="dashboard-popup__button dashboard-popup__button--secondary"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              className="dashboard-popup__button dashboard-popup__button--primary"
-              disabled={isFormDisabled}
-            >
-              {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-
-  return createPortal(dialogNode, document.body)
+  return <CreateBudgetForm eyebrow={eyebrow} title={title} onClose={onClose} onCreated={onCreated} />
 }
 
 export default DialogCreateBudgets

@@ -22,6 +22,9 @@ function DetailDrawer({
   onClose,
   onDuplicate,
   onPrint,
+  footer,
+  loadingLabel = 'Memuat detail',
+  paperSx,
   children,
 }) {
   return (
@@ -37,6 +40,7 @@ function DetailDrawer({
           sx: {
             width: { xs: '100%', sm: 640, md: 960, lg: 1180 },
             maxWidth: '100%',
+            ...paperSx,
           },
         },
       }}
@@ -95,7 +99,7 @@ function DetailDrawer({
 
         {isLoading ? (
           <LinearProgress
-            aria-label="Memuat detail"
+            aria-label={loadingLabel}
             color="inherit"
             sx={{ flexShrink: 0, color: '#2a9d8f' }}
           />
@@ -125,64 +129,68 @@ function DetailDrawer({
             bgcolor: 'background.paper',
           }}
         >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              {totalLabel}
-            </Typography>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
-              {total}
-            </Typography>
-          </Box>
-          <Stack
-            direction="row"
-            spacing={1.5}
-            sx={{
-              '& .MuiButton-root': {
-                height: 44,
-                px: 2.25,
-                borderRadius: '8px',
-                textTransform: 'none',
-                fontWeight: 600,
-                flex: { xs: 1, sm: 'initial' },
-              },
-            }}
-          >
-            {canPrint ? (
-              <Button
-                variant="outlined"
-                startIcon={<Printer size={16} aria-hidden="true" />}
-                disabled={isLoading || Boolean(errorMessage) || !onPrint}
-                onClick={onPrint}
+          {footer ?? (
+            <>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  {totalLabel}
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
+                  {total}
+                </Typography>
+              </Box>
+              <Stack
+                direction="row"
+                spacing={1.5}
                 sx={{
-                  color: 'var(--accent-teal, #2a9d8f)',
-                  borderColor: 'var(--accent-teal, #2a9d8f)',
-                  '&:hover': {
-                    bgcolor: 'rgba(42, 157, 143, 0.06)',
-                    borderColor: 'var(--accent-teal-dark, #21867a)',
+                  '& .MuiButton-root': {
+                    height: 44,
+                    px: 2.25,
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    flex: { xs: 1, sm: 'initial' },
                   },
                 }}
               >
-                Print
-              </Button>
-            ) : null}
-            <Button
-              variant="contained"
-              startIcon={<Copy size={16} aria-hidden="true" />}
-              disabled={isLoading || Boolean(errorMessage) || !onDuplicate}
-              onClick={onDuplicate}
-              sx={{
-                minWidth: 140,
-                bgcolor: 'var(--accent-teal, #2a9d8f)',
-                boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
-                '&:hover': {
-                  bgcolor: 'var(--accent-teal-dark, #21867a)',
-                  boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
-                },
-              }}
-            >
-              Duplicate
-            </Button>
-          </Stack>
+                {canPrint ? (
+                  <Button
+                    variant="outlined"
+                    startIcon={<Printer size={16} aria-hidden="true" />}
+                    disabled={isLoading || Boolean(errorMessage) || !onPrint}
+                    onClick={onPrint}
+                    sx={{
+                      color: 'var(--accent-teal, #2a9d8f)',
+                      borderColor: 'var(--accent-teal, #2a9d8f)',
+                      '&:hover': {
+                        bgcolor: 'rgba(42, 157, 143, 0.06)',
+                        borderColor: 'var(--accent-teal-dark, #21867a)',
+                      },
+                    }}
+                  >
+                    Print
+                  </Button>
+                ) : null}
+                <Button
+                  variant="contained"
+                  startIcon={<Copy size={16} aria-hidden="true" />}
+                  disabled={isLoading || Boolean(errorMessage) || !onDuplicate}
+                  onClick={onDuplicate}
+                  sx={{
+                    minWidth: 140,
+                    bgcolor: 'var(--accent-teal, #2a9d8f)',
+                    boxShadow: '0 10px 22px rgba(42, 157, 143, 0.26)',
+                    '&:hover': {
+                      bgcolor: 'var(--accent-teal-dark, #21867a)',
+                      boxShadow: '0 14px 28px rgba(42, 157, 143, 0.32)',
+                    },
+                  }}
+                >
+                  Duplicate
+                </Button>
+              </Stack>
+            </>
+          )}
         </Stack>
       </Box>
     </Drawer>
