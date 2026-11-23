@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import api from '../../services/api.js';
 import {
-  canCurrentUserApproveFrp,
+  canCurrentUserApproveRp,
   canCurrentUserDestinationCheckRp,
   canCurrentUserEditFrp,
   canCurrentUserRejectRp,
@@ -276,7 +276,7 @@ function RpPage(props) {
     vendor: '',
   })
   const [prevCanUseDestinationChecker, setPrevCanUseDestinationChecker] = useState(
-    Boolean(currentUser) && !isManagerUser(currentUser),
+    Boolean(currentUser),
   )
 
   useEffect(() => {
@@ -535,8 +535,8 @@ function RpPage(props) {
     try {
       const status = getFrpStatusValue(target)
 
-      if (!['PENDING_REQUESTER_MANAGER', 'PENDING_DESTINATION_MANAGER'].includes(status)) {
-        setApproveError(`RP status ${status || '-'} tidak bisa diapprove.`)
+      if (!canCurrentUserApproveRp(target, currentUser)) {
+        setApproveError('Anda tidak dapat menyetujui RP ini pada status saat ini.')
         return
       }
 
@@ -707,7 +707,7 @@ function RpPage(props) {
   const hasActiveRpFilter = Boolean(
     rpFilters.requestBy || rpFilters.vendor || rpFilters.status !== RP_STATUS_ALL,
   )
-  const canUseDestinationChecker = Boolean(currentUser) && !isManagerUser(currentUser)
+  const canUseDestinationChecker = Boolean(currentUser)
   const availableRpProcessStatusTabs = rpProcessStatusTabs.filter(
     (tab) =>
       tab.id !== 'VOIDED' &&
@@ -739,7 +739,9 @@ function RpPage(props) {
     return (
       matchesMobileStatus &&
       matchesDesktopStatus &&
-      (!isDestinationCheckerTab || canCurrentUserDestinationCheckRp(rpItem, currentUser)) &&
+      (!isDestinationCheckerTab ||
+        canCurrentUserDestinationCheckRp(rpItem, currentUser) ||
+        canCurrentUserApproveRp(rpItem, currentUser)) &&
       matchesRpFilters(rpItem, rpFilters)
     )
   })
@@ -855,9 +857,7 @@ function RpPage(props) {
           onRevert={openRevertDialog}
           onPrint={handlePrintRp}
           currentUser={currentUser}
-          canApprove={(row) => canCurrentUserApproveFrp(row, currentUser)}
           canReject={(row) => canCurrentUserRejectRp(row, currentUser)}
-          canCheckData={(row) => canCurrentUserDestinationCheckRp(row, currentUser)}
           isStatusUpdating={(vendor) => updatingStatusIds.has(String(vendor?.id))}
           onStatusChange={handleVendorStatusChange}
           mobileCard={{

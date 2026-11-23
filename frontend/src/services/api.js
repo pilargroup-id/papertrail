@@ -396,8 +396,11 @@ const createRpResource = (path) => ({
       .replace(/_+/g, '_')
       .toUpperCase();
 
-    if (normalizedStatus === 'PENDING_DESTINATION_MANAGER') {
-      return api.post(`${path}/${id}/destination-manager-approve`, data, options);
+    if (normalizedStatus === 'PENDING_DESTINATION_CHECKER' || normalizedStatus === 'PENDING_DESTINATION_MANAGER') {
+      return api.post(`${path}/${id}/destination-manager-approve`, {
+        ...data,
+        expected_status: normalizedStatus,
+      }, options);
     }
 
     return api.post(`${path}/${id}/requester-manager-approve`, data, options);

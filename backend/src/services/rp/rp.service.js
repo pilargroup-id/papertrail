@@ -435,7 +435,6 @@ function canDestinationManagerApprove(user = {}, rp = {}) {
 }
 
 async function canDestinationChecker(conn, user = {}, rp = {}) {
-  // Checker adalah staff; manager destination department meng-approve di tahap berikutnya.
   if (isRpCreator(user, rp) || isManagerLevel(user)) {
     return false;
   }
@@ -515,7 +514,7 @@ async function attachDestinationCheckerAccess(conn, rows = [], user = {}) {
   );
 }
 
-function getRpRevertTransition(user = {}, rp = {}) {
+async function getRpRevertTransition(conn, user = {}, rp = {}) {
   if (rp.status === 'PENDING_DESTINATION_CHECKER') {
     if (!canRequesterManagerApprove(user, rp)) {
       return null;
@@ -547,6 +546,17 @@ function getRpRevertTransition(user = {}, rp = {}) {
   if (rp.status === 'APPROVED') {
     if (!canDestinationManagerApprove(user, rp) && !isUserInItDepartment(user)) {
       return null;
+    }
+
+    const approvalLogs = await rpModel.getRpApprovalLogs(conn, rp.id);
+    const lastApproval = approvalLogs.findLast((log) => log.action === 'DESTINATION_MANAGER_APPROVE');
+
+    if (lastApproval?.from_status === 'PENDING_DESTINATION_CHECKER') {
+      return {
+        fromStatus: 'APPROVED',
+        toStatus: 'PENDING_DESTINATION_CHECKER',
+        modelMethod: 'updateRpRevertedToDestinationChecker',
+      };
     }
 
     return {
@@ -1867,12 +1877,16 @@ async function destinationManagerApproveRp(id, user = {}, body = {}, req = null)
       throw new Error('RP tidak ditemukan.');
     }
 
-    if (rp.status !== 'PENDING_DESTINATION_MANAGER') {
-      throw new Error('Hanya RP berstatus PENDING_DESTINATION_MANAGER yang dapat disetujui oleh manajer divisi pemroses.');
+    if (!['PENDING_DESTINATION_CHECKER', 'PENDING_DESTINATION_MANAGER'].includes(rp.status)) {
+      throw new Error('Hanya RP pada tahap Destination Checker atau Destination Manager yang dapat disetujui oleh manajer divisi pemroses.');
     }
 
     if (!canDestinationManagerApprove(user, rp)) {
       throw new Error('Hanya manajer divisi pemroses yang dapat menyetujui RP ini.');
+    }
+
+    if (body.expected_status != null && body.expected_status !== rp.status) {
+      throw new Error('Status RP sudah berubah. Muat ulang data sebelum menyetujui RP.');
     }
 
     await rpModel.updateRpDestinationManagerApproved(conn, id, user);
@@ -1880,7 +1894,7 @@ async function destinationManagerApproveRp(id, user = {}, body = {}, req = null)
     await rpModel.insertRpApprovalLog(conn, {
       rp_request_id: id,
       action: 'DESTINATION_MANAGER_APPROVE',
-      from_status: 'PENDING_DESTINATION_MANAGER',
+      from_status: rp.status,
       to_status: 'APPROVED',
       ...buildActorLogPayload(user),
       notes: body.notes || null,
@@ -1894,7 +1908,7 @@ async function destinationManagerApproveRp(id, user = {}, body = {}, req = null)
       description: `Destination manager approve RP ${rp.rp_number}`,
       actor: user,
       req,
-      oldValues: { status: 'PENDING_DESTINATION_MANAGER' },
+      oldValues: { status: rp.status },
       newValues: { status: 'APPROVED' },
       metadata: { rp_number: rp.rp_number },
     });
@@ -1936,7 +1950,7 @@ async function revertRp(id, user = {}, body = {}, req = null) {
       throw new Error('RP yang sudah memiliki status konversi FRP tidak dapat dikembalikan (revert).');
     }
 
-    const transition = getRpRevertTransition(user, rp);
+    const transition = await getRpRevertTransition(conn, user, rp);
 
     if (!transition) {
       throw new Error('Anda tidak dapat mengembalikan (revert) RP ini pada status saat ini.');

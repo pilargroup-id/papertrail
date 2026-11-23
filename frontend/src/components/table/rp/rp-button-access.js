@@ -52,13 +52,15 @@ function getUserDepartmentIds(user) {
   const departments = Array.isArray(user?.departments) ? user.departments : []
   const departmentIds = departments
     .flatMap((department) => [
-      getFirstValue(department, ['id', 'department_id', 'departmentId'], ''),
+      getFirstValue(department, ['id'], ''),
+      getFirstValue(department, ['department_id', 'departmentId'], ''),
       getFirstValue(department, ['class_department_id', 'classDepartmentId'], ''),
     ])
     .filter((departmentId) => departmentId !== '')
 
   return [
-    getFirstValue(user, ['context_department_id', 'department_id', 'departmentId'], ''),
+    getFirstValue(user, ['context_department_id'], ''),
+    getFirstValue(user, ['department_id', 'departmentId'], ''),
     getFirstValue(user, ['class_department_id', 'classDepartmentId'], ''),
     ...departmentIds,
   ].filter((departmentId) => departmentId !== '')
@@ -170,11 +172,15 @@ export function getRpFrpConversionStatus(rp) {
 }
 
 function canDestinationManagerApprove(rp, currentUser) {
+  const companyId = getFirstValue(rp, ['company_id', 'companyId'], '')
+  const destinationDepartmentId = getFirstValue(rp, ['destination_department_id', 'destinationDepartmentId'], '')
+
   return (
-    userHasCompanyScope(currentUser, rp) &&
-    hasScopedValue(
-      getUserDepartmentIds(currentUser),
-      getFirstValue(rp, ['destination_department_id', 'destinationDepartmentId'], ''),
+    companyId !== '' &&
+    getUserCompanyIds(currentUser).some((id) => String(id) === String(companyId)) &&
+    destinationDepartmentId !== '' &&
+    getUserDepartmentIds(currentUser).some(
+      (id) => String(id) === String(destinationDepartmentId),
     )
   )
 }
@@ -192,7 +198,7 @@ export function canCurrentUserApproveRp(rp, currentUser) {
     return canRequesterManagerApprove(rp, currentUser)
   }
 
-  if (status === 'PENDING_DESTINATION_MANAGER') {
+  if (status === 'PENDING_DESTINATION_CHECKER' || status === 'PENDING_DESTINATION_MANAGER') {
     return canDestinationManagerApprove(rp, currentUser)
   }
 

@@ -273,10 +273,8 @@ function isRevertActionHidden(rp, index, currentUser, canRevertAction) {
 
 function isCheckDataActionHidden(rp, index, currentUser, canCheckDataAction) {
   return !(
-    getFrpStatusValue(rp) === 'PENDING_DESTINATION_CHECKER' &&
-    (typeof canCheckDataAction === 'function'
-      ? canCheckDataAction(rp, index)
-      : canCurrentUserDestinationCheckRp(rp, currentUser))
+    canCurrentUserDestinationCheckRp(rp, currentUser) &&
+    (typeof canCheckDataAction !== 'function' || canCheckDataAction(rp, index))
   )
 }
 
