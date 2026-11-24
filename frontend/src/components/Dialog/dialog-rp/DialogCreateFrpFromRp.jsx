@@ -6,21 +6,25 @@ import Button from '@mui/material/Button'
 import Drawer from '@mui/material/Drawer'
 import IconButton from '@mui/material/IconButton'
 import Stack from '@mui/material/Stack'
-import Table from '@mui/material/Table'
-import TableBody from '@mui/material/TableBody'
-import TableCell from '@mui/material/TableCell'
-import TableContainer from '@mui/material/TableContainer'
-import TableHead from '@mui/material/TableHead'
-import TableRow from '@mui/material/TableRow'
 import MuiTextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 
 import api from '../../../services/api.js'
 import { XClose } from '../../layoute/TemplateIcons.jsx'
-import SectionHeader from '../dialog-frp/tabs-create-frp/SectionHeader.jsx'
 import TabsInformation from '../dialog-frp/tabs-create-frp/TabsInformation.jsx'
 import TabsVendor from '../dialog-frp/tabs-create-frp/TabsVendor.jsx'
+import RpFieldHint from '../dialog-frp/tabs-create-frp/RpFieldHint.jsx'
+import FrpItemsFromRpSection from './tabs-create-frp-from-rp/FrpItemsFromRpSection.jsx'
+import RpReferencePreview from './tabs-create-frp-from-rp/RpReferencePreview.jsx'
+import {
+  createNewFrpItem,
+  formatRupiah,
+  getItemFrpAmount,
+  mapBudgetOptions,
+  mapRpItemsToFormItems,
+} from './tabs-create-frp-from-rp/frpItemsFromRpUtils.js'
+import { formatDateValue } from './tabs-details-rp/detailRpUtils.jsx'
 
 const getTodayDateValue = () => {
   const today = new Date()
@@ -195,17 +199,37 @@ function getRpDetailFromResponse(response) {
   )
 }
 
-function mapRpItemsToFormItems(items = []) {
-  return items.map((item) => ({
-    rpItemId: item?.id,
-    budgetCode: item?.budget_code_snapshot ?? '-',
-    projectName: item?.budget_project_name_snapshot ?? '-',
-    memo: item?.memo ?? '-',
-    quantity: item?.quantity ?? 0,
-    unitPrice: item?.unit_price ?? 0,
-    rpAmount: item?.amount ?? 0,
-    frpAmount: String(item?.amount ?? ''),
-  }))
+function toDateInputValue(value) {
+  if (value === undefined || value === null || value === '') {
+    return ''
+  }
+
+  const dateValue = String(value).slice(0, 10)
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateValue) ? dateValue : ''
+}
+
+function toAmountInputValue(value) {
+  const numberValue = Number(value)
+
+  return Number.isFinite(numberValue) ? String(numberValue) : ''
+}
+
+function ensureVendorOption(options, rpDetail) {
+  const vendorId = rpDetail?.vendor_id
+
+  if (!vendorId || options.some((option) => String(option.value) === String(vendorId))) {
+    return options
+  }
+
+  return [
+    ...options,
+    {
+      value: vendorId,
+      label: rpDetail?.vendor_name_snapshot || `Vendor #${vendorId}`,
+      meta: { id: vendorId, name: rpDetail?.vendor_name_snapshot },
+    },
+  ]
 }
 
 function getCreatedFrpId(response) {
@@ -313,157 +337,6 @@ async function uploadCreatedFrpAttachment(frpId, attachment, documentTypeId) {
   }
 }
 
-function formatRupiah(value) {
-  const numberValue = Number(value)
-
-  if (!Number.isFinite(numberValue)) {
-    return '-'
-  }
-
-  return `Rp ${new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numberValue)}`
-}
-
-const rpItemTableSx = {
-  minWidth: 880,
-  tableLayout: 'fixed',
-  '& .MuiTableCell-root': {
-    px: 1,
-    py: 1,
-    verticalAlign: 'top',
-    borderColor: 'divider',
-    fontSize: '0.8125rem',
-  },
-  '& .MuiTableCell-root:first-of-type': { pl: 1.5 },
-  '& .MuiTableCell-root:last-of-type': { pr: 1.5 },
-  '& .MuiTableHead-root .MuiTableCell-root': {
-    py: 1.25,
-    bgcolor: 'rgba(52, 73, 104, 0.04)',
-    color: 'text.secondary',
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
-    verticalAlign: 'middle',
-  },
-  '& .MuiTableBody-root .MuiTableRow-root:last-of-type .MuiTableCell-root': {
-    borderBottom: 0,
-  },
-  '& .MuiInputBase-input': { fontSize: '0.8125rem' },
-  '& input[type="number"]': { textAlign: 'right' },
-  '& .MuiFormHelperText-root': { mx: 0, mt: 0.5, lineHeight: 1.35 },
-}
-
-const rpItemTextCellSx = { pt: '14px', overflowWrap: 'anywhere' }
-
-function RpItemsSection({ items, fieldErrors, isFormDisabled, updateItemFrpAmount }) {
-  return (
-    <Box component="section" sx={{ mb: 4 }}>
-      <SectionHeader title="RP Items" />
-      <Typography variant="body2" color="text.secondary" sx={{ mt: -1.5, mb: 2 }}>
-        Item diambil dari RP. Sesuaikan FRP Amount bila jumlah yang dibayar berbeda dari RP.
-      </Typography>
-
-      <Stack spacing={2}>
-        <TableContainer
-          sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: '8px',
-          }}
-        >
-          <Table size="small" sx={rpItemTableSx}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ width: 44 }} align="center">
-                  #
-                </TableCell>
-                <TableCell sx={{ minWidth: 240 }}>Budget</TableCell>
-                <TableCell sx={{ minWidth: 180 }}>Memo</TableCell>
-                <TableCell sx={{ width: 72 }} align="right">
-                  Qty
-                </TableCell>
-                <TableCell sx={{ width: 150 }} align="right">
-                  Unit Price
-                </TableCell>
-                <TableCell sx={{ width: 150 }} align="right">
-                  RP Amount
-                </TableCell>
-                <TableCell sx={{ width: 170 }} align="right">
-                  FRP Amount (IDR)
-                </TableCell>
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                    Tidak ada item RP.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-
-              {items.map((item, index) => {
-                const frpAmountError = fieldErrors[`items.${index}.frp_amount`]
-
-                return (
-                  <TableRow key={item.rpItemId ?? index}>
-                    <TableCell align="center" sx={{ color: 'text.secondary', pt: '14px' }}>
-                      {index + 1}
-                    </TableCell>
-                    <TableCell sx={rpItemTextCellSx}>
-                      {[item.budgetCode, item.projectName].filter(Boolean).join(' - ') || '-'}
-                    </TableCell>
-                    <TableCell sx={rpItemTextCellSx}>{item.memo || '-'}</TableCell>
-                    <TableCell align="right" sx={{ pt: '14px' }}>
-                      {item.quantity}
-                    </TableCell>
-                    <TableCell align="right" sx={{ pt: '14px', whiteSpace: 'nowrap' }}>
-                      {formatRupiah(item.unitPrice)}
-                    </TableCell>
-                    <TableCell align="right" sx={{ pt: '14px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {formatRupiah(item.rpAmount)}
-                    </TableCell>
-                    <TableCell>
-                      <MuiTextField
-                        fullWidth
-                        size="small"
-                        type="number"
-                        required
-                        placeholder="0"
-                        value={item.frpAmount}
-                        disabled={isFormDisabled}
-                        error={Boolean(frpAmountError)}
-                        helperText={frpAmountError}
-                        onChange={(event) => updateItemFrpAmount(index, event.target.value)}
-                        slotProps={{
-                          htmlInput: {
-                            min: 0,
-                            step: 1,
-                            'aria-label': `FRP amount item ${index + 1}`,
-                          },
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {fieldErrors.items ? (
-          <Typography variant="caption" color="error">
-            {fieldErrors.items}
-          </Typography>
-        ) : null}
-      </Stack>
-    </Box>
-  )
-}
-
 function DialogCreateFrpFromRp({
   isOpen = false,
   eyebrow = 'Convert RP menjadi FRP',
@@ -474,6 +347,8 @@ function DialogCreateFrpFromRp({
 }) {
   const [formValues, setFormValues] = useState(createInitialFormValues)
   const [items, setItems] = useState([])
+  const [rpDetail, setRpDetail] = useState(null)
+  const [budgetOptions, setBudgetOptions] = useState([])
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -500,6 +375,8 @@ function DialogCreateFrpFromRp({
     revokeAttachmentPreviewUrls()
     setFormValues(createInitialFormValues())
     setItems([])
+    setRpDetail(null)
+    setBudgetOptions([])
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
@@ -631,31 +508,156 @@ function DialogCreateFrpFromRp({
     window.open(previewUrl, '_blank', 'noopener,noreferrer')
   }
 
-  const updateItemFrpAmount = (index, value) => {
+  // Error item dikunci per index, jadi semua error item dibersihkan saat susunan item berubah.
+  const clearItemErrors = (predicate = () => true) => {
+    setFieldErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors, items: '' }
+
+      Object.keys(nextErrors).forEach((key) => {
+        if (key.startsWith('items.') && predicate(key)) {
+          nextErrors[key] = ''
+        }
+      })
+
+      return nextErrors
+    })
+  }
+
+  const updateItem = (index, patch) => {
     setItems((currentItems) =>
-      currentItems.map((item, itemIndex) =>
-        itemIndex === index
-          ? {
-              ...item,
-              frpAmount: value,
-            }
-          : item,
-      ),
+      currentItems.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
     )
 
-    setFieldErrors((currentErrors) => {
-      const errorKey = `items.${index}.frp_amount`
+    const fieldKeyMap = {
+      frpAmount: 'frp_amount',
+      budgetId: 'budget_id',
+      quantity: 'quantity',
+      unitPrice: 'unit_price',
+    }
+    const errorKeys = Object.keys(patch).map((key) => `items.${index}.${fieldKeyMap[key] ?? key}`)
 
-      if (!currentErrors[errorKey] && !currentErrors.items) {
-        return currentErrors
+    clearItemErrors((key) => errorKeys.includes(key))
+  }
+
+  const addNewItem = () => {
+    setItems((currentItems) => [...currentItems, createNewFrpItem()])
+    clearItemErrors(() => false)
+  }
+
+  const removeItem = (index) => {
+    setItems((currentItems) => currentItems.filter((_, itemIndex) => itemIndex !== index))
+    clearItemErrors()
+  }
+
+  const restoreRpItem = (rpItemId) => {
+    const rpItem = mapRpItemsToFormItems(rpDetail?.items).find(
+      (item) => String(item.rpItemId) === String(rpItemId),
+    )
+
+    if (!rpItem) {
+      return
+    }
+
+    // Kembalikan ke posisi semula di antara item RP lain; item baru tetap di bawah.
+    setItems((currentItems) => {
+      const insertIndex = currentItems.findIndex(
+        (item) => item.source === 'new' || item.rpOrder > rpItem.rpOrder,
+      )
+
+      if (insertIndex === -1) {
+        return [...currentItems, rpItem]
       }
 
-      return {
-        ...currentErrors,
-        [errorKey]: '',
-        items: '',
-      }
+      return [...currentItems.slice(0, insertIndex), rpItem, ...currentItems.slice(insertIndex)]
     })
+    clearItemErrors()
+  }
+
+  const copyItemAmount = (index) => {
+    const item = items[index]
+
+    if (item?.source === 'rp') {
+      updateItem(index, { frpAmount: toAmountInputValue(item.rpAmount) })
+    }
+  }
+
+  const copyAllItemAmounts = () => {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.source === 'rp' ? { ...item, frpAmount: toAmountInputValue(item.rpAmount) } : item,
+      ),
+    )
+    clearItemErrors((key) => key.endsWith('.frp_amount'))
+  }
+
+  // Map field preview RP -> field form FRP yang akan diisi saat tombol salin diklik.
+  const getRpCopyValues = (fieldKey) => {
+    switch (fieldKey) {
+      case 'description': {
+        const description = String(rpDetail?.description ?? '').trim()
+
+        return description ? { description } : {}
+      }
+      case 'notes': {
+        const notes = String(rpDetail?.notes ?? '').trim()
+
+        return notes ? { notes } : {}
+      }
+      case 'vendor':
+        return rpDetail?.vendor_id ? { vendor_id: rpDetail.vendor_id } : {}
+      case 'date_required': {
+        const paymentDate = toDateInputValue(rpDetail?.date_required)
+
+        return paymentDate ? { payment_date: paymentDate } : {}
+      }
+      default:
+        return {}
+    }
+  }
+
+  const applyRpCopyValues = (values) => {
+    const fieldNames = Object.keys(values)
+
+    if (fieldNames.length === 0) {
+      return
+    }
+
+    setFormValues((currentValues) => {
+      const nextValues = { ...currentValues, ...values }
+      const isVendorChanged =
+        values.vendor_id !== undefined &&
+        String(values.vendor_id) !== String(currentValues.vendor_id)
+
+      if (isVendorChanged) {
+        nextValues.vendor_bank_account_id = ''
+      }
+
+      return nextValues
+    })
+
+    setFieldErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors }
+
+      fieldNames.forEach((fieldName) => {
+        nextErrors[fieldName] = ''
+      })
+
+      return nextErrors
+    })
+  }
+
+  const copyRpField = (fieldKey) => {
+    applyRpCopyValues(getRpCopyValues(fieldKey))
+  }
+
+  const copyAllRpFields = () => {
+    applyRpCopyValues({
+      ...getRpCopyValues('description'),
+      ...getRpCopyValues('notes'),
+      ...getRpCopyValues('vendor'),
+      ...getRpCopyValues('date_required'),
+    })
+    copyAllItemAmounts()
   }
 
   const handleVendorBankChange = (value, option) => {
@@ -720,7 +722,9 @@ function DialogCreateFrpFromRp({
         const rpDetail = getRpDetailFromResponse(rpDetailResponse)
 
         setRequesterInfo(getUserRequesterInfo(authUser))
-        setVendorOptions(mapVendorOptions(getRowsFromResponse(vendorsResponse)))
+        setVendorOptions(
+          ensureVendorOption(mapVendorOptions(getRowsFromResponse(vendorsResponse)), rpDetail),
+        )
         setVendorBankOptions(mapVendorBankOptions(getRowsFromResponse(vendorBanksResponse)))
         setExternalDocumentTypeOptions(
           mapCodeNameOptions(getRowsFromResponse(externalDocumentTypesResponse), 'External document'),
@@ -731,12 +735,35 @@ function DialogCreateFrpFromRp({
         setFrpDocumentTypeOptions(
           mapNameOptions(getRowsFromResponse(frpDocumentTypesResponse), 'FRP document'),
         )
+        setRpDetail(rpDetail)
         setItems(mapRpItemsToFormItems(rpDetail?.items))
-        setFormValues((currentValues) => ({
-          ...currentValues,
-          description: rpDetail?.description || '',
-          vendor_id: rpDetail?.vendor_id || '',
-        }))
+
+        // Budget untuk item tambahan: perusahaan RP + departemen anggaran item RP
+        // (sama dengan aturan validasi di backend).
+        const budgetDepartmentId = rpDetail?.items?.[0]?.budget_department_id
+
+        if (rpDetail?.company_id && budgetDepartmentId) {
+          try {
+            const budgetsResponse = await api.budgets.list(
+              {
+                page: 1,
+                limit: 200,
+                is_active: 1,
+                company_id: rpDetail.company_id,
+                department_id: budgetDepartmentId,
+              },
+              { signal: controller.signal },
+            )
+
+            setBudgetOptions(mapBudgetOptions(getRowsFromResponse(budgetsResponse)))
+          } catch (budgetError) {
+            if (budgetError.name === 'AbortError') {
+              throw budgetError
+            }
+
+            setBudgetOptions([])
+          }
+        }
       } catch (error) {
         if (error.name === 'AbortError') {
           return
@@ -748,6 +775,7 @@ function DialogCreateFrpFromRp({
         setPaymentMethodOptions([])
         setFrpDocumentTypeOptions([])
         setItems([])
+        setRpDetail(null)
         setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat data RP.')
       } finally {
@@ -812,10 +840,26 @@ function DialogCreateFrpFromRp({
     }
 
     if (items.length === 0) {
-      nextFieldErrors.items = 'RP tidak memiliki item.'
+      nextFieldErrors.items = 'Minimal satu item FRP wajib diisi.'
     }
 
     items.forEach((item, index) => {
+      if (item.source === 'new') {
+        if (!item.budgetId) {
+          nextFieldErrors[`items.${index}.budget_id`] = 'Budget wajib dipilih.'
+        }
+
+        if (!(Number(item.quantity) > 0)) {
+          nextFieldErrors[`items.${index}.quantity`] = 'Qty harus > 0.'
+        }
+
+        if (!(Number(item.unitPrice) > 0)) {
+          nextFieldErrors[`items.${index}.unit_price`] = 'Unit price harus > 0.'
+        }
+
+        return
+      }
+
       const frpAmount = Number(item.frpAmount)
 
       if (!Number.isFinite(frpAmount) || frpAmount <= 0) {
@@ -848,10 +892,19 @@ function DialogCreateFrpFromRp({
         destination_bank_account_name: formValues.destination_bank_account_name.trim(),
         document_type_ids: formValues.document_type_ids.map((id) => Number(id)),
         notes: formValues.notes.trim() || `Create FRP from RP ${rp?.rp_number ?? rp?.id ?? ''}`,
-        items: items.map((item) => ({
-          rp_request_item_id: item.rpItemId,
-          frp_amount: Number(item.frpAmount),
-        })),
+        items: items.map((item) =>
+          item.source === 'new'
+            ? {
+                budget_id: item.budgetId,
+                memo: item.memo.trim(),
+                quantity: Number(item.quantity),
+                unit_price: Number(item.unitPrice),
+              }
+            : {
+                rp_request_item_id: item.rpItemId,
+                frp_amount: Number(item.frpAmount),
+              },
+        ),
       })
 
       if (attachmentDraft.files.length > 0) {
@@ -908,7 +961,50 @@ function DialogCreateFrpFromRp({
       : frpDocumentTypeDropdownOptions
   const rpLabel = rp?.rp_number ?? rp?.id ?? 'RP'
 
-  const totalFrpAmount = items.reduce((total, item) => total + (Number(item.frpAmount) || 0), 0)
+  // Nilai RP yang ditampilkan tepat di bawah field FRP terkait, lengkap dengan tombol salin.
+  const rpCopyValues = {
+    description: getRpCopyValues('description').description,
+    notes: getRpCopyValues('notes').notes,
+    vendor_id: getRpCopyValues('vendor').vendor_id,
+    payment_date: getRpCopyValues('date_required').payment_date,
+  }
+  const isSameValue = (fieldName) =>
+    rpCopyValues[fieldName] !== undefined &&
+    String(formValues[fieldName] ?? '').trim() === String(rpCopyValues[fieldName])
+  const rpHints = rpDetail
+    ? {
+        description: {
+          value: rpCopyValues.description,
+          isApplied: isSameValue('description'),
+          onCopy: () => copyRpField('description'),
+        },
+        notes: {
+          value: rpCopyValues.notes,
+          isApplied: isSameValue('notes'),
+          onCopy: () => copyRpField('notes'),
+        },
+        vendor_id: {
+          value: rpDetail.vendor_name_snapshot || rpCopyValues.vendor_id,
+          isApplied: isSameValue('vendor_id'),
+          onCopy: () => copyRpField('vendor'),
+        },
+        payment_date: {
+          value: rpCopyValues.payment_date
+            ? `Date Required ${formatDateValue(rpCopyValues.payment_date)}`
+            : '',
+          isApplied: isSameValue('payment_date'),
+          onCopy: () => copyRpField('date_required'),
+        },
+      }
+    : {}
+
+  const totalFrpAmount = items.reduce((total, item) => total + getItemFrpAmount(item), 0)
+  const activeRpItemIds = new Set(
+    items.filter((item) => item.source === 'rp').map((item) => String(item.rpItemId)),
+  )
+  const removedRpItems = mapRpItemsToFormItems(rpDetail?.items).filter(
+    (item) => !activeRpItemIds.has(String(item.rpItemId)),
+  )
 
   return (
     <Drawer
@@ -982,6 +1078,23 @@ function DialogCreateFrpFromRp({
         </Stack>
 
         <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 3 }}>
+          <RpReferencePreview
+            rpDetail={rpDetail}
+            isLoading={isOptionsLoading}
+            disabled={isFormDisabled}
+            onCopyAll={copyAllRpFields}
+          />
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+            <Typography
+              variant="overline"
+              sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1 }}
+            >
+              Form FRP
+            </Typography>
+            <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+          </Box>
+
           <TabsInformation
             requesterInfo={requesterInfo}
             isOptionsLoading={isOptionsLoading}
@@ -998,6 +1111,7 @@ function DialogCreateFrpFromRp({
             updateAttachmentFile={updateAttachmentFile}
             removeAttachmentDraft={removeAttachmentDraft}
             previewAttachmentDraft={previewAttachmentDraft}
+            rpHints={rpHints}
           />
 
           <TabsVendor
@@ -1010,13 +1124,22 @@ function DialogCreateFrpFromRp({
             paymentMethodOptions={paymentMethodOptions}
             updateValue={updateValue}
             handleVendorBankChange={handleVendorBankChange}
+            rpHints={rpHints}
           />
 
-          <RpItemsSection
+          <FrpItemsFromRpSection
             items={items}
+            removedRpItems={removedRpItems}
+            budgetOptions={budgetOptions}
             fieldErrors={fieldErrors}
             isFormDisabled={isFormDisabled}
-            updateItemFrpAmount={updateItemFrpAmount}
+            isOptionsLoading={isOptionsLoading}
+            updateItem={updateItem}
+            removeItem={removeItem}
+            restoreRpItem={restoreRpItem}
+            addNewItem={addNewItem}
+            copyItemAmount={copyItemAmount}
+            copyAllItemAmounts={copyAllItemAmounts}
           />
 
           <Box component="section" sx={{ mb: 2 }}>
@@ -1032,6 +1155,7 @@ function DialogCreateFrpFromRp({
               helperText={fieldErrors.notes}
               onChange={(event) => updateValue('notes', event.target.value)}
             />
+            <RpFieldHint hint={rpHints.notes} disabled={isFormDisabled} />
           </Box>
 
           {optionsError ? (

@@ -136,6 +136,16 @@ function userHasCompanyScope(user, rp) {
 }
 
 function canRequesterManagerApprove(rp, currentUser) {
+  // RP dengan "Untuk Divisi": approval tahap pertama oleh manager divisi yang dipilih.
+  const forDepartmentId = getFirstValue(rp, ['for_department_id', 'forDepartmentId'], '')
+
+  if (forDepartmentId !== '') {
+    return (
+      userHasCompanyScope(currentUser, rp) &&
+      getUserDepartmentIds(currentUser).some((id) => String(id) === String(forDepartmentId))
+    )
+  }
+
   if (isCrossDepartmentDocument(rp)) {
     return (
       userHasCompanyScope(currentUser, rp) &&

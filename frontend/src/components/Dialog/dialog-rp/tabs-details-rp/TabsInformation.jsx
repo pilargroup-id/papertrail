@@ -16,6 +16,10 @@ function TabsInformation({ rpDetail }) {
       value: getFirstValue(rpDetail, ['rp_number', 'rpNumber', 'id']),
     },
     {
+      label: 'FRP Number',
+      value: getFirstValue(rpDetail, ['converted_frp_number'], '') || 'Belum dibuat FRP',
+    },
+    {
       label: 'Request By',
       value: getFirstValue(
         rpDetail,

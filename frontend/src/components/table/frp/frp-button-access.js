@@ -116,21 +116,22 @@ export function isRpSourcedFrp(frp) {
   return String(getFirstValue(frp, ['source_module', 'sourceModule'], '')).trim().toUpperCase() === 'RP'
 }
 
-const ASSISTANT_MANAGER_PATTERN = /^(ASSISTANT|ASST|ASS)\.?\s*MANAGER\b/
+// Cocok untuk "Ass. Manager", "Assistant Manager", dan "Manager" (bukan "General Manager").
+const PRODUCT_APPROVER_LEVEL_PATTERN = /^((ASSISTANT|ASST|ASS)\.?\s*)?MANAGER\b/
 
 // Harus sama dengan backend/src/utils/productApprover.util.js.
-// Contoh user: job_level "Ass. Manager" (job_level_value 3) di departemen Product.
+// Approver: job_level "Ass. Manager" (3) atau "Manager" (4) di departemen Product.
 export function isProductAssistantManagerUser(user) {
   if (!user) {
     return false
   }
 
-  const isAssistantManager = [
+  const isApproverLevel = [
     getFirstValue(user, ['job_level', 'jobLevel'], ''),
     getFirstValue(user, ['job_position', 'jobPosition'], ''),
-  ].some((value) => ASSISTANT_MANAGER_PATTERN.test(String(value).trim().toUpperCase()))
+  ].some((value) => PRODUCT_APPROVER_LEVEL_PATTERN.test(String(value).trim().toUpperCase()))
 
-  if (!isAssistantManager) {
+  if (!isApproverLevel) {
     return false
   }
 
@@ -273,7 +274,7 @@ export function canCurrentUserApproveFrp(frp, currentUser) {
     return false
   }
 
-  // FRP dari konversi RP (General Procurement) di-approve oleh Assistant Manager Product.
+  // FRP dari konversi RP (General Procurement) di-approve oleh Ass. Manager / Manager Product.
   if (isRpSourcedFrp(frp)) {
     return isProductAssistantManagerUser(currentUser)
   }

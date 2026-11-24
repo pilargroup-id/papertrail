@@ -26,6 +26,11 @@ function createMobileCardRp({
     subtitle: () => '',
     rows: [
       {
+        key: 'frpNumber',
+        label: 'FRP Number',
+        value: (rp) => getDisplayValue(rp?.converted_frp_number),
+      },
+      {
         key: 'requestBy',
         label: 'Request By',
         value: (rp) => getDisplayValue(rp?.requested_by_name),

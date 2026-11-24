@@ -1,15 +1,16 @@
-// Approver FRP hasil konversi RP (General Procurement): Ass. Manager di departemen Product.
+// Approver FRP hasil konversi RP (General Procurement): Ass. Manager / Manager di departemen Product.
 // Logika yang sama ada di frontend: frontend/src/components/table/frp/frp-button-access.js
 const PRODUCT_DEPARTMENT_ID = 13;
-const ASSISTANT_MANAGER_PATTERN = /^(ASSISTANT|ASST|ASS)\.?\s*MANAGER\b/;
+// Cocok untuk "Ass. Manager", "Assistant Manager", dan "Manager" (bukan "General Manager").
+const APPROVER_LEVEL_PATTERN = /^((ASSISTANT|ASST|ASS)\.?\s*)?MANAGER\b/;
 
 function normalizeUpper(value) {
   return String(value ?? '').trim().toUpperCase();
 }
 
-function isAssistantManager(user = {}) {
+function isAssistantManagerOrManager(user = {}) {
   return [user.job_level, user.job_position].some((value) =>
-    ASSISTANT_MANAGER_PATTERN.test(normalizeUpper(value))
+    APPROVER_LEVEL_PATTERN.test(normalizeUpper(value))
   );
 }
 
@@ -30,7 +31,7 @@ function isProductDepartmentMember(user = {}) {
 }
 
 function isProductAssistantManager(user = {}) {
-  return isAssistantManager(user) && isProductDepartmentMember(user);
+  return isAssistantManagerOrManager(user) && isProductDepartmentMember(user);
 }
 
 module.exports = {

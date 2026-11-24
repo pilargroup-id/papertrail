@@ -12,6 +12,7 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox'
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank'
 
 import { Eye, FileText01, Trash03, Upload } from '../../../layoute/TemplateIcons.jsx'
+import RpFieldHint from './RpFieldHint.jsx'
 import SectionHeader from './SectionHeader.jsx'
 import {
   autocompleteCheckboxSx,
@@ -83,6 +84,7 @@ function TabsInformation({
   previewExistingAttachment,
   removeExistingAttachment,
   showNotes = false,
+  rpHints = {},
 }) {
   const attachmentFiles = attachmentDraft.files ?? []
   const attachmentTitle =
@@ -378,6 +380,7 @@ function TabsInformation({
         helperText={fieldErrors.description}
         onChange={(event) => updateValue('description', event.target.value)}
       />
+      <RpFieldHint hint={rpHints.description} disabled={isFormDisabled} />
 
       {showNotes ? (
         <TextField

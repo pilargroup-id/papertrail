@@ -140,11 +140,11 @@ const columnsDataTableBudgetType = [
   {
     key: 'budget_amount',
     header: 'Budget Amount',
-    accessor: (budget) => Number(budget?.budget_amount) || 0,
+    accessor: (budget) => Number(budget?.budget_remaining) || 0,
     type: 'identity',
     showAvatar: false,
-    titleAccessor: (budget) => formatRupiah(budget?.budget_amount),
-    subtitleAccessor: (budget) => `Remaining: ${formatRupiah(budget?.budget_remaining)}`,
+    titleAccessor: (budget) => `Remaining: ${formatRupiah(budget?.budget_remaining)}`,
+    subtitleAccessor: (budget) => `Budget: ${formatRupiah(budget?.budget_amount)}`,
     minWidth: 220,
   },
   {
@@ -190,8 +190,8 @@ const columnsDataTableBudgetType = [
 const defaultMobileCard = {
   subtitle: (budget) => `Budget Code: ${budget?.budget_code ?? '-'}`,
   rows: [
-    { key: 'budget_amount', label: 'Budget Amount', value: (budget) => formatRupiah(budget?.budget_amount) },
     { key: 'budget_remaining', label: 'Remaining', value: (budget) => formatRupiah(budget?.budget_remaining) },
+    { key: 'budget_amount', label: 'Budget Amount', value: (budget) => formatRupiah(budget?.budget_amount) },
     { key: 'budget_reserved', label: 'Reserved', value: (budget) => formatRupiah(budget?.budget_reserved) },
     { key: 'budget_used', label: 'Used', value: (budget) => formatRupiah(budget?.budget_used) },
     { key: 'budget_type_name', label: 'Budget Type', value: (budget) => budget?.budget_type_name ?? '-' },

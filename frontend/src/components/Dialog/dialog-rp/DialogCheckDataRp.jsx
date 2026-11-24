@@ -20,6 +20,8 @@ const editInitialFormValues = () => ({
   date_required: '',
   description: '',
   vendor_id: '',
+  vendor_name: '',
+  original_vendor_name: '',
   payment_category_id: '',
   destination_department_id: '',
   pic_name: '',
@@ -63,19 +65,6 @@ function getFirstValue(source, keys, fallback = '') {
   }
 
   return source[matchedKey]
-}
-
-function mapVendorOptions(vendors) {
-  return vendors.map((vendor) => {
-    const id = getFirstValue(vendor, ['id', 'vendor_id'])
-    const code = getFirstValue(vendor, ['code', 'vendor_code'])
-    const name = getFirstValue(vendor, ['name', 'vendor_name'], `Vendor #${id ?? '-'}`)
-
-    return {
-      value: id,
-      label: [code, name].filter(Boolean).join(' - '),
-    }
-  })
 }
 
 function mapPaymentCategoryOptions(categories) {
@@ -227,12 +216,18 @@ function mapRpItemsToFormItems(items) {
 }
 
 function mapRpToFormValues(rp) {
+  const vendorName = String(
+    getFirstValue(rp, ['vendor_name_snapshot', 'vendor_name', 'vendorName'], '') ?? '',
+  )
+
   return {
     department_id: getFirstValue(rp, ['department_id', 'departmentId'], ''),
     class_department_id: getFirstValue(rp, ['class_department_id', 'classDepartmentId'], ''),
     date_required: formatDateInputValue(getFirstValue(rp, ['date_required', 'dateRequired'])),
     description: getFirstValue(rp, ['description'], ''),
     vendor_id: getFirstValue(rp, ['vendor_id', 'vendorId'], ''),
+    vendor_name: vendorName,
+    original_vendor_name: vendorName,
     payment_category_id: getFirstValue(
       rp,
       ['payment_category_id', 'paymentCategoryId', 'rp_payment_category_id'],
@@ -373,7 +368,6 @@ function DialogCheckDataRp({
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [vendorOptions, setVendorOptions] = useState([])
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
   const [budgetOptions, setBudgetOptions] = useState([])
@@ -387,7 +381,6 @@ function DialogCheckDataRp({
     setFieldErrors({})
     setSubmitError('')
     setIsSubmitting(false)
-    setVendorOptions([])
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
     setBudgetOptions([])
@@ -460,7 +453,6 @@ function DialogCheckDataRp({
         const [
           rpDetailResponse,
           authResponse,
-          vendorsResponse,
           paymentCategoriesResponse,
           destinationDepartmentsResponse,
           budgetsResponse,
@@ -473,16 +465,6 @@ function DialogCheckDataRp({
           api.auth.me({
             signal: controller.signal,
           }),
-          api.vendors.list(
-            {
-              page: 1,
-              limit: 100,
-              is_active: 1,
-            },
-            {
-              signal: controller.signal,
-            },
-          ),
           api.rpPaymentCategories.list(
             {
               page: 1,
@@ -518,16 +500,6 @@ function DialogCheckDataRp({
         const authUser = getAuthUser(authResponse)
         const nextFormValues = mapRpToFormValues(rpDetail)
         const nextRequesterInfo = getRpRequesterInfo(rpDetail, authUser)
-        const nextVendorOptions = ensureOption(
-          mapVendorOptions(getRowsFromResponse(vendorsResponse)),
-          nextFormValues.vendor_id,
-          [
-            getFirstValue(rpDetail, ['vendor_code_snapshot', 'vendor_code'], ''),
-            getFirstValue(rpDetail, ['vendor_name_snapshot', 'vendor_name'], ''),
-          ]
-            .filter(Boolean)
-            .join(' - '),
-        )
         const nextPaymentCategoryOptions = ensureOption(
           mapPaymentCategoryOptions(getRowsFromResponse(paymentCategoriesResponse)),
           nextFormValues.payment_category_id,
@@ -560,7 +532,6 @@ function DialogCheckDataRp({
           class_department_id:
             nextFormValues.class_department_id || nextRequesterInfo.class_department_id || '',
         })
-        setVendorOptions(nextVendorOptions)
         setPaymentCategoryOptions(nextPaymentCategoryOptions)
         setDestinationDepartmentOptions(nextDestinationDepartmentOptions)
         setBudgetOptions(nextBudgetOptions)
@@ -569,7 +540,6 @@ function DialogCheckDataRp({
           return
         }
 
-        setVendorOptions([])
         setPaymentCategoryOptions([])
         setDestinationDepartmentOptions([])
         setBudgetOptions([])
@@ -614,8 +584,10 @@ function DialogCheckDataRp({
       nextFieldErrors.description = 'Description wajib diisi.'
     }
 
-    if (!formValues.vendor_id) {
-      nextFieldErrors.vendor_id = 'Vendor wajib dipilih.'
+    const vendorName = formValues.vendor_name.trim()
+
+    if (!vendorName) {
+      nextFieldErrors.vendor_name = 'Vendor wajib diisi.'
     }
 
     if (!normalizedItems.length) {
@@ -657,8 +629,10 @@ function DialogCheckDataRp({
       }
 
       const response = await api.rp.destinationCheck(rpId, {
-        vendor_source: 'MASTER',
-        vendor_id: formValues.vendor_id,
+        // Pertahankan vendor master bila nama tidak diubah; jika diubah, simpan sebagai vendor manual.
+        vendor_id:
+          vendorName === formValues.original_vendor_name.trim() ? formValues.vendor_id || null : null,
+        vendor_name: vendorName,
         description: formValues.description.trim(),
         items: normalizedItems,
         notes: formValues.notes.trim() || 'Checked by destination checker',
@@ -794,7 +768,6 @@ function DialogCheckDataRp({
             fieldErrors={fieldErrors}
             isOptionsLoading={isOptionsLoading}
             isFormDisabled={isFormDisabled}
-            vendorOptions={vendorOptions}
             paymentCategoryOptions={paymentCategoryOptions}
             destinationDepartmentOptions={destinationDepartmentOptions}
             isProcessReadOnly

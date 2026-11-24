@@ -91,7 +91,7 @@ frontend/public/uploads/
 *.sqlite3
 *.db
 *.sql
-!backend/database/migrations/031_budget_management_transactions.sql
+!backend/database/migrations/*.sql
 *.dump
 
 # -------------------------

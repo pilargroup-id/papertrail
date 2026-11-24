@@ -1136,15 +1136,28 @@ async function approveFrp(id, user = {}, body = {}, req = null) {
       }
       const header = buildHeaderSnapshotFromExistingFrp(frp);
       for (const item of items) {
-        const sourceItem = rpItems.find((candidate) => String(candidate.id) === String(item.source_rp_request_item_id));
-        if (!sourceItem || Number(sourceItem.budget_id) !== Number(item.budget_id)) {
-          throw new Error('Anggaran item FRP tidak sesuai dengan item RP sumber.');
+        let budgetHeader;
+
+        if (item.source_rp_request_item_id) {
+          const sourceItem = rpItems.find((candidate) => String(candidate.id) === String(item.source_rp_request_item_id));
+          if (!sourceItem || Number(sourceItem.budget_id) !== Number(item.budget_id)) {
+            throw new Error('Anggaran item FRP tidak sesuai dengan item RP sumber.');
+          }
+          budgetHeader = { ...header, department_id: Number(sourceItem.budget_department_id),
+            class_department_id: Number(sourceItem.budget_class_department_id) };
+        } else {
+          // Item tambahan saat konversi RP -> FRP: anggarannya sudah divalidasi saat create
+          // (perusahaan & departemen anggaran sama dengan RP), jadi pakai departemen anggaran itu.
+          const budget = await getBudgetForUpdate(conn, item.budget_id);
+          if (!budget) throw new Error('Anggaran item FRP tambahan tidak ditemukan.');
+          budgetHeader = { ...header, department_id: Number(budget.department_id),
+            class_department_id: Number(budget.class_department_id) };
         }
+
         await reserveBudget(conn, {
           budgetId: item.budget_id, amount: getItemBudgetAmount(item),
           sourceModule: 'FRP', sourceHeaderId: frp.id, sourceItemId: item.id,
-          header: { ...header, department_id: Number(sourceItem.budget_department_id),
-            class_department_id: Number(sourceItem.budget_class_department_id) },
+          header: budgetHeader,
           user, notes: `Reserve final FRP budget on approval ${frp.frp_number}`,
         });
         await finalizeBudget(conn, {

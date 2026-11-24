@@ -551,6 +551,13 @@ function DialogDetailsFrp({
       value: getFirstValue(resolvedFrpDetail, ['frp_number', 'frpNumber', 'id']),
     },
     {
+      label: 'Sumber',
+      value:
+        String(resolvedFrpDetail?.source_module ?? '').toUpperCase() === 'RP'
+          ? `Dari RP ${resolvedFrpDetail?.source_rp_number ?? '-'}`
+          : 'Langsung (FRP)',
+    },
+    {
       label: 'Request By',
       value: getFirstValue(
         resolvedFrpDetail,

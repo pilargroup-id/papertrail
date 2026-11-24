@@ -7,6 +7,7 @@ import DialogTransferBudget from '../../../../components/Dialog/dialog-budgets/D
 import DialogAdjustBudget from '../../../../components/Dialog/dialog-budgets/DialogAdjustBudget.jsx';
 import DrawerBudgetHistory from '../../../../components/Dialog/dialog-budgets/DrawerBudgetHistory.jsx';
 import DataTableBudget from '../../../../components/table/master-table/budget/DataTableBudget.jsx';
+import SearchFrp from '../../../../mobile/search-mobile/SearchFrp.jsx';
 
 // Button Vendor
 import Switch from '../../../../components/forms/Switch.jsx';
@@ -79,6 +80,14 @@ function BudgetsPage(props) {
   const outletContext = useOutletContext() ?? {}
   const activePage = props.activePage ?? outletContext.activePage
   const searchQuery = props.searchQuery ?? outletContext.searchQuery ?? ''
+  const baseSearchProps = props.searchProps ?? outletContext.searchProps
+  const searchProps = baseSearchProps
+    ? {
+        ...baseSearchProps,
+        placeholder: 'Cari nama, kode budget, company, departemen...',
+        ariaLabel: 'Cari budget',
+      }
+    : undefined
   const pageTitle = activePage?.title ?? 'Budget'
   const pageEyebrow = activePage?.eyebrow ?? 'Master Data'
   const [budgets, setBudgetType] = useState([])
@@ -251,7 +260,8 @@ function BudgetsPage(props) {
           <h1 className="dashboard-panel__title">{pageTitle}</h1>
         </div>
 
-        <div className="users-table-card__actions">
+        <div className="users-table-card__actions frp-page__desktop-actions">
+          <SearchFrp searchProps={searchProps} variant="desktop" />
           <ButtonImportBudgets
             onClick={() => setSuccessMessage('')}
             onImported={handleImportCompleted}

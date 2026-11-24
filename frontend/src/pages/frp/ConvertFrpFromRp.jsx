@@ -18,8 +18,6 @@ import { printRpDocument, showPrintError, showPrintLoading } from '../rp/print-r
 // Dialog
 import DialogCreateFrpFromRp from '../../components/Dialog/dialog-rp/DialogCreateFrpFromRp.jsx'
 import DialogVoidedRp from '../../components/Dialog/dialog-rp/DialogVoidedRp.jsx'
-import DialogApproveFrp from '../../components/Dialog/dialog-frp/DialogApproveFrp.jsx'
-import DialogRejectFrp from '../../components/Dialog/dialog-frp/DialogRejectFrp.jsx'
 
 // Mobile
 import MobileScreenDetailRp from '../../mobile/screen/screen-rp/MobileScreenDetailRp.jsx'
@@ -91,21 +89,6 @@ const conversionStatusOptions = [
   { id: 'VOIDED', label: 'Voided' },
 ]
 
-// FRP hasil convert dari baris RP, untuk dialog approve/reject FRP.
-function getConvertedFrpFromRp(rpRow) {
-  if (!rpRow?.converted_frp_request_id) {
-    return null
-  }
-
-  return {
-    id: rpRow.converted_frp_request_id,
-    frp_number: rpRow.converted_frp_number,
-    status: rpRow.converted_frp_status,
-    source_module: 'RP',
-    source_rp_number: rpRow.rp_number,
-  }
-}
-
 function getListRpForConversionStatus(conversionStatus) {
   if (conversionStatus === 'CREATED') {
     return api.rp.listConvertedToFrp
@@ -142,10 +125,6 @@ function ConvertFrpFromRp(props) {
   const [voidError, setVoidError] = useState('')
   const [selectedMobileDetailsRp, setSelectedMobileDetailsRp] = useState(null)
   const [isDesktopFilterOpen, setIsDesktopFilterOpen] = useState(false)
-  const [selectedApproveFrp, setSelectedApproveFrp] = useState(null)
-  const [selectedRejectFrp, setSelectedRejectFrp] = useState(null)
-  const [isReviewSubmitting, setIsReviewSubmitting] = useState(false)
-  const [reviewError, setReviewError] = useState('')
   const [rpFilters, setRpFilters] = useState({
     status: conversionStatusOptions[0].id,
     requestBy: '',
@@ -318,67 +297,6 @@ function ConvertFrpFromRp(props) {
     }
   }
 
-  const openApproveFrpDialog = (rpRow) => {
-    setReviewError('')
-    setSelectedApproveFrp(getConvertedFrpFromRp(rpRow))
-  }
-
-  const openRejectFrpDialog = (rpRow) => {
-    setReviewError('')
-    setSelectedRejectFrp(getConvertedFrpFromRp(rpRow))
-  }
-
-  const closeReviewDialogs = () => {
-    if (isReviewSubmitting) {
-      return
-    }
-
-    setSelectedApproveFrp(null)
-    setSelectedRejectFrp(null)
-    setReviewError('')
-  }
-
-  const submitFrpReview = async (request, fallbackMessage) => {
-    setReviewError('')
-    setIsReviewSubmitting(true)
-
-    try {
-      await request()
-      setSelectedApproveFrp(null)
-      setSelectedRejectFrp(null)
-      setReloadToken((currentValue) => currentValue + 1)
-    } catch (error) {
-      setReviewError(error.message || fallbackMessage)
-    } finally {
-      setIsReviewSubmitting(false)
-    }
-  }
-
-  const handleApproveFrp = ({ frp: targetFrp, notes } = {}) => {
-    const frpId = (targetFrp ?? selectedApproveFrp)?.id
-
-    if (!frpId) {
-      setReviewError('ID FRP tidak tersedia.')
-      return
-    }
-
-    submitFrpReview(
-      () => api.frp.approve(frpId, { notes: notes || 'Approve FRP dari RP' }),
-      'Gagal approve FRP.',
-    )
-  }
-
-  const handleRejectFrp = ({ frp: targetFrp, reason } = {}) => {
-    const frpId = (targetFrp ?? selectedRejectFrp)?.id
-
-    if (!frpId) {
-      setReviewError('ID FRP tidak tersedia.')
-      return
-    }
-
-    submitFrpReview(() => api.frp.reject(frpId, { reason }), 'Gagal reject FRP.')
-  }
-
   const authGateMessage = isAuthLoading
     ? 'Memuat profil auth...'
     : !currentUser
@@ -461,8 +379,6 @@ function ConvertFrpFromRp(props) {
           onCreateFrp={openCreateFrpDialog}
           onPrint={handlePrintRp}
           onVoid={openVoidDialog}
-          onApproveFrp={openApproveFrpDialog}
-          onRejectFrp={openRejectFrpDialog}
           currentUser={currentUser}
           canCreateFrp={(row) => canCurrentUserCreateFrpFromRp(row, currentUser)}
           mobileCard={{
@@ -489,28 +405,6 @@ function ConvertFrpFromRp(props) {
         submitError={voidError}
         onClose={closeVoidDialog}
         onVoid={handleVoidRp}
-      />
-
-      <DialogApproveFrp
-        key={selectedApproveFrp?.id ?? 'approve-converted-frp'}
-        isOpen={Boolean(selectedApproveFrp)}
-        title={`Approve ${selectedApproveFrp?.frp_number ?? 'FRP'}`}
-        frp={selectedApproveFrp}
-        isSubmitting={isReviewSubmitting}
-        submitError={reviewError}
-        onClose={closeReviewDialogs}
-        onApprove={handleApproveFrp}
-      />
-
-      <DialogRejectFrp
-        key={selectedRejectFrp?.id ?? 'reject-converted-frp'}
-        isOpen={Boolean(selectedRejectFrp)}
-        title={`Reject ${selectedRejectFrp?.frp_number ?? 'FRP'}`}
-        frp={selectedRejectFrp}
-        isSubmitting={isReviewSubmitting}
-        submitError={reviewError}
-        onClose={closeReviewDialogs}
-        onReject={handleRejectFrp}
       />
     </section>
   )

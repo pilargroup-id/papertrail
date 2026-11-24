@@ -18,6 +18,22 @@ function TabsVendor({ rpDetail }) {
         getFirstValue(rpDetail, ['payment_category_id', 'paymentCategoryId']),
     },
     {
+      label: 'Untuk Divisi',
+      value: [
+        getFirstValue(rpDetail, ['for_department_code_snapshot'], ''),
+        getFirstValue(rpDetail, ['for_department_name_snapshot'], ''),
+      ].filter(Boolean).join(' - ') ||
+        getFirstValue(rpDetail, ['for_department_id', 'forDepartmentId']),
+    },
+    {
+      label: 'Class',
+      value: [
+        getFirstValue(rpDetail, ['for_class_code_snapshot'], ''),
+        getFirstValue(rpDetail, ['for_class_name_snapshot'], ''),
+      ].filter(Boolean).join(' - ') ||
+        getFirstValue(rpDetail, ['for_class_department_id', 'forClassDepartmentId']),
+    },
+    {
       label: 'Division To Process',
       value: [
         getFirstValue(rpDetail, ['destination_department_code_snapshot'], ''),

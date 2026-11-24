@@ -2,6 +2,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 
+import RpFieldHint from './RpFieldHint.jsx'
 import SectionHeader from './SectionHeader.jsx'
 import { autocompleteSlotProps, autocompleteSlots } from './autocompleteStyles.js'
 
@@ -23,6 +24,7 @@ function TabsVendor({
   paymentMethodOptions,
   updateValue,
   handleVendorBankChange,
+  rpHints = {},
 }) {
   return (
     <Box component="section" sx={{ mb: 4 }}>
@@ -35,35 +37,39 @@ function TabsVendor({
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
           gap: 2,
+          alignItems: 'start',
           mb: 2,
         }}
       >
-        <Autocomplete
-          slots={autocompleteSlots}
-          slotProps={autocompleteSlotProps}
-          fullWidth
-          size="small"
-          options={vendorOptions}
-          value={getOptionByValue(vendorOptions, formValues.vendor_id)}
-          getOptionLabel={(option) => option?.label ?? ''}
-          isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
-          disabled={isFormDisabled}
-          loading={isOptionsLoading}
-          onChange={(_, option) => {
-            updateValue('vendor_id', option?.value ?? '')
-            updateValue('vendor_bank_account_id', '')
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              required
-              label="Vendor"
-              placeholder={isOptionsLoading ? 'Memuat vendor...' : 'Pilih vendor'}
-              error={Boolean(fieldErrors.vendor_id)}
-              helperText={fieldErrors.vendor_id}
-            />
-          )}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <Autocomplete
+            slots={autocompleteSlots}
+            slotProps={autocompleteSlotProps}
+            fullWidth
+            size="small"
+            options={vendorOptions}
+            value={getOptionByValue(vendorOptions, formValues.vendor_id)}
+            getOptionLabel={(option) => option?.label ?? ''}
+            isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
+            disabled={isFormDisabled}
+            loading={isOptionsLoading}
+            onChange={(_, option) => {
+              updateValue('vendor_id', option?.value ?? '')
+              updateValue('vendor_bank_account_id', '')
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                required
+                label="Vendor"
+                placeholder={isOptionsLoading ? 'Memuat vendor...' : 'Pilih vendor'}
+                error={Boolean(fieldErrors.vendor_id)}
+                helperText={fieldErrors.vendor_id}
+              />
+            )}
+          />
+          <RpFieldHint hint={rpHints.vendor_id} disabled={isFormDisabled} />
+        </Box>
 
         <Autocomplete
 
@@ -95,6 +101,7 @@ function TabsVendor({
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
           gap: 2,
+          alignItems: 'start',
         }}
       >
         <TextField
@@ -161,19 +168,22 @@ function TabsVendor({
           )}
         />
 
-        <TextField
-          fullWidth
-          size="small"
-          required
-          label="Payment Date"
-          type="date"
-          value={formValues.payment_date}
-          disabled={isFormDisabled}
-          error={Boolean(fieldErrors.payment_date)}
-          helperText={fieldErrors.payment_date}
-          onChange={(event) => updateValue('payment_date', event.target.value)}
-          slotProps={{ inputLabel: { shrink: true } }}
-        />
+        <Box sx={{ minWidth: 0 }}>
+          <TextField
+            fullWidth
+            size="small"
+            required
+            label="Payment Date"
+            type="date"
+            value={formValues.payment_date}
+            disabled={isFormDisabled}
+            error={Boolean(fieldErrors.payment_date)}
+            helperText={fieldErrors.payment_date}
+            onChange={(event) => updateValue('payment_date', event.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <RpFieldHint hint={rpHints.payment_date} disabled={isFormDisabled} />
+        </Box>
       </Box>
     </Box>
   )

@@ -41,6 +41,8 @@ const createInitialItem = () => ({
 const createInitialFormValues = () => ({
   department_id: '',
   class_department_id: '',
+  for_department_id: '',
+  for_class_department_id: '',
   date_required: getTodayDateValue(),
   description: '',
   vendor_name: '',
@@ -69,11 +71,58 @@ function normalizeDraftFormValues(values) {
 }
 
 function withRequesterDepartment(values, requesterInfo) {
+  const forDepartmentId = values.for_department_id || requesterInfo.department_id || ''
+
   return {
     ...values,
     department_id: values.department_id || requesterInfo.department_id || '',
     class_department_id: values.class_department_id || requesterInfo.class_department_id || '',
+    // Default "Untuk Divisi" = divisi pembuat; user dapat menggantinya.
+    for_department_id: forDepartmentId,
+    for_class_department_id:
+      values.for_class_department_id ||
+      (values.for_department_id ? values.for_department_id : requesterInfo.class_department_id) ||
+      forDepartmentId,
   }
+}
+
+// Opsi "Untuk Divisi" dan "Class" dari direktori department PilarGroup
+// (pola yang sama dengan DialogCreateBudgets).
+function mapForDepartmentOptions(departments) {
+  return departments.map((department) => {
+    const id = getFirstValue(department, ['id', 'department_id', 'uuid'])
+    const code = getFirstValue(department, ['code', 'department_code'])
+    const name = getFirstValue(department, ['name', 'department_name', 'label'], `Department #${id ?? '-'}`)
+
+    return {
+      value: id,
+      label: [code, name].filter(Boolean).join(' - '),
+    }
+  })
+}
+
+function mapForClassOptions(departments) {
+  const uniqueOptions = new Map()
+
+  departments.forEach((department) => {
+    const id = getFirstValue(department, ['id', 'department_id', 'uuid'])
+    const code = getFirstValue(department, ['code', 'department_code'])
+    const className = getFirstValue(
+      department,
+      ['class', 'department_class', 'class_name', 'name', 'department_name'],
+      `Class #${id ?? '-'}`,
+    )
+    const optionKey = String(id)
+
+    if (!uniqueOptions.has(optionKey)) {
+      uniqueOptions.set(optionKey, {
+        value: id,
+        label: [code, className].filter(Boolean).join(' - '),
+      })
+    }
+  })
+
+  return Array.from(uniqueOptions.values())
 }
 
 const initialRequesterInfo = {
@@ -83,12 +132,10 @@ const initialRequesterInfo = {
   request_by: '',
   department_id: '',
   class_department_id: '',
-  can_use_cross_budget: false,
+  // Aturan CROSS_BUDGET aktif (modul RP); dicocokkan dengan "Untuk Divisi" yang dipilih.
+  cross_budget_rules: [],
 }
 
-// Requester department IDs (HCGA = 1, IT = 8) whose RP items must use the
-// destination department's budget instead of their own.
-const DESTINATION_BUDGET_DEPARTMENT_IDS = [1, 8]
 const RP_BUDGET_PURPOSE = 'RP'
 const CROSS_BUDGET_ACCESS_TYPE = 'CROSS_BUDGET'
 
@@ -204,20 +251,15 @@ function mapBudgetOptions(budgets) {
   })
 }
 
-function usesDestinationBudget(requesterInfo) {
-  return (
-    !requesterInfo?.can_use_cross_budget &&
-    DESTINATION_BUDGET_DEPARTMENT_IDS.includes(Number(requesterInfo?.department_id))
-  )
-}
-
-function getBudgetListParams(requesterInfo, destinationDepartmentId) {
-  if (!requesterInfo?.department_id) {
+// Budget RP mengikuti "Untuk Divisi" (department + class), apa pun divisi pembuatnya.
+// Jika "Untuk Divisi" memiliki aturan CROSS_BUDGET, semua anggaran aktif pada perusahaan
+// terpilih terbuka.
+function getBudgetListParams(requesterInfo, forDepartmentId, forClassDepartmentId) {
+  if (!requesterInfo?.department_id || !forDepartmentId) {
     return null
   }
 
-  if (requesterInfo.can_use_cross_budget) {
-    // CROSS_BUDGET: semua anggaran aktif pada perusahaan terpilih.
+  if (hasCrossBudgetAccess(forDepartmentId, requesterInfo.cross_budget_rules)) {
     return {
       page: 1,
       limit: 200,
@@ -227,26 +269,23 @@ function getBudgetListParams(requesterInfo, destinationDepartmentId) {
     }
   }
 
-  const isDestinationScope = usesDestinationBudget(requesterInfo)
-
-  if (isDestinationScope && !destinationDepartmentId) {
-    return null
-  }
-
   return {
     page: 1,
     limit: 200,
     is_active: 1,
     purpose: RP_BUDGET_PURPOSE,
     company_id: requesterInfo.company_id || undefined,
-    department_id: requesterInfo.department_id,
-    class_department_id: requesterInfo.class_department_id || undefined,
-    destination_department_id: isDestinationScope ? destinationDepartmentId : undefined,
+    department_id: forDepartmentId,
+    class_department_id: forClassDepartmentId || forDepartmentId,
   }
 }
 
-function getBudgetScopeKey(requesterInfo, destinationDepartmentId) {
-  const params = getBudgetListParams(requesterInfo, destinationDepartmentId)
+function getBudgetScopeKey(requesterInfo, formValues) {
+  const params = getBudgetListParams(
+    requesterInfo,
+    formValues?.for_department_id,
+    formValues?.for_class_department_id,
+  )
 
   return params ? JSON.stringify(params) : ''
 }
@@ -264,8 +303,7 @@ function isSameIdOrUnknown(expectedId, actualId) {
 }
 
 // Filter defensif yang mengikuti aturan budget RP di backend:
-// - Pembuat IT/HCGA: budget harus milik divisi pemroses (destination) pada company terpilih.
-// - Pembuat lainnya: budget harus sama dengan company, department, dan class terpilih.
+// - Default: budget harus sama dengan company serta department + class pada "Untuk Divisi".
 // - Departemen CROSS_BUDGET: params tanpa department, jadi hanya company yang dicocokkan.
 function filterBudgetsByRpContext(budgets, params) {
   return budgets.filter((budget) => {
@@ -278,10 +316,6 @@ function filterBudgetsByRpContext(budgets, params) {
 
     if (!isSameIdOrUnknown(params.company_id, budgetCompanyId)) {
       return false
-    }
-
-    if (params.destination_department_id) {
-      return isSameIdOrUnknown(params.destination_department_id, budgetDepartmentId)
     }
 
     return (
@@ -429,6 +463,12 @@ function mapRpToDuplicateFormValues(rp) {
   return {
     department_id: '',
     class_department_id: '',
+    for_department_id: getFirstValue(rp, ['for_department_id', 'forDepartmentId'], ''),
+    for_class_department_id: getFirstValue(
+      rp,
+      ['for_class_department_id', 'forClassDepartmentId'],
+      '',
+    ),
     date_required: getTodayDateValue(),
     description: getFirstValue(rp, ['description'], ''),
     vendor_name: getFirstValue(rp, ['vendor_name_snapshot', 'vendor_name'], ''),
@@ -446,8 +486,8 @@ function mapRpToDuplicateFormValues(rp) {
 
 function DialogCreateRp({
   isOpen = false,
-  eyebrow = 'Form request purchase',
-  title = 'Create RP',
+  eyebrow = 'Formulir permintaan pembelian',
+  title = 'Buat RP',
   duplicateFrom = null,
   onClose,
   onCreated,
@@ -458,6 +498,8 @@ function DialogCreateRp({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentCategoryOptions, setPaymentCategoryOptions] = useState([])
   const [destinationDepartmentOptions, setDestinationDepartmentOptions] = useState([])
+  const [forDepartmentOptions, setForDepartmentOptions] = useState([])
+  const [forClassOptions, setForClassOptions] = useState([])
   const [budgetState, setBudgetState] = useState(createEmptyBudgetState)
   const [requesterInfo, setRequesterInfo] = useState(initialRequesterInfo)
   const [isOptionsLoading, setIsOptionsLoading] = useState(false)
@@ -474,6 +516,8 @@ function DialogCreateRp({
     setIsSubmitting(false)
     setPaymentCategoryOptions([])
     setDestinationDepartmentOptions([])
+    setForDepartmentOptions([])
+    setForClassOptions([])
     setBudgetState(createEmptyBudgetState())
     setRequesterInfo(initialRequesterInfo)
     setIsOptionsLoading(false)
@@ -539,8 +583,8 @@ function DialogCreateRp({
   }
 
   const updateValue = (fieldName, value) => {
-    const shouldResetItemBudgets =
-      fieldName === 'destination_department_id' && usesDestinationBudget(requesterInfo)
+    const isBudgetScopeField =
+      fieldName === 'for_department_id' || fieldName === 'for_class_department_id'
 
     setFormValues((currentValues) => {
       const nextValues = {
@@ -548,14 +592,25 @@ function DialogCreateRp({
         [fieldName]: value,
       }
 
+      // Class mengikuti divisi yang baru dipilih; user tetap bisa menggantinya.
+      if (fieldName === 'for_department_id') {
+        nextValues.for_class_department_id = value
+      }
+
+      // Budget mengikuti "Untuk Divisi"/class. Pilihan lama tetap valid hanya jika divisi
+      // lama dan baru sama-sama CROSS_BUDGET (keduanya membuka semua anggaran perusahaan).
+      const isStillCrossBudget =
+        hasCrossBudgetAccess(currentValues.for_department_id, requesterInfo.cross_budget_rules) &&
+        hasCrossBudgetAccess(nextValues.for_department_id, requesterInfo.cross_budget_rules)
+
       if (
-        !shouldResetItemBudgets ||
-        String(currentValues.destination_department_id) === String(value)
+        !isBudgetScopeField ||
+        isStillCrossBudget ||
+        String(currentValues[fieldName]) === String(value)
       ) {
         return nextValues
       }
 
-      // Budget RP IT/HCGA mengikuti divisi pemroses, jadi pilihan budget lama tidak lagi valid.
       return {
         ...nextValues,
         items: currentValues.items.map((item) => ({ ...item, budget_id: '' })),
@@ -563,13 +618,16 @@ function DialogCreateRp({
     })
 
     setFieldErrors((currentErrors) => {
-      if (!currentErrors[fieldName]) {
+      const clearedFields =
+        fieldName === 'for_department_id' ? [fieldName, 'for_class_department_id'] : [fieldName]
+
+      if (!clearedFields.some((name) => currentErrors[name])) {
         return currentErrors
       }
 
       return {
         ...currentErrors,
-        [fieldName]: '',
+        ...Object.fromEntries(clearedFields.map((name) => [name, ''])),
       }
     })
   }
@@ -654,6 +712,7 @@ function DialogCreateRp({
           budgetAccessRules,
           paymentCategoriesResponse,
           destinationDepartmentsResponse,
+          directoryDepartments,
         ] = await Promise.all([
           api.auth.me({
             signal: controller.signal,
@@ -700,15 +759,15 @@ function DialogCreateRp({
               signal: controller.signal,
             },
           ),
+          api.directory.departments
+            .list(undefined, { signal: controller.signal })
+            .then(getRowsFromResponse),
         ])
         const authUser = getAuthUser(authResponse)
         const userRequesterInfo = getUserRequesterInfo(authUser)
         const nextRequesterInfo = {
           ...userRequesterInfo,
-          can_use_cross_budget: hasCrossBudgetAccess(
-            userRequesterInfo.department_id,
-            budgetAccessRules,
-          ),
+          cross_budget_rules: budgetAccessRules,
         }
         const duplicateFormValues = duplicateFrom ? mapRpToDuplicateFormValues(duplicateFrom) : null
         const draftUserId = getFirstValue(authUser, ['id', 'user_id', 'userId'], '')
@@ -720,10 +779,7 @@ function DialogCreateRp({
           duplicateFormValues ?? draftFormValues ?? createInitialFormValues(),
           nextRequesterInfo,
         )
-        const nextBudgetScopeKey = getBudgetScopeKey(
-          nextRequesterInfo,
-          initialFormValues.destination_department_id,
-        )
+        const nextBudgetScopeKey = getBudgetScopeKey(nextRequesterInfo, initialFormValues)
         const nextBudgetOptions = await fetchRpBudgetOptions(
           nextBudgetScopeKey,
           controller.signal,
@@ -768,6 +824,8 @@ function DialogCreateRp({
         setFormValues(nextFormValues)
         setPaymentCategoryOptions(nextPaymentCategoryOptions)
         setDestinationDepartmentOptions(nextDestinationDepartmentOptions)
+        setForDepartmentOptions(mapForDepartmentOptions(directoryDepartments))
+        setForClassOptions(mapForClassOptions(directoryDepartments))
         setBudgetState({ key: nextBudgetScopeKey, options: nextBudgetOptions, error: '' })
       } catch (error) {
         if (error.name === 'AbortError') {
@@ -776,6 +834,8 @@ function DialogCreateRp({
 
         setPaymentCategoryOptions([])
         setDestinationDepartmentOptions([])
+        setForDepartmentOptions([])
+        setForClassOptions([])
         setBudgetState(createEmptyBudgetState())
         setRequesterInfo(initialRequesterInfo)
         setOptionsError(error.message || 'Gagal memuat pilihan RP.')
@@ -793,16 +853,14 @@ function DialogCreateRp({
     }
   }, [isOpen, duplicateFrom])
 
-  const budgetScopeKey = isOpen
-    ? getBudgetScopeKey(requesterInfo, formValues.destination_department_id)
-    : ''
+  const budgetScopeKey = isOpen ? getBudgetScopeKey(requesterInfo, formValues) : ''
   const loadedBudgetScopeKey = budgetState.key
   const isBudgetScopeLoaded = loadedBudgetScopeKey === budgetScopeKey
   const budgetOptions = isBudgetScopeLoaded ? budgetState.options : []
   const budgetOptionsError = isBudgetScopeLoaded ? budgetState.error : ''
   const isBudgetOptionsLoading = Boolean(budgetScopeKey) && !isBudgetScopeLoaded
 
-  // Muat ulang dropdown budget saat konteks berubah (mis. IT/HCGA mengganti divisi pemroses).
+  // Muat ulang dropdown budget saat konteks berubah (mis. user mengganti "Untuk Divisi"/class).
   useEffect(() => {
     if (!budgetScopeKey || budgetScopeKey === loadedBudgetScopeKey) {
       return undefined
@@ -865,6 +923,14 @@ function DialogCreateRp({
       nextFieldErrors.payment_category_id = 'Kategori pembayaran wajib dipilih.'
     }
 
+    if (!formValues.for_department_id) {
+      nextFieldErrors.for_department_id = 'Untuk divisi wajib dipilih.'
+    }
+
+    if (!formValues.for_class_department_id) {
+      nextFieldErrors.for_class_department_id = 'Class wajib dipilih.'
+    }
+
     if (!formValues.destination_department_id) {
       nextFieldErrors.destination_department_id = 'Divisi pemroses wajib dipilih.'
     }
@@ -905,6 +971,8 @@ function DialogCreateRp({
         company_id: requesterInfo.company_id || undefined,
         department_id: formValues.department_id || undefined,
         class_department_id: formValues.class_department_id || undefined,
+        for_department_id: formValues.for_department_id,
+        for_class_department_id: formValues.for_class_department_id,
         destination_department_id: formValues.destination_department_id,
         date_required: formValues.date_required,
         vendor_source: 'MANUAL',
@@ -935,10 +1003,9 @@ function DialogCreateRp({
   }
 
   const isFormDisabled = isSubmitting || isOptionsLoading
-  const isWaitingForDestination =
-    usesDestinationBudget(requesterInfo) && !formValues.destination_department_id
-  const budgetNoOptionsText = isWaitingForDestination
-    ? 'Pilih divisi pemroses terlebih dahulu untuk memuat anggaran.'
+  const isWaitingForDepartment = !formValues.for_department_id
+  const budgetNoOptionsText = isWaitingForDepartment
+    ? 'Pilih "Untuk Divisi" terlebih dahulu untuk memuat anggaran.'
     : 'Anggaran aktif tidak ditemukan untuk konteks RP ini.'
   const totalAmount = formValues.items.reduce((total, item) => {
     const quantity = Number(item.quantity)
@@ -1035,6 +1102,8 @@ function DialogCreateRp({
               isFormDisabled={isFormDisabled}
               paymentCategoryOptions={paymentCategoryOptions}
               destinationDepartmentOptions={destinationDepartmentOptions}
+              forDepartmentOptions={forDepartmentOptions}
+              forClassOptions={forClassOptions}
               updateValue={updateValue}
             />
 
@@ -1115,7 +1184,7 @@ function DialogCreateRp({
                 },
               }}
             >
-              {isSubmitting ? 'Creating...' : isOptionsLoading ? 'Loading...' : 'Create'}
+              {isSubmitting ? 'Menyimpan...' : isOptionsLoading ? 'Memuat...' : 'Buat RP'}
             </Button>
           </Stack>
         </Box>

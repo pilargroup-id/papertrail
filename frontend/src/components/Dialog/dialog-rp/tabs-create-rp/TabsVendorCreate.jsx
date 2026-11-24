@@ -24,9 +24,13 @@ function TabsVendorCreate({
   vendorOptions,
   paymentCategoryOptions,
   destinationDepartmentOptions,
+  forDepartmentOptions,
+  forClassOptions,
   isProcessReadOnly = false,
   updateValue,
 }) {
+  const showForDepartment = Array.isArray(forDepartmentOptions) && Array.isArray(forClassOptions)
+
   return (
     <Box
       component="section"
@@ -35,7 +39,7 @@ function TabsVendorCreate({
         '& .MuiInputBase-root:has([readonly])': { bgcolor: 'rgba(52, 73, 104, 0.02)' },
       }}
     >
-      <SectionHeader title="Vendor & Process Information" />
+      <SectionHeader title="Informasi Vendor & Proses" />
 
       <Box
         sx={{
@@ -99,15 +103,15 @@ function TabsVendorCreate({
           readOnly={isProcessReadOnly}
           forcePopupIcon={isProcessReadOnly ? false : 'auto'}
           loading={isOptionsLoading}
-          noOptionsText="Category payment aktif tidak ditemukan."
+          noOptionsText="Kategori pembayaran aktif tidak ditemukan."
           onChange={(_, option) => updateValue('payment_category_id', option?.value ?? '')}
           renderInput={(params) => (
             <TextField
               {...params}
               required={!isProcessReadOnly}
-              label="Category Payment"
+              label="Kategori Pembayaran"
               placeholder={
-                isProcessReadOnly ? '-' : isOptionsLoading ? 'Memuat category...' : 'Pilih category payment'
+                isProcessReadOnly ? '-' : isOptionsLoading ? 'Memuat kategori...' : 'Pilih kategori pembayaran'
               }
               error={Boolean(fieldErrors.payment_category_id)}
               helperText={fieldErrors.payment_category_id}
@@ -115,6 +119,69 @@ function TabsVendorCreate({
           )}
         />
       </Box>
+
+      {showForDepartment ? (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+            gap: 2,
+            mb: 2,
+          }}
+        >
+          <Autocomplete
+            slots={autocompleteSlots}
+            slotProps={autocompleteSlotProps}
+            fullWidth
+            size="small"
+            options={forDepartmentOptions}
+            value={getOptionByValue(forDepartmentOptions, formValues.for_department_id)}
+            getOptionLabel={(option) => option?.label ?? ''}
+            isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
+            disabled={isFormDisabled}
+            loading={isOptionsLoading}
+            noOptionsText="Divisi tidak ditemukan."
+            onChange={(_, option) => updateValue('for_department_id', option?.value ?? '')}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                required
+                label="Untuk Divisi"
+                placeholder={isOptionsLoading ? 'Memuat divisi...' : 'Pilih divisi'}
+                error={Boolean(fieldErrors.for_department_id)}
+                helperText={
+                  fieldErrors.for_department_id || 'Manager divisi ini yang akan menyetujui RP.'
+                }
+              />
+            )}
+          />
+
+          <Autocomplete
+            slots={autocompleteSlots}
+            slotProps={autocompleteSlotProps}
+            fullWidth
+            size="small"
+            options={forClassOptions}
+            value={getOptionByValue(forClassOptions, formValues.for_class_department_id)}
+            getOptionLabel={(option) => option?.label ?? ''}
+            isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
+            disabled={isFormDisabled}
+            loading={isOptionsLoading}
+            noOptionsText="Kelas tidak ditemukan."
+            onChange={(_, option) => updateValue('for_class_department_id', option?.value ?? '')}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                required
+                label="Kelas"
+                placeholder={isOptionsLoading ? 'Memuat kelas...' : 'Pilih kelas'}
+                error={Boolean(fieldErrors.for_class_department_id)}
+                helperText={fieldErrors.for_class_department_id}
+              />
+            )}
+          />
+        </Box>
+      ) : null}
 
       <Box
         sx={{
@@ -140,15 +207,15 @@ function TabsVendorCreate({
           readOnly={isProcessReadOnly}
           forcePopupIcon={isProcessReadOnly ? false : 'auto'}
           loading={isOptionsLoading}
-          noOptionsText="Division tujuan aktif tidak ditemukan."
+          noOptionsText="Divisi pemroses aktif tidak ditemukan."
           onChange={(_, option) => updateValue('destination_department_id', option?.value ?? '')}
           renderInput={(params) => (
             <TextField
               {...params}
               required={!isProcessReadOnly}
-              label="Division To Process"
+              label="Divisi Pemroses"
               placeholder={
-                isProcessReadOnly ? '-' : isOptionsLoading ? 'Memuat division...' : 'Pilih division'
+                isProcessReadOnly ? '-' : isOptionsLoading ? 'Memuat divisi...' : 'Pilih divisi pemroses'
               }
               error={Boolean(fieldErrors.destination_department_id)}
               helperText={fieldErrors.destination_department_id}
@@ -174,7 +241,7 @@ function TabsVendorCreate({
           fullWidth
           size="small"
           required={!isProcessReadOnly}
-          label="RP Date"
+          label="Tanggal RP"
           type="date"
           value={formValues.date_required}
           disabled={isFormDisabled}
@@ -191,7 +258,7 @@ function TabsVendorCreate({
         required
         multiline
         minRows={3}
-        label="Description"
+        label="Deskripsi"
         placeholder="Request pembelian kebutuhan department"
         value={formValues.description}
         disabled={isFormDisabled}

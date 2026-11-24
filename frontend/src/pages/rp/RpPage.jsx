@@ -910,7 +910,7 @@ function RpPage(props) {
       <DialogCreateRp
         key={duplicateSourceRp?.id ?? 'duplicate-rp'}
         isOpen={isDuplicateDialogOpen}
-        title={`Duplicate ${getFrpEditLabel(duplicateSourceRp)}`}
+        title={`Duplikat ${getFrpEditLabel(duplicateSourceRp)}`}
         duplicateFrom={duplicateSourceRp}
         onClose={closeDuplicateDialog}
         onCreated={handleFrpCreated}

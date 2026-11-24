@@ -98,6 +98,10 @@ jobs:
               cd /var/www/papertrail/backend
               npm ci --omit=dev
 
+              # Jalankan migration SQL baru (database/migrations) sebelum restart API.
+              # Bila gagal, deploy berhenti (set -e) dan API lama tetap berjalan.
+              npm run migrate
+
               pm2 restart papertrail-api --update-env || \
                 pm2 start npm --name papertrail-api -- run start
 

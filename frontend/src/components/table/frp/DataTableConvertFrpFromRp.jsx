@@ -2,10 +2,7 @@ import DataTableAction from '../DataTableAction.jsx'
 import ButtonCreateFrpRp from '../../button/button-rp/ButtonCreateFrpRp.jsx'
 import ButtonPrintRp from '../../button/button-rp/ButtonPrintRp.jsx'
 import ButtonVoidedRp from '../../button/button-rp/ButtonVoidedRp.jsx'
-import ButtonApprovalFrp from '../../button/button-frp/ButtonApprovalFrp.jsx'
-import ButtonRejectFrp from '../../button/button-frp/ButtonRejectFrp.jsx'
 import { FilePlus02 } from '../../layoute/TemplateIcons.jsx'
-import { isProductAssistantManagerUser } from './frp-button-access.js'
 
 // MOBILE
 import createMobileCardRp from '../../../mobile/card/MobileCardRp.jsx'
@@ -95,7 +92,7 @@ function getFrpStatusLabel(rp) {
 
     switch (getConvertedFrpStatusValue(rp)) {
       case 'PENDING':
-        return 'Waiting Ass. Manager Product'
+        return 'Waiting Ass. Manager / Manager Product'
       case 'APPROVED':
         return 'FRP Approved'
       default:
@@ -206,16 +203,6 @@ function isPrintActionHidden(rp, currentUser) {
   return getFrpStatusValue(rp) !== 'APPROVED' || !isGeneralProcurementUser(currentUser)
 }
 
-// Approve/Reject FRP hasil convert: hanya Ass. Manager Product, saat FRP masih PENDING.
-export function canCurrentUserReviewConvertedFrp(rp, currentUser) {
-  return (
-    getRpFrpConversionStatus(rp) === 'CREATED' &&
-    Boolean(rp?.converted_frp_request_id) &&
-    getConvertedFrpStatusValue(rp) === 'PENDING' &&
-    isProductAssistantManagerUser(currentUser)
-  )
-}
-
 function isVoidActionHidden(rp, index, currentUser, canVoidAction) {
   return !(
     canCurrentUserVoidRpFromRp(rp, currentUser) &&
@@ -251,6 +238,14 @@ const columnsDataTableConvertFrpFromRp = [{
     ),
     sortAccessor: 'rp_number',
     minWidth: 220,
+  },
+  {
+    key: 'frpNumber',
+    header: 'FRP Number',
+    accessor: (rp) => rp?.converted_frp_number || '-',
+    nowrap: true,
+    sortAccessor: (rp) => rp?.converted_frp_number ?? '',
+    minWidth: 160,
   },
   {
     key: 'requestor',
@@ -333,8 +328,6 @@ function DataTableConvertFrpFromRp({
   onPrint,
   onVoid,
   canVoid,
-  onApproveFrp,
-  onRejectFrp,
   currentUser,
   mobileCard,
   pagination,
@@ -397,24 +390,6 @@ function DataTableConvertFrpFromRp({
           mobileHidden: true,
           hidden: (rp) => isPrintActionHidden(rp, currentUser),
           onClick: onPrint,
-        }
-      : null,
-    typeof onApproveFrp === 'function'
-      ? {
-          key: 'approveFrp',
-          label: 'Approve',
-          buttonComponent: ButtonApprovalFrp,
-          hidden: (rp) => !canCurrentUserReviewConvertedFrp(rp, currentUser),
-          onClick: onApproveFrp,
-        }
-      : null,
-    typeof onRejectFrp === 'function'
-      ? {
-          key: 'rejectFrp',
-          label: 'Reject',
-          buttonComponent: ButtonRejectFrp,
-          hidden: (rp) => !canCurrentUserReviewConvertedFrp(rp, currentUser),
-          onClick: onRejectFrp,
         }
       : null,
   ].filter(Boolean)

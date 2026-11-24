@@ -19,6 +19,7 @@ const {
   buildUserSnapshot,
 } = require('../master/masterSnapshot.service');
 const activityLogService = require('../activity/activityLog.service');
+const { fetchDirectoryResource } = require('../directory.service');
 const { isProductAssistantManager } = require('../../utils/productApprover.util');
 
 function normalizeNumber(value, fallback = 0) {
@@ -360,6 +361,10 @@ function canViewRpByHeader(user = {}, rp = {}) {
     return true;
   }
 
+  if (rp.for_department_id && userHasDepartmentId(user, rp.for_department_id)) {
+    return true;
+  }
+
   if (isCrossDepartmentRp(rp) && userHasDepartmentId(user, rp.approval_budget_department_id)) {
     return true;
   }
@@ -410,8 +415,13 @@ function canRequesterManagerApprove(user = {}, rp = {}) {
     return false;
   }
 
-  // RP yang memakai budget department lain di-approve oleh manager department budget,
-  // bukan manager department pembuat.
+  // RP dengan "Untuk Divisi" di-approve oleh manager divisi yang dipilih pada form.
+  if (rp.for_department_id) {
+    return userHasDepartmentId(user, rp.for_department_id);
+  }
+
+  // RP lama (tanpa "Untuk Divisi") yang memakai budget department lain di-approve oleh
+  // manager department budget, bukan manager department pembuat.
   if (isCrossDepartmentRp(rp)) {
     return userHasDepartmentId(user, rp.approval_budget_department_id);
   }
@@ -607,6 +617,7 @@ function buildListAccessQuery(user = {}) {
     managerCompanyIds: isManagerLevel(user) ? getUserCompanyIds(user) : [],
     managerDepartmentContexts: isManagerLevel(user) ? departmentContexts : [],
     destinationDepartmentIds: departmentIds,
+    forDepartmentIds: departmentIds,
     budgetDepartmentIds: departmentIds,
     canViewFrpConversion: isProductAssistantManager(user),
   };
@@ -710,11 +721,120 @@ async function resolveDestinationDepartmentSnapshot(conn, destinationDepartmentI
   };
 }
 
+function pickDirectoryValue(source, keys, fallback = null) {
+  const key = keys.find((k) => source?.[k] !== undefined && source?.[k] !== null && source?.[k] !== '');
+
+  return key ? source[key] : fallback;
+}
+
+function getDirectoryRows(response) {
+  const body = response?.data;
+
+  for (const candidate of [body, body?.data, body?.data?.data, body?.rows, body?.data?.rows]) {
+    if (Array.isArray(candidate)) {
+      return candidate;
+    }
+  }
+
+  return [];
+}
+
+function truncateSnapshot(value, max) {
+  const text = normalizeString(value);
+
+  return text ? text.slice(0, max) : null;
+}
+
+const EMPTY_FOR_DEPARTMENT_SNAPSHOT = {
+  for_department_id: null,
+  for_department_name_snapshot: null,
+  for_department_class_snapshot: null,
+  for_department_code_snapshot: null,
+  for_class_department_id: null,
+  for_class_name_snapshot: null,
+  for_class_class_snapshot: null,
+  for_class_code_snapshot: null,
+};
+
+function buildForDepartmentSnapshotFromExistingRp(rp = {}) {
+  return Object.keys(EMPTY_FOR_DEPARTMENT_SNAPSHOT).reduce((snapshot, key) => {
+    snapshot[key] = rp[key] ?? null;
+    return snapshot;
+  }, {});
+}
+
+// "Untuk Divisi" + class diambil dari direktori department PilarGroup. Manager divisi ini
+// yang menyetujui tahap PENDING_REQUESTER_MANAGER. Tanpa for_department_id -> null (aturan lama).
+async function resolveForDepartmentSnapshot(body = {}, req = null) {
+  if (!body.for_department_id) {
+    return null;
+  }
+
+  const forDepartmentId = String(body.for_department_id).trim();
+  const forClassDepartmentId = String(body.for_class_department_id || forDepartmentId).trim();
+
+  let departments;
+
+  try {
+    const response = await fetchDirectoryResource('departments', { token: req?.token });
+    departments = getDirectoryRows(response);
+  } catch (error) {
+    throw new Error(`Gagal memuat department dari direktori PilarGroup: ${error.message}`);
+  }
+
+  const findDepartment = (id) =>
+    departments.find((row) => String(pickDirectoryValue(row, ['id', 'department_id', 'uuid'])) === id);
+
+  const department = findDepartment(forDepartmentId);
+
+  if (!department) {
+    throw new Error('Untuk Divisi tidak ditemukan di direktori department.');
+  }
+
+  const classDepartment = findDepartment(forClassDepartmentId);
+
+  if (!classDepartment) {
+    throw new Error('Class untuk divisi tidak ditemukan di direktori department.');
+  }
+
+  const departmentName = pickDirectoryValue(department, ['name', 'department_name', 'label']);
+  const className = pickDirectoryValue(
+    classDepartment,
+    ['class', 'department_class', 'class_name', 'name', 'department_name']
+  );
+
+  return {
+    for_department_id: Number(forDepartmentId),
+    for_department_name_snapshot: truncateSnapshot(departmentName, 100),
+    for_department_class_snapshot: truncateSnapshot(
+      pickDirectoryValue(department, ['class_name', 'department_class', 'class'], departmentName),
+      100
+    ),
+    for_department_code_snapshot: truncateSnapshot(
+      pickDirectoryValue(department, ['code', 'department_code']),
+      10
+    ),
+    for_class_department_id: Number(forClassDepartmentId),
+    for_class_name_snapshot: truncateSnapshot(className, 100),
+    for_class_class_snapshot: truncateSnapshot(className, 100),
+    for_class_code_snapshot: truncateSnapshot(
+      pickDirectoryValue(classDepartment, ['code', 'department_code']),
+      10
+    ),
+  };
+}
+
 async function buildRpItems(conn, bodyItems = [], context = {}) {
   const items = [];
-  // Departemen dengan aturan CROSS_BUDGET (master Budget Access, modul RP) boleh memakai
-  // anggaran departemen lain selama masih dalam perusahaan yang dipilih.
-  const canUseCrossBudget = await hasCrossBudgetAccess(conn, 'RP', context.department_id);
+  // "Untuk Divisi" dengan aturan CROSS_BUDGET (master Budget Access, modul RP) boleh memakai
+  // anggaran departemen lain selama masih dalam perusahaan yang dipilih. Departemen pembuat
+  // tidak menentukan akses ini (mis. user IT yang membuat RP untuk divisi non-cross tetap
+  // memakai anggaran divisi tersebut). RP lama tanpa "Untuk Divisi" memakai departemen pembuat.
+  const canUseCrossBudget = await hasCrossBudgetAccess(
+    conn,
+    'RP',
+    context.for_department_id || context.department_id
+  );
 
   for (const item of bodyItems) {
     const quantity = normalizeNumber(item.quantity, 0);
@@ -732,6 +852,14 @@ async function buildRpItems(conn, bodyItems = [], context = {}) {
     }
     if (canUseCrossBudget) {
       // Lintas departemen diizinkan.
+    } else if (context.for_department_id) {
+      // Budget mengikuti "Untuk Divisi" (department + class) yang dipilih.
+      const forClassDepartmentId = context.for_class_department_id || context.for_department_id;
+
+      if (Number(budget.department_id) !== Number(context.for_department_id) ||
+          Number(budget.class_department_id) !== Number(forClassDepartmentId)) {
+        throw new Error('Anggaran RP harus milik divisi/class pada "Untuk Divisi".');
+      }
     } else if (context.destinationBudget) {
       if (Number(budget.department_id) !== Number(context.destination_department_id)) {
         throw new Error('Anggaran RP harus milik divisi pemroses (departemen tujuan).');
@@ -1011,11 +1139,29 @@ function validateCreateFrpFromRpPayload(body = {}) {
 
   const items = Array.isArray(body.items) ? body.items : [];
 
+  if (Array.isArray(body.items) && items.length === 0) {
+    throw new Error('Minimal satu item FRP wajib diisi.');
+  }
+
   items.forEach((item, index) => {
     const itemId = normalizeString(item.rp_request_item_id || item.id);
 
+    // Item tambahan (bukan dari RP) wajib memilih anggaran dan nominal sendiri.
     if (!itemId) {
-      throw new Error(`ID item RP wajib diisi pada item FRP ${index + 1}.`);
+      assertRequired(item.budget_id, `Anggaran wajib dipilih pada item FRP ${index + 1}.`);
+
+      const quantity = normalizeNumber(item.quantity, 0);
+      const unitPrice = normalizeNumber(item.unit_price, 0);
+
+      if (quantity <= 0) {
+        throw new Error(`Qty pada item FRP ${index + 1} harus lebih dari 0.`);
+      }
+
+      if (unitPrice <= 0) {
+        throw new Error(`Unit price pada item FRP ${index + 1} harus lebih dari 0.`);
+      }
+
+      return;
     }
 
     if (item.frp_amount !== undefined && item.frp_amount !== null && item.frp_amount !== '') {
@@ -1060,66 +1206,148 @@ function buildRpHeaderSnapshotForBudget(rp = {}) {
   };
 }
 
-function buildFrpItemsFromRpItems(rpItems = [], incomingItems = []) {
-  const incomingMap = new Map();
+/**
+ * Susun item FRP dari RP.
+ * - Tanpa `incomingItems`: semua item RP dipakai apa adanya (perilaku lama).
+ * - Dengan `incomingItems`: hanya item RP yang dikirim yang dipakai (item RP yang tidak
+ *   dikirim = dikurangi), ditambah item baru (tanpa rp_request_item_id) dengan anggaran sendiri.
+ *   Anggaran item baru wajib satu perusahaan dengan RP dan satu departemen anggaran dengan
+ *   item RP, karena nomor FRP dan validasi approval bergantung pada departemen tersebut.
+ */
+async function buildFrpItemsFromRp(conn, rp = {}, rpItems = [], incomingItems = []) {
+  const hasIncomingItems = Array.isArray(incomingItems) && incomingItems.length > 0;
 
-  if (Array.isArray(incomingItems)) {
-    incomingItems.forEach((item) => {
-      const itemId = normalizeString(item.rp_request_item_id || item.id);
-
-      if (itemId) {
-        incomingMap.set(itemId, item);
-      }
-    });
+  if (!hasIncomingItems) {
+    return rpItems.map((rpItem) => buildFrpItemFromRpItem(rpItem, null));
   }
 
-  const existingIds = new Set(rpItems.map((item) => String(item.id)));
+  const rpItemMap = new Map(rpItems.map((item) => [String(item.id), item]));
+  const usedRpItemIds = new Set();
+  const budgetDepartmentId = rpItems[0]?.budget_department_id;
+  const frpItems = [];
 
-  incomingMap.forEach((item, itemId) => {
-    if (!existingIds.has(String(itemId))) {
-      throw new Error('Satu atau lebih item FRP bukan bagian dari RP ini.');
+  for (const incomingItem of incomingItems) {
+    const itemId = normalizeString(incomingItem.rp_request_item_id || incomingItem.id);
+
+    if (itemId) {
+      const rpItem = rpItemMap.get(String(itemId));
+
+      if (!rpItem) {
+        throw new Error('Satu atau lebih item FRP bukan bagian dari RP ini.');
+      }
+
+      if (usedRpItemIds.has(String(itemId))) {
+        throw new Error('Item RP yang sama tidak boleh dipakai lebih dari sekali.');
+      }
+
+      usedRpItemIds.add(String(itemId));
+      frpItems.push(buildFrpItemFromRpItem(rpItem, incomingItem));
+      continue;
     }
-  });
 
-  return rpItems.map((rpItem) => {
-    const incomingItem = incomingMap.get(String(rpItem.id)) || null;
-    const originalAmount = Number(rpItem.amount || 0);
-    const hasOverride = !!(
-      incomingItem &&
-      incomingItem.frp_amount !== undefined &&
-      incomingItem.frp_amount !== null &&
-      incomingItem.frp_amount !== ''
+    frpItems.push(
+      await buildAdditionalFrpItemFromRp(conn, rp, budgetDepartmentId, incomingItem)
     );
-    const finalAmount = hasOverride
-      ? normalizeNumber(incomingItem.frp_amount, 0)
-      : originalAmount;
+  }
 
-    if (finalAmount <= 0) {
-      throw new Error('Nominal akhir FRP harus lebih dari 0.');
-    }
+  if (!frpItems.length) {
+    throw new Error('Minimal satu item FRP wajib diisi.');
+  }
 
-    return {
-      id: randomUUID(),
-      source_rp_request_item_id: rpItem.id,
-      is_amount_overridden: hasOverride ? 1 : 0,
-      original_rp_amount: originalAmount,
-      budget_id: rpItem.budget_id,
-      budget_code_snapshot: rpItem.budget_code_snapshot,
-      budget_project_name_snapshot: rpItem.budget_project_name_snapshot,
-      budget_type_code_snapshot: rpItem.budget_type_code_snapshot,
-      budget_type_name_snapshot: rpItem.budget_type_name_snapshot,
-      memo: normalizeString(rpItem.memo),
-      currency_code: 'IDR',
-      exchange_rate: 1,
-      quantity: Number(rpItem.quantity || 1),
-      unit_price: finalAmount,
-      amount: finalAmount,
-      amount_original: finalAmount,
-      amount_idr: finalAmount,
-      budget_remaining_before: Number(rpItem.budget_remaining_before || 0),
-      budget_remaining_after: Number(rpItem.budget_remaining_after || 0),
-    };
-  });
+  return frpItems;
+}
+
+async function buildAdditionalFrpItemFromRp(conn, rp = {}, budgetDepartmentId, item = {}) {
+  const budget = await getBudgetForUpdate(conn, item.budget_id);
+
+  if (!budget) {
+    throw new Error('Anggaran tidak ditemukan.');
+  }
+
+  if (Number(budget.is_active) !== 1) {
+    throw new Error(`Anggaran ${budget.budget_code} tidak aktif.`);
+  }
+
+  if (String(budget.company_id) !== String(rp.company_id)) {
+    throw new Error(`Anggaran ${budget.budget_code} harus berasal dari perusahaan RP.`);
+  }
+
+  if (budgetDepartmentId && Number(budget.department_id) !== Number(budgetDepartmentId)) {
+    throw new Error(
+      `Anggaran ${budget.budget_code} harus dari departemen anggaran yang sama dengan item RP.`
+    );
+  }
+
+  const quantity = normalizeNumber(item.quantity, 0);
+  const unitPrice = normalizeNumber(item.unit_price, 0);
+  const amount = quantity * unitPrice;
+
+  if (amount <= 0) {
+    throw new Error('Nominal item FRP tambahan harus lebih dari 0.');
+  }
+
+  const remainingBefore = Number(budget.budget_remaining || 0);
+
+  return {
+    id: randomUUID(),
+    source_rp_request_item_id: null,
+    is_amount_overridden: 0,
+    original_rp_amount: null,
+    budget_id: budget.id,
+    budget_code_snapshot: budget.budget_code,
+    budget_project_name_snapshot: budget.project_name,
+    budget_type_code_snapshot: budget.budget_type_code,
+    budget_type_name_snapshot: budget.budget_type_name,
+    memo: normalizeString(item.memo),
+    currency_code: 'IDR',
+    exchange_rate: 1,
+    quantity,
+    unit_price: unitPrice,
+    amount,
+    amount_original: amount,
+    amount_idr: amount,
+    budget_remaining_before: remainingBefore,
+    budget_remaining_after: remainingBefore - amount,
+  };
+}
+
+function buildFrpItemFromRpItem(rpItem = {}, incomingItem = null) {
+  const originalAmount = Number(rpItem.amount || 0);
+  const hasOverride = !!(
+    incomingItem &&
+    incomingItem.frp_amount !== undefined &&
+    incomingItem.frp_amount !== null &&
+    incomingItem.frp_amount !== ''
+  );
+  const finalAmount = hasOverride
+    ? normalizeNumber(incomingItem.frp_amount, 0)
+    : originalAmount;
+
+  if (finalAmount <= 0) {
+    throw new Error('Nominal akhir FRP harus lebih dari 0.');
+  }
+
+  return {
+    id: randomUUID(),
+    source_rp_request_item_id: rpItem.id,
+    is_amount_overridden: hasOverride ? 1 : 0,
+    original_rp_amount: originalAmount,
+    budget_id: rpItem.budget_id,
+    budget_code_snapshot: rpItem.budget_code_snapshot,
+    budget_project_name_snapshot: rpItem.budget_project_name_snapshot,
+    budget_type_code_snapshot: rpItem.budget_type_code_snapshot,
+    budget_type_name_snapshot: rpItem.budget_type_name_snapshot,
+    memo: normalizeString(rpItem.memo),
+    currency_code: 'IDR',
+    exchange_rate: 1,
+    quantity: Number(rpItem.quantity || 1),
+    unit_price: finalAmount,
+    amount: finalAmount,
+    amount_original: finalAmount,
+    amount_idr: finalAmount,
+    budget_remaining_before: Number(rpItem.budget_remaining_before || 0),
+    budget_remaining_after: Number(rpItem.budget_remaining_after || 0),
+  };
 }
 
 function getFrpDocumentNumberDepartmentFromRpItems(items = []) {
@@ -1237,6 +1465,10 @@ async function getRpDetail(id, user = {}) {
 async function createRp(body = {}, user = {}, req = null) {
   validateCreatePayload(body);
 
+  // Panggilan ke direktori dilakukan sebelum transaksi DB dibuka.
+  const forDepartmentSnapshot =
+    (await resolveForDepartmentSnapshot(body, req)) || EMPTY_FOR_DEPARTMENT_SNAPSHOT;
+
   const conn = await rpModel.db.getConnection();
 
   try {
@@ -1267,6 +1499,8 @@ async function createRp(body = {}, user = {}, req = null) {
     const vendorSnapshot = await resolveRpVendorSnapshot(conn, body);
     const items = await buildRpItems(conn, body.items, {
       ...headerSnapshot,
+      for_department_id: forDepartmentSnapshot.for_department_id,
+      for_class_department_id: forDepartmentSnapshot.for_class_department_id,
       destinationBudget: [1, 8].includes(Number(headerSnapshot.department_id)),
       destination_department_id: destinationSnapshot.destination_department_id,
     });
@@ -1281,8 +1515,11 @@ async function createRp(body = {}, user = {}, req = null) {
 
     const rpId = randomUUID();
     const totalAmount = sumTotalAmount(items);
+    // Tahap approval pertama dipegang "Untuk Divisi" (fallback: department pembuat).
+    const firstApprovalDepartmentId =
+      forDepartmentSnapshot.for_department_id || headerSnapshot.department_id;
     const isShortFlow =
-      Number(destinationSnapshot.destination_department_id) === Number(headerSnapshot.department_id) &&
+      Number(destinationSnapshot.destination_department_id) === Number(firstApprovalDepartmentId) &&
       destinationSnapshot.is_short_flow_allowed;
 
     const status = isShortFlow
@@ -1299,6 +1536,7 @@ async function createRp(body = {}, user = {}, req = null) {
       flow_type: flowType,
 
       ...headerSnapshot,
+      ...forDepartmentSnapshot,
       ...destinationSnapshot,
       ...userSnapshot,
       ...vendorSnapshot,
@@ -1362,6 +1600,8 @@ async function createRp(body = {}, user = {}, req = null) {
         status,
         flow_type: flowType,
         total_amount: totalAmount,
+        for_department_id: forDepartmentSnapshot.for_department_id,
+        for_class_department_id: forDepartmentSnapshot.for_class_department_id,
       },
       metadata: {
         rp_number: rpNumber,
@@ -1389,6 +1629,7 @@ async function createRp(body = {}, user = {}, req = null) {
 async function updateRp(id, body = {}, user = {}, req = null) {
   validateUpdatePayload(body);
 
+  const incomingForDepartmentSnapshot = await resolveForDepartmentSnapshot(body, req);
   const conn = await rpModel.db.getConnection();
   const userDepartmentContexts = getUserDepartmentContexts(user);
 
@@ -1419,8 +1660,12 @@ async function updateRp(id, body = {}, user = {}, req = null) {
     );
 
     const vendorSnapshot = await resolveRpVendorSnapshot(conn, body);
+    const effectiveForDepartmentSnapshot =
+      incomingForDepartmentSnapshot || buildForDepartmentSnapshotFromExistingRp(rp);
     const newItems = await buildRpItems(conn, body.items, {
       ...buildHeaderSnapshotFromExistingRp(rp),
+      for_department_id: effectiveForDepartmentSnapshot.for_department_id,
+      for_class_department_id: effectiveForDepartmentSnapshot.for_class_department_id,
       destinationBudget: [1, 8].includes(Number(rp.department_id)),
       destination_department_id: destinationSnapshot.destination_department_id,
     });
@@ -1463,6 +1708,8 @@ async function updateRp(id, body = {}, user = {}, req = null) {
     );
 
     await rpModel.updateRpHeader(conn, id, {
+      // Tanpa for_department_id di body, "Untuk Divisi" yang tersimpan dipertahankan.
+      ...effectiveForDepartmentSnapshot,
       ...destinationSnapshot,
       ...vendorSnapshot,
       ...paymentCategorySnapshot,
@@ -1529,7 +1776,11 @@ async function requesterManagerApproveRp(id, user = {}, body = {}, req = null) {
     }
 
     if (!canRequesterManagerApprove(user, rp)) {
-      throw new Error('Hanya manajer dari departemen pemohon yang dapat menyetujui RP ini.');
+      throw new Error(
+        rp.for_department_id
+          ? 'Hanya manajer dari divisi tujuan (Untuk Divisi) yang dapat menyetujui RP ini.'
+          : 'Hanya manajer dari departemen pemohon yang dapat menyetujui RP ini.'
+      );
     }
 
     await rpModel.updateRpRequesterManagerApproved(conn, id, user);
@@ -1728,6 +1979,8 @@ async function destinationCheckRp(id, body = {}, user = {}, req = null) {
 
     const newItems = await buildRpItems(conn, checkerBodyItems, {
       ...buildHeaderSnapshotFromExistingRp(rp),
+      for_department_id: rp.for_department_id,
+      for_class_department_id: rp.for_class_department_id,
       destinationBudget: Number(oldItems[0]?.budget_department_id) === Number(rp.destination_department_id),
       destination_department_id: rp.destination_department_id,
     });
@@ -2053,7 +2306,7 @@ async function createFrpFromRp(id, body = {}, user = {}, req = null) {
       body.document_type_ids || []
     );
 
-    const frpItems = buildFrpItemsFromRpItems(rpItems, body.items || []);
+    const frpItems = await buildFrpItemsFromRp(conn, rp, rpItems, body.items || []);
     const documentNumberDepartment = getFrpDocumentNumberDepartmentFromRpItems(rpItems);
     const frpDate = body.frp_date || new Date().toISOString().slice(0, 10);
 

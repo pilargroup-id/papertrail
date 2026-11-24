@@ -26,6 +26,14 @@ function createMobileCardFrp({
     subtitle: () => '',
     rows: [
       {
+        key: 'source',
+        label: 'Sumber',
+        value: (frp) =>
+          String(frp?.source_module ?? '').toUpperCase() === 'RP'
+            ? `Dari RP ${getDisplayValue(frp?.source_rp_number)}`
+            : 'Langsung (FRP)',
+      },
+      {
         key: 'requestBy',
         label: 'Request By',
         value: (frp) => getDisplayValue(frp?.requested_by_name),

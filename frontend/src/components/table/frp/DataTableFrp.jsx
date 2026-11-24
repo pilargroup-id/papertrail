@@ -19,7 +19,32 @@ import {
   canCurrentUserEditFrp,
   canCurrentUserRejectFrp,
   canCurrentUserRevertFrp,
+  isRpSourcedFrp,
 } from './frp-button-access.js'
+
+// Penanda FRP hasil convert dari RP (bukan dibuat langsung di menu FRP).
+function RpSourceBadge() {
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        marginLeft: '0.4rem',
+        padding: '0.1rem 0.45rem',
+        borderRadius: '999px',
+        border: '1px solid #bfdbfe',
+        background: '#eff6ff',
+        color: '#1d4ed8',
+        fontSize: '0.68rem',
+        fontWeight: 700,
+        lineHeight: 1.4,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      Dari RP
+    </span>
+  )
+}
 
 const AUTO_FIT_BASE_COLUMN_COUNT = 5
 const AUTO_FIT_MIN_SCALE = 0.58
@@ -384,7 +409,17 @@ const columnsDataTableBanks = [{
     accessor: 'frp_number',
     type: 'identity',
     showAvatar: false,
-    subtitleAccessor: (frp) => `Create at: ${formatDateTime(frp?.created_at)}`,
+    badgeAccessor: (frp) => (isRpSourcedFrp(frp) ? <RpSourceBadge /> : null),
+    subtitleAccessor: (frp) =>
+      isRpSourcedFrp(frp) ? (
+        <>
+          Create at: {formatDateTime(frp?.created_at)}
+          <br />
+          Dari RP: <strong style={{ color: '#111827' }}>{frp?.source_rp_number ?? '-'}</strong>
+        </>
+      ) : (
+        `Create at: ${formatDateTime(frp?.created_at)}`
+      ),
     sortAccessor: 'frp_number',
     minWidth: 220,
   },

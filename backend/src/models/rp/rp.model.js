@@ -78,6 +78,13 @@ function buildAccessFilters(query = {}) {
     params.push(...access.destinationDepartmentIds);
   }
 
+  if (Array.isArray(access.forDepartmentIds) && access.forDepartmentIds.length) {
+    const placeholders = access.forDepartmentIds.map(() => '?').join(', ');
+
+    orWhere.push(`rr.for_department_id IN (${placeholders})`);
+    params.push(...access.forDepartmentIds);
+  }
+
   if (Array.isArray(access.budgetDepartmentIds) && access.budgetDepartmentIds.length) {
     const placeholders = access.budgetDepartmentIds.map(() => '?').join(', ');
 
@@ -147,6 +154,7 @@ function buildListFilters(query = {}) {
         rr.department_id = ?
         OR rr.class_department_id = ?
         OR rr.destination_department_id = ?
+        OR rr.for_department_id = ?
         OR EXISTS (
           SELECT 1
           FROM rp_request_items rri_scope
@@ -159,6 +167,7 @@ function buildListFilters(query = {}) {
       )
     `);
     params.push(
+      query.department_scope_id,
       query.department_scope_id,
       query.department_scope_id,
       query.department_scope_id,
@@ -180,6 +189,11 @@ function buildListFilters(query = {}) {
   if (query.destination_department_id) {
     where.push('rr.destination_department_id = ?');
     params.push(query.destination_department_id);
+  }
+
+  if (query.for_department_id) {
+    where.push('rr.for_department_id = ?');
+    params.push(query.for_department_id);
   }
 
   if (query.requested_by_user_id) {
@@ -266,6 +280,14 @@ async function listRpRequests(conn, query = {}) {
         rr.class_name_snapshot,
         rr.class_class_snapshot,
         rr.class_code_snapshot,
+        rr.for_department_id,
+        rr.for_department_name_snapshot,
+        rr.for_department_class_snapshot,
+        rr.for_department_code_snapshot,
+        rr.for_class_department_id,
+        rr.for_class_name_snapshot,
+        rr.for_class_class_snapshot,
+        rr.for_class_code_snapshot,
         rr.destination_department_id,
         rr.destination_department_name_snapshot,
         rr.destination_department_class_snapshot,
@@ -531,6 +553,16 @@ async function insertRpHeader(conn, data) {
         class_class_snapshot,
         class_code_snapshot,
 
+        for_department_id,
+        for_department_name_snapshot,
+        for_department_class_snapshot,
+        for_department_code_snapshot,
+
+        for_class_department_id,
+        for_class_name_snapshot,
+        for_class_class_snapshot,
+        for_class_code_snapshot,
+
         destination_department_id,
         destination_department_name_snapshot,
         destination_department_class_snapshot,
@@ -567,6 +599,8 @@ async function insertRpHeader(conn, data) {
         ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?,
@@ -593,6 +627,16 @@ async function insertRpHeader(conn, data) {
       data.class_name_snapshot,
       data.class_class_snapshot,
       data.class_code_snapshot,
+
+      data.for_department_id ?? null,
+      data.for_department_name_snapshot ?? null,
+      data.for_department_class_snapshot ?? null,
+      data.for_department_code_snapshot ?? null,
+
+      data.for_class_department_id ?? null,
+      data.for_class_name_snapshot ?? null,
+      data.for_class_class_snapshot ?? null,
+      data.for_class_code_snapshot ?? null,
 
       data.destination_department_id,
       data.destination_department_name_snapshot,
@@ -726,6 +770,14 @@ async function updateRpHeader(conn, id, data) {
     `
       UPDATE rp_requests
       SET
+        for_department_id = ?,
+        for_department_name_snapshot = ?,
+        for_department_class_snapshot = ?,
+        for_department_code_snapshot = ?,
+        for_class_department_id = ?,
+        for_class_name_snapshot = ?,
+        for_class_class_snapshot = ?,
+        for_class_code_snapshot = ?,
         destination_department_id = ?,
         destination_department_name_snapshot = ?,
         destination_department_class_snapshot = ?,
@@ -746,6 +798,14 @@ async function updateRpHeader(conn, id, data) {
       WHERE id = ?
     `,
     [
+      data.for_department_id ?? null,
+      data.for_department_name_snapshot ?? null,
+      data.for_department_class_snapshot ?? null,
+      data.for_department_code_snapshot ?? null,
+      data.for_class_department_id ?? null,
+      data.for_class_name_snapshot ?? null,
+      data.for_class_class_snapshot ?? null,
+      data.for_class_code_snapshot ?? null,
       data.destination_department_id,
       data.destination_department_name_snapshot,
       data.destination_department_class_snapshot,

@@ -293,6 +293,14 @@ const columnsDataTableRp = [{
     minWidth: 220,
   },
   {
+    key: 'frpNumber',
+    header: 'FRP Number',
+    accessor: (rp) => rp?.converted_frp_number || '-',
+    nowrap: true,
+    sortAccessor: (rp) => rp?.converted_frp_number ?? '',
+    minWidth: 160,
+  },
+  {
     key: 'requestor',
     header: 'Request by',
     accessor: 'requested_by_name',

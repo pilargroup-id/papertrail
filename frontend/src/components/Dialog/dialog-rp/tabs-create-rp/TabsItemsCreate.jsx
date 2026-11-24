@@ -102,7 +102,7 @@ function TabsItemsCreate({
   isOptionsLoading,
   isFormDisabled,
   budgetOptions,
-  budgetNoOptionsText = 'Budget aktif tidak ditemukan.',
+  budgetNoOptionsText = 'Anggaran aktif tidak ditemukan.',
   updateItemValue,
   removeItem,
   addItem,
@@ -112,7 +112,7 @@ function TabsItemsCreate({
 }) {
   return (
     <Box component="section" sx={{ mb: 4 }}>
-      <SectionHeader title="Item List" />
+      <SectionHeader title="Daftar Item" />
 
       <Stack spacing={2}>
         <TableContainer
@@ -128,17 +128,17 @@ function TabsItemsCreate({
                 <TableCell sx={{ width: 44 }} align="center">
                   #
                 </TableCell>
-                <TableCell sx={{ minWidth: 260 }}>Budget</TableCell>
+                <TableCell sx={{ minWidth: 260 }}>Anggaran</TableCell>
                 <TableCell sx={{ minWidth: 180 }}>Memo</TableCell>
-                <TableCell sx={{ minWidth: 180 }}>Purchase Link</TableCell>
+                <TableCell sx={{ minWidth: 180 }}>Link Pembelian</TableCell>
                 <TableCell sx={{ width: 90 }} align="right">
-                  Qty
+                  Jumlah
                 </TableCell>
                 <TableCell sx={{ width: 150 }} align="right">
-                  Unit Price (IDR)
+                  Harga Satuan (IDR)
                 </TableCell>
                 <TableCell sx={{ width: 140 }} align="right">
-                  Amount (IDR)
+                  Subtotal (IDR)
                 </TableCell>
                 {canManageItems ? <TableCell sx={{ width: 52 }} /> : null}
               </TableRow>
@@ -199,10 +199,10 @@ function TabsItemsCreate({
                               ...params.slotProps,
                               htmlInput: {
                                 ...params.slotProps.htmlInput,
-                                'aria-label': `Budget item ${index + 1}`,
+                                'aria-label': `Anggaran item ${index + 1}`,
                               },
                             }}
-                            placeholder={isOptionsLoading ? 'Memuat budget...' : 'Pilih budget'}
+                            placeholder={isOptionsLoading ? 'Memuat anggaran...' : 'Pilih anggaran'}
                             error={Boolean(budgetError)}
                             helperText={budgetError}
                           />
@@ -217,7 +217,7 @@ function TabsItemsCreate({
                         >
                           {budgetAmount ? (
                             <>
-                              Budget {budgetAmount}
+                              Anggaran {budgetAmount}
                               <Box component="span" sx={{ mx: 0.75, color: 'divider' }}>
                                 |
                               </Box>
@@ -255,7 +255,7 @@ function TabsItemsCreate({
                           updateItemValue(index, 'purchase_link', event.target.value)
                         }
                         slotProps={{
-                          htmlInput: { 'aria-label': `Purchase link item ${index + 1}` },
+                          htmlInput: { 'aria-label': `Link pembelian item ${index + 1}` },
                         }}
                       />
                     </TableCell>
@@ -287,7 +287,7 @@ function TabsItemsCreate({
                             step: 1,
                             inputMode: 'numeric',
                             pattern: '[0-9]*',
-                            'aria-label': `Quantity item ${index + 1}`,
+                            'aria-label': `Jumlah item ${index + 1}`,
                           },
                         }}
                       />
@@ -310,7 +310,7 @@ function TabsItemsCreate({
                           htmlInput: {
                             min: 0,
                             step: 1,
-                            'aria-label': `Unit price item ${index + 1}`,
+                            'aria-label': `Harga satuan item ${index + 1}`,
                           },
                         }}
                       />
@@ -354,7 +354,7 @@ function TabsItemsCreate({
               onClick={addItem}
               sx={{ textTransform: 'none' }}
             >
-              Add Item
+              Tambah Item
             </Button>
             <Button
               type="button"
@@ -366,7 +366,7 @@ function TabsItemsCreate({
               onClick={duplicateLastItem}
               sx={{ textTransform: 'none' }}
             >
-              Duplicate
+              Duplikat Item
             </Button>
           </Stack>
         ) : null}
