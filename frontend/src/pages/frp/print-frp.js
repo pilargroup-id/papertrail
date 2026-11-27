@@ -515,8 +515,9 @@ const PRINT_STYLES = `
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .frp-print__sign { grid-column: 2; }
-  .frp-print__sign-space { height: 52px; }
+  .frp-print__party { grid-column: 1; }
+  .frp-print__sign { grid-column: 2; grid-row: 1 / span 2; }
+  .frp-print__sign-space { flex: 1 1 auto; min-height: 40px; }
   .frp-print__sign-footer {
     display: flex;
     align-items: flex-end;
