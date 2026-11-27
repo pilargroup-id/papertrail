@@ -252,18 +252,20 @@ const PRINT_STYLES = `
   .rp-print__break { word-break: break-all; }
 
   .rp-print__approval-section {
-    display: grid;
-    grid-template-columns: 120px 1fr;
     margin-top: 12px;
     page-break-inside: avoid;
   }
   .rp-print__approval {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
     border-top: 1px solid #1a1a1a;
     border-left: 1px solid #1a1a1a;
   }
   .rp-print__approval-cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
     border-right: 1px solid #1a1a1a;
     border-bottom: 1px solid #1a1a1a;
   }
@@ -274,10 +276,12 @@ const PRINT_STYLES = `
     border-bottom: 1px solid #1a1a1a;
   }
   .rp-print__approval-name {
+    flex: 1 1 auto;
     padding: 1px 4px;
     line-height: 1.5;
     min-height: 18px;
     text-align: center;
+    word-break: break-word;
   }
 
   .rp-print__footer {
@@ -288,6 +292,7 @@ const PRINT_STYLES = `
     padding-top: 4px;
     border-top: 1px solid #cfd4da;
     font-size: 8px;
+    font-weight: 700;
     color: #666;
   }
 `
@@ -379,7 +384,6 @@ function buildPrintHtml({ rpDetail, items }) {
       </section>
 
       <section class="rp-print__approval-section">
-        <div class="rp-print__label">Approval</div>
         ${buildApprovalHtml(buildApprovalColumns(rpDetail))}
       </section>
 

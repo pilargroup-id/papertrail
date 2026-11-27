@@ -319,18 +319,21 @@ function sumItemsAmount(items) {
   }, 0)
 }
 
-function buildSignatureHtml({ label, name, rightLabel }) {
+function buildPartyHtml({ label, name }) {
+  return `
+    <div class="frp-print__party">
+      <div class="frp-print__party-label">${escapeHtml(label)}</div>
+      <div class="frp-print__party-name">${safe(name)}</div>
+    </div>
+  `
+}
+
+function buildSignatureHtml({ label }) {
   return `
     <div class="frp-print__sign">
-      <div class="frp-print__label">${escapeHtml(label)}</div>
-      <div class="frp-print__sign-box">
-        <div class="frp-print__sign-space"></div>
-        <div class="frp-print__sign-footer">
-          <span class="frp-print__sign-name">${safe(name, '')}</span>
-          <span class="frp-print__sign-right-label">${escapeHtml(rightLabel)}</span>
-          <span class="frp-print__sign-blank">(<span></span>)</span>
-        </div>
-      </div>
+      <div class="frp-print__sign-label">${escapeHtml(label)}</div>
+      <div class="frp-print__sign-space"></div>
+      <div class="frp-print__sign-footer">(&nbsp;<span class="frp-print__sign-line"></span>&nbsp;)</div>
     </div>
   `
 }
@@ -481,32 +484,52 @@ const PRINT_STYLES = `
   .frp-print__description { margin-top: 20px; }
   .frp-print__description .frp-print__value { min-height: 56px; white-space: pre-wrap; }
 
-  .frp-print__sign {
+  .frp-print__signatures {
     display: grid;
-    grid-template-columns: 135px 1fr;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 10px;
+    row-gap: 8px;
+    margin: 12px 0 0 135px;
     page-break-inside: avoid;
   }
-  .frp-print__sign-box { border: 1px solid #1a1a1a; margin-top: -1px; }
-  .frp-print__sign-space { height: 74px; }
-  .frp-print__sign-footer {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr;
-    align-items: center;
-    border-top: 1px solid #1a1a1a;
+  .frp-print__party,
+  .frp-print__sign {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid #1a1a1a;
+  }
+  .frp-print__party-label,
+  .frp-print__sign-label {
     padding: 1px 4px;
     line-height: 1.5;
-  }
-  .frp-print__sign-blank { display: inline-flex; align-items: flex-end; justify-content: flex-end; }
-  .frp-print__sign-blank span {
-    display: inline-block;
-    flex: 1;
-    max-width: 140px;
+    text-align: center;
     border-bottom: 1px solid #1a1a1a;
-    margin: 0 1px 3px;
   }
-  .frp-print__signatures { margin-top: 16px; }
-  .frp-print__approved { margin-top: 10px; page-break-inside: avoid; }
-  .frp-print__approved .frp-print__value { margin-top: 0; }
+  .frp-print__party-name {
+    padding: 1px 4px;
+    line-height: 1.5;
+    min-height: 18px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .frp-print__sign { grid-column: 2; }
+  .frp-print__sign-space { height: 52px; }
+  .frp-print__sign-footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 4px 2px;
+    line-height: 1.5;
+  }
+  .frp-print__sign-line {
+    display: inline-block;
+    width: 140px;
+    border-bottom: 1px solid #1a1a1a;
+    margin-bottom: 3px;
+  }
 
   .frp-print__footer {
     display: flex;
@@ -651,11 +674,9 @@ function buildPrintHtml({ frpDetail, items, documentTypes }) {
       </section>
 
       <section class="frp-print__signatures">
-        ${buildSignatureHtml({ label: 'Request By:', name: requestedBy, rightLabel: 'Finance Approval By:' })}
-        <div class="frp-print__row frp-print__approved">
-          <div class="frp-print__label">Approved By:</div>
-          <div class="frp-print__value">${safe(approvedBy)}</div>
-        </div>
+        ${buildPartyHtml({ label: 'Request By', name: requestedBy })}
+        ${buildPartyHtml({ label: 'Approved By', name: approvedBy })}
+        ${buildSignatureHtml({ label: 'Finance Approval By' })}
       </section>
 
       <footer class="frp-print__footer">
