@@ -947,6 +947,26 @@ function DialogCreateFrp({
     })
   }
 
+  const createVendorOption = async (name) => {
+    const response = await api.vendors.create({ name })
+    const vendor = response?.data?.data ?? response?.data ?? response
+    const [option] = mapVendorOptions([vendor])
+
+    if (option?.value === undefined || option?.value === null || option?.value === '') {
+      throw new Error('Vendor berhasil dibuat, tetapi ID vendor tidak ditemukan.')
+    }
+
+    setVendorOptions((currentOptions) => {
+      if (currentOptions.some((existing) => String(existing.value) === String(option.value))) {
+        return currentOptions
+      }
+
+      return [...currentOptions, option].sort((a, b) => a.label.localeCompare(b.label))
+    })
+
+    return option
+  }
+
   const handleVendorBankChange = (value, option) => {
     updateValue('vendor_bank_account_id', value)
 
@@ -1480,6 +1500,7 @@ function DialogCreateFrp({
               paymentMethodOptions={paymentMethodOptions}
               updateValue={updateValue}
               handleVendorBankChange={handleVendorBankChange}
+              onCreateVendor={createVendorOption}
             />
 
             <TabsItems

@@ -1,10 +1,16 @@
-import Autocomplete from '@mui/material/Autocomplete'
+import { useState } from 'react'
+
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete'
 import Box from '@mui/material/Box'
+import CircularProgress from '@mui/material/CircularProgress'
 import TextField from '@mui/material/TextField'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
 
 import RpFieldHint from './RpFieldHint.jsx'
 import SectionHeader from './SectionHeader.jsx'
 import { autocompleteSlotProps, autocompleteSlots } from './autocompleteStyles.js'
+
+const filterVendorOptions = createFilterOptions()
 
 function getOptionByValue(options, value) {
   if (value === undefined || value === null || value === '') {
@@ -12,6 +18,14 @@ function getOptionByValue(options, value) {
   }
 
   return options.find((option) => String(option.value) === String(value)) ?? null
+}
+
+function normalizeVendorName(value) {
+  return String(value ?? '').trim().replace(/\s+/g, ' ')
+}
+
+function getVendorOptionName(option) {
+  return normalizeVendorName(option?.meta?.name ?? option?.meta?.vendor_name ?? option?.label)
 }
 
 function TabsVendor({
@@ -24,8 +38,54 @@ function TabsVendor({
   paymentMethodOptions,
   updateValue,
   handleVendorBankChange,
+  onCreateVendor,
   rpHints = {},
 }) {
+  const [isCreatingVendor, setIsCreatingVendor] = useState(false)
+  const [createVendorError, setCreateVendorError] = useState('')
+  const canCreateVendor = typeof onCreateVendor === 'function'
+
+  const selectVendor = (vendorId) => {
+    updateValue('vendor_id', vendorId ?? '')
+    updateValue('vendor_bank_account_id', '')
+  }
+
+  const createVendor = async (name) => {
+    const vendorName = normalizeVendorName(name)
+
+    if (!vendorName || isCreatingVendor) {
+      return
+    }
+
+    // Kalau nama sudah ada (beda huruf besar/kecil), pilih vendor yang ada saja.
+    const existingOption = vendorOptions.find(
+      (option) => getVendorOptionName(option).toLowerCase() === vendorName.toLowerCase(),
+    )
+
+    if (existingOption) {
+      selectVendor(existingOption.value)
+      return
+    }
+
+    setIsCreatingVendor(true)
+    setCreateVendorError('')
+
+    try {
+      const createdOption = await onCreateVendor(vendorName)
+
+      if (createdOption?.value !== undefined && createdOption?.value !== null) {
+        selectVendor(createdOption.value)
+      }
+    } catch (error) {
+      setCreateVendorError(error?.message || 'Gagal menambahkan vendor.')
+    } finally {
+      setIsCreatingVendor(false)
+    }
+  }
+
+  const vendorHelperText = createVendorError || fieldErrors.vendor_id
+  const isVendorDisabled = isFormDisabled || isCreatingVendor
+
   return (
     <Box component="section" sx={{ mb: 4 }}>
       <SectionHeader
@@ -51,20 +111,94 @@ function TabsVendor({
             value={getOptionByValue(vendorOptions, formValues.vendor_id)}
             getOptionLabel={(option) => option?.label ?? ''}
             isOptionEqualToValue={(option, value) => String(option.value) === String(value?.value)}
-            disabled={isFormDisabled}
-            loading={isOptionsLoading}
+            disabled={isVendorDisabled}
+            loading={isOptionsLoading || isCreatingVendor}
+            noOptionsText={canCreateVendor ? 'Ketik nama vendor baru untuk menambahkan.' : 'Vendor tidak ditemukan.'}
+            filterOptions={(options, params) => {
+              const filtered = filterVendorOptions(options, params)
+              const inputName = normalizeVendorName(params.inputValue)
+
+              if (!canCreateVendor || !inputName) {
+                return filtered
+              }
+
+              const isExisting = options.some(
+                (option) => getVendorOptionName(option).toLowerCase() === inputName.toLowerCase(),
+              )
+
+              if (isExisting) {
+                return filtered
+              }
+
+              return [
+                ...filtered,
+                {
+                  value: '__create_vendor__',
+                  label: inputName,
+                  isCreateOption: true,
+                },
+              ]
+            }}
+            renderOption={(props, option) => {
+              const { key, ...optionProps } = props
+
+              if (!option.isCreateOption) {
+                return (
+                  <li key={key} {...optionProps}>
+                    {option.label}
+                  </li>
+                )
+              }
+
+              return (
+                <li
+                  key={key}
+                  {...optionProps}
+                  style={{ borderTop: '1px solid rgba(15, 23, 42, 0.08)', color: '#2a9d8f' }}
+                >
+                  <AddRoundedIcon fontSize="small" sx={{ flexShrink: 0 }} />
+                  <span>
+                    Tambah vendor baru: <strong>&ldquo;{option.label}&rdquo;</strong>
+                  </span>
+                </li>
+              )
+            }}
             onChange={(_, option) => {
-              updateValue('vendor_id', option?.value ?? '')
-              updateValue('vendor_bank_account_id', '')
+              setCreateVendorError('')
+
+              if (option?.isCreateOption) {
+                createVendor(option.label)
+                return
+              }
+
+              selectVendor(option?.value)
             }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 required
                 label="Vendor"
-                placeholder={isOptionsLoading ? 'Memuat vendor...' : 'Pilih vendor'}
-                error={Boolean(fieldErrors.vendor_id)}
-                helperText={fieldErrors.vendor_id}
+                placeholder={
+                  isOptionsLoading
+                    ? 'Memuat vendor...'
+                    : canCreateVendor
+                      ? 'Pilih atau ketik vendor baru'
+                      : 'Pilih vendor'
+                }
+                error={Boolean(vendorHelperText)}
+                helperText={isCreatingVendor ? 'Menambahkan vendor...' : vendorHelperText}
+                slotProps={{
+                  ...params.slotProps,
+                  input: {
+                    ...params.slotProps.input,
+                    endAdornment: (
+                      <>
+                        {isCreatingVendor ? <CircularProgress color="inherit" size={16} /> : null}
+                        {params.slotProps.input.endAdornment}
+                      </>
+                    ),
+                  },
+                }}
               />
             )}
           />

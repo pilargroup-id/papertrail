@@ -74,7 +74,7 @@ export const implementedNavigationPaths = [
   '/Master/Payment-methods',
 
   // SETTINGS
-  // '/Master/Rp-destination-departments',
+  '/Master/Rp-destination-departments',
   // '/Master/Rp-checker-rules',
   '/Master/Rp-payment-categories',
 
@@ -212,6 +212,12 @@ export const primaryNavigationItems = [
         label: 'Categories Payment (Rp)',
         href: '/Master/Rp-payment-categories',
         icon: Filter,
+      },
+      {
+        id: 'rp-destination-departments',
+        label: 'Destination Dept (Rp)',
+        href: '/Master/Rp-destination-departments',
+        icon: SwitchHorizontal01,
       }
     ]
   },
