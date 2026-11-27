@@ -3,10 +3,12 @@ import {
   formatDateTime,
   formatDateValue,
   formatNumber,
-  formatRupiah,
   formatStatusLabel,
   getFirstValue,
+  isBlankValue,
 } from '../../components/Dialog/dialog-rp/tabs-details-rp/detailRpUtils.jsx'
+
+const MIN_ITEM_ROWS = 18
 
 const HTML_ESCAPE_MAP = {
   '&': '&amp;',
@@ -21,13 +23,17 @@ function escapeHtml(value) {
 }
 
 function safe(value, fallback = '-') {
-  const text = value === undefined || value === null || value === '' ? fallback : value
+  const text = isBlankValue(value) || value === '-' ? fallback : value
   return escapeHtml(text)
 }
 
 function safeMultiline(value) {
-  const text = value === undefined || value === null || value === '' ? '-' : String(value)
+  const text = isBlankValue(value) ? '-' : String(value)
   return escapeHtml(text).replace(/\n/g, '<br />')
+}
+
+function joinParts(parts) {
+  return parts.filter((part) => !isBlankValue(part) && part !== '-').join(' - ')
 }
 
 function getLogoUrl() {
@@ -38,9 +44,18 @@ function getLogoUrl() {
   }
 }
 
-function buildSummaryRows(rpDetail) {
+function buildInfoRowHtml(label, value) {
+  return `
+    <div class="rp-print__row">
+      <div class="rp-print__label">${safe(label, '')}</div>
+      <div class="rp-print__value">${safe(value)}</div>
+    </div>
+  `
+}
+
+function buildLeftInfoRows(rpDetail) {
   return [
-    ['RP Number', getFirstValue(rpDetail, ['rp_number', 'rpNumber', 'id'])],
+    ['RP No.', getFirstValue(rpDetail, ['rp_number', 'rpNumber', 'id'])],
     ['RP Date', formatDateValue(getFirstValue(rpDetail, ['date_required', 'dateRequired'], ''))],
     [
       'Request By',
@@ -54,87 +69,61 @@ function buildSummaryRows(rpDetail) {
     ],
     [
       'Division',
-      [
+      joinParts([
         getFirstValue(rpDetail, ['department_code_snapshot', 'department_code'], ''),
         getFirstValue(rpDetail, ['department_name_snapshot', 'department_name'], ''),
-      ]
-        .filter(Boolean)
-        .join(' - ') || '-',
+      ]),
     ],
-    ['Total Amount', formatRupiah(getFirstValue(rpDetail, ['total_amount', 'totalAmount'], ''))],
-    ['Created At', formatDateTime(getFirstValue(rpDetail, ['created_at', 'createdAt'], ''))],
+  ]
+}
+
+function buildRightInfoRows(rpDetail) {
+  return [
+    [
+      'Vendor',
+      joinParts([
+        getFirstValue(rpDetail, ['vendor_code_snapshot', 'vendor_code'], ''),
+        getFirstValue(rpDetail, ['vendor_name_snapshot', 'vendor_name'], ''),
+      ]),
+    ],
+    [
+      'Payment Category',
+      getFirstValue(rpDetail, ['payment_category_name_snapshot', 'payment_category_name'], ''),
+    ],
+    [
+      'Destination Division',
+      joinParts([
+        getFirstValue(rpDetail, ['destination_department_code_snapshot'], ''),
+        getFirstValue(rpDetail, ['destination_department_name_snapshot'], ''),
+        getFirstValue(rpDetail, ['destination_department_class_snapshot'], ''),
+      ]),
+    ],
+    ['PIC', getFirstValue(rpDetail, ['pic_name', 'picName'], '')],
   ]
 }
 
 function buildApprovalColumns(rpDetail) {
   return [
-    ['Dibuat', getFirstValue(rpDetail, ['requested_by_name', 'request_by_name', 'created_by_name'])],
-    ['Mengetahui', getFirstValue(rpDetail, ['requester_manager_approved_by_name'])],
-    ['Checker', getFirstValue(rpDetail, ['destination_checked_by_name'])],
-    ['Disetujui', getFirstValue(rpDetail, ['destination_manager_approved_by_name'])],
+    ['Dibuat', getFirstValue(rpDetail, ['requested_by_name', 'request_by_name', 'created_by_name'], '')],
+    ['Mengetahui', getFirstValue(rpDetail, ['requester_manager_approved_by_name'], '')],
+    ['Checker', getFirstValue(rpDetail, ['destination_checked_by_name'], '')],
+    ['Disetujui', getFirstValue(rpDetail, ['destination_manager_approved_by_name'], '')],
   ]
 }
 
-function buildVendorRows(rpDetail) {
-  return [
-    [
-      'Vendor',
-      [
-        getFirstValue(rpDetail, ['vendor_code_snapshot', 'vendor_code'], ''),
-        getFirstValue(rpDetail, ['vendor_name_snapshot', 'vendor_name'], ''),
-      ]
-        .filter(Boolean)
-        .join(' - ') || getFirstValue(rpDetail, ['vendor_id', 'vendorId']),
-    ],
-    [
-      'Payment Category',
-      getFirstValue(rpDetail, ['payment_category_name_snapshot', 'payment_category_name'], '') ||
-        getFirstValue(rpDetail, ['payment_category_id', 'paymentCategoryId']),
-    ],
-    [
-      'Destination Division',
-      [
-        getFirstValue(rpDetail, ['destination_department_code_snapshot'], ''),
-        getFirstValue(rpDetail, ['destination_department_name_snapshot'], ''),
-        getFirstValue(rpDetail, ['destination_department_class_snapshot'], ''),
-      ]
-        .filter(Boolean)
-        .join(' - ') || getFirstValue(rpDetail, ['destination_department_id', 'destinationDepartmentId']),
-    ],
-    ['PIC', getFirstValue(rpDetail, ['pic_name', 'picName'])],
-  ]
-}
-
-function buildFieldBoxHtml(label, value) {
-  return `
-    <div class="rp-print__field">
-      <div class="rp-print__field-label">${safe(label)}</div>
-      <div class="rp-print__field-value">${safeMultiline(value)}</div>
-    </div>
-  `
-}
-
-function buildFieldGridHtml(rows) {
-  const cellsHtml = rows.map(([label, value]) => buildFieldBoxHtml(label, value)).join('')
-
-  return `<div class="rp-print__grid">${cellsHtml}</div>`
-}
-
-function buildFieldStackHtml(rows) {
-  const rowsHtml = rows.map(([label, value]) => buildFieldBoxHtml(label, value)).join('')
-
-  return `<div class="rp-print__stack">${rowsHtml}</div>`
-}
-
-function buildApprovalTableHtml(columns) {
-  const headHtml = columns
-    .map(([label]) => `<th class="rp-print__center">${safe(label)}</th>`)
-    .join('')
-  const bodyHtml = columns
-    .map(([, value]) => `<td class="rp-print__center">${safe(value)}</td>`)
+function buildApprovalHtml(columns) {
+  const cellsHtml = columns
+    .map(
+      ([label, name]) => `
+        <div class="rp-print__approval-cell">
+          <div class="rp-print__approval-label">${safe(label)}</div>
+          <div class="rp-print__approval-name">${safe(name)}</div>
+        </div>
+      `,
+    )
     .join('')
 
-  return `<thead><tr>${headHtml}</tr></thead><tbody><tr>${bodyHtml}</tr></tbody>`
+  return `<div class="rp-print__approval">${cellsHtml}</div>`
 }
 
 function sumItemsAmount(items) {
@@ -144,40 +133,38 @@ function sumItemsAmount(items) {
   }, 0)
 }
 
-function buildItemsTableRowsHtml(items) {
-  if (!Array.isArray(items) || items.length === 0) {
-    return '<tr><td class="rp-print__empty" colspan="8">Belum ada item RP.</td></tr>'
-  }
+function formatCellNumber(value) {
+  return isBlankValue(value) || value === '-' ? '' : escapeHtml(formatNumber(value))
+}
 
-  return items
-    .map((item, index) => {
-      const budgetCode = getFirstValue(item, ['budget_code_snapshot'], '-')
-      const budgetLabel = getFirstValue(
-        item,
-        ['budget_type_name_snapshot', 'budget_type_code_snapshot'],
-        '',
-      )
-      const projectName = getFirstValue(item, ['budget_project_name_snapshot'], '-')
-      const memo = getFirstValue(item, ['memo'], '-')
-      const purchaseLink = getFirstValue(item, ['purchase_link', 'purchaseLink'], '')
-      const quantity = formatNumber(getFirstValue(item, ['quantity'], ''))
-      const unitPrice = formatRupiah(getFirstValue(item, ['unit_price'], ''))
-      const amount = formatRupiah(getFirstValue(item, ['amount'], ''))
+function buildItemsRowsHtml(items) {
+  const itemRows = items.map((item, index) => {
+    const projectName = getFirstValue(item, ['budget_project_name_snapshot'], '')
+    const budgetCode = getFirstValue(item, ['budget_code_snapshot'], '')
+    const memo = getFirstValue(item, ['memo'], '')
+    const purchaseLink = getFirstValue(item, ['purchase_link', 'purchaseLink'], '')
 
-      return `
-        <tr>
-          <td class="rp-print__num">${index + 1}</td>
-          <td>${safe(budgetCode)}${budgetLabel ? `<br /><span class="rp-print__muted">${safe(budgetLabel)}</span>` : ''}</td>
-          <td>${safe(projectName)}</td>
-          <td>${safe(memo)}</td>
-          <td class="rp-print__break">${purchaseLink ? safe(purchaseLink) : '-'}</td>
-          <td class="rp-print__num">${safe(quantity)}</td>
-          <td class="rp-print__num">${safe(unitPrice)}</td>
-          <td class="rp-print__num">${safe(amount)}</td>
-        </tr>
-      `
-    })
-    .join('')
+    return `
+      <tr>
+        <td class="rp-print__center">${index + 1}</td>
+        <td>${safe(budgetCode, '')}</td>
+        <td>${safe(projectName, '')}</td>
+        <td>${safe(memo, '')}</td>
+        <td class="rp-print__break">${safe(purchaseLink, '')}</td>
+        <td class="rp-print__num">${formatCellNumber(getFirstValue(item, ['quantity'], ''))}</td>
+        <td class="rp-print__num">${formatCellNumber(getFirstValue(item, ['unit_price'], ''))}</td>
+        <td class="rp-print__num">${formatCellNumber(getFirstValue(item, ['amount'], ''))}</td>
+      </tr>
+    `
+  })
+
+  const fillerCount = Math.max(MIN_ITEM_ROWS - items.length, 0)
+  const fillerRows = Array.from(
+    { length: fillerCount },
+    () => `<tr class="rp-print__filler">${'<td></td>'.repeat(8)}</tr>`,
+  )
+
+  return [...itemRows, ...fillerRows].join('')
 }
 
 const PRINT_STYLES = `
@@ -186,160 +173,134 @@ const PRINT_STYLES = `
   html, body {
     margin: 0;
     padding: 0;
+  }
+  body {
+    padding: 8mm 10mm;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #1a1a1a;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .rp-print { padding: 12mm; }
+  .rp-print {
+    border: 1px solid #1a1a1a;
+    padding: 10px 12px;
+    font-size: 10.5px;
+  }
+
   .rp-print__header {
+    margin: -10px -12px 12px;
+    border-bottom: 1px solid #1a1a1a;
+  }
+  .rp-print__brand {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding-bottom: 10px;
-    margin-bottom: 14px;
-    border-bottom: 2px solid #1a1a1a;
+    gap: 6px;
+    padding: 6px 12px 5px;
   }
-  .rp-print__header-left { display: flex; align-items: center; }
-  .rp-print__logo { height: 48px; width: auto; object-fit: contain; }
-  .rp-print__header-right { text-align: right; }
-  .rp-print__heading { margin-bottom: 6px; }
-  .rp-print__heading h1 { margin: 0; font-size: 18px; letter-spacing: 0.4px; text-transform: uppercase; }
-  .rp-print__heading p { margin: 2px 0 0; font-size: 12px; color: #444; }
-  .rp-print__printed { font-size: 11px; color: #555; }
-  .rp-print__section { margin-bottom: 14px; }
-  .rp-print__section h2 {
-    margin: 0 0 6px;
-    padding-bottom: 4px;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: #333;
-    border-bottom: 1px solid #cfd4da;
-  }
-  .rp-print__field {
-    border: 1px solid #cfd4da;
-    margin-bottom: 14px;
-  }
-  .rp-print__field-label {
-    background: #f4f5f7;
-    font-weight: 600;
-    color: #333;
-    text-transform: uppercase;
+  .rp-print__logo { height: 24px; width: auto; object-fit: contain; flex: 0 0 auto; }
+  .rp-print__heading { display: flex; flex-direction: column; line-height: 1.25; text-align: right; }
+  .rp-print__heading-name {
+    font-size: 9px;
+    font-weight: 700;
     letter-spacing: 0.3px;
-    font-size: 9.5px;
-    padding: 4px 10px;
-    border-bottom: 1px solid #cfd4da;
+    text-transform: uppercase;
   }
-  .rp-print__field-value { padding: 6px 10px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
-  .rp-print__stack {
-    border-top: 1px solid #cfd4da;
-    border-left: 1px solid #cfd4da;
-    margin-bottom: 10px;
-  }
-  .rp-print__stack .rp-print__field {
-    display: flex;
-    align-items: stretch;
-    margin: 0;
-    border-top: 0;
-    border-left: 0;
-    border-right: 1px solid #cfd4da;
-    border-bottom: 1px solid #cfd4da;
-    page-break-inside: avoid;
-  }
-  .rp-print__stack .rp-print__field-label {
-    flex: 0 0 110px;
-    display: flex;
-    align-items: center;
-    border-bottom: 0;
-    border-right: 1px solid #cfd4da;
-  }
-  .rp-print__stack .rp-print__field-value { flex: 1; }
-  .rp-print__grid {
+  .rp-print__heading-meta { font-size: 8px; color: #555; }
+
+  .rp-print__info {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0;
-    margin-bottom: 10px;
-    border-top: 1px solid #cfd4da;
-    border-left: 1px solid #cfd4da;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
   }
-  .rp-print__grid .rp-print__field {
-    margin: 0;
-    border-top: 0;
-    border-left: 0;
-    border-right: 1px solid #cfd4da;
-    border-bottom: 1px solid #cfd4da;
-    page-break-inside: avoid;
+  .rp-print__row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    align-items: stretch;
   }
-  .rp-print__grid .rp-print__field-label { padding: 3px 6px; font-size: 8px; }
-  .rp-print__grid .rp-print__field-value {
-    padding: 4px 6px;
-    font-size: 10px;
-    line-height: 1.3;
-    white-space: normal;
+  .rp-print__label { padding: 1px 0; line-height: 1.5; }
+  .rp-print__value {
+    border: 1px solid #1a1a1a;
+    margin-top: -1px;
+    padding: 1px 4px;
+    line-height: 1.5;
+    min-height: 18px;
+    word-break: break-word;
   }
+  .rp-print__notes { margin-top: 8px; }
+  .rp-print__notes .rp-print__value { white-space: pre-wrap; }
+
+  .rp-print__items { margin-top: 12px; }
   table.rp-print__table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .rp-print__table th, .rp-print__table td {
-    border: 1px solid #cfd4da;
-    padding: 6px 8px;
-    font-size: 11px;
+    border: 1px solid #1a1a1a;
+    padding: 1px 4px;
+    line-height: 1.45;
+    height: 18px;
     word-wrap: break-word;
     vertical-align: top;
   }
+  .rp-print__table th { font-weight: 400; text-align: center; }
   .rp-print__table thead { display: table-header-group; }
-  .rp-print__table th {
-    background: #f4f5f7;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    font-size: 9.5px;
-    text-align: left;
-  }
   .rp-print__table tr { page-break-inside: avoid; }
+  .rp-print__table tfoot td { border-left: 0; border-right: 0; }
+  .rp-print__table tfoot td:first-child { border-left: 1px solid #1a1a1a; }
+  .rp-print__table tfoot td:last-child { border-left: 1px solid #1a1a1a; border-right: 1px solid #1a1a1a; }
+  .rp-print__table tfoot .rp-print__currency { text-align: center; }
   .rp-print__num { text-align: right; }
   .rp-print__center { text-align: center; }
   .rp-print__break { word-break: break-all; }
-  .rp-print__muted { color: #666; font-size: 10px; }
-  .rp-print__empty { text-align: center; color: #777; padding: 14px; }
-  .rp-print__table tfoot td {
-    font-weight: 700;
-    background: #f4f5f7;
+
+  .rp-print__approval-section {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    margin-top: 12px;
+    page-break-inside: avoid;
   }
-  .rp-print__table--items th,
-  .rp-print__table--items td {
-    padding: 3px 6px;
-    font-size: 9.5px;
-    line-height: 1.25;
+  .rp-print__approval {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid #1a1a1a;
+    border-left: 1px solid #1a1a1a;
   }
-  .rp-print__table--items th {
-    font-size: 8.5px;
+  .rp-print__approval-cell {
+    border-right: 1px solid #1a1a1a;
+    border-bottom: 1px solid #1a1a1a;
   }
-  .rp-print__table--items .rp-print__muted {
-    font-size: 8.5px;
+  .rp-print__approval-label {
+    padding: 1px 4px;
+    line-height: 1.5;
+    text-align: center;
+    border-bottom: 1px solid #1a1a1a;
   }
+  .rp-print__approval-name {
+    padding: 1px 4px;
+    line-height: 1.5;
+    min-height: 18px;
+    text-align: center;
+  }
+
   .rp-print__footer {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin-top: 16px;
-    padding-top: 8px;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 4px;
     border-top: 1px solid #cfd4da;
-    font-size: 10px;
+    font-size: 8px;
     color: #666;
-  }
-  .rp-print__footer .rp-print__printed {
-    white-space: nowrap;
   }
 `
 
 function buildPrintHtml({ rpDetail, items }) {
+  const itemList = Array.isArray(items) ? items : []
   const rpNumber = getFirstValue(rpDetail, ['rp_number', 'rpNumber', 'id'])
   const statusLabel = formatStatusLabel(getFirstValue(rpDetail, ['status'], ''))
   const description = getFirstValue(rpDetail, ['description'], '')
   const notes = getFirstValue(rpDetail, ['notes'], '')
+  const currencyCode = getFirstValue(rpDetail, ['currency_code', 'currency'], 'IDR')
   const printedAt = formatDateTime(new Date().toISOString())
-  const itemsTotal = formatRupiah(sumItemsAmount(Array.isArray(items) ? items : []))
+  const itemsTotal = formatNumber(sumItemsAmount(itemList))
 
   return `<!doctype html>
 <html lang="id">
@@ -351,65 +312,79 @@ function buildPrintHtml({ rpDetail, items }) {
   <body>
     <div class="rp-print">
       <header class="rp-print__header">
-        <div class="rp-print__header-left">
+        <div class="rp-print__brand">
           <img class="rp-print__logo" src="${escapeHtml(getLogoUrl())}" alt="Logo" />
-        </div>
-        <div class="rp-print__header-right">
           <div class="rp-print__heading">
-            <h1>Request Payment (RP)</h1>
-            <p>No. ${safe(rpNumber)} &bull; ${safe(statusLabel)}</p>
+            <div class="rp-print__heading-name">Request Payment (RP)</div>
+            <div class="rp-print__heading-meta">No. ${safe(rpNumber)} &bull; ${safe(statusLabel)}</div>
           </div>
         </div>
       </header>
 
-      <section class="rp-print__section">
-        <h2>Ringkasan RP &amp; Vendor</h2>
-        ${buildFieldGridHtml([...buildSummaryRows(rpDetail), ...buildVendorRows(rpDetail)])}
+      <section class="rp-print__info">
+        <div>
+          ${buildLeftInfoRows(rpDetail).map(([label, value]) => buildInfoRowHtml(label, value)).join('')}
+        </div>
+        <div>
+          ${buildRightInfoRows(rpDetail).map(([label, value]) => buildInfoRowHtml(label, value)).join('')}
+        </div>
       </section>
 
-      <section class="rp-print__section">
-        <h2>Approval</h2>
+      <section class="rp-print__notes">
+        <div class="rp-print__row">
+          <div class="rp-print__label">Description</div>
+          <div class="rp-print__value">${safeMultiline(description)}</div>
+        </div>
+        <div class="rp-print__row">
+          <div class="rp-print__label">Notes</div>
+          <div class="rp-print__value">${safeMultiline(notes)}</div>
+        </div>
+      </section>
+
+      <section class="rp-print__items">
         <table class="rp-print__table">
-          ${buildApprovalTableHtml(buildApprovalColumns(rpDetail))}
-        </table>
-      </section>
-
-      <section class="rp-print__section">
-        ${buildFieldStackHtml([
-          ['Description', description],
-          ['Notes', notes],
-        ])}
-      </section>
-
-      <section class="rp-print__section">
-        <h2>Items</h2>
-        <table class="rp-print__table rp-print__table--items">
+          <colgroup>
+            <col style="width:4%;" />
+            <col style="width:10%;" />
+            <col style="width:18%;" />
+            <col style="width:23%;" />
+            <col style="width:17%;" />
+            <col style="width:6%;" />
+            <col style="width:10%;" />
+            <col style="width:12%;" />
+          </colgroup>
           <thead>
             <tr>
-              <th style="width:4%;">No</th>
-              <th style="width:14%;">Budget Code</th>
-              <th style="width:17%;">Project Name</th>
-              <th style="width:19%;">Memo</th>
-              <th style="width:15%;">Purchase Link</th>
-              <th style="width:6%;">Qty</th>
-              <th style="width:12%;">Unit Price</th>
-              <th style="width:13%;">Amount</th>
+              <th>No</th>
+              <th>Budget ID</th>
+              <th>Project Name</th>
+              <th>Memo</th>
+              <th>Purchase Link</th>
+              <th>Qty</th>
+              <th>Unit Price</th>
+              <th>Amount</th>
             </tr>
           </thead>
           <tbody>
-            ${buildItemsTableRowsHtml(items)}
+            ${buildItemsRowsHtml(itemList)}
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="7" class="rp-print__num">Total</td>
+              <td colspan="6">Total</td>
+              <td class="rp-print__currency">${safe(currencyCode)}</td>
               <td class="rp-print__num">${escapeHtml(itemsTotal)}</td>
             </tr>
           </tfoot>
         </table>
       </section>
 
+      <section class="rp-print__approval-section">
+        <div class="rp-print__label">Approval</div>
+        ${buildApprovalHtml(buildApprovalColumns(rpDetail))}
+      </section>
+
       <footer class="rp-print__footer">
-        <div class="rp-print__printed">Dicetak pada ${escapeHtml(printedAt)}</div>
+        <div>Dicetak pada ${escapeHtml(printedAt)}</div>
         <div>Papertrail &bull; Dokumen ini dihasilkan otomatis oleh sistem</div>
       </footer>
     </div>

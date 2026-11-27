@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import api from '../../../services/api.js'
+import notify from '../../../services/notify.js'
 import { Check } from '../../layoute/TemplateIcons.jsx'
 import DropdownSearch from '../../forms/dropdown/DropdownSearch.jsx'
 import {
@@ -18,6 +19,9 @@ import {
   permissionAccessOptions,
   permissionModuleTabs,
 } from './permissionModuleFormUtils.js'
+
+// Per-module requests are batched; one toast is raised for the whole save.
+const SILENT = { notify: false }
 
 function getPermissionRecords(permissionModule) {
   if (Array.isArray(permissionModule?.permissions)) {
@@ -356,9 +360,9 @@ function DialogEditPermissionModules({
         const existingPermission = existingPermissionByModuleId[String(moduleId)]
 
         if (existingPermission?.id !== undefined && existingPermission?.id !== null) {
-          responses.push(await api.userModulePermissions.update(existingPermission.id, payload))
+          responses.push(await api.userModulePermissions.update(existingPermission.id, payload, SILENT))
         } else {
-          responses.push(await api.userModulePermissions.create(payload))
+          responses.push(await api.userModulePermissions.create(payload, SILENT))
         }
       }
 
@@ -378,10 +382,11 @@ function DialogEditPermissionModules({
             name_snapshot: normalizedName,
             module_id: Number(moduleId),
             ...getPermissionPayloadFromAccess([]),
-          }),
+          }, SILENT),
         )
       }
 
+      notify.success('Hak akses modul diperbarui', normalizedName)
       await onUpdated?.(responses)
       handleClose()
     } catch (error) {
@@ -395,6 +400,7 @@ function DialogEditPermissionModules({
         })
       }
 
+      notify.error('Gagal memperbarui hak akses modul', error.message)
       setSubmitError(error.message || 'Gagal memperbarui user module permission.')
     } finally {
       setIsSubmitting(false)

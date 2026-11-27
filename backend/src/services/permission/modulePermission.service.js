@@ -1,4 +1,5 @@
 const ModulePermissionModel = require('../../models/permission/modulePermission.model');
+const { isItDepartmentUser } = require('../../utils/itUser.util');
 
 const ACTION_COLUMN_MAP = {
   view: 'can_view',
@@ -36,6 +37,20 @@ async function checkUserModulePermission(user, moduleCode, action) {
       401,
       'AUTH_USER_NOT_FOUND'
     );
+  }
+
+  // User IT boleh mengakses semua modul tanpa perlu baris di user_module_permissions.
+  if (isItDepartmentUser(user)) {
+    return {
+      user_id: user.id,
+      module_code: moduleCode,
+      can_view: 1,
+      can_create: 1,
+      can_update: 1,
+      can_deactivate: 1,
+      is_active: 1,
+      is_it_bypass: true,
+    };
   }
 
   const permission = await ModulePermissionModel.findUserModulePermission(

@@ -17,7 +17,10 @@ import {
   Filter,
   LayoutDashboard,
 } from '../../components/layoute/TemplateIcons.jsx'
-import { isProductAssistantManagerUser } from '../../components/table/frp/frp-button-access.js'
+import {
+  isItStaffUser,
+  isProductAssistantManagerUser,
+} from '../../components/table/frp/frp-button-access.js'
 
 export const defaultNavigationPath = '/forms'
 
@@ -25,9 +28,13 @@ function normalizeRole(role) {
   return (role ?? '').toString().trim().toUpperCase()
 }
 
-// Menu terlihat jika tidak dibatasi, job_position cocok dengan allowedRoles,
-// atau allowWhen(currentUser) bernilai true.
+// Menu terlihat jika user IT (akses semua menu), tidak dibatasi,
+// job_position cocok dengan allowedRoles, atau allowWhen(currentUser) bernilai true.
 export function isNavigationItemVisible(item, userRole = '', currentUser = null) {
+  if (currentUser && isItStaffUser(currentUser)) {
+    return true
+  }
+
   const hasRoleRule = Boolean(item.allowedRoles?.length)
   const hasCustomRule = typeof item.allowWhen === 'function'
 

@@ -295,11 +295,17 @@ function FrpPage(props) {
     showPrintLoading(printWindow)
 
     try {
-      const response = await api.frp.detail(frpId)
+      const [response, documentTypesResponse] = await Promise.all([
+        api.frp.detail(frpId),
+        api.frpDocumentTypes
+          .list({ page: 1, limit: 100, is_active: 1 })
+          .catch(() => null),
+      ])
       const frpDetail = getFrpDetailFromResponse(response) ?? frp
       const items = getFrpItemsFromResponse(response)
+      const documentTypes = getRowsFromResponse(documentTypesResponse)
 
-      printFrpDocument(printWindow, { frpDetail, items })
+      printFrpDocument(printWindow, { frpDetail, items, documentTypes })
     } catch (error) {
       showPrintError(printWindow, error.message || 'Gagal memuat data FRP untuk print.')
     }

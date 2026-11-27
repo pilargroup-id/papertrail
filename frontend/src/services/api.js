@@ -1,3 +1,9 @@
+import {
+  notifyRequestFailure,
+  notifyRequestSuccess,
+  shouldNotifyRequest,
+} from './apiNotify.js';
+
 const DEFAULT_API_BASE_URL = '/api';
 const PILARGROUP_API_BASE_URL_ENV_KEY = 'VITE_PILARGROUP_API_BASE_URL';
 const AUTH_TOKEN_STORAGE_KEYS = [
@@ -496,7 +502,43 @@ const request = async (
     responseType = 'json',
     baseUrl,
     organizationContext = activeOrganizationContext,
+    // Set to false to suppress the automatic success/failure toast for a mutation.
+    notify,
   } = {},
+) => {
+  const requestOptions = {
+    method, params, data, headers, token, signal, responseType, baseUrl, organizationContext,
+  };
+
+  if (!shouldNotifyRequest(method, notify)) {
+    return performRequest(path, requestOptions);
+  }
+
+  try {
+    const responseData = await performRequest(path, requestOptions);
+    notifyRequestSuccess(method, path, data, responseData);
+    return responseData;
+  } catch (error) {
+    if (error?.name !== 'AbortError') {
+      notifyRequestFailure(method, path, data, error);
+    }
+    throw error;
+  }
+};
+
+const performRequest = async (
+  path,
+  {
+    method,
+    params,
+    data,
+    headers = {},
+    token,
+    signal,
+    responseType,
+    baseUrl,
+    organizationContext,
+  },
 ) => {
   const resolvedBaseUrl = normalizeBaseUrl(baseUrl || getApiBaseUrl());
 
